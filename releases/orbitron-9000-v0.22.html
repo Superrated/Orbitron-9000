@@ -3196,16 +3196,17 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
 .mstx .mbar{position:relative;height:8px;border-radius:4px;background:rgba(0,255,156,.1);overflow:hidden}.mstx .mfl{position:absolute;left:0;top:0;bottom:0;width:0;background:#00ff9c;transition:width .2s}.mstx .mfl.hot{background:#ffb84d}
 .mstx .mtg{position:absolute;top:-2px;bottom:-2px;left:70%;width:2px;background:var(--acc,#ffe44d)}.mstx .mtx{font:600 10px ui-monospace,monospace;letter-spacing:.04em;white-space:nowrap;opacity:.85;font-variant-numeric:tabular-nums}`;document.head.appendChild(st)}
 
-/* ---- v152: Techno rumble gets its own section on Mix → Bus & FX (Rumble, Rumble cutoff), kept there after every Launch ---- */
+/* ---- v152 (v0.22: moved to the Kick card): Techno rumble section (Rumble, Rumble cutoff) sits at the bottom of the Kick card, kept there after every Launch ---- */
 {const LBL=['Rumble','Rumble cutoff'];
  const lab=d=>{const sp=d.firstChild;return sp&&sp.firstChild?sp.firstChild.textContent.trim():''};
- function place(){const m=$('#mix');if(!m)return;const pn=m.closest('.panel')||m.parentElement;let box=document.querySelector('.rumbx');
-  if(!box){box=document.createElement('div');box.className='panel rumbx';box.innerHTML='<h2>Techno rumble</h2><p class="gnote" style="margin:0 0 6px">The kick sent through a dark, distorted reverb and ducked by the sidechain: the low rolling bed of warehouse techno. Rumble = level, cutoff = how dark.</p><div class="grid rumg"></div>';pn.after(box)}
-  const g=box.querySelector('.rumg');g.innerHTML='';[...m.querySelectorAll('.sl')].filter(d=>LBL.includes(lab(d))).forEach(d=>g.appendChild(d));
-  // only on Mix → Bus & FX: follow the bus panel's visibility (the sub-tabs hide/show that panel)
-  if(!box.dataset.obs){box.dataset.obs=1;const sync=()=>{box.hidden=!!pn.hidden};sync();new MutationObserver(sync).observe(pn,{attributes:true,attributeFilter:['hidden']})}}
+ let box=null;
+ function place(){const m=$('#mix');if(!box){box=document.createElement('div');box.className='rumbx';box.innerHTML='<div class="rumh">Techno rumble</div><p class="gnote" style="margin:0 0 6px">The kick sent through a dark, distorted reverb and ducked by the sidechain: the low rolling bed of warehouse techno. Rumble = level, cutoff = how dark.</p><div class="grid rumg"></div>'}
+  const g=box.querySelector('.rumg');if(m){const nw=[...m.querySelectorAll('.sl')].filter(d=>LBL.includes(lab(d)));if(nw.length){g.innerHTML='';nw.forEach(d=>g.appendChild(d))}}
+  const card=[...document.querySelectorAll('.card')].find(c=>{const h=c.querySelector('.hd span');return h&&h.textContent.trim()===TR[0].n});if(card&&box.parentElement!==card)card.appendChild(box)}
  const _mx=mix;mix=function(){const r=_mx.apply(this,arguments);try{place()}catch(e){}return r};
- try{place()}catch(e){}}
+ const _bd=build;build=function(){const r=_bd.apply(this,arguments);try{place()}catch(e){}return r};
+ const st=document.createElement('style');st.textContent='.rumbx{padding:8px 0 4px;margin-top:6px;border-top:1px solid rgba(255,255,255,.08)}.rumbx .rumh{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin:0 0 4px}';document.head.appendChild(st);
+ try{place()}catch(e){};setInterval(()=>{try{if(!box||!box.isConnected||!box.closest('.card'))place()}catch(e){}},700)}
 
 /* ---- v153: contemporary leads for Melancholic and Hopeful (melodic techno / progressive house): modern patches without vibrato, and one of
    three pattern styles per Launch — hypnotic 16th arp with Cycle + Reset on bar and a slow filter sweep, a rolling Turing-loop sequence, or a
