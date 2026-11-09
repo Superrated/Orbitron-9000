@@ -222,6 +222,16 @@ $("#rnd").onclick=()=>{G.root=Math.floor(R()*12);G.scale=pick(Object.keys(SC));$
  TR.forEach(t=>{if(t.pad)return;if(t.n!=="Kick"){t.st=pick([8,12,13,16,16,16,5+Math.floor(R()*12)]);t.h=1+Math.floor(R()*Math.min(t.st-1,9));t.r=Math.floor(R()*t.st)}t.pt=pat(t)});newProg(TR[5].st);build()};
 </script>
 <script>
+/* ---- v156: robust saving outside Claude — phones use the share sheet (save to Files / Drive / …), other browsers a normal download;
+   inside a sandboxed preview that blocks downloads the app says so instead of silently doing nothing ---- */
+window.orbSave=async function(name,blob){
+ const mob=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));
+ try{if(mob&&navigator.canShare){const f=new File([blob],name,{type:blob.type||'application/octet-stream'});if(navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name});return 'shared'}}}
+ catch(e){if(e&&e.name==='AbortError')return 'cancelled'}
+ let sandboxed=false;try{sandboxed=window.top!==window&&!(window.claude&&claude.use)}catch(e){sandboxed=true}
+ try{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}catch(e){return 'blocked'}
+ return sandboxed?'maybe-blocked':'downloaded'};
+
 /* ---- v145: safety — an exponential ramp to 0 (e.g. a track at Level 0) is not allowed by Web Audio and used to abort the note and the rest of
    that sequencer step; ramps now clamp to a tiny positive value, and a non-finite value or time is skipped instead of throwing ---- */
 {const E=AudioParam.prototype.exponentialRampToValueAtTime;AudioParam.prototype.exponentialRampToValueAtTime=function(v,t){if(!isFinite(v)||!isFinite(t))return this;return E.call(this,v>0?Math.max(v,1e-5):v<0?Math.min(v,-1e-5):1e-5,t)};
@@ -2480,7 +2490,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   let dl=null;try{dl=window.claude&&claude.use?await claude.use('downloads'):null}catch(e){dl=null}
   if(dl){try{await dl.save({filename:base+'.orbit.json',data:txt});msg('⇪ '+n+' SECTORS EXPORTED');note.textContent='Exported as '+base+'.orbit.json (the Claude app only saves standard file types; renaming it to .orbit is fine).'}
    catch(e){const c=e&&e.code;note.textContent=c==='declined'?'Export cancelled.':c==='rate_limited'?'A save prompt is already open — finish that one first.':'Export is not available in this view.'}return}
-  try{const u=URL.createObjectURL(new Blob([txt],{type:'application/octet-stream'})),a=document.createElement('a');a.href=u;a.download=base+'.orbit';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);msg('⇪ '+n+' SECTORS EXPORTED');note.textContent='Exported '+base+'.orbit'}catch(e){note.textContent='Export is not available in this view.'}};
+  try{const r=await window.orbSave(base+'.orbit',new Blob([txt],{type:'application/octet-stream'}));if(r==='cancelled'){note.textContent='Export cancelled.';return}if(r==='blocked'||r==='maybe-blocked'){note.textContent='This view blocks downloads (e.g. a preview pane). Open the app directly in Chrome, Safari or Firefox to export.';if(r==='blocked')return}msg('⇪ '+n+' SECTORS EXPORTED');if(r!=='maybe-blocked')note.textContent=(r==='shared'?'Shared ':'Exported ')+base+'.orbit'}catch(e){note.textContent='Export is not available in this view.'}};
  const valid=o=>o&&typeof o==='object'&&Array.isArray(o.TR)&&o.G&&typeof o.G==='object'&&o.TR.length<=TR.length;
  const esc=t=>String(t).replace(/[<>&"]/g,'');
  function offer(txt,src){let d;try{d=JSON.parse(String(txt).trim())}catch(e){d=null}
@@ -3020,7 +3030,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   const parts=[wavHeader(frames,sr),...REC.ch];REC.ch=[];const size=44+frames*4;say2((auto?'■ 20 MIN LIMIT · ':'■ ')+'SAVING '+fmt(frames/sr)+' RECORDING');
   let dl=null;try{dl=window.claude&&claude.use?await claude.use('downloads'):null}catch(e){dl=null}
   if(dl){try{const zb=await zipOf(base+'.wav',parts,size);await dl.save({filename:base+'.wav.zip',data:zb});say2('■ SAVED '+base+'.wav (inside the .zip)')}catch(e){const c=e&&e.code;say2(c==='declined'?'■ RECORDING DISCARDED':c==='rate_limited'?'▲ A SAVE PROMPT IS ALREADY OPEN':'▲ SAVING NOT AVAILABLE HERE')}return}
-  try{const u=URL.createObjectURL(new Blob(parts,{type:'audio/wav'})),a=document.createElement('a');a.href=u;a.download=base+'.wav';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);say2('■ SAVED '+base+'.wav')}catch(e){say2('▲ SAVING NOT AVAILABLE HERE')}}
+  try{const r=await window.orbSave(base+'.wav',new Blob(parts,{type:'audio/wav'}));say2(r==='cancelled'?'■ RECORDING DISCARDED':r==='blocked'||r==='maybe-blocked'?'▲ THIS VIEW BLOCKS DOWNLOADS · OPEN THE APP DIRECTLY IN YOUR BROWSER':r==='shared'?'■ SHARED '+base+'.wav':'■ SAVED '+base+'.wav')}catch(e){say2('▲ SAVING NOT AVAILABLE HERE')}}
  window.orbRec={start,stop,state:()=>({on:REC.on,frames:REC.frames,sr:REC.sr,chunks:REC.ch.length,node:!!REC.node})};
  const add=()=>{const io=document.querySelector('.sio');if(!io||io.querySelector('.srec'))return;btn=document.createElement('button');btn.className='srec';btn.type='button';btn.onclick=()=>REC.on?stop(false):start();io.appendChild(btn);show()};
  add();setInterval(add,2000);
