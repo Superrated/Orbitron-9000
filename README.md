@@ -28,4 +28,8 @@ Ten tracks — kick, hi-hat, clap, perc, snare, lead, pad, bass, dub stab and su
 - Space (auto stereo movement), Master+ (level matching and peak control), per-mood mastering finish
 - Phone-friendly: engine sleep when stopped, pause/resume when switching apps, load guard
 
+## License
+
+Copyright (c) 2026 Superrated. Licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE.md): free to use, copy, modify and share for noncommercial purposes only.
+
 Designed by Superrated and Claude.
