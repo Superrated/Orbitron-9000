@@ -3699,6 +3699,7 @@ window.MOODX={
   'phrygian':{sc:[['Phrygian',1]],pr:[[0,1,0,1],[0,0,1,0],[0,1,6,0],[0,6,1,0]],sh:['tri','sus4','7']},
   'hypnotic':{sc:[['Minor',.7],['Phrygian',.3]],pr:[[0,0,0,3],[0,0,5,5],[0,3],[0,0,0,6],[0,5]],sh:['7','9','quart']},
   'suspended':{sc:[['Minor',1]],pr:[[0,5,3,6],[0,6,3,0],[0,2,6,3]],sh:['sus2','sus4','add9','quart']}};
+ window.HARMFAM=FAM;
  const DARK={Dark:{'cinematic minor':.3,phrygian:.3,hypnotic:.25,suspended:.15},Tense:{phrygian:.45,hypnotic:.3,suspended:.25},
   Noir:{'cinematic minor':.45,suspended:.3,hypnotic:.25},Power:{phrygian:.5,hypnotic:.5},'Groove Techno':{hypnotic:.5,phrygian:.3,suspended:.2},
   Temporal:{hypnotic:.6,phrygian:.4},Acid:{phrygian:.5,hypnotic:.5},'Distorted Electro':{phrygian:.4,'cinematic minor':.3,hypnotic:.3},
@@ -3988,5 +3989,35 @@ window.MOODX={
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const B=TR[6],P=B.p,pr=HELD[curMood]||0;P.bsus=0;
   if(pr&&!(MOODS[curMood]||{}).acid&&R()<pr){P.bsus=+(.55+R()*.25).toFixed(2);P.bgt=pick([0,0,.9,1]);P.dec=+(.18+R()*.16).toFixed(2);P.bsl=Math.min(P.bsl||0,.15);
    P.blk='Free';P.bph=1;P.bgh=0;Object.assign(B,{st:16,h:pick([2,3,4]),r:2});B.pt=pat(B);P.cut=Math.round((P.cut||500)*.85)}}catch(e){}return r}}
+</script>
+<script>
+/* ---- v0.22: pad Progression menu lists every progression Launch can play, grouped: this mood, lengths of the playing progression
+   (2, 3, 4, 6, 8 chords, as Launch makes them), the four dark-harmony families, then every other mood. Whatever plays shows by name;
+   "(custom)" only after a manual chord edit. Choosing one never changes the scale or anything else. ---- */
+{const RN=['1','2','3','4','5','6','7'],plab=a=>a.map(x=>typeof x==='number'?RN[((x%7)+7)%7]:x).join('–');
+ const VAR=(a,L)=>L===2?a.slice(0,2):L===3?a.slice(0,3):L===6?a.concat(a.slice(0,2)):L===8?a.concat([a[0],a[1],a[3],a[2]]):a;
+ const ky=a=>JSON.stringify(a.map(x=>{const c=chordSpec(x);return[c.d,c.x||0]})),curKey=()=>JSON.stringify(prog.map((d,i)=>[d,(PX&&PX[i])||0]));
+ let ENT=[],SIG='';
+ function build_(){const M=MOODS[curMood]||{},E=[],seen=new Set(),ck=curKey(),add=(g,v,lab,a,sh,L)=>{E.push({g,v,lab,a,sh,L:L||a.length,k:ky(VAR(a,L||a.length))})};
+  (M.pr||[]).forEach(a=>{add('This mood · '+MN(curMood),plab(a),plab(a),a,M.sh);seen.add(ky(a))});
+  // the playing progression's base (any library) and its lengths
+  const bases=[];(M.pr||[]).forEach(a=>bases.push([a,M.sh]));Object.values(window.HARMFAM||{}).forEach(F=>F.pr.forEach(a=>bases.push([a,F.sh])));
+  Object.keys(MOODS).forEach(k=>(MOODS[k].pr||[]).forEach(a=>bases.push([a,MOODS[k].sh])));
+  const hit=bases.find(([a])=>a.length===4&&[2,3,4,6,8].some(L=>ky(VAR(a,L))===ck));
+  if(hit){const[a,sh]=hit;[2,3,4,6,8].forEach(L=>add('Lengths of '+plab(a),'len:'+L+':'+plab(a),plab(VAR(a,L))+' · '+L+' chords',a,sh,L))}
+  const FAM=window.HARMFAM||{};Object.keys(FAM).forEach(f=>FAM[f].pr.forEach((a,i)=>{if(seen.has(ky(a)))return;seen.add(ky(a));add('Dark harmony · '+f,'fam:'+f+':'+i,plab(a),a,FAM[f].sh)}));
+  Object.keys(MOODS).filter(k=>k!==curMood).forEach(k=>(MOODS[k].pr||[]).forEach((a,i)=>{if(seen.has(ky(a)))return;seen.add(ky(a));add('Mood · '+MN(k),'mood:'+k+':'+i,plab(a),a,MOODS[k].sh)}));
+  return E}
+ function apply(e){const T=TR[5],full=T.h>=T.st,sp=VAR(e.a,e.L).map(chordSpec);prog=sp.map(q=>q.d);PX=sp.map(q=>q.x);T.st=prog.length;T.h=full?T.st:Math.min(T.h,T.st);
+  pshape=prog.map(()=>pick(e.sh||(MOODS[curMood]||{}).sh||['7']));pmean=null;PTOP=null;T.pt=pat(T);try{if(typeof PD!=='undefined'&&PD&&PD.length!==T.st)PD=null}catch(_){}SIG='';build()}
+ const find=()=>[...document.querySelectorAll('label[data-pp]')].find(l=>l.firstChild&&l.firstChild.nodeType===3&&l.firstChild.textContent.trim()==='Progression');
+ function sync(){const l=find();if(!l)return;const s=l.querySelector('select');if(!s||document.activeElement===s)return;
+  const ck=curKey(),sig=curMood+'|'+ck+'|'+G.scale+'|'+padStyle;
+  if(sig!==SIG||!s.querySelector('optgroup')){SIG=sig;ENT=build_();s.innerHTML='';s.add(new Option(padStyle==='Progression'||padStyle==='Pedal chords'?'(custom)':'(set by '+padStyle+')','custom'));let og=null,gn='';
+   ENT.forEach(e=>{if(e.g!==gn){gn=e.g;og=document.createElement('optgroup');og.label=e.g;s.appendChild(og)}og.appendChild(new Option(e.lab,e.v))});
+   s.dataset.mood=curMood;s.onchange=()=>{const e=ENT.find(x=>x.v===s.value);if(e)apply(e)}}
+  const m=ENT.find(e=>e.k===ck&&!e.v.startsWith('len:'))||ENT.find(e=>e.k===ck);const v=m?m.v:'custom';if(s.value!==v)s.value=v}
+ const _b=build;build=function(){const r=_b.apply(this,arguments);setTimeout(()=>{try{SIG='';sync()}catch(e){}},30);return r};
+ setInterval(()=>{try{sync()}catch(e){}},500)}
 </script>
 </body></html>
