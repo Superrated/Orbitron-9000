@@ -3742,7 +3742,9 @@ window.MOODX={
    mid=g(.5),side=g(.5),sn=g(-.5),s1=bq('highpass',110,.54),s2=bq('highpass',110,1.31),inv=g(-1),L=g(1),Rr=g(1);
   mid.channelCount=1;mid.channelCountMode='explicit';side.channelCount=1;side.channelCountMode='explicit';
   try{A.pre.disconnect(A.glue)}catch(e){}
-  A.pre.connect(h1);h1.connect(h2);h2.connect(sp);sp.connect(mid,0);sp.connect(mid,1);sp.connect(side,0);sp.connect(sn,1);sn.connect(side);
+  /* v0.22 master Air: two cascaded high shelves (≈ a wide Baxandall lift/cut above ~10 kHz), flat at 0 dB */
+  const a1=ctx.createBiquadFilter(),a2=ctx.createBiquadFilter();a1.type=a2.type='highshelf';a1.frequency.value=8000;a2.frequency.value=14000;A.air=[a1,a2];window.airSet&&airSet(G.air||0,1);
+  A.pre.connect(a1);a1.connect(a2);a2.connect(h1);h1.connect(h2);h2.connect(sp);sp.connect(mid,0);sp.connect(mid,1);sp.connect(side,0);sp.connect(sn,1);sn.connect(side);
   side.connect(s1);s1.connect(s2);mid.connect(L);s2.connect(L);mid.connect(Rr);s2.connect(inv);inv.connect(Rr);L.connect(mg,0,0);Rr.connect(mg,0,1);mg.connect(A.glue);
   P={ctx,pre:A.pre,h1}};
  const _f=fire;fire=function(k,w){if(!(P&&P.ctx===ctx&&P.pre===A.pre))try{mk()}catch(e){console.warn('[orbitron] pa',e)}return _f.apply(this,arguments)};
@@ -4131,5 +4133,17 @@ window.MOODX={
   if(nt)nt.style.order=-89;
   [...g.children].forEach(el=>{if(el.dataset.g==='pat'||el===row||el===pgs||el===nt)return;const l=labOf(el);if(l==='Level'){el.style.order=-80;return}const i=(ORD[LPG]||[]).indexOf(l);if(i>=0)el.style.order=i})}catch(e){}};
  try{leadPages()}catch(e){}}
+</script>
+<script>
+/* ---- v0.22: master Air (Mix → Bus & FX, next to Glue). A wide, gentle high shelf above ~10 kHz before the glue compressor and limiter:
+   right = more openness and sheen, left = warmer and closer. ±4 dB, smoothed so it can move while playing. Launch never changes it. ---- */
+{if(G.air==null)G.air=0;
+ window.airSet=(db,now)=>{G.air=Math.max(-4,Math.min(4,+db||0));if(!ctx||!A.air)return;const t=ctx.currentTime,[a1,a2]=A.air;
+  if(now){a1.gain.value=G.air*.4;a2.gain.value=G.air*.6;return}a1.gain.setTargetAtTime(G.air*.4,t,.05);a2.gain.setTargetAtTime(G.air*.6,t,.05)};
+ const place=()=>{const m=$('#mix');if(!m||m.querySelector('.airsl'))return;sl(m,'Air (dB)',-4,4,G.air||0,.1,v=>airSet(v));const d=m.lastElementChild;d.classList.add('airsl');
+  d.title='Master air: a wide high shelf above ~10 kHz. Right = more open and airy, left = warmer and closer. 0 = untouched.';
+  const gl=[...m.querySelectorAll('.sl')].find(e=>labOf(e).trim()==='Glue');if(gl)gl.after(d)};
+ const _mx=mix;mix=function(){const r=_mx.apply(this,arguments);try{place()}catch(e){}return r};
+ try{place()}catch(e){}setInterval(()=>{try{place()}catch(e){}},1500)}
 </script>
 </body></html>
