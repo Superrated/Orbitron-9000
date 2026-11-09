@@ -2897,7 +2897,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  function addUI(){TR.forEach((T,k)=>{if(T.pad||k===5)return;const card=T.mb&&T.mb.closest('.card');if(!card||card.querySelector('label.rdr'))return;
   const ten=[...card.querySelectorAll('.sl')].find(e=>lab(e)==='Tension');if(!ten)return;
   const el=mkSel('Rotate drift',DO,DO[DV.indexOf(T.p.rdr||0)]||'Off',v=>{T.p.rdr=DV[DO.indexOf(v)]});el.classList.add('rdr');el.dataset.g='pat';el.dataset.keep='pat';ten.after(el)})}
- const _bd=build;build=function(){const r=_bd.apply(this,arguments);try{addUI()}catch(e){}return r};
+ const _bd=build;build=function(){const r=_bd.apply(this,arguments);/* v0.22: build is deferred (v40), so add the menu after the cards exist */setTimeout(()=>{try{addUI();sync();window.tagCtl&&tagCtl();window.applyMode&&applyMode()}catch(e){}},0);return r};
  const sync=()=>TR.forEach(T=>{const c=T.mb&&T.mb.closest('.card'),e=c&&c.querySelector('label.rdr select');if(e)e.value=DO[DV.indexOf(T.p.rdr||0)]||'Off'});
  let pend=new Set();
  const _as=arrStep;arrStep=function(w){_as.apply(this,arguments);if(!ctx||tk%16!==0)return;const bar=Math.floor(tk/16);if(bar<1)return;
