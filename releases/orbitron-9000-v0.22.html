@@ -157,12 +157,13 @@ const pat=t=>{const a=Array(t.st).fill(0);if(t.pad)return a.fill(1);const on=[];
  on.forEach(i=>a[(i+t.r)%t.st]=1);return a};
 TR.forEach(t=>t.pt=pat(t));
 // ---------- UI ----------
-function sl(par,lab,min,max,val,step,fn){if(lab==='Chords')min=1;const dec=(String(step).split('.')[1]||'').length,d=document.createElement('div');d.className='sl';d.innerHTML='<span>'+lab+'<b>'+(+val).toFixed(dec)+'</b></span>';
- const row=document.createElement('div'),i=document.createElement('input');row.className='sr';i.type='range';i.min=min;i.max=max;i.step=step;i.value=val;
- const set=v=>{i.value=Math.max(min,Math.min(max,v));d.querySelector('b').textContent=(+i.value).toFixed(dec);fn(+i.value)};
- i.oninput=()=>set(+i.value);d.firstChild.ondblclick=()=>set(val);
+function sl(par,lab,min,max,val,step,fn){if(lab==='Chords')min=1;const LG=/(cutoff|filter|tone)$/i.test(lab)&&!/tune/i.test(lab)&&min>0&&max/min>=2.5,lr=Math.log(max/min),U=v=>Math.log(Math.max(min,Math.min(max,v))/min)/lr,F=u=>min*Math.exp(lr*Math.max(0,Math.min(1,u))),dec=LG?0:(String(step).split('.')[1]||'').length,d=document.createElement('div');d.className='sl';d.innerHTML='<span>'+lab+'<b>'+(+val).toFixed(dec)+'</b></span>';
+ const row=document.createElement('div'),i=document.createElement('input');row.className='sr';i.type='range';if(LG){i.min=0;i.max=1;i.step=.001;i.value=U(val);d.dataset.lmin=min;d.dataset.lmax=max}else{i.min=min;i.max=max;i.step=step;i.value=val}
+ const cur=()=>LG?F(+i.value):+i.value,nx=k=>LG?cur()*Math.pow(1.02,k):+i.value+k*step;
+ const set=v=>{v=Math.max(min,Math.min(max,v));if(LG){i.value=U(v);v=Math.round(v);d.querySelector('b').textContent=v;fn(v);return}i.value=v;d.querySelector('b').textContent=(+i.value).toFixed(dec);fn(+i.value)};
+ i.oninput=()=>set(cur());d.firstChild.ondblclick=()=>set(val);
  const mk=(t,dl)=>{const b=document.createElement('button');b.type='button';b.className='st';b.textContent=t;let to,iv,c=0;const stop=()=>{clearTimeout(to);clearInterval(iv)};
-  b.addEventListener('pointerdown',e=>{e.preventDefault();c=0;set(+i.value+dl*step);to=setTimeout(()=>{iv=setInterval(()=>{c++;set(+i.value+dl*step*(1+Math.floor(c/6)))},70)},380)});
+  b.addEventListener('pointerdown',e=>{e.preventDefault();c=0;set(nx(dl));to=setTimeout(()=>{iv=setInterval(()=>{c++;set(nx(dl*(1+Math.floor(c/6))))},70)},380)});
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop));return b};
  row.append(mk('−',-1),i,mk('+',1));d.appendChild(row);par.appendChild(d)};
 function build(){const root=$("#tracks");root.innerHTML="";TR.forEach((t,k)=>{
@@ -2848,7 +2849,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  function syncCard(T){const card=T.mb&&T.mb.closest('.card');if(!card)return;
   card.querySelectorAll('.sl').forEach(d=>{if(d===busy&&Date.now()<busyT)return;const sp=d.firstChild;if(!sp||sp.tagName!=='SPAN'||!sp.firstChild)return;
    const l=sp.firstChild.textContent.trim(),x=(T.x||[]).find(x=>x[0]===l);let v=x?T.p[x[1]]:EXTRA[l]?EXTRA[l](T):undefined;if(typeof v!=='number'||!isFinite(v))return;
-   const i=d.querySelector('input[type=range]'),b=sp.querySelector('b');if(!i||!b)return;const mn=+i.min,mx=+i.max,c=Math.max(mn,Math.min(mx,v));
+   const i=d.querySelector('input[type=range]'),b=sp.querySelector('b');if(!i||!b)return;if(d.dataset.lmin){const a=+d.dataset.lmin,z=+d.dataset.lmax,c=Math.max(a,Math.min(z,v)),u=Math.log(c/a)/Math.log(z/a);if(Math.abs(+i.value-u)>1e-3){i.value=u;b.textContent=Math.round(c)}return}const mn=+i.min,mx=+i.max,c=Math.max(mn,Math.min(mx,v));
    if(Math.abs(+i.value-c)>1e-9){i.value=c;const dec=(String(i.step).split('.')[1]||'').length;b.textContent=(+i.value).toFixed(dec)}})}
  const syncAll=()=>{try{TR.forEach(syncCard)}catch(e){}};window.syncFaders=syncAll;
  const soon=()=>{setTimeout(syncAll,0);setTimeout(syncAll,80)};
