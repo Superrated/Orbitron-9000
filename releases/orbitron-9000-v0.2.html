@@ -464,7 +464,7 @@ function chordAt(t){if(!CHL.length||CHL[CHL.length-1].c!==cur&&!CHL.some(e=>e.c=
 function padChord(t,w){const T=TR[5],p=T.p,n=SC[G.scale].length;let ds=(SHP[pshape[t]]||SHP['7']).slice(0,Math.round(p.size)).map(i=>prog[t]+i);
  if(pmean!=null){let c=ds.slice(),best=c,bd=1e9;for(let r=0;r<ds.length;r++){const m=c.reduce((a,b)=>a+b,0)/c.length,dd=Math.abs(m-pmean);if(dd<bd){bd=dd;best=c.slice()}c=c.slice(1).concat(c[0]+n)}ds=best}
  let mm=ds.reduce((a,b)=>a+b,0)/ds.length;if(mm>n+2){ds=ds.map(x=>x-n);mm-=n}else if(mm<-1){ds=ds.map(x=>x+n);mm+=n}pmean=mm;ds=topLead(ds,n);cur={r:prog[t],n:ds,x:(PX.length===prog.length?PX[t]||0:0)};chordLog(w,cur)}
-function pad(t,w,dur){OCT=G.oct||0;const T=TR[5],p=T.p,n=SC[G.scale].length,rel=Math.min(p.rel,dur*1.5+.1),e=w+dur+rel+.1,pt=padPatch(t),vr=.75+R()*.5;
+function pad(t,w,dur){if(padStyle==='Chord memory'&&window.cmStab)return cmStab(t,w,dur);OCT=G.oct||0;const T=TR[5],p=T.p,n=SC[G.scale].length,rel=Math.min(p.rel,dur*1.5+.1),e=w+dur+rel+.1,pt=padPatch(t),vr=.75+R()*.5;
  let ds=(SHP[pshape[t]]||SHP['7']).slice(0,Math.round(p.size)).map(i=>prog[t]+i);
  if(pmean!=null){let c=ds.slice(),best=c,bd=1e9;for(let r=0;r<ds.length;r++){const m=c.reduce((a,b)=>a+b,0)/c.length,dd=Math.abs(m-pmean);if(dd<bd){bd=dd;best=c.slice()}c=c.slice(1).concat(c[0]+n)}ds=best}
  let mm=ds.reduce((a,b)=>a+b,0)/ds.length;if(mm>n+2){ds=ds.map(x=>x-n);mm-=n}else if(mm<-1){ds=ds.map(x=>x+n);mm+=n}pmean=mm;
@@ -534,8 +534,8 @@ $('#mix').innerHTML='';mix();sl($('#mix'),'Swing',0,.4,G.swing,.01,v=>G.swing=v)
 {const bp=$('#bpm'),r=document.createElement('div');r.className='sr';bp.replaceWith(r);const mkb=(t,d)=>{const b=document.createElement('button');b.className='st';b.textContent=t;b.onclick=()=>{bp.value=+bp.value+d;bp.oninput({target:bp})};return b};r.append(mkb('−',-1),bp,mkb('+',1))}
 /* v8: pad can be a one-chord / one-note drone, and chord changes can be much faster (down to 1/8 bar) */
 {const be=TR[5].x.find(e=>e[1]==='bars');be[0]='Chord length (bars)';be[2]=.125;be[4]=.125;TR[5].x.find(e=>e[1]==='size')[2]=1}
-const _b5=build;build=function(){_b5();const g=TR[5].mb.closest('.card').querySelector('.grid'),l=document.createElement('label');l.className='sl';l.innerHTML='Pad style';const s=document.createElement('select');['Progression','Pedal chords','One chord','One note'].forEach(x=>s.add(new Option(x)));s.value=padStyle;
- s.onchange=()=>{padStyle=s.value;G.pedal=padStyle==='Pedal chords';const T=TR[5];if(padStyle==='Progression'||G.pedal){T.st=4;T.p.size=4;newProg(4)}else{T.st=1;prog=[0];pshape=[pick(MOODS[curMood].sh)];T.p.size=padStyle==='One note'?1:4}pmean=null;T.pt=pat(T);build()};l.appendChild(s);g.insertBefore(l,g.children[1]);const l2=document.createElement('label');l2.className='sl';l2.innerHTML='Pad sound';const s2=document.createElement('select');[...PADN,'Rotate','Random'].forEach(x=>s2.add(new Option(x,x)));s2.value=TR[5].p.patch;s2.onchange=()=>TR[5].p.patch=s2.value;l2.appendChild(s2);g.insertBefore(l2,g.children[2]);tagCtl();applyMode()};
+const _b5=build;build=function(){_b5();const g=TR[5].mb.closest('.card').querySelector('.grid'),l=document.createElement('label');l.className='sl';l.innerHTML='Pad style';const s=document.createElement('select');['Progression','Pedal chords','Chord memory','One chord','Vamp','One note'].forEach(x=>s.add(new Option(x)));s.value=padStyle;
+ s.onchange=()=>{padStyle=s.value;G.padAuto=0;G.pedal=padStyle==='Pedal chords';const T=TR[5];if(padStyle==='Progression'||G.pedal||padStyle==='Chord memory'){T.st=4;T.p.size=4;newProg(4);if(padStyle==='Chord memory'&&window.cmPrep)cmPrep()}else{T.st=1;prog=[0];pshape=[pick(MOODS[curMood].sh)];T.p.size=padStyle==='One note'?1:4;if(padStyle==='Vamp')T.p.bars=1}pmean=null;T.pt=pat(T);build()};l.appendChild(s);g.insertBefore(l,g.children[1]);const l2=document.createElement('label');l2.className='sl';l2.innerHTML='Pad sound';const s2=document.createElement('select');[...PADN,'Rotate','Random'].forEach(x=>s2.add(new Option(x,x)));s2.value=TR[5].p.patch;s2.onchange=()=>TR[5].p.patch=s2.value;l2.appendChild(s2);g.insertBefore(l2,g.children[2]);tagCtl();applyMode()};
 /* v9: sub drone track, rhythmic gate, chord arp, denser lead, pedal option */
 G.pedal=false;
 TR.push({n:'Sub drone',c:'#00ffd0',st:16,h:2,r:0,lv:.5,p:{oct:1,hold:8,harm:.3,cut:160,follow:0},x:[['Octave','oct',0,2,1],['Hold (steps)','hold',1,32,1],['Harmonics','harm',0,1,.01],['Cutoff','cut',60,400,5],['Follow chords','follow',0,1,.01]]});TR[9].pt=pat(TR[9]);
@@ -3232,4 +3232,65 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
 /* ---- v155: clap Body — a short tuned thump under the clap; some moods get a bit by default ---- */
 {const BODY={'Groove Techno':.45,'Distorted Electro':.5,Italo:.35,Breaks:.3,Power:.4,Tense:.3,Dark:.25,Vector:.2,'Melodic House':.2};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{TR[2].p.body=BODY[curMood]||0;window.syncFaders&&setTimeout(syncFaders,0)}catch(e){}return r}}
+
+/* ---- v157: pad generation, round four —
+   (1) Chord memory: one minor-7th/9th shape moved in parallel, played as dub/Detroit stabs with echo (new Pad style; some moods pick it)
+   (2) Room for the lead: while a lead note sounds, the pad dips ~2 dB with a gentle notch around the lead's pitch, then blooms back
+   (3) Register discipline: pad voicings stay above ~C3, the deep root drops out while the bass or sub is busy, 4-note chords open up
+   (6) Vamp: one held chord retriggered each bar while a soft top voice walks (new Pad style)
+   (7) Launch never repeats the previous progression in a mood, and sometimes uses 2, 3, 6 or 8 chords instead of 4 ---- */
+{const CMS=[[0,3,7,10,14],[0,3,7,10],[0,7,10,15],[0,5,10,15],[0,3,10,14]],CMP=['0010001000100010','0010010000100100','1000001000100000','0001001000010010','0010000100100010'];
+ window.cmPrep=()=>{G.cmShape=pick(CMS);G.cmPat=pick(CMP)};
+ window.cmStab=function(t,w,dur){const T=TR[5],p=T.p,sd=60/G.bpm/4,root=prog[t],n=SC[G.scale].length;
+  const ds=(SHP[pshape[t]]||SHP['7']).slice(0,Math.max(3,Math.round(p.size))).map(i=>root+i);cur={r:root,n:ds,x:(PX.length===prog.length?PX[t]||0:0)};chordLog(w,cur);pmean=null;
+  if(!G.cmShape)cmPrep();const sh=G.cmShape,pt=G.cmPat||CMP[0],steps=Math.max(1,Math.round(dur/sd)),s0=((tk%16)+16)%16;
+  let rf=d2f(root,p.oct||2);while(rf<110)rf*=2;while(rf>260)rf/=2;const v=T.lv*.16/Math.sqrt(sh.length);
+  for(let k=0;k<steps;k++){if(pt[(s0+k)%16]!=='1')continue;const w0=w+k*sd,e=w0+.45,g=ctx.createGain(),q=ctx.createBiquadFilter(),cb=Math.max(300,(p.cut||800)*1.4);
+   q.type='lowpass';q.Q.value=4;q.frequency.setValueAtTime(cb+2200,w0);q.frequency.exponentialRampToValueAtTime(cb,w0+.18);
+   g.gain.setValueAtTime(.0001,w0);g.gain.exponentialRampToValueAtTime(v,w0+.004);g.gain.exponentialRampToValueAtTime(.0001,w0+.32);
+   sh.forEach(st=>{const f=rf*Math.pow(2,st/12);[-7,7].forEach(dt=>{const o=osc('sawtooth',f,w0,e);o.detune.value=dt;o.connect(q)})});q.connect(g);send(g,A.dk,.5,.3)}};
+ // ---- (2) room for the lead ----
+ const ACT=[];let PADON=0;
+ const _pd=pad;pad=function(t,w,dur){PADON++;const T=TR[5],P=T.p,keep={oct:P.oct,sub:P.sub,open:P.open},ptl=G.ptl;
+  try{// (3) register: lowest pad note at or above ~C3, no deep root while bass/sub is busy, open up 4+ note chords
+   if(padStyle!=='Chord memory'){let o=P.oct||2;const sO=OCT;OCT=G.oct||0;try{while(o<5&&d2f(prog[t]||0,o)<125)o++}finally{OCT=sO}P.oct=o;
+    const bassBusy=(!TR[6].m&&TR[6].h/Math.max(1,TR[6].st)>.25)||!TR[9].m;if(bassBusy)P.sub=0;if((P.size||3)>=4)P.open=Math.max(P.open||0,.45)}
+   if(padStyle==='Chord memory')G.ptl=0;if(padStyle==='Vamp')G.ptl=1;
+   return _pd.apply(this,arguments)}finally{PADON--;P.oct=keep.oct;P.sub=keep.sub;P.open=keep.open;G.ptl=ptl}};
+ const _sd=send;send=function(n,out,dly,rev){if(!PADON||!ctx||(typeof DR!=='undefined'&&DR.rendering)||ctx instanceof OfflineAudioContext)return _sd.apply(this,arguments);
+  try{const dg=ctx.createGain(),pk=ctx.createBiquadFilter();pk.type='peaking';pk.Q.value=1.2;pk.gain.value=0;pk.frequency.value=1200;n.connect(dg);dg.connect(pk);
+   ACT.push({dg,pk,end:ctx.currentTime+12});while(ACT.length>24||(ACT.length&&ACT[0].end<ctx.currentTime))ACT.shift();return _sd.call(this,pk,out,dly,rev)}catch(e){return _sd.apply(this,arguments)}};
+ const _fl=fire;fire=function(k,w){const r=_fl.apply(this,arguments);try{if(k===4&&!TR[4].m&&ctx&&ACT.length&&!(TR[5].m)){const P=TR[4].p,hold=Math.min(.6,Math.max(.12,(P.dec||.25)*.8)),lf=Math.max(300,Math.min(5000,(LF||600)*2)),t=w||ctx.currentTime;
+   ACT.forEach(a=>{if(a.end<t)return;a.dg.gain.cancelScheduledValues(t);a.dg.gain.setTargetAtTime(.79,t,.02);a.dg.gain.setTargetAtTime(1,t+hold,.18);
+    a.pk.frequency.setValueAtTime(lf,t);a.pk.gain.cancelScheduledValues(t);a.pk.gain.setTargetAtTime(-3,t,.02);a.pk.gain.setTargetAtTime(0,t+hold,.2)})}}catch(e){}return r};
+ // ---- (1)/(6)/(7) on Launch ----
+ const CMM={Noir:.5,Dark:.3,'Groove Techno':.35,Vector:.3,Bleep:.25,Melancholic:.15,Drone:.2},VAM={Drone:.3,Dark:.2,Tense:.2,'Groove Techno':.25,Ethereal:.2,Bleep:.2,Ambient:.15};
+ const LAST={};
+ const _gp=generate;generate=function(){if(G.padAuto){padStyle='Progression';G.padAuto=0;G.pedal=false}const r=_gp.apply(this,arguments);try{const m=curMood,T=TR[5];
+   if(padStyle==='Progression'||padStyle==='Pedal chords'||padStyle==='Chord memory'){
+    // (7) never the same progression twice in a row; sometimes 2, 3, 6 or 8 chords
+    for(let i=0;i<10&&LAST[m]&&LAST[m]===prog.join(','); i++)newProg(4);LAST[m]=prog.join(',');
+    if(R()<.35&&prog.length===4){const L=pick([2,3,6,8]),b=prog.slice(),x=PX.slice(),sh=pshape.slice(),mk=a=>L===2?a.slice(0,2):L===3?a.slice(0,3):L===6?a.concat(a.slice(0,2)):a.concat([a[0],a[1],a[3],a[2]]);
+     prog=mk(b);PX=x.length===4?mk(x):[];pshape=mk(sh);T.st=prog.length;T.h=prog.length;T.r=0;T.pt=pat(T);try{if(typeof PD!=='undefined'&&PD&&PD.length!==T.st)PD=null}catch(e){}pmean=null;PTOP=null}}
+   // (1) chord memory, (6) vamp
+   const rr=R();
+   if(padStyle==='Progression'&&rr<(CMM[m]||0)){padStyle='Chord memory';G.padAuto=1;cmPrep();T.m=false;T.lv=Math.max(T.lv||.3,.32);G.pedal=false}
+   else if(padStyle==='Progression'&&rr<(CMM[m]||0)+(VAM[m]||0)){padStyle='Vamp';G.padAuto=1;T.st=1;prog=[0];pshape=[pick((MOODS[m]||{}).sh||['7'])];T.p.size=4;T.p.bars=1;T.pt=pat(T);pmean=null;PTOP=null}
+   else if(padStyle==='Chord memory'||padStyle==='Vamp'){if(padStyle==='Chord memory')cmPrep()}
+   build()}catch(e){console.warn('[orbitron] pad gen',e)}return r};
+ window.padGen={style:()=>padStyle,cm:()=>({shape:G.cmShape,pat:G.cmPat}),room:()=>ACT.length}}
+
+/* ---- v158: phrase-aware harmony — each Launch picks a phrase style for progressions: a sus4→3 resolution or a dominant V tension chord
+   on the last chord of every second pass through the progression (every 8 or 16 bars), so the music leans into the next downbeat; or none ---- */
+{const PW={Melancholic:[.45,.3],Hopeful:[.4,.35],Dreamy:[.45,.2],'Melodic House':[.4,.35],Vector:[.35,.35],Italo:[.25,.45],Ethereal:[.4,.1],Noir:[.3,.2],Breaks:[.3,.3],Dark:[.2,.25],Tense:[.15,.35],Acid:[.1,.2],'Deep Space':[.3,.05],Ambient:[.35,0],Drone:[.15,.1],Bleep:[.15,.15],'Distorted Electro':[.15,.35],'Groove Techno':[.1,.15],Power:[0,0]};
+ let cyc=0,lastT=-1;
+ const _ph=pad;pad=function(t,w,dur){
+  if(t<=lastT)cyc++;lastT=t;
+  const mode=G.phr||'none';if(mode==='none'||padStyle==='Vamp'||padStyle==='One chord'||padStyle==='One note'||padStyle==='Chord memory'||prog.length<2||t!==prog.length-1||cyc%2!==1)return _ph.apply(this,arguments);
+  if(mode==='sus'&&dur>.3){const sh=pshape[t];pshape[t]='sus4';try{_ph.call(this,t,w,dur/2)}finally{pshape[t]=sh}return _ph.call(this,t,w+dur/2,dur/2)}
+  if(mode==='tension'){if(PX.length!==prog.length)PX=prog.map(()=>0);const sp=chordSpec('V');if(prog[t]===sp.d&&PX[t]===sp.x)return _ph.apply(this,arguments);const d=prog[t],x=PX[t];prog[t]=sp.d;PX[t]=sp.x;
+   try{return _ph.apply(this,arguments)}finally{prog[t]=d;PX[t]=x}}
+  return _ph.apply(this,arguments)};
+ const _gh=generate;generate=function(){const r=_gh.apply(this,arguments);try{const w=PW[curMood]||[.25,.2],x=R();G.phr=x<w[0]?'sus':x<w[0]+w[1]?'tension':'none';cyc=0;lastT=-1}catch(e){}return r};
+ window.phraseMode=()=>G.phr}
 </script></body></html>
