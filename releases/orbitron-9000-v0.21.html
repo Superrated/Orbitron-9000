@@ -3486,16 +3486,21 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const _f2=fire;fire=function(k,w){if(!HP&&ctx)try{hpOn()}catch(e){}return _f2.apply(this,arguments)};
  setInterval(()=>{try{hpOn()}catch(e){}},1000);
  window.evolve={set:v=>{G.evolve=v?1:0},hp:()=>HP&&HP.frequency.value};
- // UI: Evolve toggle pad on Flight → Thrusters, next to Break!
- const add=()=>{if(document.querySelector('#t-perf .evx'))return;const brk=[...document.querySelectorAll('#t-perf .pad')].find(x=>/^Break!/.test(x.textContent.trim()));if(!brk)return;
-  const b=document.createElement('button');b.className='pad evx';b.style.setProperty('--col','#9fe0ff');b.innerHTML='Evolve<span> (toggle)</span>';
-  b.title='On: the loop keeps moving — hat roll every 8 bars, kick drop on the last beat of every 16, perc shift every 32 · tap to switch off';
-  const c=document.createElement('i');c.className='evc';c.style.cssText='display:block;font-style:normal;font-size:9px;font-weight:400;letter-spacing:-.02em;text-transform:none;opacity:.85;margin-top:2px;white-space:nowrap;font-family:ui-monospace,Menlo,monospace';b.appendChild(c);
-  b.onclick=()=>{G.evolve=G.evolve?0:1;paint()};brk.after(b);paint()};
+ // UI: "Fill" toggle pad on Flight → Thrusters, in the place of the old +2 octaves pad. Clear state: lit + glow when on, dark + dashed when off.
+ const st=document.createElement('style');st.textContent=`#t-perf .pad.evx{transition:background .15s,box-shadow .15s}
+  #t-perf .pad.evx:not(.on){background:var(--c1)!important;color:var(--muted)!important;outline:1px dashed rgba(159,224,255,.55);outline-offset:-3px;box-shadow:none}
+  #t-perf .pad.evx.on{background:#9fe0ff!important;color:#04100a!important;outline:0;box-shadow:0 0 14px rgba(159,224,255,.8),inset 0 0 0 2px #fff}
+  #t-perf .pad.evx .evc{display:block;font-style:normal;font-size:9px;font-weight:600;letter-spacing:-.02em;text-transform:none;margin-top:2px;white-space:nowrap;font-family:ui-monospace,Menlo,monospace}`;document.head.appendChild(st);
+ const add=()=>{if(document.querySelector('#t-perf .evx'))return;const pads=[...document.querySelectorAll('#t-perf .pad')];
+  const oct2=pads.find(x=>/^\+2 octaves/.test(x.textContent.trim())),brk=pads.find(x=>/^Break!/.test(x.textContent.trim()));if(!oct2&&!brk)return;
+  const b=document.createElement('button');b.className='pad evx';b.style.setProperty('--col','#9fe0ff');b.innerHTML='Fill';
+  b.title='Fill on: the loop keeps moving — hat roll every 8 bars, kick drop on the last beat of every 16, perc shift every 32 · tap to switch off';
+  const c=document.createElement('i');c.className='evc';b.appendChild(c);b.onclick=()=>{G.evolve=G.evolve?0:1;paint()};
+  if(oct2){oct2.replaceWith(b)}else brk.after(b);paint()};
  // countdown: bars until the next hat roll (bar 8 of 16) and kick drop (bar 16 of 16); "now" during the beat it happens
  const until=(t,b,s)=>{const d=((t-b%16)%16+16)%16;return d===0?(s>=12?'now':'this bar'):d};
  const paint=()=>{const b=document.querySelector('#t-perf .evx');if(!b)return;b.classList.toggle('on',!!G.evolve);const c=b.querySelector('.evc');if(!c)return;
-  let t='';if(!G.evolve)t='off';else if(playing&&ctx){const st=((tk%16)+16)%16,br=Math.floor(tk/16);const r=until(7,br,st),d=until(15,br,st);t='roll '+r+'·drop '+d}
+  let t='○ OFF';if(G.evolve){if(playing&&ctx){const st=((tk%16)+16)%16,br=Math.floor(tk/16);t='roll '+until(7,br,st)+'·drop '+until(15,br,st)}else t='● ON'}
   if(c.textContent!==t)c.textContent=t};
  add();setInterval(()=>{try{add();paint()}catch(e){}},300)}
 </script>
