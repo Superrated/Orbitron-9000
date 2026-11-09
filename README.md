@@ -22,7 +22,9 @@ Ten tracks — kick, hi-hat, clap, perc, snare, lead, pad, bass, dub stab and su
 ## What's new in v0.22
 
 - Moods renamed to fit the ship: Event Horizon, Lost Signal, Nebula, Countdown, Aurora, First Light, Dark Side, Orbital Hum, Max Q, Low Orbit
-- Balance pass across all moods (pads lower), no dated lead sounds from Launch
+- Balance pass across all moods (pads lower), no dated lead sounds from Launch, percussion kits per mood
+- Darker harmony and melodies in the dark/techno moods (cinematic minor, Phrygian, hypnotic, suspended)
+- Tight low end: kick tuned within 41–60 Hz, short kick and bass, bass always ducks under the kick, rumble low cut, PA stage (30 Hz cut, mono below 110 Hz)
 - Contemporary leads (Cinematic arp, Donk, Rave stab), ducked lead echo and note dynamics
 - Groove families (electro, two-step, broken techno, halftime, clave perc), drum bus, Fill, cleaner low end
 

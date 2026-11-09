@@ -398,7 +398,7 @@ function chips(){[['#t-drums',[0,1,2,3,7]],['#t-synth',[4,5,6,8,9]]].forEach(([i
  [['pat','PATTERN'],['snd','SOUND']].forEach(([m,l])=>{const b=document.createElement('button');b.dataset.m=m;b.textContent=l;b.onclick=()=>{tmode=m;applyMode()};seg.appendChild(b)});
  c.prepend(cap);c.prepend(seg);c.prepend(bar);show()});tagCtl();applyMode()}
 const _b4=build;build=function(){_b4();chips()};
-setInterval(()=>{const t=NN[G.root]+' '+G.scale+' \u00b7 '+MN(curMood),k=$('#kinfo'),s=$('#gsum');if(k)k.textContent=t+' \u00b7 '+G.bpm;if(s)s.textContent='Now: '+t+(typeof MP!=='undefined'&&MP[curMood]?' ('+MP[curMood].sty+')':'')+' \u00b7 '+G.bpm+' BPM \u00b7 lead: '+(TR[4].p.patch||'custom')+' \u00b7 pad: '+TR[5].p.patch+(G.dfeel?' \u00b7 drums: '+G.dfeel:'')},400);
+setInterval(()=>{const t=NN[G.root]+' '+G.scale+' \u00b7 '+MN(curMood),k=$('#kinfo'),s=$('#gsum');if(k)k.textContent=t+' \u00b7 '+G.bpm;if(s)s.textContent='Now: '+t+(typeof MP!=='undefined'&&MP[curMood]?' ('+MP[curMood].sty+')':'')+' \u00b7 '+G.bpm+' BPM \u00b7 lead: '+(TR[4].p.patch||'custom')+' \u00b7 pad: '+TR[5].p.patch+(G.dfeel?' \u00b7 drums: '+G.dfeel:'')+(G.hfam?' \u00b7 harmony: '+G.hfam:'')},400);
 setInterval(()=>document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('m',!!TR[+b.dataset.k].m)),300);
 [rp,Q3].forEach(p=>p.classList.add('rz'));
 const QD=document.createElement('div');QD.className='panel';QD.innerHTML='<h2>Dub stabs</h2><div class="pads"></div>';
@@ -3422,7 +3422,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
 {const NOTE=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
  const tunedMidi=p=>{const m=p.ktune||'Root + fifth';if(m==='Off')return null;const sc=SC[G.scale]||[0],root=((G.root%12)+12)%12,pcs=[root];
   if(m!=='Root'&&sc.includes(7))pcs.push((root+7)%12);const mf=69+12*Math.log2(Math.max(20,p.pitch)/440);let best=null,bd=99;
-  for(let n=Math.floor(mf)-7;n<=Math.ceil(mf)+7;n++){const hz=440*Math.pow(2,(n-69)/12);if(hz<31||hz>78)continue;if(pcs.includes(((n%12)+12)%12)){const d=Math.abs(n-mf);if(d<bd){bd=d;best=n}}}return best};
+  for(const[lo,hi]of[[40.5,60.5],[36,66]]){for(let n=Math.floor(mf)-9;n<=Math.ceil(mf)+9;n++){const hz=440*Math.pow(2,(n-69)/12);if(hz<lo||hz>hi)continue;if(pcs.includes(((n%12)+12)%12)){const d=Math.abs(n-mf);if(d<bd){bd=d;best=n}}}if(best!=null)break}return best};
  const hzOf=n=>440*Math.pow(2,(n-69)/12);
  window.kickTune=()=>{const n=tunedMidi(TR[0].p);return n==null?null:{note:NOTE[n%12]+(Math.floor(n/12)-1),hz:+hzOf(n).toFixed(1)}};
  const _fv=fireVoice;fireVoice=function(k,w){if(k!==0)return _fv.apply(this,arguments);const P=TR[0].p,o=P.pitch,n=tunedMidi(P);if(n==null)return _fv.apply(this,arguments);
@@ -3685,4 +3685,65 @@ window.MOODX={
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(applyKit(curMood)){build();setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}}catch(e){console.warn('[orbitron] kit',e)}return r};
  window.KIT=KIT}
 </script>
-</body></html>
+<script>
+/* v175: darker, moodier harmony and melodies in the dark/techno moods (about 70% of Launches; the rest keep the mood's own colour).
+   Harmony families: cinematic minor (i–VI–III–VII, i–iv–VI–v), Phrygian/tense (i–bII), static/hypnotic (one or two chords, 7/9 colours),
+   suspended (sus2/sus4/add9/quartal, never landing). Melodies: lower bias, short 2–4 note loops with high déjà vu, fewer and longer
+   notes, and Motif lines that fall. Uses only existing settings (scale, progression, chord shapes, lead Bias/Loop len/Déjà vu/Hits/Decay);
+   the key lock is respected. The "Now:" line names the harmony family. */
+{const FAM={
+  'cinematic minor':{sc:[['Minor',.7],['Harm. minor',.3]],pr:[[0,5,2,6],[0,3,5,4],[0,5,3,4],[0,6,5,6],[0,3,6,5]],sh:['7','9','tri','add9']},
+  'phrygian':{sc:[['Phrygian',1]],pr:[[0,1,0,1],[0,0,1,0],[0,1,6,0],[0,6,1,0]],sh:['tri','sus4','7']},
+  'hypnotic':{sc:[['Minor',.7],['Phrygian',.3]],pr:[[0,0,0,3],[0,0,5,5],[0,3],[0,0,0,6],[0,5]],sh:['7','9','quart']},
+  'suspended':{sc:[['Minor',1]],pr:[[0,5,3,6],[0,6,3,0],[0,2,6,3]],sh:['sus2','sus4','add9','quart']}};
+ const DARK={Dark:{'cinematic minor':.3,phrygian:.3,hypnotic:.25,suspended:.15},Tense:{phrygian:.45,hypnotic:.3,suspended:.25},
+  Noir:{'cinematic minor':.45,suspended:.3,hypnotic:.25},Power:{phrygian:.5,hypnotic:.5},'Groove Techno':{hypnotic:.5,phrygian:.3,suspended:.2},
+  Temporal:{hypnotic:.6,phrygian:.4},Acid:{phrygian:.5,hypnotic:.5},'Distorted Electro':{phrygian:.4,'cinematic minor':.3,hypnotic:.3},
+  Melancholic:{'cinematic minor':.6,suspended:.4},Drone:{hypnotic:.6,phrygian:.4}};
+ const wpick=o=>{let u=R(),t=0;const e=Object.entries(o);for(const[k,w]of e){t+=w;if(u<t)return k}return e[e.length-1][0]};
+ const wpk=a=>{let u=R(),t=0;for(const[k,w]of a){t+=w;if(u<t)return k}return a[a.length-1][0]};
+ window.darkHarmony=(fam)=>{const F=FAM[fam];if(!F)return false;
+  if(!G.keyLock){G.scale=wpk(F.sc);const sc=document.getElementById('scale');if(sc)sc.value=G.scale}
+  const T=TR[5];if((padStyle==='Progression'||padStyle==='Pedal chords')&&prog.length>1){const pn=pick(F.pr),sp=pn.map(chordSpec);
+   prog=sp.map(c=>c.d);PX=sp.map(c=>c.x);pshape=prog.map(()=>pick(F.sh));T.st=prog.length;T.h=T.st;T.pt=pat(T);pmean=null;PTOP=null;PD=null}
+  else if(prog.length===1)pshape=[pick(F.sh)];
+  // melody: lower, slower, short hypnotic loops, falling Motif lines
+  const L=TR[4],P=L.p;if(!L.m&&P.mode!=='Acid 303'&&['Motif','Marbles','Interval','Turing loop'].includes(P.mode)){
+   P.dv=Math.max(P.dv||0,.88);P.len=pick([2,3,4,4]);P.bias=Math.min(P.bias==null?.4:P.bias,.3);P.range=Math.min(P.range||2,2);
+   if(L.h>4){L.h=Math.max(3,Math.round(L.h*.7));L.pt=pat(L)}P.dec=Math.min(2,(P.dec||.3)*1.25);
+   if(P.mode==='Motif'){const n=SC[G.scale].length,top=Math.max(2,P.range*n),Ln=Math.round(P.len);let d=Math.min(top-1,n-1+pick([0,2]));mot=[];
+    for(let i=0;i<Ln;i++){mot.push(Math.max(0,Math.min(top-1,d)));d+=pick([-1,-1,-2,-1,0,1])}mp=-1}}
+  G.hfam=fam;return true};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);G.hfam=null;try{const m=DARK[curMood];if(m&&R()<.7){darkHarmony(wpick(m));build();setTimeout(()=>{try{window.syncFaders&&syncFaders();window.syncMenus&&syncMenus()}catch(e){}},0)}}catch(e){console.warn('[orbitron] dark',e)}return r}}
+</script>
+<script>
+/* v176: tight, low kick + bass + rumble in every mood. Kick decay capped (0.45; Deep Space 0.55) — its pitch already snaps to the key
+   inside 41–60 Hz. Bass decay capped (0.3; Breaks 0.45) and Gate at most 0.6, so notes stop before the next kick. The bass bus ducks at
+   least 65% under every kick (pads/leads keep the mood's own sidechain). Rumble gets a 40 Hz low cut so its sub doesn't pile up. */
+{const KD={'Deep Space':.55},BD={Breaks:.45};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const K=TR[0].p,B=TR[6].p;
+   K.dec=Math.min(K.dec,KD[curMood]||.45);B.dec=Math.min(B.dec,BD[curMood]||.3);if((B.bgt||0)>.6)B.bgt=.6;
+   setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync()}catch(e){}},0)}catch(e){}return r};
+ const _d=duck;duck=function(t){_d.apply(this,arguments);try{if(TR[0].m)return;const du=Math.max(0,Math.min(.95,G.duck+.4*mv("Sidechain depth",t)));
+   if(du<.65){A.dkb.gain.cancelScheduledValues(t);A.dkb.gain.setValueAtTime(.35,t);A.dkb.gain.setTargetAtTime(1,t+G.rel*.12,G.rel*.38)}}catch(e){}};
+ let RH=null;const rhp=()=>{if(!ctx||!A.rg||!A.rdk)return;if(RH&&RH.context===ctx)return;RH=ctx.createBiquadFilter();RH.type='highpass';RH.frequency.value=40;RH.Q.value=.6;
+   try{A.rg.disconnect(A.rdk)}catch(e){}A.rg.connect(RH);RH.connect(A.rdk)};
+ const _f=fire;fire=function(k,w){if(k===0&&!(RH&&RH.context===ctx))try{rhp()}catch(e){}return _f.apply(this,arguments)}}
+</script><script>
+/* v177: PA-safe low end, always on (before the glue compressor): a 30 Hz subsonic cut (energy a PA can't reproduce but that eats
+   headroom and makes limiting pump) and everything below ~110 Hz summed to mono, so kick, bass, sub and rumble hit the subs together. */
+{let P=null;const mk=()=>{if(!ctx||!A.pre||!A.glue||(P&&P.ctx===ctx&&P.pre===A.pre))return;
+  const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},bq=(t,f,q)=>{const n=ctx.createBiquadFilter();n.type=t;n.frequency.value=f;n.Q.value=q;return n};
+  const h1=bq('highpass',30,.54),h2=bq('highpass',30,1.31),sp=ctx.createChannelSplitter(2),mg=ctx.createChannelMerger(2),
+   mid=g(.5),side=g(.5),sn=g(-.5),s1=bq('highpass',110,.54),s2=bq('highpass',110,1.31),inv=g(-1),L=g(1),Rr=g(1);
+  mid.channelCount=1;mid.channelCountMode='explicit';side.channelCount=1;side.channelCountMode='explicit';
+  try{A.pre.disconnect(A.glue)}catch(e){}
+  A.pre.connect(h1);h1.connect(h2);h2.connect(sp);sp.connect(mid,0);sp.connect(mid,1);sp.connect(side,0);sp.connect(sn,1);sn.connect(side);
+  side.connect(s1);s1.connect(s2);mid.connect(L);s2.connect(L);mid.connect(Rr);s2.connect(inv);inv.connect(Rr);L.connect(mg,0,0);Rr.connect(mg,0,1);mg.connect(A.glue);
+  P={ctx,pre:A.pre,h1}};
+ const _f=fire;fire=function(k,w){if(!(P&&P.ctx===ctx&&P.pre===A.pre))try{mk()}catch(e){console.warn('[orbitron] pa',e)}return _f.apply(this,arguments)};
+ window.paStage=()=>P}
+</script><script>
+/* v178: low-end/balance recheck trims (dB): Deep Space sub drone was level with the kick, Vector and Dreamy pads still loud, Melodic House clave perc */
+{const T={'Deep Space':{9:-4},Vector:{5:-4},Dreamy:{5:-3},'Melodic House':{3:-3}};for(const m in T){if(!MTRIM[m])continue;for(const k in T[m])MTRIM[m][+k]=(MTRIM[m][+k]||0)+T[m][k]}}
+</script></body></html>
