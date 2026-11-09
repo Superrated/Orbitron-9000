@@ -3450,7 +3450,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   bus.connect(A.m);bus.connect(hp);hp.connect(cmp);cmp.connect(pre);pre.connect(sat);sat.connect(tone);tone.connect(wet);wet.connect(A.m);
   try{A.ks.disconnect(A.m)}catch(e){}A.ks.connect(bus);
   B={ctx,bus,wet,cmp};A.db=bus;return true}
- window.drumBus={set(v){G.dbus=Math.max(0,Math.min(1,+v||0));if(B&&ctx)B.wet.gain.setTargetAtTime(wetGain(G.dbus),ctx.currentTime,.05)},get:()=>G.dbus,node:()=>B};
+ window.drumBus={set(v){G.dbus=Math.max(0,Math.min(1,+v||0));if(B&&ctx)B.wet.gain.setTargetAtTime(wetGain(G.dbus),ctx.currentTime,.05);try{show()}catch(e){}},get:()=>G.dbus,node:()=>B};
  // drum voices connect to the bus instead of the master (only while a drum fires, only on the live context)
  const oc=AudioNode.prototype.connect;
  AudioNode.prototype.connect=function(d,...r){if(inDrum&&B&&d===A.m&&this.context===B.ctx&&!(window.DR&&DR.rendering))return oc.call(this,B.bus,...r);return oc.call(this,d,...r)};
@@ -3486,9 +3486,17 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const _f2=fire;fire=function(k,w){if(!HP&&ctx)try{hpOn()}catch(e){}return _f2.apply(this,arguments)};
  setInterval(()=>{try{hpOn()}catch(e){}},1000);
  window.evolve={set:v=>{G.evolve=v?1:0},hp:()=>HP&&HP.frequency.value};
- // UI: Evolve switch under the Drum bus fader
- const add=()=>{const a=document.querySelector('#t-mix .dbx')||document.querySelector('#t-mix .spc');if(!a||document.querySelector('#t-mix .evx'))return;
-  const el=mkSel('Evolve (fills + small changes every 8–32 bars)',['On','Off'],G.evolve?'On':'Off',v=>{G.evolve=v==='On'?1:0});el.classList.add('evx');el.style.margin='0 0 8px';a.after(el)};
- add();setInterval(()=>{try{add();const s=document.querySelector('#t-mix .evx select');if(s&&document.activeElement!==s){const v=G.evolve?'On':'Off';if(s.value!==v)s.value=v}}catch(e){}},800)}
+ // UI: Evolve toggle pad on Flight → Thrusters, next to Break!
+ const add=()=>{if(document.querySelector('#t-perf .evx'))return;const brk=[...document.querySelectorAll('#t-perf .pad')].find(x=>/^Break!/.test(x.textContent.trim()));if(!brk)return;
+  const b=document.createElement('button');b.className='pad evx';b.style.setProperty('--col','#9fe0ff');b.innerHTML='Evolve<span> (toggle)</span>';
+  b.title='On: the loop keeps moving — hat roll every 8 bars, kick drop on the last beat of every 16, perc shift every 32 · tap to switch off';
+  const c=document.createElement('i');c.className='evc';c.style.cssText='display:block;font-style:normal;font-size:9px;font-weight:400;letter-spacing:-.02em;text-transform:none;opacity:.85;margin-top:2px;white-space:nowrap;font-family:ui-monospace,Menlo,monospace';b.appendChild(c);
+  b.onclick=()=>{G.evolve=G.evolve?0:1;paint()};brk.after(b);paint()};
+ // countdown: bars until the next hat roll (bar 8 of 16) and kick drop (bar 16 of 16); "now" during the beat it happens
+ const until=(t,b,s)=>{const d=((t-b%16)%16+16)%16;return d===0?(s>=12?'now':'this bar'):d};
+ const paint=()=>{const b=document.querySelector('#t-perf .evx');if(!b)return;b.classList.toggle('on',!!G.evolve);const c=b.querySelector('.evc');if(!c)return;
+  let t='';if(!G.evolve)t='off';else if(playing&&ctx){const st=((tk%16)+16)%16,br=Math.floor(tk/16);const r=until(7,br,st),d=until(15,br,st);t='roll '+r+'·drop '+d}
+  if(c.textContent!==t)c.textContent=t};
+ add();setInterval(()=>{try{add();paint()}catch(e){}},300)}
 </script>
 </body></html>
