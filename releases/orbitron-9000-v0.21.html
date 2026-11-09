@@ -3458,7 +3458,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  AudioNode.prototype.connect=function(d,...r){if(inDrum&&B&&d===A.m&&this.context===B.ctx&&!(window.DR&&DR.rendering))return oc.call(this,B.bus,...r);return oc.call(this,d,...r)};
  const _f=fire;fire=function(k,w){if(!DK.has(k))return _f.apply(this,arguments);if(!(B&&B.ctx===ctx))ensure();inDrum++;try{return _f.apply(this,arguments)}finally{inDrum--}};
  // a mood-matched amount on every Launch
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{drumBus.set(AMT[curMood]!=null?AMT[curMood]:.35);show()}catch(e){}return r};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{drumBus.set((window.MOODX&&MOODX[curMood]||{}).bus!=null?(window.MOODX&&MOODX[curMood]||{}).bus:AMT[curMood]!=null?AMT[curMood]:.35);show()}catch(e){}return r};
  // UI: one fader at the top of Mix, under Space
  let show=()=>{};
  const add=()=>{const anchor=document.querySelector('#t-mix .spc')||document.querySelector('#t-mix .ch');if(!anchor||document.querySelector('#t-mix .dbx'))return;
@@ -3533,7 +3533,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   if(F.h&&!TR[1].m&&R()<.75)put(1,pk(F.h));
   if(F.p){TR[3].m=false;put(3,pk(F.p))}
   G.dfeel=name;return true};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);G.dfeel=null;try{const m=MM[curMood];if(m&&R()<m[0]){grooveFamily(pk(m.slice(1)));build();setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}}catch(e){console.warn('[orbitron] groove',e)}return r}}
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);G.dfeel=null;try{const mx=(window.MOODX&&MOODX[curMood]||{}),m='grv' in mx?mx.grv:MM[curMood];if(m&&R()<m[0]){grooveFamily(pk(m.slice(1)));build();setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}}catch(e){console.warn('[orbitron] groove',e)}return r}}
 </script>
 <script>
 /* v168: contemporary leads — Vocal chop (Fred again.. / Overmono / afro house), Cinematic arp (Afterlife), Donk (tech house),
@@ -3564,10 +3564,63 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   Temporal:[['Donk',.25],['Vocal chop',.1]],'Distorted Electro':[['Donk',.2],['Rave stab',.15]],Melancholic:[['Cinematic arp',.3]],Dark:[['Cinematic arp',.2]],
   Ethereal:[['Cinematic arp',.25]],Tense:[['Cinematic arp',.15]],Vector:[['Cinematic arp',.15],['Rave stab',.15]],Breaks:[['Rave stab',.3]],Italo:[['Rave stab',.15]],
   Bleep:[['Rave stab',.2],['Donk',.15]]};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],m=PICK[curMood];if(m&&!L.m&&L.p.mode!=='Acid 303'){let u=R();
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],mx=(window.MOODX&&MOODX[curMood]||{}),m='lead' in mx?mx.lead:PICK[curMood];if(m&&!L.m&&L.p.mode!=='Acid 303'){let u=R();
    for(const [n,c] of m){if(u<c){applyLP(n,1);L.lv=Math.max(.3,Math.min(L.lv||.45,.5));try{window.leadResetPos&&leadResetPos()}catch(e){}build();break}u-=c}}}catch(e){console.warn('[orbitron] lead pick',e)}return r};
  // lead patch menus: add the new names
  const addOpt=()=>document.querySelectorAll('select[aria-label="Lead patch"]').forEach(s=>{Object.keys(NEW).forEach(n=>{if(![...s.options].some(o=>o.value===n))s.add(new Option(n,n))})});
  addOpt();setInterval(()=>{try{addOpt()}catch(e){}},1500);window.NEWLEADS=NEW}
 </script>
-</body></html>
+<script>
+/* v169: produced leads for every lead sound. (1) Ducked echo: the lead's delay send gets its own dotted-8th ping-pong echo, filtered
+   300 Hz–4.5 kHz, that dips while a lead note plays and swells back in the gaps (level follows Delay mix). (2) Note dynamics: on-beat
+   and some off-beat notes are accents (a bit louder and brighter), the rest softer and darker, and note lengths vary through the phrase —
+   fixed per pattern step, so the loop repeats like a played part. The Acid 303 keeps its own accents. */
+{let LE=null,inLead=0;
+ function ensureLE(){if(!ctx||!A.dk)return null;if(LE&&LE.ctx===ctx)return LE;
+  const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},bq=(t,f)=>{const n=ctx.createBiquadFilter();n.type=t;n.frequency.value=f;n.Q.value=.6;return n};
+  const inp=g(1),hp=bq('highpass',300),dL=ctx.createDelay(2),dR=ctx.createDelay(2),lpL=bq('lowpass',4500),lpR=bq('lowpass',3800),fb=g(.38),x=g(1),
+   pL=ctx.createStereoPanner(),pR=ctx.createStereoPanner(),duck=g(1),out=g(1);pL.pan.value=-.6;pR.pan.value=.6;
+  inp.connect(hp);hp.connect(dL);dL.connect(lpL);lpL.connect(pL);lpL.connect(x);x.connect(dR);dR.connect(lpR);lpR.connect(pR);lpR.connect(fb);fb.connect(dL);
+  pL.connect(duck);pR.connect(duck);duck.connect(out);out.connect(A.dk);
+  LE={ctx,inp,dL,dR,duck,out,fb};retime();return LE}
+ const retime=()=>{if(!LE)return;const t=.75*60/G.bpm,now=ctx.currentTime;LE.dL.delayTime.setTargetAtTime(t,now,.05);LE.dR.delayTime.setTargetAtTime(t,now,.05);
+  LE.out.gain.setTargetAtTime(Math.min(1.2,(G.dly==null?.25:G.dly)*1.6),now,.1)};
+ setInterval(()=>{try{if(LE&&LE.ctx===ctx)retime()}catch(e){}},500);
+ // lead delay sends go to the lead echo
+ const _s=send;send=function(n,out,dly,rev){if(inLead&&dly>0&&ensureLE()){_s.call(this,n,out,0,rev);const s=ctx.createGain();s.gain.value=dly*1.1*((window.MOODX&&MOODX[curMood]||{}).echo!=null?(window.MOODX&&MOODX[curMood]||{}).echo:1);n.connect(s);s.connect(LE.inp);return}return _s.apply(this,arguments)};
+ const hs=(a,b)=>{const x=Math.sin(a*12.9898+b*78.233)*43758.5453;return x-Math.floor(x)};
+ const _f=fire;fire=function(k,w){if(k!==4)return _f.apply(this,arguments);const T=TR[4],P=T.p;
+  if(P.mode==='Acid 303'||P.dyn===0){inLead=1;try{return _f.apply(this,arguments)}finally{inLead=0}}
+  const s=((tk%T.st)+T.st)%T.st,seed=(P.seed||0)+T.st*7,acc=s%4===0||hs(s,seed)<.22,ln=[.65,.85,1,1,1.25,1.6][Math.floor(hs(s+31,seed)*6)];
+  const o={lv:T.lv,cut:P.cut,dec:P.dec,hold:P.hold},dy=(window.MOODX&&MOODX[curMood]||{}).dyn!=null?(window.MOODX&&MOODX[curMood]||{}).dyn:.6,lm=1+(ln-1)*dy*1.3;
+  T.lv=o.lv*(acc?1+.22*dy:1-.2*dy);P.cut=o.cut*(acc?1+.5*dy:1-.18*dy);P.dec=o.dec*lm;if(P.hold)P.hold=Math.max(.25,o.hold*lm);
+  // echo dips under the note and swells back after it
+  const L=ensureLE();if(L){const sd=60/G.bpm/4,len=Math.max(.08,(P.sus>.01?(P.hold||1)*sd:P.dec)*1.0);L.duck.gain.setTargetAtTime(.3,w,.008);L.duck.gain.setTargetAtTime(1,w+len,.09)}
+  inLead=1;try{return _f.apply(this,arguments)}finally{inLead=0;T.lv=o.lv;P.cut=o.cut;P.dec=o.dec;if(o.hold!=null)P.hold=o.hold}};
+ window.leadFX={echo:()=>LE}}
+</script>
+<script>
+/* v170: one settings row per mood for the newer features — drum bus amount, groove families [chance, families…], new-lead picks,
+   lead echo amount (× the lead's delay send) and note dynamics depth (0 = tight and even, 1 = loose and human). */
+window.MOODX={
+ Dark:{bus:.45,grv:[.35,'broken techno','skipping four'],lead:[['Cinematic arp',.2],['Donk',.08]],echo:.8,dyn:.4},
+ Melancholic:{bus:.3,grv:[.35,'two-step','broken techno'],lead:[['Cinematic arp',.3],['Vocal chop',.1]],echo:1.1,dyn:.7},
+ Dreamy:{bus:.25,grv:[.4,'two-step','halftime'],lead:[['Vocal chop',.25],['Cinematic arp',.1]],echo:1.2,dyn:.8},
+ Tense:{bus:.45,grv:[.4,'broken techno','skipping four','electro'],lead:[['Cinematic arp',.15],['Donk',.1]],echo:.7,dyn:.3},
+ Ethereal:{bus:.2,grv:[.4,'halftime','two-step'],lead:[['Cinematic arp',.25],['Vocal chop',.15]],echo:1.3,dyn:.8},
+ Hopeful:{bus:.3,grv:[.35,'two-step','clave perc'],lead:[['Vocal chop',.3],['Cinematic arp',.1]],echo:1.1,dyn:.8},
+ Noir:{bus:.35,grv:[.45,'halftime','broken techno'],lead:[['Rave stab',.12],['Cinematic arp',.1]],echo:1,dyn:.6},
+ Drone:{bus:.3,grv:[.3,'halftime','clave perc'],lead:[['Cinematic arp',.1]],echo:1.2,dyn:.5},
+ Acid:{bus:.45,grv:[.4,'electro','broken techno','skipping four'],lead:[],echo:.8,dyn:.3},
+ Power:{bus:.5,grv:[.3,'skipping four','broken techno'],lead:[['Donk',.1]],echo:.6,dyn:.2},
+ Italo:{bus:.35,grv:[.3,'electro','skipping four'],lead:[['Rave stab',.2]],echo:1,dyn:.6},
+ Breaks:{bus:.55,grv:[.5,'electro','halftime','broken techno'],lead:[['Rave stab',.3],['Vocal chop',.12]],echo:.9,dyn:.6},
+ 'Deep Space':{bus:.2,grv:[.45,'halftime','broken techno'],lead:[['Cinematic arp',.15]],echo:1.3,dyn:.5},
+ Bleep:{bus:.35,grv:[.45,'electro','two-step','broken techno'],lead:[['Rave stab',.2],['Donk',.15]],echo:.8,dyn:.4},
+ 'Melodic House':{bus:.35,grv:[.35,'two-step','skipping four','clave perc'],lead:[['Vocal chop',.3],['Cinematic arp',.15]],echo:1.1,dyn:.7},
+ 'Distorted Electro':{bus:.45,grv:[.55,'electro','broken techno'],lead:[['Donk',.2],['Rave stab',.15]],echo:.8,dyn:.4},
+ Ambient:{bus:.12,grv:null,lead:[['Vocal chop',.12],['Cinematic arp',.1]],echo:1.4,dyn:.9},
+ 'Groove Techno':{bus:.5,grv:[.35,'skipping four','broken techno','clave perc'],lead:[['Donk',.25],['Vocal chop',.15]],echo:.7,dyn:.35},
+ Temporal:{bus:.55,grv:[.35,'skipping four','clave perc'],lead:[['Donk',.25],['Vocal chop',.1]],echo:.6,dyn:.3},
+ Vector:{bus:.35,grv:[.45,'two-step','electro','broken techno'],lead:[['Cinematic arp',.15],['Rave stab',.15],['Vocal chop',.1]],echo:1,dyn:.6}};
+</script></body></html>
