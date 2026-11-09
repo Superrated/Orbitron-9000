@@ -3823,11 +3823,13 @@ window.MOODX={
    right = longer notes, brighter filter (cutoff + envelope) and more lead echo and reverb. It springs back to the centre slowly (about 2.5 s, eased) when released. */
 {const LM={x:0,raf:0};
  const _f=fire;fire=function(k,w){if(k!==4||Math.abs(LM.x)<.01)return _f.apply(this,arguments);const P=TR[4].p,x=LM.x,
-   o={dec:P.dec,hold:P.hold,cut:P.cut,envA:P.envA,ds:P.ds,rs:P.rs};
-  try{P.dec=Math.max(.03,Math.min(2.5,(P.dec||.25)*Math.pow(2,1.5*x)));if(P.hold)P.hold=Math.max(.2,Math.min(4,P.hold*Math.pow(2,1.2*x)));
+   o={dec:P.dec,hold:P.hold,rel:P.rel,drv:P.drv,pg:P.pg,cut:P.cut,envA:P.envA,ds:P.ds,rs:P.rs};
+  /* v0.22: one even length curve for decay, gate and release together (short side as before, long side up to 2x), plus warm drive on the long side */
+  try{const lf=x<0?Math.pow(2,1.5*x):Math.pow(2,x);P.dec=Math.max(.03,Math.min(3,(P.dec||.25)*lf));if(P.hold)P.hold=Math.max(.2,P.hold*lf);if(P.rel!=null)P.rel=Math.max(.01,Math.min(3,P.rel*lf));
+   if(x>0){const ad=.25*x;P.drv=Math.min(1,(P.drv||0)+ad);P.pg=(P.pg||1)/(1+ad*.4)/(1+ad*.9)}
    if(P.cut!=null)P.cut=Math.max(60,Math.min(12000,P.cut*Math.pow(2,1.2*x)));if(P.envA!=null)P.envA=Math.max(0,P.envA*(1+.6*x));
    P.ds=Math.max(0,Math.min(1,(P.ds||0)*(1+x)));P.rs=Math.max(0,Math.min(1,(P.rs||0)*(1+x)));return _f.apply(this,arguments)}
-  finally{Object.assign(P,o)}};
+  finally{Object.keys(o).forEach(k=>{if(o[k]===undefined)delete P[k];else P[k]=o[k]})}};
  const st=document.createElement('style');st.textContent=`.lmx{margin-top:8px}.lmx .lmh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}
   .lmx .lmh span{font-family:Orbitron,system-ui,sans-serif;font-size:11px;letter-spacing:.08em;color:var(--acc)}.lmx .lmh small{font-size:10px;color:var(--muted);flex:1}
   .lmx .lmh b{font-size:12px;color:var(--edge);min-width:70px;text-align:right}.lmx .lmt{position:relative;height:44px;background:var(--c1);border:1px solid rgba(0,255,156,.3);touch-action:none;user-select:none}
@@ -3841,9 +3843,11 @@ window.MOODX={
   el=document.createElement('div');el.className='lmx';
   el.innerHTML='<div class="lmh"><span>LEAD</span><small>decay · filter · echo</small><b>AS SET</b></div><div class="lmt" title="Drag left for short, dry, dark plucks; right for long, bright notes with more echo and reverb. Let go and it glides back."><div class="lmc"></div><div class="lmf"></div><div class="lmk"></div><i style="left:4px">SHORT</i><i style="right:4px">LONG</i></div>';
   host.appendChild(el);const tr=el.querySelector('.lmt');let on=0;
-  const at=e=>{const r=tr.getBoundingClientRect();LM.x=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));show()};
-  tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(LM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e)});
-  tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{if(!on)return;on=0;glideBack()}));show()};
+  let tg=0,lt=0;const sm=t=>{const dt=Math.min(50,t-(lt||t));lt=t;LM.x+=(tg-LM.x)*(1-Math.exp(-dt/70));if(Math.abs(tg-LM.x)<.002)LM.x=tg;show();
+    if(on||LM.x!==tg)LM.raf=requestAnimationFrame(sm);else if(!on)glideBack()};
+  const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1))};
+  tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(LM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;LM.raf=requestAnimationFrame(sm)});
+  tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{if(!on)return;on=0;if(LM.x===tg){cancelAnimationFrame(LM.raf);glideBack()}}));show()};
  add();setInterval(()=>{try{add()}catch(e){}},1000);window.leadMacro=LM}
 </script>
 <script>
