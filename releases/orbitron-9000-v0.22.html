@@ -3816,4 +3816,32 @@ window.MOODX={
  const paint=()=>{const b=document.querySelector('#t-perf .rgx');if(b)b.classList.toggle('on',!!ON)};
  add();setInterval(()=>{try{add();paint()}catch(e){}},800);window.rigidHats={set,on:()=>!!ON}}
 </script>
+<script>
+/* v183: LEAD macro fader on Flight, under the low-pass. Centre = the lead as launched. Left = shorter, darker, drier plucks;
+   right = longer notes, brighter filter (cutoff + envelope) and more lead echo and reverb. It springs back to the centre slowly (about 2.5 s, eased) when released. */
+{const LM={x:0,raf:0};
+ const _f=fire;fire=function(k,w){if(k!==4||Math.abs(LM.x)<.01)return _f.apply(this,arguments);const P=TR[4].p,x=LM.x,
+   o={dec:P.dec,hold:P.hold,cut:P.cut,envA:P.envA,ds:P.ds,rs:P.rs};
+  try{P.dec=Math.max(.03,Math.min(2.5,(P.dec||.25)*Math.pow(2,1.5*x)));if(P.hold)P.hold=Math.max(.2,Math.min(4,P.hold*Math.pow(2,1.2*x)));
+   if(P.cut!=null)P.cut=Math.max(60,Math.min(12000,P.cut*Math.pow(2,1.2*x)));if(P.envA!=null)P.envA=Math.max(0,P.envA*(1+.6*x));
+   P.ds=Math.max(0,Math.min(1,(P.ds||0)*(1+x)));P.rs=Math.max(0,Math.min(1,(P.rs||0)*(1+x)));return _f.apply(this,arguments)}
+  finally{Object.assign(P,o)}};
+ const st=document.createElement('style');st.textContent=`.lmx{margin-top:8px}.lmx .lmh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}
+  .lmx .lmh span{font-family:Orbitron,system-ui,sans-serif;font-size:11px;letter-spacing:.08em;color:var(--acc)}.lmx .lmh small{font-size:10px;color:var(--muted);flex:1}
+  .lmx .lmh b{font-size:12px;color:var(--edge);min-width:70px;text-align:right}.lmx .lmt{position:relative;height:44px;background:var(--c1);border:1px solid rgba(0,255,156,.3);touch-action:none;user-select:none}
+  .lmx .lmc{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(214,255,230,.35)}.lmx .lmf{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,rgba(181,131,255,.55),rgba(181,131,255,.25))}
+  .lmx .lmk{position:absolute;top:2px;bottom:2px;width:14px;margin-left:-7px;background:var(--acc)}.lmx .lmt i{position:absolute;bottom:2px;font-size:9px;color:var(--muted);font-style:normal}`;document.head.appendChild(st);
+ let el=null;const show=()=>{if(!el)return;const x=LM.x,k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
+   k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';
+   b.textContent=Math.abs(x)<.01?'AS LAUNCHED':(x<0?'SHORT ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};
+ const glideBack=()=>{cancelAnimationFrame(LM.raf);const x0=LM.x,t0=performance.now(),D=2500;const step=t=>{const p=Math.min(1,(t-t0)/D),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;LM.x=x0*(1-e);show();if(p<1)LM.raf=requestAnimationFrame(step);else{LM.x=0;show()}};LM.raf=requestAnimationFrame(step)};
+ const add=()=>{if(document.querySelector('.lmx'))return;const lp=document.querySelector('#t-perf .lpt');if(!lp)return;const host=lp.parentElement;
+  el=document.createElement('div');el.className='lmx';
+  el.innerHTML='<div class="lmh"><span>LEAD</span><small>decay · filter · echo</small><b>AS LAUNCHED</b></div><div class="lmt" title="Drag left for short, dry, dark plucks; right for long, bright notes with more echo and reverb. Let go and it glides back."><div class="lmc"></div><div class="lmf"></div><div class="lmk"></div><i style="left:4px">SHORT</i><i style="right:4px">LONG</i></div>';
+  host.appendChild(el);const tr=el.querySelector('.lmt');let on=0;
+  const at=e=>{const r=tr.getBoundingClientRect();LM.x=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));show()};
+  tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(LM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e)});
+  tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{if(!on)return;on=0;glideBack()}));show()};
+ add();setInterval(()=>{try{add()}catch(e){}},1000);window.leadMacro=LM}
+</script>
 </body></html>
