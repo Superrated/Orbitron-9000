@@ -1261,7 +1261,7 @@ const _init39=init;init=function(){const nw=!ctx;_init39();if(!nw)return;const p
  setInterval(()=>{if(!playing)return;an.getFloatTimeDomainData(buf);let s=0;for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];const r=Math.sqrt(s/buf.length);
   if(r>.004){ema=ema?ema*.9+r*.1:r;agc=Math.max(.35,Math.min(3,G.ldT*(G.ldMul||1)/ema));o.gain.setTargetAtTime(G.ldOut*agc,ctx.currentTime,.6)}},100)};
 const LVQ=[];function leadVoice(g,w){for(let i=LVQ.length-1;i>=0;i--)if(w-LVQ[i].w>2.5)LVQ.splice(i,1);
- while(LVQ.length>=3){const o=LVQ.shift();try{o.g.gain.cancelScheduledValues(w);o.g.gain.setTargetAtTime(.0001,w,.06)}catch(e){}}LVQ.push({g,w})}
+ while(LVQ.length>=((window.leadMacro&&leadMacro.x>.3)?2:3)){const o=LVQ.shift();try{o.g.gain.cancelScheduledValues(w);o.g.gain.setTargetAtTime(.0001,w,.06)}catch(e){}}LVQ.push({g,w})}
 const _gen39=generate;generate=function(){_gen39();const P=TR[4].p,ac=P.mode==='Acid 303';
  if(ac){P.res=Math.min(P.res,12);P.envA=Math.min(P.envA,4200)}
  else{P.res=Math.min(P.res,curMood==='Power'?14:6);if(P.eng==='Stack'||P.eng==='Mini'||P.eng==='Saw'||P.eng==='Pulse'||!P.eng){P.cut=Math.min(P.cut,2600);P.envA=Math.min(P.envA,3500)}P.vib=Math.min(P.vib||0,14);P.uni=Math.min(P.uni||1,5);
@@ -1870,7 +1870,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const nextHit=s=>{const K=TR[0];for(let d=1;d<=16;d++)if((own(s+d)&&!(G.bavoid&&!K.m&&K.pt[(s+d)%K.st]))||(inFill(s+d)&&[10,12,14].includes((s+d)%16)))return d;return 16};
  let lastBassStep=-9;
  function play(w,opt){const P=B.p,sd=sdur(),o={dec:P.dec,cut:P.cut,lv:B.lv},s=tk;window.BFDEC=P.dec;
-  if(P.bgt>0)P.dec=Math.max(.05,Math.min(P.bsus>.01?3:1.6,P.bgt*nextHit(s)*sd*.95));else if(P.bsus>.01)P.dec=Math.max(.05,Math.min(3,nextHit(s)*sd*.95)); // v0.22: with Sustain a note holds until the next bass note (Gate shortens it)
+  const cap=P.bsus>.01?Math.min(3,16*sd):1.6;if(P.bgt>0)P.dec=Math.max(.05,Math.min(cap,P.bgt*nextHit(s)*sd*.95));else if(P.bsus>.01)P.dec=Math.max(.05,Math.min(cap,nextHit(s)*sd*.95)); // v0.22: with Sustain a note holds until the next bass note (Gate shortens it)
   if(opt&&opt.ghost){P.dec=Math.min(P.dec,.09);P.cut=P.cut*.55;B.lv=B.lv*.38}
   if(opt&&opt.roll){if(!(P.bgt>0))P.dec=Math.min(P.dec,sd*.85);B.lv=B.lv*(opt.roll===1?.8:opt.roll===2?1:.9)}
   window.BOVF=window.BNSF||opt&&opt.f||0;const sl=P.bsl>0&&window.BLF&&s-lastBassStep<=4&&hs(7,s%32,Math.floor(tk/32))<P.bsl;window.BSLF=sl?BLF:0;window.BSLT=Math.min(.09,sd*.6);
@@ -3831,7 +3831,7 @@ window.MOODX={
    o={dec:P.dec,hold:P.hold,rel:P.rel,drv:P.drv,grit:P.grit,pg:P.pg,cut:P.cut,envA:P.envA,ds:P.ds,rs:P.rs};
   /* v0.22: one even length curve for decay, gate and release together (short side as before, long side up to 2x), plus warm drive on the long side */
   try{const lf=x<0?Math.pow(2,1.5*x):Math.pow(2,x);P.dec=Math.max(.03,Math.min(3,(P.dec||.25)*lf));if(P.hold)P.hold=Math.max(.2,P.hold*lf);if(P.rel!=null)P.rel=Math.max(.01,Math.min(3,P.rel*lf));
-   if(x>0){const hv=Math.max(0,(x-.6)/.4),ad=x<=.6?.25*x:.15+.75*hv,gr=.35*hv; /* warm up to 60 %, then heavy drive + grit to the end */
+   if(x>0){const hv=Math.max(0,(x-.6)/.4),ad=x<=.6?.25*x:.15+.9*hv,gr=0; /* no grit: it adds a noise voice per note */ /* warm up to 60 %, then heavy drive + grit to the end */
     P.drv=Math.min(1,(P.drv||0)+ad);if(gr>0)P.grit=Math.min(1,(P.grit||0)+gr);P.pg=(P.pg||1)/(1+ad*.4)/(1+ad*1.2)/(1+gr*.9)}
    if(P.cut!=null)P.cut=Math.max(60,Math.min(12000,P.cut*Math.pow(2,(x<0?1.2:.6)*x)));if(P.envA!=null)P.envA=Math.max(0,P.envA*(1+(x<0?.6:.3)*x));
    if(x>0){const T=TR[4],n=T.st||16,s0=((tk%n)+n)%n;let d=1;while(d<n&&!T.pt[(s0+d)%n])d++;const gap=d*sdur(); /* long notes fill the gap evenly instead of piling up */
@@ -3843,7 +3843,7 @@ window.MOODX={
   .lmx .lmh b{font-size:12px;color:var(--edge);min-width:70px;text-align:right}.lmx .lmt{position:relative;height:44px;background:var(--c1);border:1px solid rgba(0,255,156,.3);touch-action:none;user-select:none}
   .lmx .lmc{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(214,255,230,.35)}.lmx .lmf{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,rgba(181,131,255,.55),rgba(181,131,255,.25))}
   .lmx .lmk{position:absolute;top:2px;bottom:2px;width:14px;margin-left:-7px;background:var(--acc)}.lmx .lmt i{position:absolute;bottom:2px;font-size:9px;color:var(--muted);font-style:normal}`;document.head.appendChild(st);
- let el=null;const show=()=>{if(!el)return;const x=LM.x,k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
+ let el=null,lastX=null;const show=()=>{if(!el)return;const x=LM.x;if(lastX!==null&&Math.abs(x-lastX)<.002)return;lastX=x;const k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
    k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';
    b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'SHORT ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};
  const glideBack=()=>{cancelAnimationFrame(LM.raf);const x0=LM.x,t0=performance.now(),D=2500;const step=t=>{const p=Math.min(1,(t-t0)/D),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;LM.x=x0*(1-e);show();if(p<1)LM.raf=requestAnimationFrame(step);else{LM.x=0;show()}};LM.raf=requestAnimationFrame(step)};
@@ -3909,7 +3909,7 @@ window.MOODX={
  .mxrow .lmt{height:38px;border:1px solid rgba(0,255,156,.35);border-radius:10px;background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(0,255,156,.10));overflow:hidden;cursor:ew-resize}
  .mxrow .lmc{background:rgba(255,255,255,.18)}
  .mxrow .lmf{background:rgba(255,228,77,.16)}
- .mxrow .lmk{top:3px;bottom:3px;width:18px;margin-left:-9px;border-radius:6px;background:var(--acc,#ffe44d);box-shadow:0 0 10px rgba(255,228,77,.6)}
+ .mxrow .lmk{top:3px;bottom:3px;width:18px;margin-left:-9px;border-radius:6px;background:var(--acc,#ffe44d);box-shadow:none;will-change:left}.mxrow .lmf{will-change:left,width}
  .mxrow .lmt i{top:50%;bottom:auto;transform:translateY(-50%);font-size:9px;letter-spacing:.14em;opacity:.45;pointer-events:none}
  .mxrow .lmt i:first-of-type{left:10px!important}.mxrow .lmt i:last-of-type{right:10px!important}
  @media (max-width:700px){.mxrow .lmh small{display:none}.mxrow .lmh b{font-size:10px}}
@@ -3917,7 +3917,7 @@ window.MOODX={
  @media (max-width:640px) and (max-height:780px){.mxp{padding:6px 10px!important}.mxrow>.lmx,.mxrow>.bmx{position:relative}
   .mxrow .lmh{position:absolute;left:12px;right:12px;top:50%;transform:translateY(-50%);margin:0;z-index:2;pointer-events:none}
   .mxrow .lmh span{opacity:.8}.mxrow .lmt i{display:none}}`;document.head.appendChild(st)}
- let el=null;const show=()=>{if(!el)return;const x=BM.x,k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
+ let el=null,lastX=null;const show=()=>{if(!el)return;const x=BM.x;if(lastX!==null&&Math.abs(x-lastX)<.002)return;lastX=x;const k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
    k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';
    b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'TIGHT ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};
  const glideBack=()=>{cancelAnimationFrame(BM.raf);const x0=BM.x,t0=performance.now(),D=2500;const step=t=>{const p=Math.min(1,(t-t0)/D),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;BM.x=x0*(1-e);show();if(p<1)BM.raf=requestAnimationFrame(step);else{BM.x=0;show()}};BM.raf=requestAnimationFrame(step)};
@@ -4243,5 +4243,11 @@ window.MOODX={
  const fac=tg=>{const M=LT.has(tg)?window.leadMacro:BT.has(tg)?window.bassMacro:null;if(!M)return 1;return 1-.8*Math.min(1,Math.abs(M.x||0))};
  const _mv=mv;mv=function(tg,t){const v=_mv(tg,t);if(!v)return v;const f=fac(tg);return f===1?v:v*f};
  const _mvd=mvd;mvd=function(tg,t){const r=_mvd(tg,t);const f=fac(tg);return f===1?r:[r[0]*f,r[1]*f]}}
+</script>
+<script>
+/* ---- v0.22: while a Flight fader (LEAD, BASS) is held or gliding back, the live visuals run at half frame rate, so the note scheduler
+   gets the main-thread time it needs (no stutter on busy devices). ---- */
+{let f=0;const busy=()=>{const L=window.leadMacro,B=window.bassMacro;return (L&&Math.abs(L.x)>.001)||(B&&Math.abs(B.x)>.001)};
+ const _vz=viz;viz=function(){if(busy()&&(f++%2)){requestAnimationFrame(viz);return}_vz()}}
 </script>
 </body></html>
