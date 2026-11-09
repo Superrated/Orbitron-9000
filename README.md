@@ -13,10 +13,18 @@ Ten tracks — kick, hi-hat, clap, perc, snare, lead, pad, bass, dub stab and su
 
 | File | What it is |
 | --- | --- |
-| `index.html` | The current version (v0.21) |
+| `index.html` | The current version (v0.22) |
+| `releases/orbitron-9000-v0.22.html` | Frozen copy of v0.22 |
 | `releases/orbitron-9000-v0.21.html` | Frozen copy of v0.21 |
 | `releases/orbitron-9000-v0.2.html` | Frozen copy of v0.2 |
 | `releases/orbitron-9000-v0.1.html` | Frozen copy of v0.1 |
+
+## What's new in v0.22
+
+- Moods renamed to fit the ship: Event Horizon, Lost Signal, Nebula, Countdown, Aurora, First Light, Dark Side, Orbital Hum, Max Q, Low Orbit
+- Balance pass across all moods (pads lower), no dated lead sounds from Launch
+- Contemporary leads (Vocal chop, Cinematic arp, Donk, Rave stab), ducked lead echo and note dynamics
+- Groove families (electro, two-step, broken techno, halftime, clave perc), drum bus, Fill, cleaner low end
 
 ## What's new in v0.21
 

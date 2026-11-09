@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Orbitron 9000 v0.21 — generative Euclidean groovebox
+  Orbitron 9000 v0.22 — generative Euclidean groovebox
   Copyright (c) 2026 Superrated. Designed by Superrated and Claude.
 
   Licensed under the PolyForm Noncommercial License 1.0.0:
@@ -128,6 +128,9 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
 <section class="tp" id="t-viz" hidden><div class="panel"><canvas id="viz" width="720" height="720" style="width:100%;height:auto;max-width:560px;display:block;margin:auto"></canvas><div class="lg" id="lg"></div></div></section>
 <section class="tp" id="t-perf" hidden></section>
 <script>
+/* v172: display names for moods (internal keys unchanged, so sectors, exports and settings keep working) */
+window.MOODNAME={Dark:'Event Horizon',Melancholic:'Lost Signal',Dreamy:'Nebula',Tense:'Countdown',Ethereal:'Aurora',Hopeful:'First Light',Noir:'Dark Side',Drone:'Orbital Hum',Power:'Max Q',Ambient:'Low Orbit'};
+window.MN=m=>(window.MOODNAME&&MOODNAME[m])||m;
 const SC={Minor:[0,2,3,5,7,8,10],Dorian:[0,2,3,5,7,9,10],Phrygian:[0,1,3,5,7,8,10],Major:[0,2,4,5,7,9,11],"Harm. minor":[0,2,3,5,7,8,11],"Min pentatonic":[0,3,5,7,10],"Whole tone":[0,2,4,6,8,10],Hirajoshi:[0,2,3,7,8],"Major pentatonic":[0,2,4,7,9],"Sus pentatonic":[0,2,5,7,9],Lydian:[0,2,4,6,7,9,11],Mixolydian:[0,2,4,5,7,9,10]};
 const NN=["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
 const G={swing:.12,bpm:124,root:9,scale:"Minor",dly:.22,fb:.45,rev:.3,duck:.7,rel:.2,rumble:.22,rcut:140,shim:.6,dens:.5,bgrit:.1};
@@ -395,7 +398,7 @@ function chips(){[['#t-drums',[0,1,2,3,7]],['#t-synth',[4,5,6,8,9]]].forEach(([i
  [['pat','PATTERN'],['snd','SOUND']].forEach(([m,l])=>{const b=document.createElement('button');b.dataset.m=m;b.textContent=l;b.onclick=()=>{tmode=m;applyMode()};seg.appendChild(b)});
  c.prepend(cap);c.prepend(seg);c.prepend(bar);show()});tagCtl();applyMode()}
 const _b4=build;build=function(){_b4();chips()};
-setInterval(()=>{const t=NN[G.root]+' '+G.scale+' \u00b7 '+curMood,k=$('#kinfo'),s=$('#gsum');if(k)k.textContent=t+' \u00b7 '+G.bpm;if(s)s.textContent='Now: '+t+(typeof MP!=='undefined'&&MP[curMood]?' ('+MP[curMood].sty+')':'')+' \u00b7 '+G.bpm+' BPM \u00b7 lead: '+(TR[4].p.patch||'custom')+' \u00b7 pad: '+TR[5].p.patch+(G.dfeel?' \u00b7 drums: '+G.dfeel:'')},400);
+setInterval(()=>{const t=NN[G.root]+' '+G.scale+' \u00b7 '+MN(curMood),k=$('#kinfo'),s=$('#gsum');if(k)k.textContent=t+' \u00b7 '+G.bpm;if(s)s.textContent='Now: '+t+(typeof MP!=='undefined'&&MP[curMood]?' ('+MP[curMood].sty+')':'')+' \u00b7 '+G.bpm+' BPM \u00b7 lead: '+(TR[4].p.patch||'custom')+' \u00b7 pad: '+TR[5].p.patch+(G.dfeel?' \u00b7 drums: '+G.dfeel:'')},400);
 setInterval(()=>document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('m',!!TR[+b.dataset.k].m)),300);
 [rp,Q3].forEach(p=>p.classList.add('rz'));
 const QD=document.createElement('div');QD.className='panel';QD.innerHTML='<h2>Dub stabs</h2><div class="pads"></div>';
@@ -513,7 +516,7 @@ const _ln2=leadNote;leadNote=function(p){if(p.mode!=='Motif')return _ln2(p);cons
  let d=mot[mp];if(mp%4===0&&R()<p.lock)d=snapCT(d,p);return d};
 /* mood-driven generator */
 function generate(){const set=(k,st,h,r,lv)=>{const T=TR[k];Object.assign(T,{st,h,r,lv});T.pt=pat(T)};
- const sel=$('#mood').value;curMood=sel==='Auto'?pick([...$('#mood').options].map(o=>o.value).filter(v=>v!=='Auto'&&MOODS[v])):sel;const M=MOODS[curMood];$('#mood').options[0].textContent='Auto ('+curMood+')';
+ const sel=$('#mood').value;curMood=sel==='Auto'?pick([...$('#mood').options].map(o=>o.value).filter(v=>v!=='Auto'&&MOODS[v])):sel;const M=MOODS[curMood];$('#mood').options[0].textContent='Auto ('+MN(curMood)+')';
  G.scale=pick(M.sc);G.root=Math.floor(R()*12);G.bpm=M.b[0]+Math.floor(R()*(M.b[1]-M.b[0]+1));
  set(0,16,4,0,.9);set(1,...pick(M.hat||[[16,4,2],[16,7,2],[16,9,1],[16,11,0]]),.5);set(2,16,2,4,.75);set(7,16,pick([2,3,5]),Math.floor(R()*16),.5);
  set(3,pick([12,13,15]),3+Math.floor(R()*3),Math.floor(R()*12),.55);set(4,16,pick(M.lh),M.acid?0:Math.floor(R()*16),M.acid?.7:.6);set(6,16,pick([4,5]),2,.55);set(5,4,4,0,M.padlv||.5);
@@ -1309,7 +1312,7 @@ body.warp::before{animation-duration:3s!important}
  const mc=document.createElement('div');mc.className='mctl';document.body.appendChild(mc);let mcT=0,mcI=0;
  const say=(txt)=>{clearInterval(mcI);clearTimeout(mcT);mc.textContent='';mc.classList.add('on');let i=0;mcI=setInterval(()=>{mc.textContent=txt.slice(0,++i);if(i>=txt.length){clearInterval(mcI);mcT=setTimeout(()=>mc.classList.remove('on'),2200)}},18)};
  // rocket on generate + course banner
- const _gen35=generate;generate=function(){_gen35();const sty=MP[curMood]?MP[curMood].sty:'';say('▲ COURSE SET · '+curMood.toUpperCase()+(sty?' · '+sty.toUpperCase():'')+' · '+NN[G.root]+' '+G.scale.toUpperCase()+' · '+G.bpm+' BPM')};
+ const _gen35=generate;generate=function(){_gen35();const sty=MP[curMood]?MP[curMood].sty:'';say('▲ COURSE SET · '+MN(curMood).toUpperCase()+(sty?' · '+sty.toUpperCase():'')+' · '+NN[G.root]+' '+G.scale.toUpperCase()+' · '+G.bpm+' BPM')};
  gb.addEventListener('click',e=>{const r=gb.getBoundingClientRect(),k=document.createElement('div');k.className='rocket';k.textContent='🚀';k.style.left=(r.left+r.width/2-11)+'px';k.style.top=(r.top+4)+'px';document.body.appendChild(k);setTimeout(()=>k.remove(),1400)});
  // transmission ticker
  const tk2=document.createElement('div');tk2.className='ticker';document.body.appendChild(tk2);
@@ -1806,7 +1809,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden)chBuild();return r};
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.21 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.21';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.22 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.22';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -2395,7 +2398,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  const _in=init;init=function(){const r=_in.apply(this,arguments);try{build()}catch(e){console.warn('finish',e)}return r};
  const _gf=generate;generate=function(){const r=_gf.apply(this,arguments);try{apply(0)}catch(e){}return r};
  const mp=document.querySelector('#t-mix .panel');if(mp){const b=document.createElement('button');b.className='finb';
-  const lab=()=>{b.innerHTML=G.fin?'✦ Mood finish <b>ON</b> · '+curMood:'✧ Mood finish <b>OFF</b> · raw mix';b.classList.toggle('on',!!G.fin)};lab();setInterval(lab,1000);
+  const lab=()=>{b.innerHTML=G.fin?'✦ Mood finish <b>ON</b> · '+MN(curMood):'✧ Mood finish <b>OFF</b> · raw mix';b.classList.toggle('on',!!G.fin)};lab();setInterval(lab,1000);
   b.title='Per-mood mastering polish: tone shaping, mono bass, stereo width, reverb colour and level matching. Tap to compare with the raw mix.';
   b.onclick=()=>{G.fin=G.fin?0:1;try{localStorage.setItem('orb-fin',G.fin)}catch(e){}apply(0);lab()};mp.querySelector('h2').after(b);
   const st=document.createElement('style');st.textContent='.finb{display:block;width:100%;min-height:42px;margin:0 0 10px;border:1px solid rgba(0,255,156,.35);border-radius:10px;background:transparent;color:inherit;font:inherit;cursor:pointer;opacity:.75}.finb.on{opacity:1;border-color:var(--acc,#ffe44d);box-shadow:0 0 8px rgba(255,228,77,.3)}.finb b{color:var(--acc,#ffe44d)}';document.head.appendChild(st)}}
@@ -2437,11 +2440,11 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   const lead=ctx?Math.max(0,(w-ctx.currentTime)*1000):0;
   setTimeout(()=>{try{applyFX()}catch(e){}try{window.moodFinish&&moodFinish.apply()}catch(e){}},lead);
   setTimeout(()=>refreshUI(S),lead+120)}
- function refreshUI(S){try{const ms=$('#mood');if(ms){const has=[...ms.options].some(o=>o.value===S.sel);ms.value=has?S.sel:(MOODS[curMood]?curMood:'Auto');ms.options[0].textContent='Auto ('+curMood+')'}
+ function refreshUI(S){try{const ms=$('#mood');if(ms){const has=[...ms.options].some(o=>o.value===S.sel);ms.value=has?S.sel:(MOODS[curMood]?curMood:'Auto');ms.options[0].textContent='Auto ('+MN(curMood)+')'}
   $('#root').value=G.root;$('#scale').value=G.scale;$('#bpm').value=G.bpm;$('#bv').textContent=G.bpm}catch(e){}
   try{syncMix()}catch(e){}requestAnimationFrame(()=>{try{build()}catch(e){}try{kl()}catch(e){}})}
  // the scheduler hook: runs first in every step, before any track fires
- const _as=arrStep;arrStep=function(w){if(SS.q&&tk%64===0&&!SS.held){const S=SS.q,i=SS.qi;SS.q=null;SS.qi=-1;try{apply(S,w);SS.act=i;window._mstLearn=performance.now()+9000;msg('▶ ARRIVED AT '+((SL[i]&&SL[i].nm)||'SECTOR '+(i+1)).toUpperCase()+' · '+curMood)}catch(e){console.warn('sector',e)}paint()}return _as.apply(this,arguments)};
+ const _as=arrStep;arrStep=function(w){if(SS.q&&tk%64===0&&!SS.held){const S=SS.q,i=SS.qi;SS.q=null;SS.qi=-1;try{apply(S,w);SS.act=i;window._mstLearn=performance.now()+9000;msg('▶ ARRIVED AT '+((SL[i]&&SL[i].nm)||'SECTOR '+(i+1)).toUpperCase()+' · '+MN(curMood))}catch(e){console.warn('sector',e)}paint()}return _as.apply(this,arguments)};
  // hold off while a riser / breakdown pad is held (they restore their own snapshot on release)
  document.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('#t-perf .rz'))SS.held++},true);
  const rel=()=>{if(SS.held)SS.held=0};['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,rel,true));
@@ -2470,7 +2473,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  function tap(i){try{ensure()}catch(e){}
   if(SS.del){if(!SL[i])return;if(SS.prot){SS.del=0;paint();return}const nm=SL[i].nm;SL[i]=null;if(SS.qi===i){SS.q=null;SS.qi=-1}if(SS.act===i)SS.act=-1;persist();SS.del=0;msg('✖ '+(nm||'SECTOR').toUpperCase()+' DELETED · slot '+(i+1)+' is empty');paint();return}
   if(SS.save){if(SL[i]&&SS.prot){msg('▲ '+SL[i].nm.toUpperCase()+' IS PROTECTED · turn off 🔒 to overwrite');btns[i].classList.add('deny');setTimeout(()=>btns[i].classList.remove('deny'),400);return}
-   SL[i]=snap();SL[i].nm=pnm();persist();SS.save=0;SS.act=i;msg('💾 '+SL[i].nm.toUpperCase()+' STORED · SLOT '+(i+1)+' · '+curMood);paint();return}
+   SL[i]=snap();SL[i].nm=pnm();persist();SS.save=0;SS.act=i;msg('💾 '+SL[i].nm.toUpperCase()+' STORED · SLOT '+(i+1)+' · '+MN(curMood));paint();return}
   if(!SL[i])return;if(SS.qi===i){SS.q=null;SS.qi=-1;paint();return}
   let S;try{S=JSON.parse(JSON.stringify(SL[i]))}catch(e){return}
   if(!playing||!ctx){apply(S,ctx?ctx.currentTime:0);SS.act=i;paint();return}
@@ -2603,7 +2606,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
 {const LP={v:1,ctx:null,dest:null,f:{syn:new Map(),drm:new Map(),pad:new Map()}};const PZ=.85,VV=(v=LP.v)=>Math.min(1,v/PZ);let CURG=null;const DRK=new Set([1,2,3,7]);
  const oc=AudioNode.prototype.connect;
  const DZ=.45;const cur=(v0=LP.v)=>{const v=VV(v0),op=v>=.999,a=Math.max(0,Math.min(1,(v-DZ)/(1-DZ))),
-   fs=v>=DZ?500*Math.pow(20000/500,Math.pow(a,.9)):60*Math.pow(500/60,v/DZ),vd=Math.min(1,v/DZ);
+   fs=v>=DZ?650*Math.pow(20000/650,Math.pow(a,.9)):60*Math.pow(650/60,v/DZ),vd=Math.min(1,v/DZ);
   const fd=op||vd>=1?20000:140*Math.pow(20000/140,Math.pow(vd,.9));
   // per group: [cutoff, Q of the 2nd stage (resonance bump, eased below 300 Hz), makeup gain]
   const res=(f,top)=>{const cl=1-Math.log(f/60)/Math.log(20000/60);const q=1.31*(1+top*cl);return f<300?1.31+(q-1.31)*Math.max(0,(f-90)/210):q},
@@ -3623,4 +3626,30 @@ window.MOODX={
  'Groove Techno':{bus:.5,grv:[.35,'skipping four','broken techno','clave perc'],lead:[['Donk',.25],['Vocal chop',.15]],echo:.7,dyn:.35},
  Temporal:{bus:.55,grv:[.35,'skipping four','clave perc'],lead:[['Donk',.25],['Vocal chop',.1]],echo:.6,dyn:.3},
  Vector:{bus:.35,grv:[.45,'two-step','electro','broken techno'],lead:[['Cinematic arp',.15],['Rave stab',.15],['Vocal chop',.1]],echo:1,dyn:.6}};
+</script><script>
+/* v171: no dated lead sounds from Launch. These patches stay in the lead patch menu, but Launch replaces them with a modern patch
+   from the mood's own pool. Bleep keeps its "Bleep" (that is bleep techno). */
+{const CHEESE=new Set(['Square chip','FM bell','FM keys','Organ','Mini flute','Mini sparkle','Vowel','Talkbox','Space blip','Bleep','Supersaw','Hoover','Mini brass','Mini fifths','Mini wobble']);
+ const POOL={Dark:['Mini lead','Clean','Metal FM','Reese','Hollow BP','Techno stab'],Melancholic:['Pluck','Glass','Mini lead','Clean','Soft sine'],
+  Dreamy:['Soft sine','Glass','Pluck','Clean'],Tense:['Hollow BP','Mini edge','Metal FM','Reese','Mini acid','Techno stab'],Ethereal:['Soft sine','Glass','Pluck','Mist'],
+  Hopeful:['Pluck','Soft sine','Clean','Glass','Mini lead'],Noir:['Reese','Mini lead','Clean','Metal FM','Hollow BP','Mist'],Drone:['Mini drone','Mist','Reese','Soft sine'],
+  Italo:['Pluck','Mini edge','Clean','Hollow BP','Mini lead'],Breaks:['Pluck','Glass','Techno stab','Hollow BP'],'Deep Space':['Mini drone','Mist','Soft sine','Glass'],
+  Bleep:['Hollow BP','Metal FM','Techno stab','Clean'],'Melodic House':['Pluck','Clean','Glass','Soft sine','Mini lead'],
+  'Distorted Electro':['Mini edge','Aggro','Reese','Techno stab','Mini acid','Dense'],Ambient:['Mist','Soft sine','Glass','Mini drone'],
+  'Groove Techno':['Techno stab','Hollow BP','Metal FM','Clean','Mini lead'],Vector:['Pluck','Glass','Clean','Hollow BP','Mini acid','Mini lead'],
+  Temporal:['Metal FM','Hollow BP','Techno stab'],Power:['Reese','Mini edge','Techno stab']};
+ const ok=(m,p)=>!(CHEESE.has(p)&&!(m==='Bleep'&&p==='Bleep'));
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],P=L.p;if(!L.m&&P.mode!=='Acid 303'&&P.patch&&!ok(curMood,P.patch)){
+   const pool=(POOL[curMood]||['Pluck','Clean','Glass']).filter(n=>LPRE[n]);if(pool.length){applyLP(pick(pool),1);build()}}}catch(e){console.warn('[orbitron] lead taste',e)}return r};
+ // Rave stab half as often
+ try{for(const m in MOODX)(MOODX[m].lead||[]).forEach(a=>{if(a[0]==='Rave stab')a[1]/=2})}catch(e){}
+ window.LEADTASTE={CHEESE,POOL}}
+</script>
+<script>
+/* v172: mood menu shows the display names */
+{const lab=()=>{const s=document.getElementById('mood');if(!s)return;[...s.options].forEach(o=>{if(o.value!=='Auto'&&MOODNAME[o.value]&&o.textContent!==MOODNAME[o.value])o.textContent=MOODNAME[o.value]})};lab();setInterval(lab,2000)}
+</script><script>
+/* v173: balance pass from per-part measurements in every mood (dB added to the mood's track trims; index = track:
+   0 kick 1 hat 2 clap 3 perc 4 lead 5 pad 6 bass 7 snare 8 stab 9 sub). Pads come down most. */
+{const T={"Dark": {"5": -5.6}, "Melancholic": {"5": -6}, "Dreamy": {"5": -3.5}, "Tense": {"5": -4.2, "2": -2.8, "3": -3.5}, "Ethereal": {"2": 3, "3": 3, "6": 3, "8": 2.8}, "Hopeful": {"5": -4.9, "6": -3.5}, "Noir": {"2": 3, "8": -2.8}, "Drone": {"2": 3}, "Acid": {"3": 3}, "Power": {"1": 3}, "Breaks": {"5": -4.9, "6": -5.6, "7": -4.9}, "Deep Space": {"5": -4.9}, "Bleep": {"2": 3}, "Melodic House": {"3": -6}, "Distorted Electro": {"2": -4.2}, "Groove Techno": {"3": 3}, "Vector": {"3": -4.2}, "Temporal": {"2": -6, "7": 3, "1": -3}};for(const m in T){if(!MTRIM[m])continue;for(const k in T[m])MTRIM[m][+k]=(MTRIM[m][+k]||0)+T[m][k]}}
 </script></body></html>
