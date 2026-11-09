@@ -3539,11 +3539,9 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);G.dfeel=null;try{const mx=(window.MOODX&&MOODX[curMood]||{}),m='grv' in mx?mx.grv:MM[curMood];if(m&&R()<m[0]){grooveFamily(pk(m.slice(1)));build();setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}}catch(e){console.warn('[orbitron] groove',e)}return r}}
 </script>
 <script>
-/* v168: contemporary leads — Vocal chop (Fred again.. / Overmono / afro house), Cinematic arp (Afterlife), Donk (tech house),
+/* v168: contemporary leads — Cinematic arp (Afterlife), Donk (tech house),
    Rave stab (Bicep / Kettama rave revival). Each is a lead patch with its own pattern; Launch picks them in moods they fit. */
 {const NEW={
-  'Vocal chop':{pg:1.4,eng:'Vowel',vow:0,uni:2,usp:8,wid:.35,ft:'LP12',cut:2600,res:2,envA:1500,dec:.22,sus:.6,hold:.75,rel:.08,att:3,penv:-2,pdec:.06,grit:.12,kt:.3,ds:.3,rs:.45,glide:0,vib:0,subosc:0,oct2:0,drv:0,crush:0,fold:0,
-   mode:'Motif',len:4,range:1,cyc:0,nrep:1,rst:0,xv:'chop',_t:{st:16,h:6,r:2,ten:.2}},
   'Cinematic arp':{pg:1.5,eng:'Stack',uni:5,usp:18,wid:.8,det:9,wave:.3,ft:'LP24',cut:700,res:6,envA:2600,dec:.2,sus:0,att:2,kt:.4,subosc:.15,oct2:.2,ds:.4,rs:.55,glide:0,vib:0,drv:0,crush:0,fold:0,penv:0,
    mode:'Up/Down',range:2,cyc:0,nrep:1,rst:0,xv:'arp',_t:{st:16,h:16,r:0,ten:0}},
   'Donk':{pg:1.6,eng:'FM',fmr:2,fmi:3,fenv:.9,uni:1,usp:0,wid:0,ft:'LP12',cut:2400,res:3,envA:1800,dec:.13,sus:0,att:1,penv:12,pdec:.035,kt:.2,subosc:.3,oct2:0,ds:.18,rs:.08,glide:0,vib:0,drv:0,crush:0,fold:0,
@@ -3554,7 +3552,6 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const hs=(a,b)=>{const x=Math.sin(a*12.9898+b*78.233)*43758.5453;return x-Math.floor(x)};
  // per-note extras
  const _lp=leadPoly;leadPoly=function(w){const T=TR[4],P=T.p,x=P.xv;if(!x||!NEW[P.patch])return _lp.apply(this,arguments);
-  if(x==='chop'){P.vow=[0,.25,.75,.25,0,.5][Math.floor(hs(tk%T.st,(P.seed||0)+Math.floor(tk/64))*6)];return _lp.apply(this,arguments)}
   if(x==='arp'){const c=P.cut;P.cut=c*(.55+1.1*(((tk%256)+256)%256)/256);try{return _lp.apply(this,arguments)}finally{P.cut=c}}
   if(x==='donk'){const o=OCT;OCT=o-1;try{return _lp.apply(this,arguments)}finally{OCT=o}}
   if(x==='stab'){_lp.apply(this,arguments);const d=lastDeg,ln=leadNote,lv=T.lv,lf=LF,lw=LW;
@@ -3563,8 +3560,8 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  // switching to an older patch clears the per-note extra
  const _a=applyLP;applyLP=function(){const r=_a.apply(this,arguments);try{const P=TR[4].p;if(!(LPRE[P.patch]&&LPRE[P.patch].xv))delete P.xv}catch(e){}return r};
  // Launch: moods pick them now and then
- const PICK={'Melodic House':[['Vocal chop',.3],['Cinematic arp',.12]],Hopeful:[['Vocal chop',.3]],Dreamy:[['Vocal chop',.2]],'Groove Techno':[['Donk',.25],['Vocal chop',.15]],
-  Temporal:[['Donk',.25],['Vocal chop',.1]],'Distorted Electro':[['Donk',.2],['Rave stab',.15]],Melancholic:[['Cinematic arp',.3]],Dark:[['Cinematic arp',.2]],
+ const PICK={'Melodic House':[['Cinematic arp',.12]],Hopeful:[],Dreamy:[],'Groove Techno':[['Donk',.25]],
+  Temporal:[['Donk',.25]],'Distorted Electro':[['Donk',.2],['Rave stab',.15]],Melancholic:[['Cinematic arp',.3]],Dark:[['Cinematic arp',.2]],
   Ethereal:[['Cinematic arp',.25]],Tense:[['Cinematic arp',.15]],Vector:[['Cinematic arp',.15],['Rave stab',.15]],Breaks:[['Rave stab',.3]],Italo:[['Rave stab',.15]],
   Bleep:[['Rave stab',.2],['Donk',.15]]};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],mx=(window.MOODX&&MOODX[curMood]||{}),m='lead' in mx?mx.lead:PICK[curMood];if(m&&!L.m&&L.p.mode!=='Acid 303'){let u=R();
@@ -3607,25 +3604,25 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
    lead echo amount (× the lead's delay send) and note dynamics depth (0 = tight and even, 1 = loose and human). */
 window.MOODX={
  Dark:{bus:.45,grv:[.35,'broken techno','skipping four'],lead:[['Cinematic arp',.2],['Donk',.08]],echo:.8,dyn:.4},
- Melancholic:{bus:.3,grv:[.35,'two-step','broken techno'],lead:[['Cinematic arp',.3],['Vocal chop',.1]],echo:1.1,dyn:.7},
- Dreamy:{bus:.25,grv:[.4,'two-step','halftime'],lead:[['Vocal chop',.25],['Cinematic arp',.1]],echo:1.2,dyn:.8},
+ Melancholic:{bus:.3,grv:[.35,'two-step','broken techno'],lead:[['Cinematic arp',.3]],echo:1.1,dyn:.7},
+ Dreamy:{bus:.25,grv:[.4,'two-step','halftime'],lead:[['Cinematic arp',.1]],echo:1.2,dyn:.8},
  Tense:{bus:.45,grv:[.4,'broken techno','skipping four','electro'],lead:[['Cinematic arp',.15],['Donk',.1]],echo:.7,dyn:.3},
- Ethereal:{bus:.2,grv:[.4,'halftime','two-step'],lead:[['Cinematic arp',.25],['Vocal chop',.15]],echo:1.3,dyn:.8},
- Hopeful:{bus:.3,grv:[.35,'two-step','clave perc'],lead:[['Vocal chop',.3],['Cinematic arp',.1]],echo:1.1,dyn:.8},
+ Ethereal:{bus:.2,grv:[.4,'halftime','two-step'],lead:[['Cinematic arp',.25]],echo:1.3,dyn:.8},
+ Hopeful:{bus:.3,grv:[.35,'two-step','clave perc'],lead:[['Cinematic arp',.1]],echo:1.1,dyn:.8},
  Noir:{bus:.35,grv:[.45,'halftime','broken techno'],lead:[['Rave stab',.12],['Cinematic arp',.1]],echo:1,dyn:.6},
  Drone:{bus:.3,grv:[.3,'halftime','clave perc'],lead:[['Cinematic arp',.1]],echo:1.2,dyn:.5},
  Acid:{bus:.45,grv:[.4,'electro','broken techno','skipping four'],lead:[],echo:.8,dyn:.3},
  Power:{bus:.5,grv:[.3,'skipping four','broken techno'],lead:[['Donk',.1]],echo:.6,dyn:.2},
  Italo:{bus:.35,grv:[.3,'electro','skipping four'],lead:[['Rave stab',.2]],echo:1,dyn:.6},
- Breaks:{bus:.55,grv:[.5,'electro','halftime','broken techno'],lead:[['Rave stab',.3],['Vocal chop',.12]],echo:.9,dyn:.6},
+ Breaks:{bus:.55,grv:[.5,'electro','halftime','broken techno'],lead:[['Rave stab',.3]],echo:.9,dyn:.6},
  'Deep Space':{bus:.2,grv:[.45,'halftime','broken techno'],lead:[['Cinematic arp',.15]],echo:1.3,dyn:.5},
  Bleep:{bus:.35,grv:[.45,'electro','two-step','broken techno'],lead:[['Rave stab',.2],['Donk',.15]],echo:.8,dyn:.4},
- 'Melodic House':{bus:.35,grv:[.35,'two-step','skipping four','clave perc'],lead:[['Vocal chop',.3],['Cinematic arp',.15]],echo:1.1,dyn:.7},
+ 'Melodic House':{bus:.35,grv:[.35,'two-step','skipping four','clave perc'],lead:[['Cinematic arp',.15]],echo:1.1,dyn:.7},
  'Distorted Electro':{bus:.45,grv:[.55,'electro','broken techno'],lead:[['Donk',.2],['Rave stab',.15]],echo:.8,dyn:.4},
- Ambient:{bus:.12,grv:null,lead:[['Vocal chop',.12],['Cinematic arp',.1]],echo:1.4,dyn:.9},
- 'Groove Techno':{bus:.5,grv:[.35,'skipping four','broken techno','clave perc'],lead:[['Donk',.25],['Vocal chop',.15]],echo:.7,dyn:.35},
- Temporal:{bus:.55,grv:[.35,'skipping four','clave perc'],lead:[['Donk',.25],['Vocal chop',.1]],echo:.6,dyn:.3},
- Vector:{bus:.35,grv:[.45,'two-step','electro','broken techno'],lead:[['Cinematic arp',.15],['Rave stab',.15],['Vocal chop',.1]],echo:1,dyn:.6}};
+ Ambient:{bus:.12,grv:null,lead:[['Cinematic arp',.1]],echo:1.4,dyn:.9},
+ 'Groove Techno':{bus:.5,grv:[.35,'skipping four','broken techno','clave perc'],lead:[['Donk',.25]],echo:.7,dyn:.35},
+ Temporal:{bus:.55,grv:[.35,'skipping four','clave perc'],lead:[['Donk',.25]],echo:.6,dyn:.3},
+ Vector:{bus:.35,grv:[.45,'two-step','electro','broken techno'],lead:[['Cinematic arp',.15],['Rave stab',.15]],echo:1,dyn:.6}};
 </script><script>
 /* v171: no dated lead sounds from Launch. These patches stay in the lead patch menu, but Launch replaces them with a modern patch
    from the mood's own pool. Bleep keeps its "Bleep" (that is bleep techno). */

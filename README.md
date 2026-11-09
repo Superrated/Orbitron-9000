@@ -23,7 +23,7 @@ Ten tracks — kick, hi-hat, clap, perc, snare, lead, pad, bass, dub stab and su
 
 - Moods renamed to fit the ship: Event Horizon, Lost Signal, Nebula, Countdown, Aurora, First Light, Dark Side, Orbital Hum, Max Q, Low Orbit
 - Balance pass across all moods (pads lower), no dated lead sounds from Launch
-- Contemporary leads (Vocal chop, Cinematic arp, Donk, Rave stab), ducked lead echo and note dynamics
+- Contemporary leads (Cinematic arp, Donk, Rave stab), ducked lead echo and note dynamics
 - Groove families (electro, two-step, broken techno, halftime, clave perc), drum bus, Fill, cleaner low end
 
 ## What's new in v0.21
