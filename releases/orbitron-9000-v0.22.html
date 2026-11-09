@@ -2626,7 +2626,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  const wrap=(fn,g)=>function(){if(LP.v>=.999||!ctx)return fn.apply(this,arguments);const gg=typeof g==='function'?g(arguments[0]):g;if(!gg)return fn.apply(this,arguments);prep();const o=CURG;CURG=gg;try{return fn.apply(this,arguments)}finally{CURG=o}};
  fire=wrap(fire,k=>k===0?null:DRK.has(k)?'drm':k===5?'pad':'syn');pad=wrap(pad,'pad');grains=wrap(grains,'syn');
  // energy thinning: stage 1 from 65 % of travel, 2 below ~39 %, 3 below ~18 %. Strong positions survive; the kick never thins.
- const thin=()=>{const E=Math.max(0,(.65-VV())/.65);return E>=.72?3:E>=.4?2:E>=.12?1:0};
+ const thin=()=>{const v=VV();return v<=.25?3:v<=.52?2:v<=.66?1:0};   // stages 1 and 2 arrive before the drum filter starts (DZ .45)
  const drop=(k,s)=>{const st=thin();if(!st||k===0)return false;const o16=s%2===1,off8=s%4===2;
   if(k===3)return st>=1&&o16||st>=2&&off8;                       // perc
   if(k===1)return st>=2&&o16;                                     // hats: 16ths → 8ths
@@ -3796,5 +3796,27 @@ window.MOODX={
  const _f=fire;fire=function(k,w){if(!(RV&&RV.context===ctx&&PC&&PC.context===ctx))try{mkMaster()}catch(e){console.warn('[orbitron] master',e)}
   const r=_f.apply(this,arguments);try{if(k===4&&!TR[4].m&&RV){const P=TR[4].p,len=Math.max(.08,Math.min(.5,(P.sus>.01?(P.hold||1)*60/G.bpm/4:(P.dec||.25))));dip(w||ctx.currentTime,.7,len,.12)}}catch(e){}return r};
  window.masterFX=()=>({RV,PC,SC:true})}
+</script>
+<script>
+/* v182: "Rigid hats" toggle on Flight → Thrusters, in the place of Planet song. On: the hi-hat plays straight 16ths, machine-tight —
+   no swing, no humanize, no accent/ghost/variation, no open hats, no tension. Off: the previous hat pattern and feel come back exactly.
+   A Launch while it is on keeps it on (the new groove's hats are saved for when you switch off). */
+{let ON=0,SAVE=null;const H=()=>TR[1];
+ const save=()=>{const T=H();SAVE={st:T.st,h:T.h,r:T.r,ten:T.ten,acc:T.acc,gho:T.gho,vari:T.vari,pt:T.pt.slice(),pacc:T.p.acc,open:T.p.open}};
+ const rigid=()=>{const T=H();T.st=16;T.h=16;T.r=0;T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.p.acc=0;T.p.open=0;T.pt=pat(T)};
+ const restore=()=>{if(!SAVE)return;const T=H(),S=SAVE;Object.assign(T,{st:S.st,h:S.h,r:S.r,ten:S.ten,acc:S.acc,gho:S.gho,vari:S.vari});T.pt=S.pt.slice();T.p.acc=S.pacc;T.p.open=S.open;SAVE=null};
+ const set=v=>{if(v&&!ON){save();rigid();ON=1}else if(!v&&ON){restore();ON=0}try{build();window.syncFaders&&syncFaders()}catch(e){}paint()};
+ // no swing on the hats while rigid
+ const _f=fire;fire=function(k,w){if(ON&&k===1&&tk%2)w-=G.swing*sdur();return _f.call(this,k,w)};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);if(ON){try{save();rigid()}catch(e){}}return r};
+ const st=document.createElement('style');st.textContent=`#t-perf .pad.rgx{transition:background .15s,box-shadow .15s}
+  #t-perf .pad.rgx:not(.on){background:var(--c1)!important;color:var(--muted)!important;outline:1px dashed rgba(77,212,172,.55);outline-offset:-3px;box-shadow:none}
+  #t-perf .pad.rgx.on{background:#4dd4ac!important;color:#04100a!important;outline:0;box-shadow:0 0 14px rgba(77,212,172,.8),inset 0 0 0 2px #fff}
+  #t-perf .pad.rgx .rgc{display:block;font-style:normal;font-size:9px;font-weight:600;letter-spacing:-.02em;text-transform:none;margin-top:2px;white-space:nowrap;font-family:ui-monospace,Menlo,monospace}`;document.head.appendChild(st);
+ const add=()=>{if(document.querySelector('#t-perf .rgx'))return;const ps=[...document.querySelectorAll('#t-perf .pad')].find(x=>/^Planet song/.test(x.textContent.trim()));if(!ps)return;
+  const b=document.createElement('button');b.className='pad rgx';b.innerHTML='Rigid hats';b.title='Straight, machine-tight 16th hats (no swing, humanize, ghosts or open hats) · tap again for your pattern';
+  const c=document.createElement('i');c.className='rgc';b.appendChild(c);b.onclick=()=>set(!ON);ps.replaceWith(b);paint()};
+ const paint=()=>{const b=document.querySelector('#t-perf .rgx');if(!b)return;b.classList.toggle('on',!!ON);const c=b.querySelector('.rgc'),t=ON?'● ON':'○ OFF';if(c&&c.textContent!==t)c.textContent=t};
+ add();setInterval(()=>{try{add();paint()}catch(e){}},800);window.rigidHats={set,on:()=>!!ON}}
 </script>
 </body></html>
