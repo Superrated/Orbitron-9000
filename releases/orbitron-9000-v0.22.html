@@ -3166,7 +3166,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   // meters: K-weighted loudness and plain peak, taken from the final output
   const kh=bq('highpass',60),ks=ctx.createBiquadFilter();ks.type='highshelf';ks.frequency.value=1500;ks.gain.value=4;const an=ctx.createAnalyser(),ap=ctx.createAnalyser();an.fftSize=2048;ap.fftSize=2048;
   A.out.connect(kh);kh.connect(ks);ks.connect(an);A.out.connect(ap);
-  window._mstLearn=performance.now()+9000;lim2.ratio.value=on?20:1;lim2.threshold.value=on?-1:0;lim2.knee.value=0;if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1;M={ctx,lim2,dry,wet,ag,cL,cM,cH,gL,gM,gH,an,ap,bL:new Float32Array(2048),bP:new Float32Array(2048)};agDb=0;hist=[];amount()}
+  window._mstLearn=performance.now()+9000;lim2.ratio.value=20;lim2.threshold.value=on?-1:-.5;lim2.knee.value=0;if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1;M={ctx,lim2,dry,wet,ag,cL,cM,cH,gL,gM,gH,an,ap,bL:new Float32Array(2048),bP:new Float32Array(2048)};agDb=0;hist=[];amount()}
  function amount(){if(!M)return;const a=AMT[curMood]!=null?AMT[curMood]:.8,t=ctx.currentTime;
   // Web Audio compressors add their own makeup gain (≈ 0.6 × the gain reduction at 0 dBFS); cancel it so the bands only shape, never boost
   [[M.cL,M.gL,-3-1.5*a,1.1+.25*a,0],[M.cM,M.gM,-2-1*a,1.05+.15*a,0],[M.cH,M.gH,-1.5-1*a,1.05+.15*a,0]].forEach(([c,g,th,ra,trim])=>{c.threshold.value=th;c.ratio.value=ra;
@@ -3780,4 +3780,21 @@ window.MOODX={
   Dreamy:[.65,.65],'Deep Space':[.65,.7],Noir:[.7,.75],Ethereal:[.7,.7],Ambient:[.75,.75],Breaks:[.8,.75]};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const c=CH[curMood];if(c){[1,2].forEach((k,i)=>{TR[k].p.char=+Math.max(0,Math.min(1,c[i]+(R()-.5)*.12)).toFixed(2)})}}catch(e){}return r};
  window.CHARMOOD=CH}
-</script></body></html>
+</script><script>
+/* v181: (2) ducked reverb — the reverb tail dips about 3 dB under every kick (on top of the synth-bus sidechain) and under each lead note,
+   then blooms back in the gaps. (3) cleaner, louder master — a transparent peak clipper between the mood saturator and the limiter
+   (linear up to ~-2.5 dBFS, rounds off only the peaks above, 4x oversampled), the saturator oversampled 4x, a slightly gentler limiter,
+   and Master+'s final limiter (when Master+ is off) acts as a ceiling at -0.5 dBFS so nothing clips. No new controls. */
+{let RV=null,PC=null,SC=null;
+ const kneeCurve=(t,ceil)=>{const n=4096,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1,a=Math.abs(x);c[i]=Math.sign(x)*(a<=t?a:t+(ceil-t)*Math.tanh((a-t)/(ceil-t)))}return c};
+ function mkMaster(){if(!ctx)return;
+  if(A.rcv&&A.rO&&!(RV&&RV.context===ctx)){RV=ctx.createGain();try{A.rcv.disconnect(A.rO)}catch(e){}A.rcv.connect(RV);RV.connect(A.rO)}
+  if(A.clip&&A.lim&&!(PC&&PC.context===ctx)){PC=ctx.createWaveShaper();PC.curve=kneeCurve(.75,.97);PC.oversample='4x';try{A.clip.disconnect(A.lim)}catch(e){}A.clip.connect(PC);PC.connect(A.lim);
+   try{A.clip.oversample='4x';A.lim.attack.value=.002;A.lim.release.value=.12}catch(e){}}}
+ const dip=(t,to,back,tc)=>{if(!RV)return;const g=RV.gain;g.cancelScheduledValues(t);g.setTargetAtTime(to,t,.006);g.setTargetAtTime(1,t+back,tc)};
+ const _d=duck;duck=function(t){_d.apply(this,arguments);try{dip(t,.7,.02,60/G.bpm/4*.45)}catch(e){}};
+ const _f=fire;fire=function(k,w){if(!(RV&&RV.context===ctx&&PC&&PC.context===ctx))try{mkMaster()}catch(e){console.warn('[orbitron] master',e)}
+  const r=_f.apply(this,arguments);try{if(k===4&&!TR[4].m&&RV){const P=TR[4].p,len=Math.max(.08,Math.min(.5,(P.sus>.01?(P.hold||1)*60/G.bpm/4:(P.dec||.25))));dip(w||ctx.currentTime,.7,len,.12)}}catch(e){}return r};
+ window.masterFX=()=>({RV,PC,SC:true})}
+</script>
+</body></html>
