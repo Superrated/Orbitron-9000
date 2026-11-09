@@ -3197,7 +3197,9 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const lab=d=>{const sp=d.firstChild;return sp&&sp.firstChild?sp.firstChild.textContent.trim():''};
  function place(){const m=$('#mix');if(!m)return;const pn=m.closest('.panel')||m.parentElement;let box=document.querySelector('.rumbx');
   if(!box){box=document.createElement('div');box.className='panel rumbx';box.innerHTML='<h2>Techno rumble</h2><p class="gnote" style="margin:0 0 6px">The kick sent through a dark, distorted reverb and ducked by the sidechain: the low rolling bed of warehouse techno. Rumble = level, cutoff = how dark.</p><div class="grid rumg"></div>';pn.after(box)}
-  const g=box.querySelector('.rumg');g.innerHTML='';[...m.querySelectorAll('.sl')].filter(d=>LBL.includes(lab(d))).forEach(d=>g.appendChild(d))}
+  const g=box.querySelector('.rumg');g.innerHTML='';[...m.querySelectorAll('.sl')].filter(d=>LBL.includes(lab(d))).forEach(d=>g.appendChild(d));
+  // only on Mix → Bus & FX: follow the bus panel's visibility (the sub-tabs hide/show that panel)
+  if(!box.dataset.obs){box.dataset.obs=1;const sync=()=>{box.hidden=!!pn.hidden};sync();new MutationObserver(sync).observe(pn,{attributes:true,attributeFilter:['hidden']})}}
  const _mx=mix;mix=function(){const r=_mx.apply(this,arguments);try{place()}catch(e){}return r};
  try{place()}catch(e){}}
 
