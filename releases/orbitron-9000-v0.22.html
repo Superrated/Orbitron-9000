@@ -2009,7 +2009,7 @@ PADN.push('PWM','Brass','Bell pad','Fold','Tape');Object.assign(PGAIN,{PWM:1.15,
   Breaks:['Strings','Air','Bell pad','Choir'],'Deep Space':['Air','Glass','Choir','Bell pad','Fold'],Bleep:['Glass','Hollow','Fold'],'Melodic House':['Strings','Warm saw','Tape','Bell pad','Poly'],'Distorted Electro':['PWM','Brass','Warm saw'],Ambient:['Air','Glass','Choir','Cloud','Bell pad'],'Groove Techno':['Hollow','Air'],Temporal:['Hollow','Organ'],Vector:['Bell pad','Poly','Strings','Tape','Glass']};
  for(const m in PAL)if(MOODS[m])MOODS[m].pt=PAL[m];
  const GP=['1011011010110101','1010101010101010','1101101101101101','1001001010010010','1111011101110111'].map(s=>s.split('').map(Number));
- const CHR={Swell:{att:[.6,.9],pgate:0,trem:0,apan:[.1,.3],open:[.3,.6],lfo:[.4,.7]},'Stab gate':{att:[.02,.08],pgate:[.6,.9],trem:0,apan:[.05,.2],open:[.2,.5],lfo:[.2,.4]},
+ const CHR={Swell:{att:[.6,.9],pgate:0,trem:0,apan:[.1,.3],open:[.3,.6],lfo:[.4,.7]},'Stab gate':{att:[.02,.08],pgate:[.5,.75],trem:0,apan:[.05,.2],open:[.2,.5],lfo:[.2,.4]},
   Breathing:{att:[.3,.5],pgate:0,trem:[.25,.45],apan:[.2,.4],open:[.3,.6],lfo:[.6,.9]},Wide:{att:[.2,.4],pgate:0,trem:0,apan:[.5,.8],open:[.6,.9],lfo:[.3,.6]},Intimate:{att:[.15,.35],pgate:0,trem:0,apan:0,open:[0,.2],lfo:[.1,.3]}};
  const CW={Dark:['Swell','Breathing','Intimate'],Melancholic:['Swell','Wide','Breathing'],Dreamy:['Wide','Breathing','Swell'],Tense:['Stab gate','Intimate','Swell'],Ethereal:['Wide','Swell','Breathing'],Hopeful:['Stab gate','Wide','Swell'],
   Noir:['Breathing','Intimate','Swell'],Drone:['Swell','Breathing'],Acid:['Stab gate','Intimate'],Italo:['Stab gate','Wide'],'The Touch':['Intimate','Stab gate','Breathing'],Breaks:['Wide','Swell','Stab gate'],'Deep Space':['Swell','Wide'],Bleep:['Intimate','Stab gate'],'Melodic House':['Wide','Breathing','Stab gate'],'Distorted Electro':['Stab gate','Intimate'],Ambient:['Swell','Breathing','Wide'],'Groove Techno':['Stab gate','Intimate'],Temporal:['Stab gate','Intimate'],Vector:['Wide','Breathing','Intimate']};
@@ -2067,7 +2067,7 @@ LPRE['Sunny keys']={pg:1.1,eng:'FM',fmr:1,fmi:1.2,fenv:.5,ft:'LP12',cut:2400,env
   Object.assign(H,{st:16,h:4,r:2,ten:0,acc:0,gho:.35,vari:.15,m:false});H.pt=pat(H);Object.assign(H.p,{open:.9,dec:.05,acc:.2});
   Object.assign(C,{st:16,h:2,r:4,ten:0,acc:0,gho:.1,vari:.15,m:false});C.pt=pat(C);S.m=true;P.m=true;
   // the loop: sustained 7th/9th chords chopped in a disco rhythm, pumping with the kick
-  Object.assign(PD_,{m:false,lv:.55});Object.assign(PD_.p,{patch:pick(SND[fl]),bars:pick([1,2]),size:4,pgate:.88,pgpat:pick(LOOP),att:.02,rel:.15,trem:0,apan:.1,open:.35,lfo:.15});
+  Object.assign(PD_,{m:false,lv:.55});Object.assign(PD_.p,{patch:pick(SND[fl]),bars:pick([1,2]),size:4,pgate:.75,pgpat:pick(LOOP),att:.02,rel:.15,trem:0,apan:.1,open:.35,lfo:.15});
   pshape=prog.map(()=>pick(['7','9','7']));
   // octave disco bass on the root, 8ths or 16ths
   Object.assign(B,{st:16,h:pick([8,8,16]),r:0,ten:0,m:false});B.pt=pat(B);G.bstyle='octave';G.pedal=false;G.bavoid=false;
@@ -2145,7 +2145,7 @@ TR[5].p.mov=TR[5].p.mov||'Classic';
 /* ---- v89: pad variety, round three — chord colour locks per Launch, rhythmic chord patterns (offbeat stabs, house-organ syncopation), and a slow counter-line moving inside the chords ---- */
 {const COL={Dreamy:['9','add9'],Ethereal:['sus2','sus4'],Tense:['quart'],'Deep Space':['quart','sus2'],Noir:['7'],Melancholic:['7','add9'],Hopeful:['add9'],Dark:['tri','sus4'],Italo:['tri'],Breaks:['9','7'],Acid:['tri','sus4'],Drone:['quart','sus2'],Bleep:['sus2','quart'],Power:['tri'],'Melodic House':['7','add9','9'],'Distorted Electro':['tri','quart'],Ambient:['add9','sus2','quart'],'Groove Techno':['tri','quart'],Temporal:['7','quart'],Vector:['9','7','add9']};
  const RHY={'Offbeat stabs':'0010001000100010','House organ':'1001001000100100','Push stabs':'0010010000100101','Two-step':'1000001000100010'};
- const RCH={Hopeful:.3,Italo:.35,Acid:.3,Breaks:.3,Dark:.2,Tense:.2,Bleep:.25,'Melodic House':.35,'Distorted Electro':.25};
+ const RCH={Hopeful:.3,Italo:.2,Acid:.3,Breaks:.3,Dark:.2,Tense:.2,Bleep:.25,'Melodic House':.35,'Distorted Electro':.25};
  const TLC={Melancholic:.5,Dreamy:.45,Ethereal:.45,Hopeful:.4,Noir:.35,'Deep Space':.35,Italo:.3,Breaks:.25,Dark:.2,Tense:.15};
  G.ptl=0;let tlLast=null;
  // counter-line: one extra soft voice per chord, moving by step around the chord's top
@@ -2161,7 +2161,7 @@ TR[5].p.mov=TR[5].p.mov||'Classic';
   // chord colour lock
   if(COL[curMood]&&R()<.45){const c=pick(COL[curMood]);pshape=prog.map(()=>c);pmean=null;G.pcol=c}else G.pcol=null;
   // rhythmic chord pattern instead of sustained chords
-  if(R()<(RCH[curMood]||.1)){const k=pick(Object.keys(RHY));P.pgpat=RHY[k].split('').map(Number);P.pgate=.97;P.att=.01;P.rel=Math.min(P.rel||.3,.18);G.prhy=k}else G.prhy=null;
+  if(R()<(RCH[curMood]||.1)){const k=pick(Object.keys(RHY));P.pgpat=RHY[k].split('').map(Number);P.pgate=.8;P.att=.01;P.rel=Math.min(P.rel||.3,.18);G.prhy=k}else G.prhy=null;
   // counter-line
   G.ptl=R()<(TLC[curMood]||0)?1:0;build()};
  // controls on the pad pattern page
@@ -2169,7 +2169,7 @@ TR[5].p.mov=TR[5].p.mov||'Classic';
  const _b89=build;build=function(){_b89();queueMicrotask(()=>queueMicrotask(()=>queueMicrotask(()=>{const c=[...document.querySelectorAll('.card')].find(c=>+c.dataset.k===5);if(!c)return;const g=c.querySelector('.grid');if(!g)return;
   if(!c.querySelector('[data-tl]')){const el=mkSel('Top line',['Off','On'],G.ptl?'On':'Off',v=>{G.ptl=v==='On'?1:0;tlLast=null});el.dataset.g='pat';el.dataset.tl=1;g.appendChild(el)}
   const gs=[...c.querySelectorAll('select')].find(s=>labOf(s.parentElement)==='Gate rhythm');if(gs&&![...gs.options].some(o=>o.value==='Offbeat stabs')){Object.keys(RHY).forEach(k=>gs.add(new Option(k,k)));const P=TR[5].p;if(G.prhy&&(P.pgate||0)>.01)gs.value=G.prhy;
-   gs.addEventListener('change',()=>{const v=RHY[gs.value];if(v){P.pgpat=v.split('').map(Number);P.pgate=.97}})}})))};build()}
+   gs.addEventListener('change',()=>{const v=RHY[gs.value];if(v){P.pgpat=v.split('').map(Number);P.pgate=.8}})}})))};build()}
 /* ---- v90: stability guards — one failing voice can't stall the sequencer, a worker-driven clock that keeps running when the tab is in the background, auto-resume of a suspended audio engine, catch-up after timer stalls, and a NaN watchdog that flushes the effect loops ---- */
 {const ERR={n:0,last:''};window.ORB_ERR=ERR;const note=(where,e)=>{ERR.n++;ERR.last=where+': '+(e&&e.message||e);if(ERR.n<=5)console.warn('[orbitron]',ERR.last)};
  const guard=(name,fn)=>function(){try{return fn.apply(this,arguments)}catch(e){note(name,e)}};
@@ -2696,7 +2696,7 @@ body .panel.top .stg{height:22px!important;min-height:22px!important}}
      {n:'Solina swell',patch:'Strings',mov:'Ensemble',att:.75,rel:1.4,pgate:0,open:.5,cut:1900,det:12,size:4,apan:.35,lfo:.45,trem:.18},
      {n:'Phaser sweep',patch:pick(['PWM','Strings','Poly']),mov:'Phaser',att:.4,rel:1.2,pgate:0,open:.6,cut:2500,det:11,size:4,apan:.4,lfo:.75,trem:0},
      {n:'DX bell pad',patch:'Bell pad',mov:'Ensemble',att:.04,rel:1.6,pgate:0,open:.65,cut:3300,det:7,size:4,apan:.45,lfo:.35,trem:0},
-     {n:'Synth-pop gate',patch:pick(['PWM','Poly']),mov:'Ensemble',att:.02,rel:.14,pgate:.9,pgpat:pick(['1011011010110101','1101101101101101','1111011101110111']),open:.6,cut:2700,det:10,size:4,apan:.3,lfo:.3,trem:0}];
+     {n:'Synth-pop gate',patch:pick(['PWM','Poly']),mov:'Ensemble',att:.02,rel:.14,pgate:.7,pgpat:pick(['1011011010110101','1101101101101101','1111011101110111']),open:.6,cut:2700,det:10,size:4,apan:.3,lfo:.3,trem:0}];
     const f=pick(FL);T.m=false;Object.assign(P,{patch:f.patch,mov:f.mov,att:f.att,rel:f.rel,pgate:f.pgate,open:f.open,cut:f.cut*(.85+R()*.3),det:f.det,size:f.size,apan:f.apan,lfo:f.lfo,trem:f.trem});
     if(f.pgpat)P.pgpat=G16(f.pgpat);T.lv=Math.max(T.lv||0,.5);G.padchr=f.n;G.pad80=f.n;try{if(typeof say==='function')setTimeout(()=>say('♪ 80s PAD · '+f.n.toUpperCase()),400)}catch(e){}}}
    try{TR.forEach(T=>{if(T.mb)T.mb.classList.toggle('m',!!T.m)})}catch(e){}}}catch(e){}return r}}
@@ -3746,4 +3746,31 @@ window.MOODX={
 </script><script>
 /* v178: low-end/balance recheck trims (dB): Deep Space sub drone was level with the kick, Vector and Dreamy pads still loud, Melodic House clave perc */
 {const T={'Deep Space':{9:-4},Vector:{5:-4},Dreamy:{5:-3},'Melodic House':{3:-3}};for(const m in T){if(!MTRIM[m])continue;for(const k in T[m])MTRIM[m][+k]=(MTRIM[m][+k]||0)+T[m][k]}}
-</script></body></html>
+</script><script>
+/* v179: "808 ↔ room" character fader on Hi-hat and Clap (Sound page). 0.5 = the sound as before. Towards 0 = 808 style (hat: softer, more noise,
+   less metal, a little darker and longer · clap: wider, darker, smoother); towards 1 = acoustic / room (hat: less metal, some room,
+   longer, small hit-to-hit differences · clap: more room, longer tail, small hit-to-hit differences). Hit-to-hit differences use 4
+   fixed variants, so the drum cache stays small. Also: no pad gate deeper than 0.8 from Launch. */
+{if(TR[1].p.char==null)TR[1].p.char=.5;if(TR[2].p.char==null)TR[2].p.char=.5;
+ const VAR=[[0,0],[.6,-.5],[-.7,.4],[.3,.8]],vi=()=>VAR[(((tk*7)%4)+4)%4];
+ let room=0;const _s=send;send=function(n,out,dly,rev){if(room>0)return _s.call(this,n,out,dly,Math.min(.7,(rev||0)+room));return _s.apply(this,arguments)};
+ const _f=fire;fire=function(k,w){if(k!==1&&k!==2)return _f.apply(this,arguments);const P=TR[k].p,c=P.char==null?.5:+P.char;if(Math.abs(c-.5)<.02)return _f.apply(this,arguments);
+  const keep={tone:P.tone,dec:P.dec,metal:P.metal,spread:P.spread,tail:P.tail,rv:P.rv,body:P.body},a=Math.max(0,(.5-c)/.5),b=Math.max(0,(c-.5)/.5),[v1,v2]=vi();
+  const T=TR[k],lv0=T.lv;T.lv=lv0*(k===1?(1-.5*a)*(1-.08*b):(1-.4*a)*(1-.25*b));
+  try{if(k===1){const mt=P.metal==null?.6:P.metal;
+     if(a>0){P.metal=mt*(1-.6*a);P.tone=P.tone*(1-.15*a);P.dec=P.dec*(1+.4*a)}
+     else{P.metal=mt*(1-.5*b);P.tone=P.tone*(1-.1*b)*(1+.05*b*v1);P.dec=P.dec*(1+.6*b)*(1+.12*b*v2);room=.2*b}}
+    else{if(a>0){P.spread=Math.min(30,P.spread*(1+.5*a));P.tone=P.tone*(1-.2*a);P.tail=Math.min(.6,P.tail*(1+.3*a))}
+     else{P.rv=Math.min(.6,(P.rv||0)+.3*b);P.tone=P.tone*(1+.06*b*v1);P.spread=Math.max(4,Math.min(30,P.spread*(1+.15*b*v2)));P.tail=Math.min(.6,P.tail*(1+.4*b));P.body=(P.body||0)*(1-.3*b)}}
+   return _f.apply(this,arguments)}finally{room=0;Object.assign(P,keep);T.lv=lv0}};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const P=TR[5].p;if((P.pgate||0)>.8)P.pgate=.8;[1,2].forEach(k=>{if(TR[k].p.char==null)TR[k].p.char=.5})}catch(e){}return r};
+ // UI: the fader sits on the Sound page of the Hi-hat and Clap cards
+ const addUI=()=>{[1,2].forEach(k=>{const c=TR[k].mb&&TR[k].mb.closest('.card');if(!c||c.querySelector('[data-char]'))return;const g=c.querySelector('.grid');if(!g)return;
+   const n=g.children.length;sl(g,'808 ↔ room',0,1,TR[k].p.char==null?.5:TR[k].p.char,.01,v=>{TR[k].p.char=v});const el=g.children[n];if(!el)return;el.dataset.char=1;el.dataset.g='snd';
+   el.title='0 = 808 style · 0.5 = as before · 1 = acoustic / room';const sp=el.firstChild;if(sp&&sp.firstChild)sp.firstChild.textContent='808 ↔ room'})};
+ const syncUI=()=>[1,2].forEach(k=>{const c=TR[k].mb&&TR[k].mb.closest('.card'),el=c&&c.querySelector('[data-char]');if(!el)return;const i=el.querySelector('input'),b=el.querySelector('b'),v=TR[k].p.char==null?.5:TR[k].p.char;
+   if(i&&document.activeElement!==i&&Math.abs(+i.value-v)>.005){i.value=v;if(b)b.textContent=(+v).toFixed(2)}});
+ const _bb=build;build=function(){const r=_bb.apply(this,arguments);queueMicrotask(()=>queueMicrotask(()=>{try{addUI();tagCtl&&tagCtl();syncUI()}catch(e){}}));return r};
+ setInterval(()=>{try{addUI();syncUI()}catch(e){}},1000);try{addUI()}catch(e){}}
+</script>
+</body></html>
