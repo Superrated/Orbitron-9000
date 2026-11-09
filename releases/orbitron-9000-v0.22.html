@@ -3817,7 +3817,7 @@ window.MOODX={
  add();setInterval(()=>{try{add();paint()}catch(e){}},800);window.rigidHats={set,on:()=>!!ON}}
 </script>
 <script>
-/* v183: LEAD macro fader on Flight, under the low-pass. Centre = the lead as launched. Left = shorter, darker, drier plucks;
+/* v183: LEAD macro fader on Flight, under the low-pass. Centre = the lead exactly as it is set now (including manual edits). Left = shorter, darker, drier plucks;
    right = longer notes, brighter filter (cutoff + envelope) and more lead echo and reverb. It springs back to the centre slowly (about 2.5 s, eased) when released. */
 {const LM={x:0,raf:0};
  const _f=fire;fire=function(k,w){if(k!==4||Math.abs(LM.x)<.01)return _f.apply(this,arguments);const P=TR[4].p,x=LM.x,
@@ -3833,11 +3833,11 @@ window.MOODX={
   .lmx .lmk{position:absolute;top:2px;bottom:2px;width:14px;margin-left:-7px;background:var(--acc)}.lmx .lmt i{position:absolute;bottom:2px;font-size:9px;color:var(--muted);font-style:normal}`;document.head.appendChild(st);
  let el=null;const show=()=>{if(!el)return;const x=LM.x,k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
    k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';
-   b.textContent=Math.abs(x)<.01?'AS LAUNCHED':(x<0?'SHORT ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};
+   b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'SHORT ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};
  const glideBack=()=>{cancelAnimationFrame(LM.raf);const x0=LM.x,t0=performance.now(),D=2500;const step=t=>{const p=Math.min(1,(t-t0)/D),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;LM.x=x0*(1-e);show();if(p<1)LM.raf=requestAnimationFrame(step);else{LM.x=0;show()}};LM.raf=requestAnimationFrame(step)};
  const add=()=>{if(document.querySelector('.lmx'))return;const lp=document.querySelector('#t-perf .lpt');if(!lp)return;const host=lp.parentElement;
   el=document.createElement('div');el.className='lmx';
-  el.innerHTML='<div class="lmh"><span>LEAD</span><small>decay · filter · echo</small><b>AS LAUNCHED</b></div><div class="lmt" title="Drag left for short, dry, dark plucks; right for long, bright notes with more echo and reverb. Let go and it glides back."><div class="lmc"></div><div class="lmf"></div><div class="lmk"></div><i style="left:4px">SHORT</i><i style="right:4px">LONG</i></div>';
+  el.innerHTML='<div class="lmh"><span>LEAD</span><small>decay · filter · echo</small><b>AS SET</b></div><div class="lmt" title="Drag left for short, dry, dark plucks; right for long, bright notes with more echo and reverb. Let go and it glides back."><div class="lmc"></div><div class="lmf"></div><div class="lmk"></div><i style="left:4px">SHORT</i><i style="right:4px">LONG</i></div>';
   host.appendChild(el);const tr=el.querySelector('.lmt');let on=0;
   const at=e=>{const r=tr.getBoundingClientRect();LM.x=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));show()};
   tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(LM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e)});
