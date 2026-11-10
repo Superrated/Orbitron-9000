@@ -203,11 +203,21 @@ function init(){if(ctx){ctx.resume();return}
  A.ks=ctx.createWaveShaper();A.ks.curve=curve(TR[0].p.drive);A.ks.connect(A.m);
  A.ru=g(.8);const rc=ctx.createConvolver();A.rmc=rc;rc.buffer=irM(ir(1.1,1.6,.06));A.rl=ctx.createBiquadFilter();A.rl.frequency.value=G.rcut;A.rl.Q.value=.7;const rs=ctx.createWaveShaper();rs.curve=curve(2.5);A.rg=g(G.rumble);A.rdk=g();
  A.ru.connect(rc);rc.connect(A.rl);A.rl.connect(rs);rs.connect(A.rg);A.rg.connect(A.rdk);A.rdk.connect(A.m)}
-function send(n,out,dly,rev){n.connect(out);if(dly){const s=ctx.createGain();s.gain.value=dly;n.connect(s);s.connect(A.dI)}if(rev){const s=ctx.createGain();s.gain.value=rev;n.connect(s);s.connect(A.rI)}}
+function send(n,out,dly,rev){n.connect(out);if(dly)sendTo(n,A.dI,dly);if(rev)sendTo(n,A.rI,rev)}
+/* v0.23 perf: one send gain per track and level (made outside the note, so the clean-up EQ and the Low-pass treat it like before) instead of two new nodes per note */
+function sendTo(n,dst,v){const k=n.__k,key=(k==null?'x':k)+'|'+Math.round(v*1000);let m=dst.__sg||(dst.__sg=new Map()),s=m.get(key);
+ if(s&&s!=='pending'){n.connect(s);return}
+ const t=ctx.createGain();t.gain.value=v;n.connect(t);t.connect(dst);
+ if(!s&&m.size<160&&!(ctx instanceof OfflineAudioContext)){m.set(key,'pending');const c=ctx;queueMicrotask(()=>{try{if(c!==ctx)return;const g=c.createGain();g.gain.value=Math.round(v*1000)/1000;g.__an=1;if(k!=null)g.__k=k;g.connect(dst);m.set(key,g)}catch(e){m.delete(key)}})}}
 function env(g,t,pk,dur,att=.003){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(pk,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+dur)}
 function nz(t,type,f,dur,pk,out,rev){const s=ctx.createBufferSource();s.buffer=A.nb;const q=ctx.createBiquadFilter();q.type=type;q.frequency.value=f;const g=ctx.createGain();env(g,t,pk,dur);s.connect(q);q.connect(g);send(g,out,0,rev||0);s.start(t,R()*.5);s.stop(t+dur+.02)}
 function duck(t){const du=Math.max(0,Math.min(.95,G.duck+.4*mv("Sidechain depth",t)));A.dkb.gain.cancelScheduledValues(t);A.dkb.gain.setValueAtTime(1-du,t);A.dkb.gain.setTargetAtTime(1,t+G.rel*.12,G.rel*.38);A.dk.gain.cancelScheduledValues(t);A.dk.gain.setValueAtTime(1-du,t);A.dk.gain.setTargetAtTime(1,t+G.rel*.12,G.rel*.38);A.rdk.gain.cancelScheduledValues(t);A.rdk.gain.setValueAtTime(.03,t);A.rdk.gain.setTargetAtTime(1,t+.02,Math.min(G.rel*.6,13/G.bpm))}
 const osc=(ty,f,t,e)=>{const o=ctx.createOscillator();o.type=ty;o.frequency.value=f;o.start(t);o.stop(e);return o};
+/* v0.23 perf: pad modulation LFOs are shared (one running sine per rate, per audio context) instead of a new oscillator per chord.
+   Each chord connects to it and disconnects when the chord ends. Rates snap to the nearest of 10 fixed rates. */
+const PLF={};function plfo(f,w,e){if(!ctx||ctx instanceof OfflineAudioContext)return osc('sine',f,w,e);const RT=[.07,.11,.16,.23,.33,.5,.7,2.5,4,5.8],q=RT.reduce((b,x)=>Math.abs(Math.log(x/f))<Math.abs(Math.log(b/f))?x:b,RT[0]),key=q.toFixed(2); /* at most 10 shared LFOs */
+ let L=PLF[key];if(!L||L.ctx!==ctx){const o=ctx.createOscillator();o.type='sine';o.frequency.value=q;o.start();L=PLF[key]={o,ctx}}const o=L.o,c=ctx;
+ return {frequency:o.frequency,connect(d){o.connect(d);setTimeout(()=>{try{if(c===ctx||c.state!=='closed')o.disconnect(d)}catch(_){}},Math.max(0,(e-c.currentTime)*1000)+400);return d},disconnect(){},stop(){},start(){}}}
 function leadNote(p){const n=SC[G.scale].length,top=p.range*n;
  if(p.mode==="Up"){ar=(ar+1)%top;return ar}
  if(p.mode==="Up/Down"){ar+=ad;if(ar>=top-1||ar<=0)ad*=-1;ar=Math.max(0,Math.min(top-1,ar));return ar}
@@ -493,23 +503,23 @@ function pad(t,w,dur){if(padStyle==='Chord memory'&&window.cmStab)return cmStab(
   for(let j=0;j<n;j++){const t=w+R()*(dur+rel*.6),d=pick(ds),up=R()<.35?2:1,f=d2f(d,oc(1))*up,gl=.12+R()*.25,o=osc(R()<.5?'sine':'triangle',f,t,t+gl+.02),gg=ctx.createGain(),pn2=PNS[j%4];o.detune.value=(R()-.5)*14;
    gg.gain.setValueAtTime(.0001,t);gg.gain.linearRampToValueAtTime(.32,t+gl*.4);gg.gain.linearRampToValueAtTime(.0001,t+gl);o.connect(gg);gg.connect(pn2)}
   ds.forEach((d,i)=>{const o=osc('sine',d2f(d,oc(i)),w,e),og=ctx.createGain();og.gain.value=.18;o.connect(og);og.connect(side(i))})}
- else if(pt==='Tron'){const fl=osc('sine',5.5+R(),w,e),fg=ctx.createGain(),wl=osc('sine',.5,w,e),wg=ctx.createGain(),bp=ctx.createBiquadFilter(),hp2=ctx.createBiquadFilter(),bg=ctx.createGain();fg.gain.value=5;wg.gain.value=7;fl.connect(fg);wl.connect(wg);
+ else if(pt==='Tron'){const fl=plfo(5.5+R(),w,e),fg=ctx.createGain(),wl=plfo(.5,w,e),wg=ctx.createGain(),bp=ctx.createBiquadFilter(),hp2=ctx.createBiquadFilter(),bg=ctx.createGain();fg.gain.value=5;wg.gain.value=7;fl.connect(fg);wl.connect(wg);
   bp.type='peaking';bp.frequency.value=1100;bp.gain.value=6;bp.Q.value=.8;hp2.type='highpass';hp2.frequency.value=220;bg.gain.value=1;bp.connect(hp2);hp2.connect(bg);bg.connect(inL);bg.connect(inR);
   ds.forEach((d,i)=>{const f=d2f(d,oc(i));['sawtooth','triangle'].forEach((ty,k)=>{const o=osc(ty,f,w,e),og=ctx.createGain();og.gain.value=k?.6:.4;fg.connect(o.detune);wg.connect(o.detune);o.connect(og);og.connect(bp)})});
   {const ns=ctx.createBufferSource(),nf=ctx.createBiquadFilter(),ng=ctx.createGain();ns.buffer=A.nb;ns.loop=true;nf.type='highpass';nf.frequency.value=5000;ng.gain.value=.02;ns.connect(nf);nf.connect(ng);ng.connect(inL);ns.start(w);ns.stop(e)}
   [q1,q2].forEach(q=>{q.frequency.cancelScheduledValues(w);q.frequency.setValueAtTime(Math.min(cb*1.2,3600),w)})}
- else if(pt==='PWM'){ds.forEach((d,i)=>{const f=d2f(d,oc(i));[[.32,-1],[.18,1]].forEach(([pw,c],j)=>{const o=osc('sawtooth',f,w,e);o.setPeriodicWave(pulseWave(pw));o.detune.value=c*p.det*1.4+(R()-.5)*4;const vl=osc('sine',.3+R()*.4,w,e),vg=ctx.createGain();vg.gain.value=6;vl.connect(vg);vg.connect(o.detune);o.connect(j?inR:inL)})})}
+ else if(pt==='PWM'){ds.forEach((d,i)=>{const f=d2f(d,oc(i));[[.32,-1],[.18,1]].forEach(([pw,c],j)=>{const o=osc('sawtooth',f,w,e);o.setPeriodicWave(pulseWave(pw));o.detune.value=c*p.det*1.4+(R()-.5)*4;const vl=plfo(.3+R()*.4,w,e),vg=ctx.createGain();vg.gain.value=6;vl.connect(vg);vg.connect(o.detune);o.connect(j?inR:inL)})})}
  else if(pt==='Brass'){ds.forEach((d,i)=>{const f=d2f(d,oc(i));[-1,1].forEach((c,j)=>{const o=osc('sawtooth',f,w,e);o.detune.value=c*p.det*.6;o.connect(j?inR:inL)})});[q1,q2].forEach(q=>{q.frequency.cancelScheduledValues(w);q.Q.value=1.6;q.frequency.setValueAtTime(cb*.35,w);q.frequency.linearRampToValueAtTime(cb*1.6+sw,w+Math.min(.5,dur*.3));q.frequency.linearRampToValueAtTime(cb*.9,w+dur)})}
  else if(pt==='Bell pad'){ds.forEach((d,i)=>{const f=d2f(d,oc(i)),o=osc('sine',f,w,e),og=ctx.createGain(),b=osc('sine',f*2,w,w+2.5),m=osc('sine',f*3.5,w,w+2.5),mg=ctx.createGain(),bg=ctx.createGain();og.gain.value=.55;o.connect(og);og.connect(side(i));
    mg.gain.setValueAtTime(f*2,w);mg.gain.exponentialRampToValueAtTime(f*.05,w+2);m.connect(mg);mg.connect(b.frequency);bg.gain.setValueAtTime(.0001,w);bg.gain.exponentialRampToValueAtTime(.9,w+.005);bg.gain.exponentialRampToValueAtTime(.0001,w+2.4);b.connect(bg);bg.connect(side(i))})}
  else if(pt==='Fold'){const fo=ctx.createWaveShaper(),fg=ctx.createGain(),fl=osc('sine',.05+R()*.12,w,e),flg=ctx.createGain();fo.curve=foldCurve(.6);fg.gain.value=.7;flg.gain.value=.45;fl.connect(flg);flg.connect(fg.gain);fg.connect(fo);fo.connect(inL);fo.connect(inR);
   ds.forEach((d,i)=>{const o=osc(i%2?'triangle':'sine',d2f(d,oc(i)),w,e);o.detune.value=(R()-.5)*8;o.connect(fg)})}
- else if(pt==='Tape'){const wl=osc('sine',.4+R()*.5,w,e),wg=ctx.createGain();wg.gain.value=9;wl.connect(wg);ds.forEach((d,i)=>{const f=d2f(d,oc(i));[-1,1].forEach((c,j)=>{const o=osc(j?'triangle':'sawtooth',f,w,e);o.detune.value=c*p.det*.5;wg.connect(o.detune);o.connect(j?inR:inL)})});[q1,q2].forEach(q=>{q.Q.value=.5;q.frequency.cancelScheduledValues(w);q.frequency.setValueAtTime(Math.min(cb,1400),w)})}
+ else if(pt==='Tape'){const wl=plfo(.4+R()*.5,w,e),wg=ctx.createGain();wg.gain.value=9;wl.connect(wg);ds.forEach((d,i)=>{const f=d2f(d,oc(i));[-1,1].forEach((c,j)=>{const o=osc(j?'triangle':'sawtooth',f,w,e);o.detune.value=c*p.det*.5;wg.connect(o.detune);o.connect(j?inR:inL)})});[q1,q2].forEach(q=>{q.Q.value=.5;q.frequency.cancelScheduledValues(w);q.frequency.setValueAtTime(Math.min(cb,1400),w)})}
  else{const wv=pt==='Hollow'?'square':'sawtooth',vc=pt==='Strings'?[-1.8,0,1.8]:[-1,1];ds.forEach((d,i)=>{const f=d2f(d,oc(i));vc.forEach((c,j)=>{const o=osc(wv,f,w,e);o.detune.value=c*p.det+(R()-.5)*3;o.connect(j%2?inR:inL)})})}
  if(p.sub>0){const s=osc('sine',d2f(cur.r,p.oct-1),w,e),sg=ctx.createGain();sg.gain.value=p.sub*.6;s.connect(sg);sg.connect(g)}
  q1.connect(pa);q2.connect(pb);pa.connect(g);pb.connect(g);const PIN=padMove(p,w,e,pn);if((p.pgate||0)>.01){const gt=ctx.createGain(),sd=60/G.bpm/4,pat16=p.pgpat||[1,0,1,1,0,1,0,1,1,0,1,1,0,1,0,1];gt.gain.setValueAtTime(1,w);for(let t0=w,i=0;t0<w+dur+rel;t0+=sd,i++){const on=pat16[i%16];gt.gain.setValueAtTime(on?1:1-p.pgate,t0);if(on)gt.gain.setTargetAtTime(1-p.pgate*.7,t0+sd*.35,sd*.25)}g.connect(gt);gt.connect(PIN)}else g.connect(PIN);
- if(p.trem>0){const o=osc('sine',2+R()*3,w,e),tg=ctx.createGain();tg.gain.value=gv*p.trem*.5;o.connect(tg);tg.connect(g.gain)}
- if(p.apan>0){const o=osc('sine',.1+R()*.3,w,e),pg=ctx.createGain();pg.gain.value=p.apan;o.connect(pg);pg.connect(pn.pan)}
+ if(p.trem>0){const o=plfo(2+R()*3,w,e),tg=ctx.createGain();tg.gain.value=gv*p.trem*.5;o.connect(tg);tg.connect(g.gain)}
+ if(p.apan>0){const o=plfo(.1+R()*.3,w,e),pg=ctx.createGain();pg.gain.value=p.apan;o.connect(pg);pg.connect(pn.pan)}
  send(pn,A.dk,.15,p.rs)};
 /* motif melody mode: stepwise phrases that land on chord tones, slowly mutating */
 const snapCT=(d,p)=>{const n=SC[G.scale].length,ct=cur.n.map(x=>((x%n)+n)%n);let b=d,bd=99;for(let c=-1;c<=3;c++)ct.forEach(t=>{const q=t+n*c,dd=Math.abs(q-d);if(dd<bd){bd=dd;b=q}});return Math.max(0,Math.min(b,p.range*n-1))};
@@ -1130,7 +1140,7 @@ function tomHit(t,f,v,pan){const e=t+.6,o=osc('triangle',f*2,t,e),o2=osc('sine',
 /* ---- v30: stability guard — measures load (active voices, render capacity, scheduler lateness, frame time) and sheds work in steps; skips missed steps instead of bursting ---- */
 const QOS={lvl:0,cool:0,src:new Set(),load:0,late:0,ft:16,f:0,lt:0,la:.12,hi:[170,240,320],hard:420,uni:[7,4,2,1],nm:['OK','LOAD','SAVING','OVERLOAD'],cl:['#00ff9c','#ffe44d','#ffb84d','#ff5d73']};
 ['createOscillator','createBufferSource','createConstantSource'].forEach(fn=>{const P=(window.AudioContext||window.webkitAudioContext).prototype,o=P[fn];if(!o)return;P[fn]=function(...a){const n=o.apply(this,a),st=n.start.bind(n),sp=n.stop.bind(n);
- n.start=(t=0,...r)=>{n.__s=t;n.__e=Infinity;n.__pc=window.__PADC||0;QOS.src.add(n);return st(t,...r)};n.stop=(t=0)=>{n.__e=t;return sp(t)};n.addEventListener('ended',()=>QOS.src.delete(n));return n}});
+ n.start=(t=0,...r)=>{n.__s=t;n.__e=Infinity;n.__pc=window.__PADC||0;if(window.__LCOL)__LCOL.push(n);QOS.src.add(n);return st(t,...r)};n.stop=(t=0)=>{n.__e=t;return sp(t)};n.addEventListener('ended',()=>QOS.src.delete(n));return n}});
 function steal(nx){ /* v0.23: the pad chord that is sounding now is never stolen (that made pads cut in and out); other voices go first, then older pad chords */
  const now=ctx.currentTime,cur=window.__PADL||0,c=[...QOS.src].filter(n=>n.__e!==Infinity&&n.__e-now>.35&&!(n.__pc&&n.__pc===cur)).sort((a,b)=>(a.__pc?1:0)-(b.__pc?1:0)||a.__s-b.__s).slice(0,Math.ceil(nx));
  QOS.stolen=(QOS.stolen||0)+c.length;QOS.stolenPad=(QOS.stolenPad||0)+c.filter(n=>n.__pc).length;c.forEach(n=>{try{n.stop(now+.02)}catch(e){}})}
@@ -1218,9 +1228,9 @@ h1{display:flex;align-items:center;gap:0}.orb{margin-right:10px}
  const met=document.createElement('span');met.className='met';met.title='Mission elapsed time';met.textContent='T+00:00';(QB||$('#kinfo')).after(met);
  const pg=document.createElement('span');pg.className='ping';$('#play').appendChild(pg);
  let t0=0,lastB=-1;
- setInterval(()=>{const on=playing&&ctx;orb.classList.toggle('run',!!on);orb.querySelector('em').style.animationDuration=(240/G.bpm)+'s';
-  if(!on){t0=0;lastB=-1;met.textContent='T+00:00';return}
-  if(!t0)t0=performance.now();const s=Math.floor((performance.now()-t0)/1000);met.textContent='T+'+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+ const em0=orb.querySelector('em');let ad0='',mt0='';setInterval(()=>{const on=playing&&ctx;if(orb.classList.contains('run')!==!!on)orb.classList.toggle('run',!!on);const ad=(240/G.bpm)+'s';if(ad!==ad0){ad0=ad;em0.style.animationDuration=ad} /* v0.23: write only on change */
+  if(!on){t0=0;lastB=-1;if(mt0!=='T+00:00'){mt0='T+00:00';met.textContent=mt0}return}
+  if(!t0)t0=performance.now();const s=Math.floor((performance.now()-t0)/1000),mt='T+'+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');if(mt!==mt0){mt0=mt;met.textContent=mt}if(0)met.textContent='T+'+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
   const sd=60/G.bpm/4,pos=tk-(nextT-ctx.currentTime)/sd,b=Math.floor(pos/4);if(b!==lastB&&pos>=0){lastB=b;if(!$('#play .ping'))$('#play').appendChild(pg);pg.classList.remove('go');void pg.offsetWidth;pg.classList.add('go')}},40)}
 /* ---- v36: real shimmer reverb (octave-up pitch-shifted feedback through a long reverb), fed from the synth bus; Deep Space uses it heavily; "Space shimmer" mix slider ---- */
 G.shx=0;const SHM={on:0};
@@ -1276,7 +1286,10 @@ const _init39=init;init=function(){const nw=!ctx;_init39();if(!nw)return;const p
  setInterval(()=>{if(!playing)return;an.getFloatTimeDomainData(buf);let s=0;for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];const r=Math.sqrt(s/buf.length);
   if(r>.004){ema=ema?ema*.9+r*.1:r;agc=Math.max(.35,Math.min(3,G.ldT*(G.ldMul||1)/ema));o.gain.setTargetAtTime(G.ldOut*agc,ctx.currentTime,.6)}},100)};
 const LVQ=[];function leadVoice(g,w){for(let i=LVQ.length-1;i>=0;i--)if(w-LVQ[i].w>2.5)LVQ.splice(i,1);
- while(LVQ.length>=3){const o=LVQ.shift();try{o.g.gain.cancelScheduledValues(w);o.g.gain.setTargetAtTime(.0001,w,.06)}catch(e){}}LVQ.push({g,w})}
+ while(LVQ.length>=3){const o=LVQ.shift();try{o.g.gain.cancelScheduledValues(w);o.g.gain.setTargetAtTime(.0001,w,.06)}catch(e){}
+  /* v0.23 perf: the faded note's oscillators stop 0.45 s later instead of running silently to their planned end */
+  if(o.src)o.src.forEach(n=>{try{if(n.__e!==Infinity&&n.__e>w+.45)n.stop(w+.45)}catch(e){}})} /* persistent (mono) oscillators are never touched */
+ const src=window.__LCOL;window.__LCOL=src?[]:null;LVQ.push({g,w,src})}
 const _gen39=generate;generate=function(){_gen39();const P=TR[4].p,ac=P.mode==='Acid 303';
  if(ac){P.res=Math.min(P.res,12);P.envA=Math.min(P.envA,4200)}
  else{P.res=Math.min(P.res,curMood==='Power'?14:6);if(P.eng==='Stack'||P.eng==='Mini'||P.eng==='Saw'||P.eng==='Pulse'||!P.eng){P.cut=Math.min(P.cut,2600);P.envA=Math.min(P.envA,3500)}P.vib=Math.min(P.vib||0,14);P.uni=Math.min(P.uni||1,5);
@@ -1474,7 +1487,7 @@ const _gen50=generate;generate=function(){_gen50();G.pgate=null;if(curMood!=='Po
  build()};
 /* ---- v51: Eco eco — hard cap of 64 sounding voices + lightest settings ---- */
 {const CAP=64,LOW=new Set([1,3,8,9]);let q0='Eco';try{q0=localStorage.getItem('orb-q')||'Eco'}catch(e){}QOS.eco2=q0==='Eco eco';
- QOS.voices=()=>{if(!ctx)return 0;const now=ctx.currentTime;let n=0;for(const s of QOS.src)if(s.__e!==Infinity&&s.__e>now)n++;return n};
+ QOS.voices=()=>{if(!ctx)return 0;const now=ctx.currentTime;let n=0;for(const s of QOS.src)if(s.__e!==Infinity&&s.__e>now&&s.__s<=now+.01)n++;return n}; /* v0.23: notes scheduled ahead are not counted */
  const room=(k,need)=>{const v=QOS.voices();if(v+need<=CAP)return true;if(LOW.has(k))return false;steal(v+need-CAP);return QOS.voices()+need<=CAP+8};
  const NEED={0:1,1:2,2:1,3:1,4:4,6:4,7:1,8:6,9:3};
  const _f51=fire;fire=function(k,w){if(QOS.eco2&&!room(k,NEED[k]||2))return;_f51(k,w)};
@@ -2104,10 +2117,10 @@ LPRE['Sunny keys']={pg:1.1,eng:'FM',fmr:1,fmi:1.2,fenv:.5,ft:'LP12',cut:2400,env
 /* ---- v86: four more pad sounds (Poly — Juno-style chorused saw+pulse, Wavetable — morphing timbre, Cloud — granular shimmer, Tron — wobbly tape-choir) and a pad Movement control (Classic, Ensemble chorus, Phaser) ---- */
 let PWT=null;function padWT(){if(PWT&&PWT.c===ctx)return PWT.w;const mk=fn=>{const N=40,re=new Float32Array(N),im=new Float32Array(N);for(let n=1;n<N;n++)im[n]=fn(n);return ctx.createPeriodicWave(re,im)};
  const w=[mk(n=>n===1?1:n===2?.3:n===3?.1:0),mk(n=>1/n*(n%3===0?.2:1)),mk(n=>n%2?1/(n*.7):0.0)];PWT={c:ctx,w};return w}
-function padMove(p,w,e,out){const mv=p.mov||'Classic';if(mv==='Ensemble'){const i=ctx.createGain(),d1=ctx.createDelay(.05),d2=ctx.createDelay(.05),l1=osc('sine',.5,w,e),l2=osc('sine',.7,w,e),g1=ctx.createGain(),g2=ctx.createGain(),pl=ctx.createStereoPanner(),pr=ctx.createStereoPanner(),dry=ctx.createGain();
+function padMove(p,w,e,out){const mv=p.mov||'Classic';if(mv==='Ensemble'){const i=ctx.createGain(),d1=ctx.createDelay(.05),d2=ctx.createDelay(.05),l1=plfo(.5,w,e),l2=plfo(.7,w,e),g1=ctx.createGain(),g2=ctx.createGain(),pl=ctx.createStereoPanner(),pr=ctx.createStereoPanner(),dry=ctx.createGain();
   d1.delayTime.value=.012;d2.delayTime.value=.017;g1.gain.value=.0012;g2.gain.value=.0012; /* v0.22: Juno-like depth (~6-8 cents), was ~30 cents */l1.connect(g1);g1.connect(d1.delayTime);l2.connect(g2);g2.connect(d2.delayTime);pl.pan.value=-.8;pr.pan.value=.8;dry.gain.value=.7;
   i.connect(dry);dry.connect(out);i.connect(d1);i.connect(d2);d1.connect(pl);d2.connect(pr);pl.connect(out);pr.connect(out);return i}
- if(mv==='Phaser'){const i=ctx.createGain(),l=osc('sine',.15+R()*.2,w,e),lg=ctx.createGain(),mix=ctx.createGain();lg.gain.value=700;l.connect(lg);let last=i;[300,700,1500,3000].forEach(f=>{const a=ctx.createBiquadFilter();a.type='allpass';a.frequency.value=f;a.Q.value=.7;lg.connect(a.frequency);last.connect(a);last=a});
+ if(mv==='Phaser'){const i=ctx.createGain(),l=plfo(.15+R()*.2,w,e),lg=ctx.createGain(),mix=ctx.createGain();lg.gain.value=700;l.connect(lg);let last=i;[300,700,1500,3000].forEach(f=>{const a=ctx.createBiquadFilter();a.type='allpass';a.frequency.value=f;a.Q.value=.7;lg.connect(a.frequency);last.connect(a);last=a});
   i.connect(out);last.connect(mix);mix.gain.value=.9;mix.connect(out);return i}
  return out}
 PADN.push('Poly','Wavetable','Cloud','Tron');Object.assign(PGAIN,{Poly:.95,Wavetable:1.65,Cloud:1.9,Tron:1.15});Object.assign(PCUT,{Poly:1.6,Wavetable:2.5,Cloud:3.5,Tron:1.5});
@@ -2886,7 +2899,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const soon=()=>{setTimeout(syncAll,0);setTimeout(syncAll,80)};
  ['#t-drums','#t-synth'].forEach(id=>{const c=document.querySelector(id);if(c){c.addEventListener('change',soon,true);c.addEventListener('click',e=>{if(e.target.closest('button'))soon()},true)}});
  const _gs=generate;generate=function(){const r=_gs.apply(this,arguments);soon();return r};
- setInterval(()=>{if(!document.hidden)syncAll()},700)}
+ setInterval(()=>{if(!document.hidden)try{TR.forEach(T=>{const c=T.mb&&T.mb.closest('.card');if(c&&c.offsetParent)syncCard(T)})}catch(e){}},700)} /* v0.23: only cards on screen */
 
 /* ---- v139: new arp modes (Turing loop, Converge, Diverge, Pedal arp) + Cycle, Note repeat and Reset on bar for the lead ---- */
 {const NEWM=['Turing loop','Converge','Diverge','Pedal arp'];NEWM.forEach(m=>{if(!MODES.includes(m))MODES.push(m)});
@@ -4583,7 +4596,15 @@ window.MOODX={
 <script>
 /* ---- v0.23: pad chords are numbered as they start, so the load guard can tell the sounding chord from old tails (see steal()).
    In load-saving mode the pad release is capped at 1.5 s, so chords overlap less and there is less to steal in the first place. ---- */
-{let id=0;const _p=pad;pad=function(t,w,dur){const P=TR[5].p,o=P.rel;window.__PADC=window.__PADL=++id;if((QOS.lvl||0)>=2&&o>1.5)P.rel=1.5;try{return _p.apply(this,arguments)}finally{window.__PADC=0;P.rel=o}}}
+{let id=0,prev=null;const CG=BaseAudioContext.prototype.createGain;let grab=null;
+ BaseAudioContext.prototype.createGain=function(){const g=CG.apply(this,arguments);if(grab&&!grab.g)grab.g=g;return g};
+ const _p=pad;pad=function(t,w,dur){const P=TR[5].p,o=P.rel;window.__PADC=window.__PADL=++id;if((QOS.lvl||0)>=2&&o>1.5)P.rel=1.5;
+  const me={id,g:null,end:w+dur+Math.min(P.rel,dur*1.5+.1)+.1};grab=me;
+  try{return _p.apply(this,arguments)}finally{window.__PADC=0;P.rel=o;grab=null;
+   /* v0.23 perf: once this chord has faded in, the previous chord's remaining tail is shortened to about 1 s */
+   try{if(prev&&prev.g&&ctx&&!(ctx instanceof OfflineAudioContext)&&typeof prev.g.gain.cancelAndHoldAtTime==='function'){const t0=w+Math.min(1.5,Math.max(.2,(P.att||.3)*dur*.6));
+     if(prev.end>t0+1.6){prev.g.gain.cancelAndHoldAtTime(t0);prev.g.gain.setTargetAtTime(.0001,t0,.25);const pid=prev.id,ts=t0+1.4;for(const n of QOS.src)if(n.__pc===pid&&n.__e!==Infinity&&n.__e>ts)try{n.stop(ts)}catch(e){}prev.end=ts}}}catch(e){}
+   if(me.g)prev=me}}}
 </script>
 <script>
 /* ---- v0.23: Thrusters and mutes no longer fight. Your mutes (Planet mutes, Mute buttons, Launch) and the temporary mutes of held Thrusters
@@ -4608,5 +4629,9 @@ window.MOODX={
  pads.forEach((p,k)=>p.addEventListener('click',e=>{if(SOLO==null&&F[k]&&F[k].size>0){U[k]=!U[k];e.stopImmediatePropagation();e.preventDefault();try{if(typeof say==='function')say((U[k]?'MUTED':'UNMUTED')+' · AFTER THE THRUSTER')}catch(_){}}},true));
  const _g=generate;generate=function(){F.forEach(s=>s.clear());SOLO=null;clr();return _g.apply(this,arguments)};
  window.TMUTE={solo:k=>{SOLO=k},user:k=>U[k],forced:k=>F[k]?F[k].size:0,clear:()=>{F.forEach(s=>s.clear());SOLO=null}}}
+</script>
+<script>
+/* ---- v0.23 perf: collect the oscillators of each lead note, so a stolen note can be stopped for real (see leadVoice) ---- */
+{const _fv=fireVoice;fireVoice=function(k){if(k!==4)return _fv.apply(this,arguments);window.__LCOL=[];try{return _fv.apply(this,arguments)}finally{window.__LCOL=null}}}
 </script>
 </body></html>
