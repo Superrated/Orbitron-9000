@@ -1130,8 +1130,10 @@ function tomHit(t,f,v,pan){const e=t+.6,o=osc('triangle',f*2,t,e),o2=osc('sine',
 /* ---- v30: stability guard — measures load (active voices, render capacity, scheduler lateness, frame time) and sheds work in steps; skips missed steps instead of bursting ---- */
 const QOS={lvl:0,cool:0,src:new Set(),load:0,late:0,ft:16,f:0,lt:0,la:.12,hi:[170,240,320],hard:420,uni:[7,4,2,1],nm:['OK','LOAD','SAVING','OVERLOAD'],cl:['#00ff9c','#ffe44d','#ffb84d','#ff5d73']};
 ['createOscillator','createBufferSource','createConstantSource'].forEach(fn=>{const P=(window.AudioContext||window.webkitAudioContext).prototype,o=P[fn];if(!o)return;P[fn]=function(...a){const n=o.apply(this,a),st=n.start.bind(n),sp=n.stop.bind(n);
- n.start=(t=0,...r)=>{n.__s=t;n.__e=Infinity;QOS.src.add(n);return st(t,...r)};n.stop=(t=0)=>{n.__e=t;return sp(t)};n.addEventListener('ended',()=>QOS.src.delete(n));return n}});
-function steal(nx){const now=ctx.currentTime,c=[...QOS.src].filter(n=>n.__e!==Infinity&&n.__e-now>.35).sort((a,b)=>a.__s-b.__s).slice(0,Math.ceil(nx));c.forEach(n=>{try{n.stop(now+.02)}catch(e){}})}
+ n.start=(t=0,...r)=>{n.__s=t;n.__e=Infinity;n.__pc=window.__PADC||0;QOS.src.add(n);return st(t,...r)};n.stop=(t=0)=>{n.__e=t;return sp(t)};n.addEventListener('ended',()=>QOS.src.delete(n));return n}});
+function steal(nx){ /* v0.23: the pad chord that is sounding now is never stolen (that made pads cut in and out); other voices go first, then older pad chords */
+ const now=ctx.currentTime,cur=window.__PADL||0,c=[...QOS.src].filter(n=>n.__e!==Infinity&&n.__e-now>.35&&!(n.__pc&&n.__pc===cur)).sort((a,b)=>(a.__pc?1:0)-(b.__pc?1:0)||a.__s-b.__s).slice(0,Math.ceil(nx));
+ QOS.stolen=(QOS.stolen||0)+c.length;QOS.stolenPad=(QOS.stolenPad||0)+c.filter(n=>n.__pc).length;c.forEach(n=>{try{n.stop(now+.02)}catch(e){}})}
 const _init30=init;init=function(){const nw=!ctx;_init30();if(nw&&ctx.renderCapacity){try{ctx.renderCapacity.start({updateInterval:1});ctx.renderCapacity.addEventListener('update',e=>QOS.load=Math.max(e.averageLoad||0,(e.peakLoad||0)*.8))}catch(e){}}};
 const _tick30=tick;tick=function(){if(!ctx)return;const sd=60/G.bpm/4,now=ctx.currentTime;if(nextT<now-.025){const miss=Math.ceil((now-nextT)/sd);nextT+=miss*sd;tk+=miss;QOS.late++}else if(nextT<now)QOS.late++;_tick30()};
 document.addEventListener('visibilitychange',()=>{QOS.la=document.hidden?1.2:.12});
@@ -4444,8 +4446,8 @@ window.MOODX={
 /* ---- v0.22: Planet mutes (Flight): hold a pad to solo that track; let go and every mute is back as it was. A short tap still mutes.
    A mute you change while holding (other pad, Launch) is kept. ---- */
 {const HOLD=380;let held=-1,saved=null,forced=null,swallow=false,tmr=0;
- const start=k=>{try{window.SOLO&&SOLO.off()}catch(e){}held=k;saved=TR.map(T=>!!T.m);forced=TR.map((T,i)=>i!==k);TR.forEach((T,i)=>T.m=forced[i]);pads.forEach((p,i)=>p.classList.toggle('hsolo',i===k));try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}};
- const end=()=>{clearTimeout(tmr);tmr=0;if(held<0)return;TR.forEach((T,i)=>{if(forced&&T.m===forced[i])T.m=saved[i]});held=-1;saved=forced=null;pads.forEach(p=>p.classList.remove('hsolo'))};
+ const start=k=>{try{window.SOLO&&SOLO.off()}catch(e){}held=k;if(window.TMUTE)TMUTE.solo(k);else{saved=TR.map(T=>!!T.m);forced=TR.map((T,i)=>i!==k);TR.forEach((T,i)=>T.m=forced[i])}pads.forEach((p,i)=>p.classList.toggle('hsolo',i===k));try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}};
+ const end=()=>{clearTimeout(tmr);tmr=0;if(held<0)return;if(window.TMUTE)TMUTE.solo(null);else TR.forEach((T,i)=>{if(forced&&T.m===forced[i])T.m=saved[i]});held=-1;saved=forced=null;pads.forEach(p=>p.classList.remove('hsolo'))};
  pads.forEach((p,k)=>{if(!p||p.dataset.hs)return;p.dataset.hs=1;
   p.addEventListener('pointerdown',e=>{if(e.button>0)return;clearTimeout(tmr);swallow=false;tmr=setTimeout(()=>{tmr=0;swallow=true;start(k)},HOLD)});
   ['pointerup','pointercancel','lostpointercapture'].forEach(n=>p.addEventListener(n,end));p.addEventListener('pointerleave',()=>{if(held<0){clearTimeout(tmr);tmr=0}});
@@ -4453,7 +4455,7 @@ window.MOODX={
   p.addEventListener('contextmenu',e=>e.preventDefault());p.title='Tap: mute · hold: solo';
   p.addEventListener('pointerdown',e=>{try{p.setPointerCapture(e.pointerId)}catch(_){}})});
  window.addEventListener('blur',end);document.addEventListener('visibilitychange',()=>{if(document.hidden)end()});
- const _g=generate;generate=function(){if(held>=0){clearTimeout(tmr);held=-1;saved=forced=null;pads.forEach(p=>p.classList.remove('hsolo'))}return _g.apply(this,arguments)};
+ const _g=generate;generate=function(){if(held>=0){clearTimeout(tmr);held=-1;saved=forced=null;try{window.TMUTE&&TMUTE.solo(null)}catch(e){}pads.forEach(p=>p.classList.remove('hsolo'))}return _g.apply(this,arguments)};
  const st=document.createElement('style');st.textContent='#pads .pad{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}#pads .pad.hsolo{box-shadow:0 0 0 2px var(--acc,#ffe44d),0 0 12px rgba(255,228,77,.55)!important;opacity:1!important}';document.head.appendChild(st);
  window.holdSolo={state:()=>held}}
 </script>
@@ -4565,6 +4567,11 @@ window.MOODX={
    if(m==='Tense'&&!L.m&&!acid){if(P.mode==='Marbles')P.mode='Motif';P.len=pick([2,3,4]);P.dv=.97;P.range=1;buf=[];mot=[];mp=-1}                 // Mills: short repeating motifs
    if(m==='Breaks'&&!L.m&&!acid){ring(L,16,3,pick([2,6,10]));P.len=3}                                                                        // a short phrase, not one note a bar
    if(m==='Hopeful'&&!L.m&&!(P.rdr>0)&&R()<.5)P.rdr=8;                                                                                         // the arp keeps evolving
+   if(m==='Melodic House'){const K3=TR[3];
+    // marimba in about 1 Launch in 3 (it was every Launch), and darker when it plays
+    if(R()<.65){try{window.setPercSound&&setPercSound('Blip')}catch(e){}}else{K3.p.filt=pick([1800,2200,2600]);K3.p.wtn=0;K3.lv=Math.min(K3.lv,.42)}
+    // no random pad gate (it chopped the pad on odd timing): cinematic = never; hook = sometimes an even off-beat pump
+    if(G.mhFlav==='hook'&&R()<.25){PD.p.pgate=.5;PD.p.pgpat=[0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1]}else PD.p.pgate=0}
    if(m==='Melodic House'&&G.mhFlav==='hook'){B.p.bns=pick(['Chord tones','Melodic']);const h=Math.max(2,Math.round(L.st*.4));if(!L.m&&L.h>h){L.h=h;L.pt=pat(L)}} // Booka Shade: the bass carries the hook
    if(m==='Distorted Electro'&&G.deFlav==='techno'&&R()<.35&&!acid){L.m=false;ring(L,16,pick([5,6]),pick([0,3]));Object.assign(P,{mode:'Motif',len:4,dv:.98,range:1,lock:1});buf=[];mot=[];mp=-1;
     const F=LFOS[0];if(F)Object.assign(F,{tg:'Lead cutoff',sh:0,sync:1,div:32,d:.4,ph:0})}                                                      // Vitalic: one driven riff, slowly filtered
@@ -4572,5 +4579,34 @@ window.MOODX={
    for(const k in (C.lvl||{}))TRIM[k]=(TRIM[k]||0)+C.lvl[k];
   }catch(e){console.warn('[orbitron] v023 refine',e)}
   try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync();if(typeof lfoUI==='function')lfoUI()}catch(e){}},0);return r}}
+</script>
+<script>
+/* ---- v0.23: pad chords are numbered as they start, so the load guard can tell the sounding chord from old tails (see steal()).
+   In load-saving mode the pad release is capped at 1.5 s, so chords overlap less and there is less to steal in the first place. ---- */
+{let id=0;const _p=pad;pad=function(t,w,dur){const P=TR[5].p,o=P.rel;window.__PADC=window.__PADL=++id;if((QOS.lvl||0)>=2&&o>1.5)P.rel=1.5;try{return _p.apply(this,arguments)}finally{window.__PADC=0;P.rel=o}}}
+</script>
+<script>
+/* ---- v0.23: Thrusters and mutes no longer fight. Your mutes (Planet mutes, Mute buttons, Launch) and the temporary mutes of held Thrusters
+   are kept apart: a track sounds only if you have not muted it AND no held Thruster is forcing it off (hold-to-solo sits on top).
+   · tap a mute while a Thruster holds that track: your mute changes underneath and is there when you let go
+   · two Thrusters on the same track: the track comes back when the last one is released
+   · Launch while holding: the new groove's mutes win; nothing stale is put back ---- */
+{const U=[],F=[];let SOLO=null,CUR=null,PH='';
+ const eff=k=>SOLO!=null?k!==SOLO:(U[k]||F[k].size>0);
+ const install=k=>{const T=TR[k],d=Object.getOwnPropertyDescriptor(T,'m');if(d&&d.get)return;U[k]=!!T.m;F[k]=F[k]||new Set();
+  Object.defineProperty(T,'m',{enumerable:true,configurable:true,get:()=>eff(k),
+   set:v=>{if(CUR){if(PH==='down'){if(v)F[k].add(CUR);return}F[k].delete(CUR);return}U[k]=!!v}})};
+ const all=()=>TR.forEach((T,k)=>install(k));all();setInterval(all,1000);
+ // which Thruster is acting: its own press / release handlers run inside these events
+ const own=e=>{const t=e.target&&e.target.closest&&e.target.closest('#t-perf button,#t-perf .pad');return t&&!t.closest('#pads')?t:null};
+ const clr=()=>{CUR=null;PH=''};
+ const hook=(ev,ph)=>{window.addEventListener(ev,e=>{const o=own(e);if(!o){clr();return}CUR=o;PH=ph;if(ph==='down')o.__held=1;setTimeout(clr,0)},true);window.addEventListener(ev,clr,false)};
+ hook('pointerdown','down');['pointerup','pointerleave','pointercancel','lostpointercapture'].forEach(n=>hook(n,'up'));
+ // safety net: a Thruster that is no longer lit cannot keep a track muted
+ setInterval(()=>{F.forEach(set=>set.forEach(o=>{if(!o.isConnected||(o.__held&&!o.classList.contains('on')&&!o.matches(':active'))){set.delete(o)}}))},500);
+ // tapping a Planet mute under a held Thruster changes your own mute underneath
+ pads.forEach((p,k)=>p.addEventListener('click',e=>{if(SOLO==null&&F[k]&&F[k].size>0){U[k]=!U[k];e.stopImmediatePropagation();e.preventDefault();try{if(typeof say==='function')say((U[k]?'MUTED':'UNMUTED')+' · AFTER THE THRUSTER')}catch(_){}}},true));
+ const _g=generate;generate=function(){F.forEach(s=>s.clear());SOLO=null;clr();return _g.apply(this,arguments)};
+ window.TMUTE={solo:k=>{SOLO=k},user:k=>U[k],forced:k=>F[k]?F[k].size:0,clear:()=>{F.forEach(s=>s.clear());SOLO=null}}}
 </script>
 </body></html>
