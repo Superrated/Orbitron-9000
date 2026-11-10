@@ -129,7 +129,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
 <section class="tp" id="t-perf" hidden></section>
 <script>
 /* v172: display names for moods (internal keys unchanged, so sectors, exports and settings keep working) */
-window.MOODNAME={Dark:'Event Horizon',Melancholic:'Lost Signal',Dreamy:'Nebula',Tense:'Countdown',Ethereal:'Aurora',Hopeful:'First Light',Noir:'Dark Side',Drone:'Orbital Hum',Power:'Max Q',Ambient:'Low Orbit'};
+window.MOODNAME={Dark:'Event Horizon',Melancholic:'Lost Signal',Dreamy:'Nebula',Tense:'Countdown',Ethereal:'Aurora',Hopeful:'First Light',Noir:'Dark Side',Drone:'Orbital Hum',Power:'Max Q',Ambient:'Low Orbit',
+ /* v0.24 */Acid:'Solar Flare',Italo:'Satellite Disco',Breaks:'Meteor Shower',Bleep:'Telemetry','Melodic House':'Stardust','Distorted Electro':'Ion Storm','Groove Techno':'Gravity Assist',Temporal:'Time Dilation',Vector:'Trajectory','Deep Space':'Outer Rim'};
 window.MN=m=>(window.MOODNAME&&MOODNAME[m])||m;
 const SC={Minor:[0,2,3,5,7,8,10],Dorian:[0,2,3,5,7,9,10],Phrygian:[0,1,3,5,7,8,10],Major:[0,2,4,5,7,9,11],"Harm. minor":[0,2,3,5,7,8,11],"Min pentatonic":[0,3,5,7,10],"Whole tone":[0,2,4,6,8,10],Hirajoshi:[0,2,3,7,8],"Major pentatonic":[0,2,4,7,9],"Sus pentatonic":[0,2,5,7,9],Lydian:[0,2,4,6,7,9,11],Mixolydian:[0,2,4,5,7,9,10]};
 const NN=["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
@@ -3206,7 +3207,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
    bs('Walking');PD.lv=.42;PD.m=false;Object.assign(PD.p,{bars:pick([1,2])});G.swing=Math.max(G.swing||0,.07)}
   G.space=.55;
   $('#bpm').value=G.bpm;$('#bv').textContent=G.bpm;if(A.dl)A.dl.delayTime.value=(G.dt||.75)*60/G.bpm;
-  try{window.leadResetPos&&leadResetPos()}catch(e){}build();if(typeof lfoUI==='function')lfoUI();try{say&&say('♪ VECTOR · '+G.vecFlav.toUpperCase())}catch(e){}
+  try{window.leadResetPos&&leadResetPos()}catch(e){}build();if(typeof lfoUI==='function')lfoUI();try{say&&say('♪ '+MN('Vector').toUpperCase()+' · '+G.vecFlav.toUpperCase())}catch(e){}
   setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync();window.spaceShow&&spaceShow();window.moodFinish&&moodFinish.apply()}catch(e){}},0)}catch(e){console.warn('[orbitron] vector',e)}return r}}
 
 /* ---- v151: Master+ — 3-band multiband compression (120 Hz / 2.5 kHz, Linkwitz-Riley splits, amount per mood), a slow automatic loudness
