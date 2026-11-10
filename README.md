@@ -13,12 +13,21 @@ Ten tracks — kick, hi-hat, clap, perc, snare, lead, pad, bass, dub stab and su
 
 | File | What it is |
 | --- | --- |
-| `index.html` | The current version (v0.23) |
-| `releases/orbitron-9000-v0.23.html` | Copy of v0.23 (follows `index.html` until v0.23 is frozen) |
+| `index.html` | The current version (v0.24) |
+| `releases/orbitron-9000-v0.24.html` | Copy of v0.24 (follows `index.html` until v0.24 is frozen) |
+| `releases/orbitron-9000-v0.23.html` | Frozen copy of v0.23 |
 | `releases/orbitron-9000-v0.22.html` | Frozen copy of v0.22 |
 | `releases/orbitron-9000-v0.21.html` | Frozen copy of v0.21 |
 | `releases/orbitron-9000-v0.2.html` | Frozen copy of v0.2 |
 | `releases/orbitron-9000-v0.1.html` | Frozen copy of v0.1 |
+
+## What's new in v0.24
+
+- 5 new leads (Hard sync, String pluck, West Coast fold, PPG wave, Juno pulse) and 4 new pads (EP chords, Abyss, Sync sweep, Wind), level-matched and used by Launch in fitting moods
+- New perc sounds: Conga/bongo and Cowbell/rim
+- Launch picks a drum kit (909, 808, Rumble, Raw) that fits the mood, about 1 in 5 crosses over; bass characters (deep, round, rubbery, gritty); subtle ±15 % sound mutation so no two Launches sound identical
+- PUMP fader on Mix → Channels (sidechain depth and release in one)
+- Interface cleanup: nothing clips on a phone, compact header on Flight, master toggles moved to Bus & FX, help texts folded into ⓘ, compact Sectors grid
 
 ## What's new in v0.23
 
