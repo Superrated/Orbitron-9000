@@ -4875,6 +4875,10 @@ window.MOODX={
  const ARPM={Melancholic:.45,'Melodic House':.4,Hopeful:.5,Italo:.35,Vector:.3,Dreamy:.3,Tense:.25};
  const ARPP={Melancholic:['PPG wave','Pluck','Mini lead','Cinematic arp'],'Melodic House':['Cinematic arp','PPG wave','Pluck','String pluck'],Hopeful:['Juno pulse','Pluck','String pluck'],
   Italo:['Juno pulse','Mini lead','Pluck'],Vector:['Pluck','West Coast fold','Glass'],Dreamy:['String pluck','Glass','Juno pulse'],Tense:['Hollow BP','Mini edge','Hard sync']};
+ /* v0.25: a bit more rotate drift in the hypnotic, spacious and melodic moods — one more track (perc, hats, stab or a non-arp lead) rotates every 8 or 16 bars */
+ const DRM={Ethereal:.6,Drone:.6,'Deep Space':.6,Melancholic:.5,Dreamy:.5,Bleep:.5,'Melodic House':.45,Noir:.45,Power:.4,Breaks:.35,Acid:.35};
+ const driftMore=()=>{const ch=DRM[curMood];if(!ch||R()>=ch)return;const c=[3,1,8,4].filter(k=>{const T=TR[k];return T&&!T.m&&!((T.p.rdr||0)>0)&&T.h>0&&!(k===4&&(G.arpOn||T.p.mode==='Acid 303'))&&!(k===1&&window.rigidHats&&rigidHats.on())});
+  if(c.length)TR[pick(c)].p.rdr=pick([8,16,16])};
  const arpify=()=>{G.arpOn=0;const L=TR[4],P=L.p,ch=ARPM[curMood];if(!ch||L.m||P.mode==='Acid 303'||ARPOK()||R()>=ch)return;
   const ok=(ARPP[curMood]||[]).filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1);G.arpOn=1;
   Object.assign(L,{st:16,ten:0});L.h=pick([16,16,12,8]);L.r=0;L.pt=pat(L);P.mode=pick(['Chord arp','Up/Down','Pedal arp','Chord arp','Up']);P.range=2;P.lock=Math.max(P.lock||0,.8);
@@ -4899,7 +4903,7 @@ window.MOODX={
   if(eng==='FM'&&(P.fmi||0)<.6)P.fmi=.9;
   // no cheesy runs
   const run=['Up','Up/Down','Random','Chord arp','Pedal arp'].includes(P.mode);if(run&&!ARPOK()){if(L.h>=8||P.mode==='Random'){P.mode=pick(['Motif','Interval','Turing loop']);if(L.st===16&&L.h>7){L.h=pick([4,5,6]);L.pt=pat(L)}buf=[];mot=[];mp=-1}}};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{G.flav=null;let f=FL[curMood];if(typeof f==='function')f=f();else if(Array.isArray(f))f=pick(f);if(f)apply(f);arpify();clean();
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{G.flav=null;let f=FL[curMood];if(typeof f==='function')f=f();else if(Array.isArray(f))f=pick(f);if(f)apply(f);arpify();clean();driftMore();
    const Q=window.orbQuality;if(Q){Q.gate();Q.slots();if(!TR[4].m&&TR[4].p.mode!=='Acid 303'){Q.bestRotation();Q.bestMelody()}}}catch(e){console.warn('[orbitron] flavour',e)}
   try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync();if(typeof lfoUI==='function')lfoUI()}catch(e){}},0);return r};
  window.orbFlavours=FL}
