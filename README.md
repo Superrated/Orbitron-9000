@@ -1,4 +1,4 @@
-# Orbitron 9000
+ß# Orbitron 9000
 
 A generative Euclidean groovebox for live playing on phone and computer, in a single HTML file (Web Audio, no dependencies, no build step).
 
@@ -33,7 +33,7 @@ Ten tracks — kick, hi-hat, clap, perc, snare, lead, pad, bass, dub stab and su
 - Launch picks a drum kit (909, 808, Rumble, Raw) that fits the mood, about 1 in 5 crosses over; bass characters (deep, round, rubbery, gritty); subtle ±15 % sound mutation so no two Launches sound identical
 - PUMP fader on Mix → Channels (sidechain depth and release in one)
 - Interface cleanup: nothing clips on a phone, compact header on Flight, master toggles moved to Bus & FX, help texts folded into ⓘ, compact Sectors grid
-- Mood flavours after the artists (2–3 per mood), space names for every mood, Launch quality (best-of lead lines, quality gate, groove per track, register slots), Lead Octave knob
+- Mood flavours after the sub (2–3 per mood), space names for every mood, Launch quality (best-of lead lines, quality gate, groove per track, register slots), Lead Octave knob
 - In-time Launch, risers and breakdowns release on the beat, safety loop when the audio goes haywire, recovery from audio output changes
 
 ## What's new in v0.23
