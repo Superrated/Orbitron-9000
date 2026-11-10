@@ -1301,7 +1301,7 @@ const _gen39=generate;generate=function(){_gen39();const P=TR[4].p,ac=P.mode==='
  let lt0=0,lastT=performance.now();
  setInterval(()=>{const d=$('#diag');if(!d||!d.offsetParent)return;const now=performance.now(),dt=(now-lastT)/1000;lastT=now;const late=QOS.lateTot-lt0;lt0=QOS.lateTot;
   const lat=ctx?Math.round(((ctx.baseLatency||0)+(ctx.outputLatency||0))*1000):0,ps=ctx&&ctx.playbackStats;
-  d.textContent='FLIGHT DIAGNOSTICS\n'+'core level   '+QOS.nm[QOS.lvl]+(QOS.floor?'  (floor '+QOS.nm[QOS.floor]+')':'')+'\n'+'voices       '+(QOS.eco2?QOS.voices()+' / 64':QOS.src.size)+'\n'+'audio load   '+(QOS.load?Math.round(QOS.load*100)+'%':'n/a on this browser')+'\n'+'late steps   '+late+' /s'+(late?'  ← sequencer can\'t keep up':'')+'\n'+'screen       '+Math.round(1000/Math.max(8,QOS.ft))+' fps'+'\n'+'buffer       '+(lat?lat+' ms':'n/a')+(ps&&ps.underrunEvents!=null?'\nunderruns    '+ps.underrunEvents:'')+'\n'+'mode         '+qual()+(mob?' · phone':'')+(lean()?' · lean':'')},1000)}
+  let tx=d.querySelector('.dtx');if(!tx){tx=document.createElement('div');tx.className='dtx';[...d.childNodes].forEach(n=>{if(n.nodeType===3)n.remove()});d.prepend(tx)}const dtxt='FLIGHT DIAGNOSTICS\n'+'core level   '+QOS.nm[QOS.lvl]+(QOS.floor?'  (floor '+QOS.nm[QOS.floor]+')':'')+'\n'+'voices       '+(QOS.eco2?QOS.voices()+' / 64':QOS.src.size)+'\n'+'audio load   '+(QOS.load?Math.round(QOS.load*100)+'%':'n/a on this browser')+'\n'+'late steps   '+late+' /s'+(late?'  ← sequencer can\'t keep up':'')+'\n'+'screen       '+Math.round(1000/Math.max(8,QOS.ft))+' fps'+'\n'+'buffer       '+(lat?lat+' ms':'n/a')+(ps&&ps.underrunEvents!=null?'\nunderruns    '+ps.underrunEvents:'')+'\n'+'mode         '+qual()+(mob?' · phone':'')+(lean()?' · lean':'');if(tx.textContent!==dtxt)tx.textContent=dtxt},1000)}
 gb.onclick=()=>{generate();try{if(!playing)toggle()}catch(e){}};$("#rnd").before(gb);
 /* ---- v35: fun space UI — shooting stars, rocket liftoff on Generate, mission-control course banner, transmission ticker, warp-speed easter egg ---- */
 {const st=document.createElement('style');st.textContent=`
@@ -2215,7 +2215,7 @@ TR[5].p.mov=TR[5].p.mov||'Classic';
  {const add=()=>{const g=document.querySelector('#t-mix .eng');if(!g||g.querySelector('.rst'))return;const b=document.createElement('button');b.className='pad rst';b.style.cssText='grid-column:1/-1;min-height:44px';b.textContent='Reset audio engine';b.onclick=()=>hardReset('manual');g.appendChild(b)};add();setInterval(add,2000)}
  // show it in the diagnostics readout
  setInterval(()=>{const d=$('#diag');if(!d||!d.offsetParent)return;let x=d.querySelector('.stab');if(!x){x=document.createElement('div');x.className='stab';x.style.cssText='margin-top:6px;font-size:11px;opacity:.85';d.appendChild(x)}
-  x.textContent=`stability · errors ${ERR.n}${ERR.last?' ('+ERR.last.slice(0,60)+')':''} · resumes ${ERR.resumes||0} · catch-ups ${ERR.catchups||0} · NaN resets ${ERR.nanResets||0} · rebuilds ${ERR.rebuilds||0} · silences ${ERR.silences||0} · clock ${wk?'worker':'page'} · audio ${ctx?ctx.state:'-'}`},1000)}
+  const sx=`stability · errors ${ERR.n}${ERR.last?' ('+ERR.last.slice(0,60)+')':''} · resumes ${ERR.resumes||0} · catch-ups ${ERR.catchups||0} · NaN resets ${ERR.nanResets||0} · rebuilds ${ERR.rebuilds||0} · silences ${ERR.silences||0} · clock ${wk?'worker':'page'} · audio ${ctx?ctx.state:'-'}`;if(x.textContent!==sx)x.textContent=sx},1000)}
 /* ---- v91: 909-style ride as a Perc sound — Perc sound: Blip / Ride (six detuned square partials, high band-pass, bell ping, noise wash), pre-rendered per setting; moods sometimes switch perc to ride ---- */
 {const P0=TR[3].p;Object.assign(P0,{pv:P0.pv||'Blip',rtn:P0.rtn||1,rdc:P0.rdc||1.1,rbl:P0.rbl==null?.4:P0.rbl});
  function rideRaw(w,p){const t=p.rtn||1,dec=p.rdc||1.1,out=ctx.createGain(),pn=ctx.createStereoPanner();pn.pan.value=.25;out.connect(pn);
@@ -2415,7 +2415,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  const _in=init;init=function(){const r=_in.apply(this,arguments);try{build()}catch(e){console.warn('finish',e)}return r};
  const _gf=generate;generate=function(){const r=_gf.apply(this,arguments);try{apply(0)}catch(e){}return r};
  const mp=document.querySelector('#t-mix .panel');if(mp){const b=document.createElement('button');b.className='finb';
-  const lab=()=>{b.innerHTML=G.fin?'✦ Mood finish <b>ON</b> · '+MN(curMood):'✧ Mood finish <b>OFF</b> · raw mix';b.classList.toggle('on',!!G.fin)};lab();setInterval(lab,1000);
+  const lab=()=>{const h=G.fin?'✦ Mood finish <b>ON</b> · '+MN(curMood):'✧ Mood finish <b>OFF</b> · raw mix';if(b.innerHTML!==h)b.innerHTML=h;b.classList.toggle('on',!!G.fin)};lab();setInterval(lab,1000);
   b.title='Per-mood mastering polish: tone shaping, mono bass, stereo width, reverb colour and level matching. Tap to compare with the raw mix.';
   b.onclick=()=>{G.fin=G.fin?0:1;try{localStorage.setItem('orb-fin',G.fin)}catch(e){}apply(0);lab()};mp.querySelector('h2').after(b);
   const st=document.createElement('style');st.textContent='.finb{display:block;width:100%;min-height:42px;margin:0 0 10px;border:1px solid rgba(0,255,156,.35);border-radius:10px;background:transparent;color:inherit;font:inherit;cursor:pointer;opacity:.75}.finb.on{opacity:1;border-color:var(--acc,#ffe44d);box-shadow:0 0 8px rgba(255,228,77,.3)}.finb b{color:var(--acc,#ffe44d)}';document.head.appendChild(st)}}
@@ -3203,7 +3203,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const _in=init;init=function(){const r=_in.apply(this,arguments);try{setTimeout(()=>{try{build();if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1}catch(e){console.warn('master+',e)}},0)}catch(e){}return r};
  const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();window._mstLearn=performance.now()+9000;if(on&&M&&M.ctx===ctx){agDb=MEM[curMood]!=null?MEM[curMood]:-2.5;hist=[];M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.15)}}catch(e){}return r};
  // UI under Mood finish
- let box=null;const lab=()=>{if(!box)return;const b=box.querySelector('button');b.innerHTML=on?'▲ Master+ <b>ON</b> · peak control + −9 LUFS':'△ Master+ <b>OFF</b> · previous master';b.classList.toggle('on',on)};
+ let box=null;const lab=()=>{if(!box)return;const b=box.querySelector('button');{const h=on?'▲ Master+ <b>ON</b> · peak control + −9 LUFS':'△ Master+ <b>OFF</b> · previous master';if(b.innerHTML!==h)b.innerHTML=h}b.classList.toggle('on',on)};
  function show(){if(!box||!box.offsetParent)return;const t=box.querySelector('.mtx'),f=box.querySelector('.mfl');const l=stv<-60?'—':stv.toFixed(1);
   t.textContent=l+' LUFS · peak '+(pk<-60?'—':pk.toFixed(1))+' dB'+(on?' · gain '+(agDb>=0?'+':'')+agDb.toFixed(1):'');f.style.width=Math.max(0,Math.min(100,(stv+30)/30*100))+'%';f.classList.toggle('hot',stv>-7)}
  const add=()=>{const fb=document.querySelector('.finb');if(!fb||document.querySelector('.mstx'))return;box=document.createElement('div');box.className='mstx';
