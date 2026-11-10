@@ -1383,7 +1383,7 @@ const _gen43=generate;generate=function(){_gen43();if(curMood!=='Power')return;c
  G.pedal=true;buf=[];mot=[];mp=-1;build()};
 /* ---- v45: live stability — pre-rendered drum hits (kick/snare/clap/fixed perc), Stage mode, audio interruption recovery ---- */
 window.DR={cache:new Map(),pend:new Set(),rendering:false,vr:1,hits:0,live:0,
- key(k,p){const r=x=>Math.round((+x||0)*1000)/1000;
+ key(k,p){if(window.LFNC&&LFNC.has(k))return null;const r=x=>Math.round((+x||0)*1000)/1000; /* v0.22: an LFO moving this drum's sound → play it live */
   if(k===0)return 'k|'+[p.pitch,p.dec,p.punch,p.click==null?1:p.click].map(r).join(',');
   if(k===7)return 's|'+[p.tone,p.snap,p.dec].map(r).join(',');
   if(k===2)return 'c|'+[p.tone,p.spread,p.tail,p.body||0].map(r).join(',');
@@ -1764,16 +1764,18 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  // octave up / 2 octaves up live in the thrusters now; the key readout moves with them
  [...PH.children].forEach((b,i)=>{b.classList.remove('act');b.style.setProperty('--col',i?'#ff8cf0':'#c9a2ff');b.innerHTML=i?'+2 octaves':'+1 octave';g.appendChild(b)});KL.style.cssText='font-size:11px;color:var(--muted);margin-top:10px';arm.after(KL);QP.style.display='none'}
 /* ---- v63: LFO targets reworked — drop the less musical ones (sidechain depth, perc FM, master pump, delay mix, bus grit), add per-note sound targets and continuous tape wobble / shimmer ---- */
-{const NEWV=["Lead cutoff","Lead resonance","Lead decay","Lead detune","Lead glide","Bass cutoff","Bass resonance","Bass decay","Pad cutoff","Stab cutoff","Stab decay","Stab echo","Hat tone","Hat decay"],
-  NEWP=["Master low-pass","Master high-pass","Delay feedback","Tape wobble","Reverb mix","Shimmer","Rumble"];
+{const NEWV=["Lead cutoff","Lead resonance","Lead decay","Lead detune","Lead glide","Bass cutoff","Bass resonance","Bass decay","Pad cutoff","Stab cutoff","Stab decay","Stab echo","Hat tone","Hat decay","Lead drive","Bass drive","Perc decay","Perc octave","Clap tone"],
+  NEWR=["Perc hits","Hat hits","Lead hits","Stab hits"],NEWP=["Master low-pass","Master high-pass","Delay feedback","Tape wobble","Reverb mix","Shimmer","Rumble"];
  const OLD=new Set(["Sidechain depth","Perc FM","Perc filter","Perc decay","Master pump","Delay mix","Bus grit"]);
  LF_V.splice(0,LF_V.length,...NEWV);LF_P.splice(0,LF_P.length,...NEWP);
  LFOS.forEach(L=>{if(OLD.has(L.tg))L.tg='Lead cutoff'});
  // per-note targets: [track, param(s), how the LFO value s (−depth..+depth) bends it]
  const exp=(k,lo,hi)=>(b,s)=>Math.max(lo,Math.min(hi,b*Math.pow(2,k*s)));
- const PN={"Lead resonance":[4,['res'],exp(.8,.5,9)],"Lead detune":[4,['det','o2d','o3d'],(b,s)=>b+18*s*(b>=0?1:-1)],"Lead glide":[4,['glk','gt'],(b,s)=>Math.max(0,b*(1+s)+60*Math.max(0,s))],
-  "Bass resonance":[6,['res'],exp(.8,.5,5)],"Bass decay":[6,['dec'],exp(1.2,.08,.8)],"Stab decay":[8,['dec'],exp(1.5,.05,.8)],"Stab echo":[8,['eko'],(b,s)=>Math.max(0,Math.min(1,b+.45*s))],
-  "Hat decay":[1,['dec'],exp(1.8,.02,.4)]};
+ const PN={"Lead resonance":[4,['res'],exp(.8,.5,13)],"Lead detune":[4,['det','o2d','o3d'],(b,s)=>b+18*s*(b>=0?1:-1)],"Lead glide":[4,['glk','gt'],(b,s)=>Math.max(0,b*(1+s)+60*Math.max(0,s))],
+  "Bass resonance":[6,['res'],exp(.8,.5,8)],"Bass decay":[6,['dec'],exp(1.2,.08,.8)],"Stab decay":[8,['dec'],exp(1.5,.05,.8)],"Stab echo":[8,['eko'],(b,s)=>Math.max(0,Math.min(1,b+.45*s))],
+  "Hat decay":[1,['dec'],exp(1.8,.02,.4)],
+  /* v0.22 sound targets */"Lead drive":[4,['drv'],(b,s)=>Math.max(0,Math.min(1,(b||0)+.5*s))],"Bass drive":[6,['bdrv'],(b,s)=>Math.max(0,Math.min(.8,(b||0)+.4*s))],
+  "Perc decay":[3,['dec','mdec'],exp(1.5,.02,1.5)],"Perc octave":[3,['oct'],(b,s)=>Math.max(2,Math.min(7,b+Math.round(s)))],"Clap tone":[2,['tone'],exp(1,500,5000)]};
  const apply=(k,w)=>{let sv=null;for(const tg in PN){const D=PN[tg];if(D[0]!==k)continue;const s=mv(tg,w);if(!s)continue;const P=TR[k].p;sv=sv||[];D[1].forEach(key=>{if(P[key]==null)return;sv.push([key,P[key]]);P[key]=D[2](P[key],s)})}return sv};
  const undo=(k,sv)=>{if(sv)for(let i=sv.length-1;i>=0;i--)TR[k].p[sv[i][0]]=sv[i][1]};
  const _f63=fire;fire=function(k,w){const sv=apply(k,w);try{_f63(k,w)}finally{undo(k,sv)}};
@@ -1785,8 +1787,8 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
   const[s2,d2]=mvd("Shimmer",t+.03);if(d2>0){LF_ACT.Shimmer=1;A.sh.gain.setTargetAtTime(Math.max(0,(G.shim||0)+.9*s2),t,.03)}else if(LF_ACT.Shimmer){LF_ACT.Shimmer=0;A.sh.gain.setTargetAtTime(G.shim||0,t,.05)}},30);
  // rebuild the target menus
  document.querySelectorAll('#t-lfo select').forEach((s,i)=>{if(![...s.options].some(o=>o.value==='Lead cutoff'))return;const cur=s.value;s.innerHTML='';
-  [["— Sound (per note) —",""],...NEWV.map(x=>[x,x]),["— Master / FX (continuous) —",""],...NEWP.map(x=>[x,x])].forEach(o=>s.add(new Option(o[0],o[1])));s.value=OLD.has(cur)?'Lead cutoff':cur});
- const note=document.querySelector('#t-lfo .gnote');if(note)note.textContent='Depth 0 = off. Sound targets bend each note as it starts (pad: each chord); Master/FX targets move continuously. Tape wobble warbles the delay time for dubby pitch drift on the echoes. Sync rate is a full cycle.'}
+  [["— Sound (per note) —",""],...NEWV.map(x=>[x,x]),["— Rhythm (per bar) —",""],...NEWR.map(x=>[x,x]),["— Master / FX (continuous) —",""],...NEWP.map(x=>[x,x])].forEach(o=>s.add(new Option(o[0],o[1])));s.value=OLD.has(cur)?'Lead cutoff':cur});
+ const note=document.querySelector('#t-lfo .gnote');if(note)note.textContent='Depth 0 = off. Sound targets bend each note as it starts (pad: each chord); Rhythm targets add or remove hits once per bar around your setting; Master/FX targets move continuously. Tape wobble warbles the delay time for dubby pitch drift on the echoes. Sync rate is a full cycle.'}
 /* ---- v64: Mix tab split into "Bus & FX" (everything as before) and "Channels" (per-track level, pan, pan movement); credits ---- */
 {TR.forEach(T=>{if(T.pan==null)T.pan=0});
  const NOPAN=new Set([0,6,9]);let CURK=null,CURW=0;
@@ -3783,7 +3785,9 @@ window.MOODX={
   try{A.pre.disconnect(A.glue)}catch(e){}
   /* v0.22 master Air: two cascaded high shelves (≈ a wide Baxandall lift/cut above ~10 kHz), flat at 0 dB */
   const a1=ctx.createBiquadFilter(),a2=ctx.createBiquadFilter();a1.type=a2.type='highshelf';a1.frequency.value=8000;a2.frequency.value=14000;A.air=[a1,a2];window.airSet&&airSet(G.air||0,1);
-  A.pre.connect(a1);a1.connect(a2);a2.connect(h1);h1.connect(h2);h2.connect(sp);sp.connect(mid,0);sp.connect(mid,1);sp.connect(side,0);sp.connect(sn,1);sn.connect(side);
+  /* v0.22 global mud tilt, same for every mood: −2 dB around 300 Hz, +1.5 dB presence around 1.6 kHz */
+  const t1=bq('peaking',300,.9),t2=bq('peaking',1600,.7);t1.gain.value=-2;t2.gain.value=1.5;A.tilt=[t1,t2];
+  A.pre.connect(a1);a1.connect(a2);a2.connect(t1);t1.connect(t2);t2.connect(h1);h1.connect(h2);h2.connect(sp);sp.connect(mid,0);sp.connect(mid,1);sp.connect(side,0);sp.connect(sn,1);sn.connect(side);
   side.connect(s1);s1.connect(s2);mid.connect(L);s2.connect(L);mid.connect(Rr);s2.connect(inv);inv.connect(Rr);L.connect(mg,0,0);Rr.connect(mg,0,1);mg.connect(A.glue);
   P={ctx,pre:A.pre,h1}};
  const _f=fire;fire=function(k,w){if(!(P&&P.ctx===ctx&&P.pre===A.pre))try{mk()}catch(e){console.warn('[orbitron] pa',e)}return _f.apply(this,arguments)};
@@ -4219,7 +4223,7 @@ window.MOODX={
    4. Plate reverb: the reverb impulses are rebuilt as a smooth plate with natural damping (highs fade about twice as fast as lows),
       a soft build-up and decorrelated stereo — same lengths as before, so no extra CPU. Pre-delay follows the tempo (≈1/64 note). ---- */
 {if(G.pro==null){G.pro=1;try{const v=localStorage.getItem('orb-pro');if(v!=null)G.pro=+v}catch(e){}}
- let CURK=null,NID=0,NIDC=0,MAKING=0,MEAS=null,EQN=0;const EQK={2:[180],3:[120],4:[140],5:[110,1],7:[110]},DRIFT=new Set([4,8]);
+ let CURK=null,NID=0,NIDC=0,MAKING=0,MEAS=null,EQN=0;const EQK={0:[20,1,250,-3],2:[180],3:[120],4:[140],5:[110,1],7:[110]},DRIFT=new Set([4,8]);
  const t0=performance.now(),drift=()=>{const t=(performance.now()-t0)/1000;return 1.1*Math.sin(t*.37)+.7*Math.sin(t*.23+1.3)+(Math.random()*2-1)*1.1};
  // tag every node a track creates while it makes a sound
  const CP=BaseAudioContext.prototype;
@@ -4231,13 +4235,13 @@ window.MOODX={
  // shared clean-up EQ per track and destination
  let EQC=null;const eqFor=(k,d)=>{if(!EQC||EQC.ctx!==ctx)EQC={ctx,m:{}};const m=EQC.m[k]||(EQC.m[k]=new Map());let e=m.get(d);if(e)return e;if(m.size>=8)return null;
   MAKING=1;try{const [f,mud]=EQK[k],h=ctx.createBiquadFilter();h.type='highpass';h.frequency.value=f;h.Q.value=.707;h.__eq=1;h.__dst=d;let out=h;
-   if(mud){const pk=ctx.createBiquadFilter();pk.type='peaking';pk.frequency.value=300;pk.Q.value=1;pk.gain.value=-2;pk.__eq=1;h.connect(pk);out=pk}
+   if(mud){const pk=ctx.createBiquadFilter();pk.type='peaking';pk.frequency.value=EQK[k][2]||300;pk.Q.value=1;pk.gain.value=EQK[k][3]||-2;pk.__eq=1;h.connect(pk);out=pk}
    out.connect(d);m.set(d,h);EQN++;return h}finally{MAKING=0}};
  const oc=AudioNode.prototype.connect;
  AudioNode.prototype.connect=function(d,...r){const k=this.__k;
   if(k!=null&&!this.__eq&&d instanceof AudioNode&&this.context===ctx&&!(window.DR&&DR.rendering)){
    if(MEAS&&!d.__an&&(d.__eq?!isSend(d.__dst):(!isSend(d)&&(isBus(d)||(d.__k!=null&&d.__n!==this.__n)))))try{oc.call(this,MEAS.an(k))}catch(e){}
-   if(G.pro&&!r.length&&EQK[k]&&d.__k==null&&!d.__eq&&isBus(d)&&!(d instanceof AudioDestinationNode)&&!(k===4&&TR[4].p.mode==='Acid 303')&&!(window.LOWPASS&&LOWPASS.get()<.999)){
+   if((G.pro||k===0)&&!r.length&&EQK[k]&&d.__k==null&&!d.__eq&&isBus(d)&&!(d instanceof AudioDestinationNode)&&!(k===4&&TR[4].p.mode==='Acid 303')&&!(window.LOWPASS&&LOWPASS.get()<.999)){
     const e=eqFor(k,d);if(e){oc.call(this,e);return d}}}
   return oc.apply(this,[d,...r])};
  // analog glue: tape curve on the synth bus (unity at low level, about 2 dB softer at full scale, slightly asymmetric)
@@ -4456,5 +4460,42 @@ window.MOODX={
 /* ---- v0.22: a new Launch resets the Flight faders: Low-pass fully open, LEAD and BASS back to AS SET, Altitude octave off. ---- */
 {const _g=generate;generate=function(){try{window.lpReset&&lpReset()}catch(e){}try{window.leadMacro&&leadMacro.reset&&leadMacro.reset()}catch(e){}
   try{window.bassMacro&&bassMacro.reset&&bassMacro.reset()}catch(e){}G.oct=0;return _g.apply(this,arguments)}}
+</script>
+<script>
+/* ---- v0.22: more useful LFO targets + polymeters on Launch.
+   · weak targets scaled up so a given Depth sounds about equally strong everywhere (resonance, detune, glide, decays, hat tone)
+   · new Sound targets: Lead drive, Bass drive, Perc decay, Perc octave, Clap tone (drums they touch play live instead of from the cache)
+   · new Rhythm targets: Perc / Hat / Lead / Stab hits — once per bar the LFO adds or removes hits around your setting (up to ±60 %); depth 0 puts it back
+   · Launch: most launches give 1–2 of perc, lead, hats, stab a polymetric ring (12, 14, 7, 11 …) or Rotate drift (4/8/16 bars); kick, clap and bass stay on 16.
+     About 1 launch in 3 also puts a Rhythm or Sound target on the slow LFO (LFO 3). ---- */
+{const SC={'Lead resonance':2,'Bass resonance':2,'Lead detune':1.7,'Hat tone':1.3,'Lead decay':1.3,'Bass decay':1.3,'Lead glide':1.5};
+ const _mv=mv;mv=function(tg,t){const s=_mv.apply(this,arguments);return s&&SC[tg]?s*SC[tg]:s};
+ const _mvd=mvd;mvd=function(tg,t){const r=_mvd.apply(this,arguments);if(r&&SC[tg])r[0]*=SC[tg];return r};
+ const NC={'Perc decay':3,'Perc octave':3,'Clap tone':2};window.LFNC=new Set();
+ setInterval(()=>{const s=new Set();LFOS.forEach(L=>{if(L.d>0&&NC[L.tg]!=null)s.add(NC[L.tg])});window.LFNC=s},250);
+ // Rhythm: hits per bar
+ const RH={'Perc hits':3,'Hat hits':1,'Lead hits':4,'Stab hits':8};let HB={};
+ const redraw=T=>{try{draw(T,-1)}catch(e){}};
+ const step=t=>{const act={};LFOS.forEach(L=>{const k=RH[L.tg];if(k!=null&&L.d>0)act[k]=(act[k]||0)+L.d*lfV(L,t)});
+  Object.values(RH).forEach(k=>{const T=TR[k];if(!T)return;let H=HB[k];
+   if(act[k]==null){if(H){if(T.h===H.a){T.h=H.b;T.pt=pat(T);redraw(T)}delete HB[k]}return}
+   if(!H||T.h!==H.a)H=HB[k]={b:T.h,a:T.h};const v=Math.max(-1,Math.min(1,act[k])),span=Math.max(1,Math.round(H.b*.6)),
+    h=Math.max(1,Math.min(T.st,H.b+Math.round(v*span)));if(h!==T.h){T.h=h;T.pt=pat(T);redraw(T)}H.a=T.h})};
+ const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);try{if(playing&&((tk%16)+16)%16===0)step(w)}catch(e){}return r};
+ // Launch: polymeters / drift + sometimes a new LFO target
+ const POLY={3:[12,14,10,7,11,13],4:[12,14,7,11,13],1:[12,14,15],8:[12,14,10]};
+ const _g=generate;generate=function(){HB={};const r=_g.apply(this,arguments);try{
+   const cand=[3,4,1,8].filter(k=>{const T=TR[k];return T&&!T.m&&!T.pad&&!(k===4&&T.p.mode==='Acid 303')&&!(k===1&&window.rigidHats&&rigidHats.on())});
+   if(R()<.8){let have=cand.filter(k=>TR[k].st!==16||(TR[k].p.rdr||0)>0).length;const want=pick([1,2,2]);
+    const pool=cand.filter(k=>TR[k].st===16&&!((TR[k].p.rdr||0)>0)).sort(()=>R()-.5);
+    while(have<want&&pool.length){const k=pool.shift(),T=TR[k];
+     if(R()<.55){const st=pick(POLY[k]);T.h=Math.max(1,Math.min(st-1,Math.round(T.h*st/16)||1));T.st=st;T.r=Math.floor(R()*st);T.pt=pat(T)}
+     else T.p.rdr=pick([4,8,16]);have++}}
+   const L=LFOS[2];if(L&&!(L.d>0)&&R()<.35){const on=k=>TR[k]&&!TR[k].m;
+    const rh=['Perc hits','Hat hits','Lead hits'].filter(n=>on(RH[n])),so=[['Lead drive',4],['Bass drive',6],['Perc decay',3],['Clap tone',2],['Perc octave',3]].filter(x=>on(x[1])).map(x=>x[0]);
+    const useR=rh.length&&(R()<.5||!so.length),tg=useR?pick(rh):so.length?pick(so):null;
+    if(tg)Object.assign(L,{tg,sh:pick([0,1]),sync:1,div:useR?pick([32,64]):pick([8,16,32]),d:+(useR?.5+R()*.3:.3+R()*.3).toFixed(2),ph:0})}
+  }catch(e){console.warn('[orbitron] poly',e)}
+  setTimeout(()=>{try{window.syncFaders&&syncFaders();if(typeof lfoUI==='function')lfoUI()}catch(e){}},0);return r}}
 </script>
 </body></html>
