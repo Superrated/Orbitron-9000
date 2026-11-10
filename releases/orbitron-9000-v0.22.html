@@ -288,7 +288,8 @@ function fireVoice(k,w){const T=TR[k],p=T.p,v=T.lv;if(window.DR&&DR.on(k,w,v,p))
  else if(k===4&&p.mode==='Acid 303')acidVoice(w);
  else if(k===4&&p.eng==='Mini')miniVoice(w);
  else if(k===4)leadPoly(w);
- else if(k===6){let d=G.pedal?0:cur.r;if(lastDeg%2&&R()<p.fifth)d+=4;const bS=(p.bsus||0)>.01,bB=window.BFDEC||p.dec,bR=Math.min(.35,Math.max(.04,bB*.8)),f=window.BOVF||d2f(d,p.oct)*(G.bstyle==='octave'?(tk%2?2:1):G.bstyle==='funk'?[1,1,2,1,2,1,1,2][tk%8]:(R()<p.jump?2:1)),e=w+p.dec+(bS?bR:0)+.05,o=osc("sawtooth",f,w,e),o2=osc("sawtooth",f,w,e),s=osc("sine",f,w,e),q=ctx.createBiquadFilter(),g=ctx.createGain(),sg=ctx.createGain();o2.detune.value=p.det;sg.gain.value=p.sub*1.2;{const pp=p.bpp||0;if(pp>.02&&!(window.BSLF&&Math.abs(BSLF/f-1)>.01)){const f0=f*Math.pow(2,pp*1.5),te=w+.035+pp*.04;[o,o2,s].forEach(x=>{x.frequency.setValueAtTime(f0,w);x.frequency.exponentialRampToValueAtTime(f,te)})}}q.type="lowpass";q.Q.value=p.res;{const bm=Math.pow(2,2*mv("Bass cutoff",w));q.frequency.setValueAtTime(p.cut*bm*(1+p.envA),w);q.frequency.exponentialRampToValueAtTime(p.cut*bm*.4,w+(window.BFDEC||p.dec)*.8)}if(bS){const pk=v*.6,sl=Math.max(.0002,pk*Math.min(1,p.bsus));g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(pk,w+.003);g.gain.setTargetAtTime(sl,w+.003,Math.max(.015,bB/3));g.gain.setTargetAtTime(.0001,w+Math.max(.02,p.dec),bR/4)}else env(g,w,v*.6,p.dec);if(window.BSLF&&Math.abs(BSLF/f-1)>.01)[o,o2,s].forEach(x=>{x.frequency.setValueAtTime(BSLF,w);x.frequency.exponentialRampToValueAtTime(f,w+(window.BSLT||.06))});window.BLF=f;window.BLFN=(window.BLFN||0)+1;o.connect(q);o2.connect(q);{const sm=p.sqm||0;if(sm>.02){const o3=osc('square',f,w,e),g3=ctx.createGain();g3.gain.value=sm*.8;{const pp=p.bpp||0;if(pp>.02&&!(window.BSLF&&Math.abs(BSLF/f-1)>.01)){o3.frequency.setValueAtTime(f*Math.pow(2,pp*1.5),w);o3.frequency.exponentialRampToValueAtTime(f,w+.035+pp*.04)}}o3.connect(g3);g3.connect(q);o.detune.value=0;if(window.BSLF&&Math.abs(BSLF/f-1)>.01){o3.frequency.setValueAtTime(BSLF,w);o3.frequency.exponentialRampToValueAtTime(f,w+(window.BSLT||.06))}}}
+ else if(k===6){let d=G.pedal?0:cur.r;if(lastDeg%2&&R()<p.fifth)d+=4;const bS=(p.bsus||0)>.01,bB=window.BFDEC||p.dec,bR=Math.min(.35,Math.max(.04,bB*.8)),f=window.BOVF||d2f(d,p.oct)*(G.bstyle==='octave'?(tk%2?2:1):G.bstyle==='funk'?[1,1,2,1,2,1,1,2][tk%8]:(R()<p.jump?2:1)),e=w+p.dec+(bS?bR:0)+.05,o=osc("sawtooth",f,w,e),o2=osc("sawtooth",f,w,e),s=osc("sine",f,w,e),q=ctx.createBiquadFilter(),g=ctx.createGain(),sg=ctx.createGain();o2.detune.value=p.det;sg.gain.value=p.sub*1.2;{const pp=p.bpp||0;if(pp>.02&&!(window.BSLF&&Math.abs(BSLF/f-1)>.01)){const f0=f*Math.pow(2,pp*1.5),te=w+.035+pp*.04;[o,o2,s].forEach(x=>{x.frequency.setValueAtTime(f0,w);x.frequency.exponentialRampToValueAtTime(f,te)})}}q.type="lowpass";q.Q.value=p.res;{const bm=Math.pow(2,2*mv("Bass cutoff",w));if(bS&&p.dec>.3){const L=p.dec,a=Math.min(.45,L*.35),c=p.cut*bm;q.frequency.setValueAtTime(c*.6,w);q.frequency.exponentialRampToValueAtTime(Math.min(16000,c*(1+p.envA*.6)),w+a);q.frequency.exponentialRampToValueAtTime(c*.5,w+L)} /* v0.22: long held notes swell open, then settle */
+ else{q.frequency.setValueAtTime(p.cut*bm*(1+p.envA),w);q.frequency.exponentialRampToValueAtTime(p.cut*bm*.4,w+(window.BFDEC||p.dec)*.8)}}if(bS){const pk=v*.6,sl=Math.max(.0002,pk*Math.min(1,p.bsus));g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(pk,w+.003);g.gain.setTargetAtTime(sl,w+.003,Math.max(.015,bB/3));g.gain.setTargetAtTime(.0001,w+Math.max(.02,p.dec),bR/4)}else env(g,w,v*.6,p.dec);if(window.BSLF&&Math.abs(BSLF/f-1)>.01)[o,o2,s].forEach(x=>{x.frequency.setValueAtTime(BSLF,w);x.frequency.exponentialRampToValueAtTime(f,w+(window.BSLT||.06))});window.BLF=f;window.BLFN=(window.BLFN||0)+1;o.connect(q);o2.connect(q);{const sm=p.sqm||0;if(sm>.02){const o3=osc('square',f,w,e),g3=ctx.createGain();g3.gain.value=sm*.8;{const pp=p.bpp||0;if(pp>.02&&!(window.BSLF&&Math.abs(BSLF/f-1)>.01)){o3.frequency.setValueAtTime(f*Math.pow(2,pp*1.5),w);o3.frequency.exponentialRampToValueAtTime(f,w+.035+pp*.04)}}o3.connect(g3);g3.connect(q);o.detune.value=0;if(window.BSLF&&Math.abs(BSLF/f-1)>.01){o3.frequency.setValueAtTime(BSLF,w);o3.frequency.exponentialRampToValueAtTime(f,w+(window.BSLT||.06))}}}
  {let src=q;const gr=p.bgr||0;if(gr>.02&&window.bassFold){const fw=ctx.createWaveShaper(),kk=Math.round(gr*10);fw.curve=BFC[kk]||(BFC[kk]=bassFold(kk/10));const fm=ctx.createGain();fm.gain.value=1/(1+gr*.6);q.connect(fw);fw.connect(fm);src=fm}const dv=p.bdrv||0;if(dv>.02){const ws=ctx.createWaveShaper(),k=Math.round((1+dv*6)*10)/10;ws.curve=BDC[k]||(BDC[k]=satCurve(k));const mk=ctx.createGain();mk.gain.value=1+dv*2.4;src.connect(ws);ws.connect(mk);mk.connect(g)}else src.connect(g)}s.connect(sg);sg.connect(g);send(g,A.dkb,0,0)}};
 const BDC={};
 function fire(k,w){OCT=(k===6||k===9)?0:(G.oct||0);FIX=0;if(k===3&&TR[3].p.mode==="Fixed")FIX=440*Math.pow(2,(TR[3].p.tune-69)/12);if(tk%2)w+=G.swing*sdur();
@@ -1886,8 +1887,8 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
   const cap=P.bsus>.01?Math.min(4,24*sd):1.6;if(P.bgt>0)P.dec=Math.max(.05,Math.min(cap,P.bgt*nextHit(s)*sd*.95));else if(P.bsus>.01)P.dec=Math.max(.05,Math.min(cap,nextHit(s)*sd*.95)); // v0.22: with Sustain a note holds until the next bass note (Gate shortens it)
   if(opt&&opt.ghost){P.dec=Math.min(P.dec,.09);P.cut=P.cut*.55;B.lv=B.lv*.38}
   if(opt&&opt.roll){if(!(P.bgt>0))P.dec=Math.min(P.dec,sd*.85);B.lv=B.lv*(opt.roll===1?.8:opt.roll===2?1:.9)}
-  window.BOVF=window.BNSF||opt&&opt.f||0;const sl=P.bsl>0&&window.BLF&&s-lastBassStep<=4&&hs(7,s%32,Math.floor(tk/32))<P.bsl;window.BSLF=sl?BLF:0;window.BSLT=Math.min(.09,sd*.6);
-  const bv=G.bavoid;if(opt&&opt.force&&!G.bavStrict)G.bavoid=false;if(G.bavoid&&G.bavStrict){const K=TR[0];if(!K.m&&K.pt[((s%K.st)+K.st)%K.st])return}try{_f70(6,w)}finally{G.bavoid=bv;P.dec=o.dec;P.cut=o.cut;B.lv=o.lv;window.BOVF=0;window.BSLF=0;window.BFDEC=0}if(!(opt&&opt.ghost))lastBassStep=s}
+  window.BOVF=window.BNSF||opt&&opt.f||0;const held=P.bsus>.01,touch=window.BLE&&w<=BLE+.012,sl=P.bsl>0&&window.BLF&&(held?touch:s-lastBassStep<=4)&&hs(7,s%32,Math.floor(tk/32))<(held?Math.min(1,P.bsl*2):P.bsl);window.BSLF=sl?BLF:0;window.BSLT=held?Math.min(.14,sd*.9):Math.min(.09,sd*.6); /* v0.22: held bass slides only between touching notes, a little slower */
+  const bv=G.bavoid;if(opt&&opt.force&&!G.bavStrict)G.bavoid=false;if(G.bavoid&&G.bavStrict){const K=TR[0];if(!K.m&&K.pt[((s%K.st)+K.st)%K.st])return}try{window.BLE=w+P.dec;_f70(6,w)}finally{G.bavoid=bv;P.dec=o.dec;P.cut=o.cut;B.lv=o.lv;window.BOVF=0;window.BSLF=0;window.BFDEC=0}if(!(opt&&opt.ghost))lastBassStep=s}
  const _f70=fire;fire=function(k,w){if(k!==6)return _f70(k,w);const P=B.p,s=tk;if(inFill(s))return;
   if(P.blk!=='Free'&&P.blk!=='Around kick')return; // handled per step below
   if(P.blk==='Around kick'&&kickHit(s))return;play(w)};
@@ -2723,7 +2724,7 @@ body .panel.top .stg{height:22px!important;min-height:22px!important}}
 /* ---- v135: Bassline toolkit — Style picker, Notes (note source), Kick avoid, Turnaround, 🎲 New bassline;
    sound: Pitch punch (a fast pitch drop at each note) and Growl (wavefolder before the drive). ---- */
 window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=(1-a*.7)*x+a*.7*Math.sin(x*Math.PI*k)/1.15}let m=0;for(const v of c)m=Math.max(m,Math.abs(v));for(let i=0;i<n;i++)c[i]/=m||1;return c};
-{const BNS=['Auto','Root','Pedal','Octave','Root + fifth','Chord tones','Scale walk','Arp up','Arp down'];
+{const BNS=['Auto','Root','Pedal','Octave','Root + fifth','Chord tones','Scale walk','Arp up','Arp down','Melodic'];
  const STY={'Octave bounce':['xxxxxxxxxxxxxxxx','Octave',.35,0,0],'Off-beat':['..x...x...x...x.','Root',.5,0,.1],'Gallop':['x.xxx.xxx.xxx.xx','Root',.4,0,0],
   'Rolling 16ths':['.xxx.xxx.xxx.xxx','Root',.25,0,.15],'Syncopated':['x..x..x...x..x..','Chord tones',.55,.15,0],'Walking':['x.x.x.x.x.x.x.x.','Scale walk',.65,.1,0],
   'Pedal':['x.x.x.x.x.x.x.x.','Pedal',.4,0,.1],'Acid run':['xx.xx.xxx.xx.x.x','Chord tones',.3,.35,.2],'Octave 8ths':['x.x.x.x.x.x.x.x.','Octave',.45,0,0],'Disco run':['x.xx.xx.x.xx.xx.','Octave',.4,.1,0]};
@@ -2740,7 +2741,14 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   else if(m==='Rolling'){setRing([...'.xxx.xxx.xxx.xxx'].map(c=>c==='x'?1:0));G.bavoid=true;G.bavStrict=true;if(!(P.bgt>0))P.bgt=.25}
   else if(m==='Around kick'){const T=TR[6],kp=i=>K.pt[i%K.st];let best=T.r,bo=1e9;for(let r=0;r<T.st;r++){const q=pat(Object.assign({},T,{r}));let o=0;for(let i=0;i<16;i++)if(q[i%T.st]&&kp(i))o++;if(o<bo){bo=o;best=r}}T.r=best;T.pt=pat(T);G.bavoid=true;G.bavStrict=true}P.blk='Free'}
  let bn=0,TURN=0;
+ /* v0.22 Melodic: root, fifth, root, third — and the last note before a chord change steps into the new root from one scale step away */
+ const nextRoot=()=>{const T=TR[6],PDT=TR[5],n=prog&&prog.length;if(!n)return null;let d=1;for(;d<=16;d++)if(T.pt[((tk+d)%T.st+T.st)%T.st])break;
+  const L=16*(PDT.p.bars||1);let idx;
+  if(PD&&PD.length===n){const st=[];let a=0;PD.forEach(x=>{st.push(a);a+=Math.round(x*L)});const C=a||1;idx=t=>{const q=((t%C)+C)%C;let i=0;for(let j=0;j<n;j++)if(st[j]<=q)i=j;return i}}
+  else idx=t=>((Math.floor(t/L)%n)+n)%n;
+  const i0=idx(tk),i1=idx(tk+d);return i1===i0?null:prog[i1]};
  function noteF(P){const r=cur.r,o=Math.round(P.oct)||1,F=d=>d2f(d,o),n=bn++;
+  if(P.bns==='Melodic'){let t=null;try{t=nextRoot()}catch(e){}if(t!=null&&t!==r)return F(t>r?t-1:t+1);return F(r+[0,4,0,2][n%4])}
   switch(P.bns){case'Root':return F(r);case'Pedal':return F(0);case'Octave':return F(r)*(n%2?2:1);case'Root + fifth':return F(n%2?r+4:r);
    case'Chord tones':return F(r+[0,2,4][Math.floor(R()*3)])*(R()<.15?2:1);case'Scale walk':return F(r+[0,1,2,3,4,3,2,1][n%8]);
    case'Arp up':return n%4===3?F(r)*2:F(r+[0,2,4][n%4]);case'Arp down':return n%4===0?F(r)*2:F(r+[4,2,0][(n%4)-1])}return 0}
@@ -4027,7 +4035,7 @@ window.MOODX={
   if(k!==9)return _f.apply(this,arguments);const B=TR[6],S=TR[9],su=B.p.bsus||0;if(B.m||su<.05)return _f.apply(this,arguments);
   const o=S.lv;S.lv=o*Math.max(.3,1-.9*su);try{return _f.apply(this,arguments)}finally{S.lv=o}};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const B=TR[6],P=B.p,pr=HELD[curMood]||0;P.bsus=0;
-  if(pr&&!(MOODS[curMood]||{}).acid&&R()<pr){P.bsus=+(.55+R()*.25).toFixed(2);P.bgt=pick([0,0,.9,1]);P.dec=+(.18+R()*.16).toFixed(2);P.bsl=Math.min(P.bsl||0,.15);
+  if(pr&&!(MOODS[curMood]||{}).acid&&R()<pr){P.bsus=+(.55+R()*.25).toFixed(2);P.bgt=pick([0,0,.9,1]);P.dec=+(.18+R()*.16).toFixed(2);P.bsl=pick([.15,.25]);P.bns='Melodic';
    P.blk='Free';P.bph=1;P.bgh=0;Object.assign(B,{st:16,h:pick([2,3,4]),r:2});B.pt=pat(B);P.cut=Math.round((P.cut||500)*.85)}}catch(e){}return r}}
 </script>
 <script>
@@ -4409,7 +4417,7 @@ window.MOODX={
  const roll=()=>{if(!window.bassRoll)return;UNDO=snap();const mk=SRC==='This mood'?curMood:Object.keys(MOODS).find(k=>'Mood · '+MN(k)===SRC);
   bassRoll(weights(mk));const B=TR[6],P=B.p;
   if(R()<.2){P.bsus=+(.55+R()*.25).toFixed(2);P.bgt=pick([0,0,.9,1]);P.bsl=Math.min(P.bsl||0,.15);P.blk='Free';P.bph=1;P.bgh=0;P.btn=false;P.bsty='Custom';
-   P.bns=pick(['Auto','Root','Root + fifth']);G.bavoid=false;G.bavStrict=false;Object.assign(B,{st:16,h:pick([2,3,4]),r:2,ten:0});B.pt=pat(B);try{build()}catch(e){}sync();
+   P.bns='Melodic';P.bsl=pick([.15,.25]);G.bavoid=false;G.bavStrict=false;Object.assign(B,{st:16,h:pick([2,3,4]),r:2,ten:0});B.pt=pat(B);try{build()}catch(e){}sync();
    try{if(typeof say==='function')say('🎲 NEW BASSLINE · HELD · '+P.bns.toUpperCase())}catch(e){}}
   else P.bsus=0};
  let ui=null;
