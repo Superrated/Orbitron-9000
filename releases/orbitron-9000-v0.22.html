@@ -358,7 +358,7 @@ const Q3=mkPad("Noise riser","kick drops first, then percussion · white noise +
  ()=>{nr2.on=0;clearInterval(nr2.iv);const n=ctx.currentTime,kd=nr2.p>.1;nr2.g.gain.cancelScheduledValues(n);nr2.g.gain.setTargetAtTime(0,n,.02);nr2.src.stop(n+.15);TR.forEach((T,k)=>T.m=nr2.sm[k]);if(kd&&playing&&!nr2.sm[0])fire(0,n+.02);A.hp.frequency.setTargetAtTime(10,n,.02);gs(A.rO,G.rev);gs(A.dO,G.dly)});
 /* snare fill: hold for a tempo-synced roll that speeds up and gets louder */
 const fr={on:0,t:0,t0:0,iv:0};
-function frRun(){if(!fr.on)return;const sd=sdur();while(fr.t<ctx.currentTime+.12){const b=(fr.t-fr.t0)/(4*sd);snare(fr.t,Math.min(1.1,.75+.12*b));fr.t+=sd}}
+function frRun(){if(!fr.on)return;const sd=sdur();while(fr.t<ctx.currentTime+.12){const b=(fr.t-fr.t0)/(4*sd);{const t=fr.t,v=Math.min(1.1,.75+.12*b);window.lpRun?lpRun('drm',()=>snare(t,v)):snare(t,v)}fr.t+=sd}}
 const QS=document.createElement("div");QS.className="panel";QS.innerHTML='<h2>Snare fill</h2><button class="pad" style="width:100%;height:96px;background:#e8a0ff;touch-action:none;user-select:none">Hold for snare roll<br><span style="font-weight:400;font-size:12px">steady 16ths, tempo-synced, getting louder</span></button>';
 {const b=QS.firstChild.nextSibling,go=e=>{e.preventDefault();if(fr.on)return;ensure();fr.on=1;fr.t=fr.t0=align(sdur());fr.iv=setInterval(frRun,25);b.classList.add("on")},stop=()=>{if(!fr.on)return;fr.on=0;clearInterval(fr.iv);b.classList.remove("on")};b.addEventListener("pointerdown",go);["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,stop))}
 rp.after(Q3);Q3.after(QS);
@@ -1107,17 +1107,23 @@ function tomHit(t,f,v,pan){const e=t+.6,o=osc('triangle',f*2,t,e),o2=osc('sine',
 /* ---- v29: funky claps -> rigid, aggressive, dense ---- */
 {const g=QD.children[1];[...g.children].forEach(b=>{if(/^Funky claps/.test(b.textContent))b.remove()});
  const sat=ctx0=>0;let DC=null;const dc=()=>DC||(DC=curve(3.5));
- function hardClap(t,v,pan){const pn=ctx.createStereoPanner(),ws=ctx.createWaveShaper(),pre=ctx.createGain(),out=ctx.createGain();pn.pan.value=pan;ws.curve=dc();pre.gain.value=1.6;out.gain.value=.47;pre.connect(ws);ws.connect(out);out.connect(pn);
+ function hardClap(t,v,pan,tn=1){const pn=ctx.createStereoPanner(),ws=ctx.createWaveShaper(),pre=ctx.createGain(),out=ctx.createGain();pn.pan.value=pan;ws.curve=dc();pre.gain.value=2.1;out.gain.value=.42;pre.connect(ws);ws.connect(out);out.connect(pn);
   const burst=(tt,dur,pk,f,q)=>{const s=ctx.createBufferSource(),bp=ctx.createBiquadFilter(),gg=ctx.createGain();s.buffer=A.nb;bp.type='bandpass';bp.frequency.value=f;bp.Q.value=q;gg.gain.setValueAtTime(.0001,tt);gg.gain.exponentialRampToValueAtTime(pk,tt+.0008);gg.gain.exponentialRampToValueAtTime(.0001,tt+dur);s.connect(bp);bp.connect(gg);gg.connect(pre);s.start(tt,R()*.5);s.stop(tt+dur+.02)};
-  [0,.005,.011].forEach(d=>burst(t+d,.016,v,1350,1.6));burst(t+.015,.11,v,1250,1.1);burst(t,.06,v*.95,480,1);burst(t+.004,.045,v*.7,850,1.4);burst(t,.02,v*.35,4200,1.5);
+  [0,.005,.011].forEach(d=>burst(t+d,.016,v,1350*tn,1.6));burst(t+.015,.11,v,1250*tn,1.1);burst(t,.06,v*.95,480*tn,1);burst(t+.004,.045,v*.7,850*tn,1.4);burst(t,.02,v*.45,4200*tn,1.5);
   {const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.setValueAtTime(230,t);o.frequency.exponentialRampToValueAtTime(150,t+.05);og.gain.setValueAtTime(.0001,t);og.gain.exponentialRampToValueAtTime(v*.55,t+.002);og.gain.exponentialRampToValueAtTime(.0001,t+.06);o.connect(og);og.connect(pre);o.start(t);o.stop(t+.08)}
-  send(pn,A.m,.03,.1)}
+  send(pn,A.m,.02,.04)}
  const PATS=[[1,0,.7,.7, 1,0,.7,1, 0,.7,1,0, 1,.7,.7,1, 1,.7,0,1, .7,1,0,.7, 1,1,.7,1, 1,1,1,1],
              [1,.7,.7,0, 1,.7,1,.7, .7,1,.7,0, 1,.7,1,1, .7,1,.7,1, 1,0,1,.7, 1,.7,1,.7, 1,1,1,1],
              [1,0,1,.7, .7,1,0,1, 1,0,.7,1, .7,1,1,0, 1,.7,1,.7, 1,0,1,1, .7,1,.7,1, 1,1,1,1]];
  let PT=PATS[0];const hold={};
- const b=holdPad(g,'Funky claps',(t,i,sd)=>{const v=PT[i%32];if(!v)return;const tt=t-(i%2?G.swing*sd:0),L=TR[2].lv*dbg(TRIM[2])*1.15;hardClap(tt,L*(v>=1?1.15:.8),(R()-.5)*.16)},
-  ()=>{PT=pick(PATS);hold.m=[TR[2].m,TR[7].m];TR[2].m=true;TR[7].m=true},()=>{TR[2].m=hold.m[0];TR[7].m=hold.m[1]});
+ /* v0.22: a fresh 2-bar clap pattern every cycle while held: beats 2 and 4 always hit, the rest is random (some silence, ghost hits,
+    accents), the last beat of bar 2 rolls up; random flams and 32nd ratchets; every hit gets its own tone and place in the stereo field */
+ const gen=()=>{const p=[];for(let i=0;i<32;i++){const b=i%16;let v;if(b===4||b===12)v=1;else if(i>=28)v=R()<.85?1:.7;else{const r=R();v=r<.28?0:r<.62?.7:1}
+   p.push(v)}return p};
+ const b=holdPad(g,'Funky claps',(t,i,sd)=>{if(i>0&&i%32===0)PT=gen();const v=PT[i%32];if(!v)return;const tt=t-(i%2?G.swing*sd:0),L=TR[2].lv*dbg(TRIM[2])*1.25;
+   const hit=(t1,a)=>{const pn=(R()-.5)*.7,tn=.85+R()*.3;window.lpRun?lpRun('drm',()=>hardClap(t1,a,pn,tn)):hardClap(t1,a,pn,tn)};
+   const a=L*(v>=1?1.3:.75);hit(tt,a);const r=R();if(r<.12)hit(tt-.022,a*.45);else if(r<.22&&v>=1)hit(tt+sd/2,a*.6)},
+  ()=>{PT=R()<.3?pick(PATS):gen();hold.m=[TR[2].m,TR[7].m];TR[2].m=true;TR[7].m=true},()=>{TR[2].m=hold.m[0];TR[7].m=hold.m[1]});
  b.style.setProperty('--col',TR[2].c);g.insertBefore(b,g.children[2]||null)}
 /* ---- v30: stability guard — measures load (active voices, render capacity, scheduler lateness, frame time) and sheds work in steps; skips missed steps instead of bursting ---- */
 const QOS={lvl:0,cool:0,src:new Set(),load:0,late:0,ft:16,f:0,lt:0,la:.12,hi:[170,240,320],hard:420,uni:[7,4,2,1],nm:['OK','LOAD','SAVING','OVERLOAD'],cl:['#00ff9c','#ffe44d','#ffb84d','#ff5d73']};
@@ -2297,7 +2303,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  setInterval(sync,1500);document.addEventListener('visibilitychange',sync);document.addEventListener('pointerup',()=>setTimeout(sync,50))}
 {const _g120=generate;generate=function(){const r=_g120.apply(this,arguments);if(curMood==='Power'){TR[4].m=true;TR[8].m=true;G.ptl=0;build()}return r}}
 {const g=document.querySelector('#t-perf .thr');if(g){let sv=null,P=null;const rb=document.createElement('button');rb.className='pad';rb.innerHTML='Ride push<span> (toggle)</span>';g.appendChild(rb);
- const hit=(t,sd)=>{const ai=Math.round((t-anchor())/sd);if(((ai%4)+4)%4!==2)return;const T=TR[3],o=T.lv,bar=Math.floor(ai/16);T.lv=Math.max(.42,o||0)*(1.12+.06*Math.sin(bar*2.1))*(ai%16===14?1.1:1);try{if(typeof ride==='function')ride(t)}catch(e){}finally{T.lv=o}};
+ const hit=(t,sd)=>{const ai=Math.round((t-anchor())/sd);if(((ai%4)+4)%4!==2)return;const T=TR[3],o=T.lv,bar=Math.floor(ai/16);T.lv=Math.max(.42,o||0)*(1.12+.06*Math.sin(bar*2.1))*(ai%16===14?1.1:1);try{if(typeof ride==='function'){window.lpRun?lpRun('drm',()=>ride(t)):ride(t)}}catch(e){}finally{T.lv=o}};
  const off=()=>{if(!P)return;clearInterval(P.iv);P=null;rb.classList.remove('on');rb.innerHTML='Ride push<span> (toggle)</span>';if(sv!==null)TR[3].m=sv;sv=null};
  const on=w=>{ensure();if(!playing||P)return;rb.classList.add('on');rb.innerHTML='Ride push ●<span> (toggle)</span>';sv=TR[3].p.pv==='Ride'?TR[3].m:null;if(sv!==null)TR[3].m=true;
   P={t:w&&w>ctx.currentTime?w:align(sdur())};P.iv=setInterval(()=>{if(!P||!ctx)return;if(!playing){off();return}const sd=sdur();if(P.t<ctx.currentTime-.05)P.t=align(sd);while(P.t<ctx.currentTime+.15){hit(P.t,sd);P.t+=sd}},25)};
@@ -2624,7 +2630,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
    mk=(f,db)=>{const cl=Math.max(0,1-Math.log(f/60)/Math.log(20000/60));return Math.pow(10,db*cl/20)};
   // pads: the first 30 % of the travel darkens only the pads (filter down to about 800 Hz, level unchanged, no resonance); after that they follow the synths
   const pt=v0>=PZ?(1-v0)/(1-PZ):1,pf=v0>=.999?20000:Math.min(20000*Math.pow(800/20000,pt),op?20000:fs),pg=1;
-  return{syn:[op?20000:fs,op?1.31:res(fs,.45),op?1:mk(fs,3)],drm:[fd,fd>=19999?1.31:res(fd,.3),fd>=19999?1:mk(fd,2)],pad:[pf,1.31,pg]}};
+  return{syn:[op?20000:fs,op?1.31:res(fs,.2),op?1:mk(fs,3)],drm:[fd,fd>=19999?1.31:res(fd,.12),fd>=19999?1:mk(fd,2)],pad:[pf,1.31,pg]}};
  const fresh=new WeakSet(),CP=BaseAudioContext.prototype;
  Object.getOwnPropertyNames(CP).filter(n=>/^create/.test(n)&&typeof CP[n]==='function').forEach(n=>{const f=CP[n];CP[n]=function(){const x=f.apply(this,arguments);if(CURG&&this===ctx&&x&&typeof x==='object')fresh.add(x);return x}});
  try{const AW=window.AudioWorkletNode;if(AW){const W=class extends AW{constructor(...a){super(...a);if(CURG)fresh.add(this)}};window.AudioWorkletNode=W}}catch(e){}
@@ -2635,10 +2641,11 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  AudioNode.prototype.connect=function(d,...r){if(CURG&&LP.dest&&LP.ctx===ctx&&d instanceof AudioNode&&this.context===ctx&&fresh.has(this)&&!fresh.has(d)&&!(d instanceof AudioDestinationNode)&&!isF(d))return oc.call(this,bus(CURG,d),...r);return oc.call(this,d,...r)};
  function apply(){if(!ctx||LP.ctx!==ctx)return;const c=cur(),t=ctx.currentTime;['syn','drm','pad'].forEach(g=>LP.f[g].forEach(f=>{[f.f1,f.f2].forEach(b=>{b.frequency.cancelScheduledValues(t);b.frequency.setTargetAtTime(c[g][0],t,.03)});f.f2.Q.setTargetAtTime(c[g][1],t,.05);f.g.gain.setTargetAtTime(c[g][2],t,.05)}))}
  const wrap=(fn,g)=>function(){if(LP.v>=.999||!ctx||(window.DR&&DR.rendering))return fn.apply(this,arguments);const gg=typeof g==='function'?g(arguments[0]):g;if(!gg)return fn.apply(this,arguments);prep();const o=CURG;CURG=gg;try{return fn.apply(this,arguments)}finally{CURG=o}};
- fire=wrap(fire,k=>k===0?null:DRK.has(k)?'drm':k===5?'pad':'syn');pad=wrap(pad,'pad');grains=wrap(grains,'syn');
+ fire=wrap(fire,k=>k===0?null:DRK.has(k)?'drm':k===5?'pad':'syn');window.lpRun=(g,fn)=>wrap(fn,g)();pad=wrap(pad,'pad');grains=wrap(grains,'syn');
  // energy thinning: stage 1 from 65 % of travel, 2 below ~39 %, 3 below ~18 %. Strong positions survive; the kick never thins.
  const thin=()=>{const v=VV();return v<=.47?3:v<=.56?2:v<=.66?1:0};   // all three stages arrive before the drum filter starts (DZ .45)
- const drop=(k,s)=>{const st=thin();if(!st||k===0)return false;const o16=s%2===1,off8=s%4===2;
+ const pushed=k=>(k===1&&window.rigidHats&&rigidHats.on())||(window.breakFX&&breakFX.is()&&(k===1||k===2||k===3||k===7)); /* v0.22: a percussion push keeps every hit of its own track */
+ const drop=(k,s)=>{const st=thin();if(!st||k===0||pushed(k))return false;const o16=s%2===1,off8=s%4===2;
   if(k===3)return st>=1&&o16||st>=2&&off8;                       // perc
   if(k===1)return st>=2&&o16;                                     // hats: 16ths → 8ths
   if(k===2||k===7)return st>=2&&s%8!==4||st>=3&&s!==12;           // clap / snare: backbeats, then half time
@@ -2655,6 +2662,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  function show(){const c=cur();kn.style.left=(LP.v*100)+'%';fill.style.width=((1-LP.v)*100)+'%';pan.classList.toggle('on',LP.v<.999);
   const th=thin();val.textContent=LP.v>=.999?'OPEN':LP.v>=PZ?'PADS '+fmt(c.pad[0]):'SYN '+fmt(c.syn[0])+' · DRM '+(c.drm[0]>=19000?'open':fmt(c.drm[0]))+(th?' · THIN '+th:'')}
  function set(v){LP.v=Math.max(0,Math.min(1,v));if(LP.v>.9995)LP.v=1;if(ctx)prep();apply();show()}
+ window.lpReset=()=>{tgt=null;if(raf)cancelAnimationFrame(raf);raf=0;lt=0;set(1)};
  // glide toward a target. Tap: constant speed, so the time follows the distance (full sweep ≈ 4 s, a small nudge is quick),
  // eased in the last stretch. Drag: follows the finger closely.
  const SPD=.25;let tgt=null,mode='tap',raf=0,lt=0;
@@ -2724,7 +2732,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   for(let ti=0;ti<=20&&best.sc<n;ti++)for(let r=0;r<n;r++){const ten=ti/20,q=pat(Object.assign({},T,{st:n,h,r,ten}));let sc=0;for(let i=0;i<n;i++)if(q[i]===pt[i])sc++;if(sc>best.sc){best={h,r,ten,sc};if(sc===n)break}}return best}
  function style(name,rot){const S=STY[name];if(!S)return;const T=TR[6],P=T.p;let pt=[...S[0]].map(c=>c==='x'?1:0);if(rot)pt=pt.slice(-rot).concat(pt.slice(0,-rot));
   T.st=16;const ft=fit(T,pt);T.h=ft.h;T.r=ft.r;T.ten=ft.ten;T.pt=pat(T);Object.assign(P,{bns:S[1],bgt:S[2],bsl:S[3],bgh:S[4],fifth:0,jump:0,bsty:name,blk:'Free'});P.oct=Math.max(0,Math.min(2,Math.round(P.oct)||1))}
- window.bassStyle=style;window.bassFit=fit;
+ window.bassStyle=style;window.bassFit=fit;setTimeout(()=>{window.bassRoll=roll},0);
  // the Euclid ring is the bass rhythm: old Lock modes are converted into ring settings (and Kick avoid) so the ring always shows what plays
  function setRing(pt){const T=TR[6],f=fit(T,pt);T.st=pt.length;T.h=f.h;T.r=f.r;T.ten=f.ten;T.pt=pat(T)}
  function unlock(){const T=TR[6],P=T.p,m=P.blk||'Free';if(m==='Free')return;const K=TR[0];
@@ -2745,7 +2753,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   const ob=window.BOVF,on=window.BNSF,c0=window.BLFN;window.BOVF=f;window.BNSF=f;try{return _fb.apply(this,arguments)}finally{window.BOVF=ob;window.BNSF=on;if(own&&window.BLFN===c0)bn=Math.max(0,bn-1)}};
  const _ab=arrStep;arrStep=function(w){const r=_ab.apply(this,arguments);try{const s=st16();if(s===0)bn=0;const P=TR[6].p;
   if(P.btn&&playing&&!TR[6].m&&bar4()&&s>=12){TURN=calc(()=>d2f(cur.r+[0,1,2,4][s-12],Math.round(P.oct)||1)*(s===15?1:1));try{fire(6,w)}finally{TURN=0}}}catch(e){TURN=0}return r};
- function roll(){const W=[['Octave bounce',2],['Off-beat',2],['Gallop',2],['Rolling 16ths',2],['Syncopated',2],['Walking',1],['Pedal',1],['Acid run',2],['Octave 8ths',1],['Disco run',1]];
+ function roll(W0){const W=W0||[['Octave bounce',2],['Off-beat',2],['Gallop',2],['Rolling 16ths',2],['Syncopated',2],['Walking',1],['Pedal',1],['Acid run',2],['Octave 8ths',1],['Disco run',1]];
   let t=W.reduce((a,b)=>a+b[1],0)*R();const nm=(W.find(x=>(t-=x[1])<0)||W[0])[0];style(nm,pick([0,0,0,2]));const P=TR[6].p;
   if(R()<.3)P.bns=pick(BNS.slice(1));P.btn=R()<.4;G.bavoid=R()<.25;G.bavStrict=G.bavoid;P.bph=pick([1,1,2]);try{build()}catch(e){}setTimeout(()=>window.bassSync&&bassSync(),0);setTimeout(()=>window.bassSync&&bassSync(),120);try{if(typeof say==='function')say('🎲 NEW BASSLINE · '+nm.toUpperCase()+' · '+P.bns.toUpperCase())}catch(e){}}
  window.bassUI=(g,t)=>{const P=t.p;const sep=document.createElement('div');sep.className='bksep';sep.textContent='Bass toolkit';g.appendChild(sep);
@@ -3834,7 +3842,7 @@ window.MOODX={
  const add=()=>{if(document.querySelector('#t-perf .rgx'))return;const ps=[...document.querySelectorAll('#t-perf .pad')].find(x=>/^Planet song/.test(x.textContent.trim()));if(!ps)return;
   const b=document.createElement('button');b.className='pad rgx';b.style.setProperty('--col',TR[1].c);b.innerHTML='Hat push<span> (toggle)</span>';b.title='Straight, machine-tight 16th hats (no swing, humanize, ghosts or open hats) · tap again for your pattern';
   b.onclick=()=>set(!ON);ps.replaceWith(b);paint()};
- const paint=()=>{const b=document.querySelector('#t-perf .rgx');if(b)b.classList.toggle('on',!!ON)};
+ const paint=()=>{const b=document.querySelector('#t-perf .rgx');if(!b)return;b.classList.toggle('on',!!ON);const h='Hat push'+(ON?' ●':'')+'<span> (toggle)</span>';if(b.innerHTML!==h)b.innerHTML=h};
  add();setInterval(()=>{try{add();paint()}catch(e){}},800);window.rigidHats={set,on:()=>!!ON}}
 </script>
 <script>
@@ -3844,10 +3852,10 @@ window.MOODX={
  const _f=fire;fire=function(k,w){if(k!==4||Math.abs(LM.x)<.01)return _f.apply(this,arguments);const P=TR[4].p,x=LM.x,
    o={dec:P.dec,hold:P.hold,rel:P.rel,drv:P.drv,grit:P.grit,pg:P.pg,cut:P.cut,envA:P.envA,ds:P.ds,rs:P.rs,res:P.res};
   /* v0.22: one even length curve for decay, gate and release together (short side as before, long side up to 2x), plus warm drive on the long side */
-  try{const lf=x<0?Math.pow(2,1.5*x):Math.pow(2,x);P.dec=Math.max(.03,Math.min(3,(P.dec||.25)*lf));if(P.hold)P.hold=Math.max(.2,P.hold*lf);if(P.rel!=null)P.rel=Math.max(.01,Math.min(3,P.rel*lf));
-   if(x>0){const hv=Math.max(0,(x-.5)/.5),wl=Math.max(0,(x-.8)/.2),ad=x<=.5?.3*x:.15+1.2*hv+.8*wl*wl,gr=0; /* no grit: it adds a noise voice per note */ /* warm up to 60 %, then heavy drive + grit to the end */
-    P.drv=Math.min(2.2,(P.drv||0)+ad);if(hv>0&&P.res!=null)P.res=Math.min(Math.max(P.res,11),P.res+4.5*hv); /* resonance screams into the overdrive */if(gr>0)P.grit=Math.min(1,(P.grit||0)+gr);{const hasD=P.eng!=='Mini',ac=Math.min(ad,1.35);P.pg=(P.pg||1)/(1+ad*.4)/(hasD?1+ac*.75:1)} /* Mini has no drive stage, so only the level term is undone there */}
-   if(P.cut!=null)P.cut=Math.max(60,Math.min(12000,P.cut*Math.pow(2,(x<0?1.2:.75)*x)));if(P.envA!=null)P.envA=Math.max(0,P.envA*(1+(x<0?.6:.4)*x));
+  try{const lf=x<0?Math.pow(2,1.5*x):Math.pow(2,1.25*Math.min(x,.8)); /* v0.22 Radian: full length (legato, filling the bar) is reached at 80 % */P.dec=Math.max(.03,Math.min(3,(P.dec||.25)*lf));if(P.hold)P.hold=Math.max(.2,P.hold*lf);if(P.rel!=null)P.rel=Math.max(.01,Math.min(3,P.rel*lf));
+   if(x>0){const wl=Math.max(0,(x-.8)/.2),hv=wl,ad=.35*Math.min(x,.8)/.8+1.0*wl+.8*wl*wl,gr=0; /* Radian: warm, steady drive up to 80 %, then wild */ /* no grit: it adds a noise voice per note */ /* warm up to 60 %, then heavy drive + grit to the end */
+    P.drv=Math.min(2.2,(P.drv||0)+ad);if(hv>0&&P.res!=null)P.res=Math.min(Math.max(P.res,11),P.res+4.5*hv); /* resonance screams into the overdrive */if(gr>0)P.grit=Math.min(1,(P.grit||0)+gr);{const hasD=P.eng!=='Mini',ac=Math.min(ad,1.35);P.pg=(P.pg||1)/(1+ad*.4)/(hasD?1+ac*.75:1)/(1+.4*wl)} /* Mini has no drive stage, so only the level term is undone there */}
+   if(P.cut!=null)P.cut=Math.max(60,Math.min(12000,P.cut*Math.pow(2,x<0?1.2*x:.5*Math.max(0,(x-.8)/.2))));if(P.envA!=null)P.envA=Math.max(0,P.envA*(1+(x<0?.6*x:.4*Math.max(0,(x-.8)/.2))));
    if(x>0){const T=TR[4],n=T.st||16,d=Math.max(1,n/Math.max(1,T.h||1)),gap=d*sdur(); /* every note gets the same length limit (from the average spacing), so all notes lengthen alike */
     P.dec=Math.min(P.dec,Math.max(o.dec||.1,gap*2));if(P.hold)P.hold=Math.min(P.hold,Math.max(o.hold||1,d*2));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(o.rel||.05,gap))}
    P.ds=Math.max(0,Math.min(1,(P.ds||0)*(1+x)));P.rs=Math.max(0,Math.min(1,(P.rs||0)*(1+x)));return _f.apply(this,arguments)}
@@ -3871,7 +3879,7 @@ window.MOODX={
   tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(LM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;LM.raf=requestAnimationFrame(sm)});
   tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{if(!on)return;on=0}));
   let lt2=0;tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(LM.raf);LM.raf=requestAnimationFrame(sm)}lt2=n});show()}; // v0.22: LEAD holds where you leave it; double-tap = back to AS SET
- add();setInterval(()=>{try{add()}catch(e){}},1000);window.leadMacro=LM}
+ add();setInterval(()=>{try{add()}catch(e){}},1000);LM.reset=()=>{cancelAnimationFrame(LM.raf);LM.raf=0;LM.x=0;lastX=null;show()};window.leadMacro=LM}
 </script>
 <script>
 /* ---- v0.22: the 15 "dated" lead patches reworked to sit in a modern mix: darker filters, shorter envelopes, less resonance/glide whistle,
@@ -3949,7 +3957,7 @@ window.MOODX={
   tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(BM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;BM.raf=requestAnimationFrame(sm)});
   tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{if(!on)return;on=0}));
   let lt2=0;tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(BM.raf);BM.raf=requestAnimationFrame(sm)}lt2=n});show()}; // v0.22: BASS holds where you leave it; double-tap = back to AS SET
- add();setInterval(()=>{try{add()}catch(e){}},1000);window.bassMacro=BM}
+ add();setInterval(()=>{try{add()}catch(e){}},1000);BM.reset=()=>{cancelAnimationFrame(BM.raf);BM.raf=0;BM.x=0;lastX=null;show()};window.bassMacro=BM}
 </script>
 <script>
 /* ---- v0.22: Flight uses the full screen width on large screens (not phones). Only while Flight is open: the page widens and the deck becomes
@@ -4303,8 +4311,8 @@ window.MOODX={
    Level-matched; works on every lead patch, including Mini (which has no drive of its own). ---- */
 {let last=null;setInterval(()=>{try{if(!ctx||!A.fz)return;const x=(window.leadMacro&&leadMacro.x)||0;if(last!==null&&Math.abs(x-last)<.003)return;last=x;
   const a=Math.max(0,Math.min(1,(x-.5)/.5)),t=ctx.currentTime,F=A.fz;
-  const wl=Math.max(0,(x-.8)/.2),dr=1+11*a+16*wl*wl;F.fi.gain.setTargetAtTime(dr,t,.03);F.fw.gain.setTargetAtTime(.62*a/(1+1.1*a),t,.03);F.fd.gain.setTargetAtTime(1-.8*a,t,.03);
-  const L=window.LEX;if(L&&L.ctx===ctx){if(L.fb0==null||a===0)L.fb0=L.fb0==null?L.fb.gain.value:L.fb0;const e=Math.max(0,(x-.7)/.3);L.fb.gain.setTargetAtTime(Math.min(.72,L.fb0+.3*e),t,.15)}}catch(e){}},40)}
+  const wl=Math.max(0,(x-.8)/.2),w0=Math.min(1,a/.6),dr=1+3*w0+9*wl+16*wl*wl;F.fi.gain.setTargetAtTime(dr,t,.03);F.fw.gain.setTargetAtTime(.12*w0+.18*wl,t,.03);F.fd.gain.setTargetAtTime(1-.25*w0-.55*wl,t,.03); /* v0.22 Radian: light warm overdrive 50–80 %, the wild fuzz only in the last 20 % */
+  const L=window.LEX;if(L&&L.ctx===ctx){if(L.fb0==null||a===0)L.fb0=L.fb0==null?L.fb.gain.value:L.fb0;const e=wl;L.fb.gain.setTargetAtTime(Math.min(.72,L.fb0+.3*e),t,.15)}}catch(e){}},40)}
 </script>
 <script>
 /* ---- v0.22: pad Pattern page tidied. Dice row on top (🎲 Chords · 🎲 Whole part · ↶), then three headed groups:
@@ -4372,5 +4380,65 @@ window.MOODX={
    else if(st==='Rolling 16ths'||st==='Gallop'||st==='Octave 8ths'||st==='Octave bounce'){p.bgt=+(.3+R()*.12).toFixed(2);p.bsl=0;p.dec=Math.min(p.dec,.12);G.bavoid=false;G.bavStrict=false}
    else if(st==='Pedal'||st==='Walking'){p.bgt=+(.52+R()*.08).toFixed(2)}}
   setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync()}catch(e){}},0)}catch(e){}return r}}
+</script>
+<script>
+/* ---- v0.22: 🎲 New bassline, finished like the pad and lead dice. "from" picks whose bass style to borrow (this mood, any mood, or anything);
+   about 1 roll in 5 gives a held bass (Sustain: few long notes, like the Launch held moods). While playing it lands on the next bar;
+   ↶ brings back the bassline from before the last roll. The bass sound (filter, decay, drive …) is untouched. ---- */
+{let SRC='This mood',PEND=0,UNDO=null;
+ const srcList=()=>['This mood',...Object.keys(MOODS).map(k=>'Mood · '+MN(k)),'Anything'];
+ const HELDM=new Set(['Deep Space','Ethereal','Ambient','Dreamy','Drone','Melancholic']);
+ const BASE=[['Octave bounce',2],['Off-beat',2],['Gallop',2],['Rolling 16ths',2],['Syncopated',2],['Walking',1],['Pedal',1],['Acid run',2],['Octave 8ths',1],['Disco run',1]];
+ const weights=mk=>{if(!mk)return BASE.map(x=>[x[0],1]);const M=MOODS[mk]||{};
+  if(M.acid)return[['Acid run',4],['Rolling 16ths',3],['Off-beat',2],['Octave bounce',1]];
+  if(HELDM.has(mk))return[['Pedal',3],['Off-beat',2],['Walking',2],['Syncopated',2],['Octave 8ths',1]];
+  if(M.power||(M.b&&M.b[0]>=136))return[['Rolling 16ths',3],['Gallop',3],['Off-beat',2],['Octave bounce',2],['Syncopated',1]];
+  return BASE};
+ const PK=['bns','bgt','bsl','bgh','fifth','jump','bsty','blk','oct','btn','bph','bsus'];
+ const snap=()=>{const T=TR[6],o={st:T.st,h:T.h,r:T.r,ten:T.ten,av:G.bavoid,avs:G.bavStrict};PK.forEach(k=>o[k]=T.p[k]);return o};
+ const sync=()=>{setTimeout(()=>window.bassSync&&bassSync(),0);setTimeout(()=>window.bassSync&&bassSync(),120)};
+ const restore=S=>{const T=TR[6];T.st=S.st;T.h=S.h;T.r=S.r;T.ten=S.ten;G.bavoid=S.av;G.bavStrict=S.avs;PK.forEach(k=>{if(S[k]===undefined)delete T.p[k];else T.p[k]=S[k]});T.pt=pat(T);try{build()}catch(e){}sync()};
+ const roll=()=>{if(!window.bassRoll)return;UNDO=snap();const mk=SRC==='This mood'?curMood:Object.keys(MOODS).find(k=>'Mood · '+MN(k)===SRC);
+  bassRoll(weights(mk));const B=TR[6],P=B.p;
+  if(R()<.2){P.bsus=+(.55+R()*.25).toFixed(2);P.bgt=pick([0,0,.9,1]);P.bsl=Math.min(P.bsl||0,.15);P.blk='Free';P.bph=1;P.bgh=0;P.btn=false;P.bsty='Custom';
+   P.bns=pick(['Auto','Root','Root + fifth']);G.bavoid=false;G.bavStrict=false;Object.assign(B,{st:16,h:pick([2,3,4]),r:2,ten:0});B.pt=pat(B);try{build()}catch(e){}sync();
+   try{if(typeof say==='function')say('🎲 NEW BASSLINE · HELD · '+P.bns.toUpperCase())}catch(e){}}
+  else P.bsus=0};
+ let ui=null;
+ const lab=()=>{if(!ui||!ui.isConnected)return;ui.querySelector('.pdr').textContent=PEND?'🎲 … next bar':'🎲 New bassline';ui.querySelector('.pdu').disabled=!UNDO};
+ const go=()=>{if(PEND)return;const now=()=>{PEND=0;try{roll()}catch(e){}lab()};
+  if(playing&&ctx){const left=(16-((tk%16)+16)%16)%16||16,ms=Math.max(0,left*sdur()*1000-120);PEND=1;lab();setTimeout(now,ms)}else now()};
+ const swap=()=>{const c=TR[6].mb&&TR[6].mb.closest('.card');if(!c)return;const old=c.querySelector('button.bassroll');if(!old)return;
+  ui=document.createElement('div');ui.className='pdice bdice bassroll';ui.dataset.g='pat';ui.dataset.keep='pat';
+  ui.innerHTML='<button type="button" class="pdr" title="Re-roll only the bass rhythm and notes, in the style of the mood in from. Sometimes a held bass. Lands on the next bar.">🎲 New bassline</button><button type="button" class="pdu" title="Back to the bassline before the last roll">↶</button><label class="pds">from<select></select></label>';
+  const s=ui.querySelector('select');srcList().forEach(o=>s.add(new Option(o,o)));s.value=SRC;s.onchange=()=>{SRC=s.value};
+  ui.querySelector('.pdr').onclick=e=>{e.preventDefault();go()};ui.querySelector('.pdu').onclick=e=>{e.preventDefault();if(UNDO){const u=UNDO;UNDO=null;restore(u);lab()}};
+  old.replaceWith(ui);lab();try{window.bassLayout&&bassLayout()}catch(e){}};
+ const _bu=window.bassUI;window.bassUI=function(){const r=_bu.apply(this,arguments);queueMicrotask(()=>{try{swap()}catch(e){}});return r};
+ setInterval(()=>{try{swap()}catch(e){}},1000);setTimeout(()=>{try{swap()}catch(e){}},300);
+ const st=document.createElement('style');st.textContent='.pdice.bdice.bassroll{border:0;background:none;min-height:0;padding:0;font-weight:inherit;letter-spacing:0;color:inherit;cursor:default}.pdice.bdice.bassroll:active{background:none}';document.head.appendChild(st);
+ window.bassDice={roll:go,undo:()=>{if(UNDO){const u=UNDO;UNDO=null;restore(u)}},src:v=>{if(v)SRC=v;return SRC}}}
+</script>
+<script>
+/* ---- v0.22: Planet mutes (Flight): hold a pad to solo that track; let go and every mute is back as it was. A short tap still mutes.
+   A mute you change while holding (other pad, Launch) is kept. ---- */
+{const HOLD=380;let held=-1,saved=null,forced=null,swallow=false,tmr=0;
+ const start=k=>{try{window.SOLO&&SOLO.off()}catch(e){}held=k;saved=TR.map(T=>!!T.m);forced=TR.map((T,i)=>i!==k);TR.forEach((T,i)=>T.m=forced[i]);pads.forEach((p,i)=>p.classList.toggle('hsolo',i===k));try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}};
+ const end=()=>{clearTimeout(tmr);tmr=0;if(held<0)return;TR.forEach((T,i)=>{if(forced&&T.m===forced[i])T.m=saved[i]});held=-1;saved=forced=null;pads.forEach(p=>p.classList.remove('hsolo'))};
+ pads.forEach((p,k)=>{if(!p||p.dataset.hs)return;p.dataset.hs=1;
+  p.addEventListener('pointerdown',e=>{if(e.button>0)return;clearTimeout(tmr);swallow=false;tmr=setTimeout(()=>{tmr=0;swallow=true;start(k)},HOLD)});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(n=>p.addEventListener(n,end));p.addEventListener('pointerleave',()=>{if(held<0){clearTimeout(tmr);tmr=0}});
+  p.addEventListener('click',e=>{if(swallow){swallow=false;e.stopImmediatePropagation();e.preventDefault()}},true);
+  p.addEventListener('contextmenu',e=>e.preventDefault());p.title='Tap: mute · hold: solo';
+  p.addEventListener('pointerdown',e=>{try{p.setPointerCapture(e.pointerId)}catch(_){}})});
+ window.addEventListener('blur',end);document.addEventListener('visibilitychange',()=>{if(document.hidden)end()});
+ const _g=generate;generate=function(){if(held>=0){clearTimeout(tmr);held=-1;saved=forced=null;pads.forEach(p=>p.classList.remove('hsolo'))}return _g.apply(this,arguments)};
+ const st=document.createElement('style');st.textContent='#pads .pad{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}#pads .pad.hsolo{box-shadow:0 0 0 2px var(--acc,#ffe44d),0 0 12px rgba(255,228,77,.55)!important;opacity:1!important}';document.head.appendChild(st);
+ window.holdSolo={state:()=>held}}
+</script>
+<script>
+/* ---- v0.22: a new Launch resets the Flight faders: Low-pass fully open, LEAD and BASS back to AS SET, Altitude octave off. ---- */
+{const _g=generate;generate=function(){try{window.lpReset&&lpReset()}catch(e){}try{window.leadMacro&&leadMacro.reset&&leadMacro.reset()}catch(e){}
+  try{window.bassMacro&&bassMacro.reset&&bassMacro.reset()}catch(e){}G.oct=0;return _g.apply(this,arguments)}}
 </script>
 </body></html>
