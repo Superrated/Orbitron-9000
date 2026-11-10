@@ -13,11 +13,20 @@ Ten tracks — kick, hi-hat, clap, perc, snare, lead, pad, bass, dub stab and su
 
 | File | What it is |
 | --- | --- |
-| `index.html` | The current version (v0.22) |
+| `index.html` | The current version (v0.23) |
+| `releases/orbitron-9000-v0.23.html` | Copy of v0.23 (follows `index.html` until v0.23 is frozen) |
 | `releases/orbitron-9000-v0.22.html` | Frozen copy of v0.22 |
 | `releases/orbitron-9000-v0.21.html` | Frozen copy of v0.21 |
 | `releases/orbitron-9000-v0.2.html` | Frozen copy of v0.2 |
 | `releases/orbitron-9000-v0.1.html` | Frozen copy of v0.1 |
+
+## What's new in v0.23
+
+- Mood refinement pass: fewer cluttered or cheesy launches, clearer identity per mood, per-mood level fixes (buried hats and leads raised)
+- Optional tracks drop out per mood (for example no clap in Ethereal, pad rare in Acid, lead rare in Noir); a hook always stays
+- Dark stays on one or two chords; Drone is strictly one chord in Phrygian or Minor; Tense plays short repeating motifs
+- Dated sounds removed per mood (Brass and PWM pads, Supersaw and Cinematic arp leads where they did not fit)
+- Melodic House hook flavour: the bass carries the hook; Distorted Electro sometimes gets one driven, slowly filtered riff
 
 ## What's new in v0.22
 
