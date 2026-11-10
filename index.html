@@ -346,7 +346,7 @@ function setP(p){rs.p=p;$("#rfill").style.height=p*100+"%";if(!ctx)return;const 
  TR[4].p.dec=rs.ld0+(1.2-rs.ld0)*q}
 RZ.addEventListener("pointerdown",e=>{e.preventDefault();init();RZ.setPointerCapture(e.pointerId);rs.on=1;rs.y0=e.clientY;rs.ld0=TR[4].p.dec;setP(0)});
 RZ.addEventListener("pointermove",e=>{if(!rs.on)return;setP(Math.max(0,Math.min(1,(rs.y0-e.clientY)/(Math.max(150,RZ.getBoundingClientRect().height)*.85))))});
-const drop=()=>{if(!rs.on)return;rs.on=0;const t=ctx.currentTime;TR[4].p.dec=rs.ld0;if(rs.kd){rs.kd=0;TR[0].m=rs.km;if(playing&&!rs.km)fire(0,t+.02)}
+const drop=()=>{if(!rs.on)return;rs.on=0;const dT=window.__dropT,t=dT&&dT>ctx.currentTime?dT-.02:ctx.currentTime;if(dT&&dT>ctx.currentTime)window.__kickHold=dT; /* no kick before the drop beat */TR[4].p.dec=rs.ld0;if(rs.kd){rs.kd=0;TR[0].m=rs.km;if(playing&&!rs.km)fire(0,t+.02)}
  $("#rfill").style.height="0";rs.p=0;A.hp.frequency.setTargetAtTime(10,t,.02);gs(A.rO,G.rev);gs(A.sh,G.shim);gs(A.dO,G.dly);gs(A.dF,G.fb)};
 ["pointerup","pointercancel"].forEach(ev=>RZ.addEventListener(ev,drop));
 /* timing helpers + noise riser */
@@ -1691,7 +1691,7 @@ TR[4].x.forEach(x=>{if(x[1]==='o2d'||x[1]==='o3d'){x[2]=-700;x[3]=700}});
   const lab=()=>{b.innerHTML=name+'<br>'+(S.arm?'▲ ARMED':'○ arm');b.classList.toggle('on',!!S.arm)};lab();b.onclick=()=>{ensure();S.arm=!S.arm;lab();if(S.arm&&prep)setTimeout(prep,30)};
   AR.push(S);S.go=(w,wd)=>{S.arm=0;lab();fn(w,wd)};const hb=[...g.children].find(x=>/^Horn/.test(x.textContent)),last=AR.length>1?AR[AR.length-2].b:hb;S.b=b;if(last)last.after(b);else g.appendChild(b);return b};
  // all armed hits fire together; an armed noise sweep first cuts the sound for a bar, so everything else lands a bar later
- window.dropAll=()=>{if(!ctx)return;const sd=sdur(),gap=AR.some(S=>S.arm&&S.pre);let w0=align(sd),w=w0;if(gap){w0=align(4*sd);const a=anchor(),B=16*sd;w=a+Math.ceil((w0+8*sd-a-.001)/B)*B}window.DROPW=w;AR.forEach(S=>{if(S.arm)S.go(S.pre?w0:w,w)})};
+ window.dropAll=()=>{if(!ctx)return;const sd=sdur(),gap=AR.some(S=>S.arm&&S.pre),dt=window.__dropT;let w0=dt||align(sd),w=w0;if(gap){w0=dt||align(4*sd); /* v0.24: land on the drop's beat */const a=anchor(),B=16*sd;w=a+Math.ceil((w0+8*sd-a-.001)/B)*B}window.DROPW=w;AR.forEach(S=>{if(S.arm)S.go(S.pre?w0:w,w)})};
  // 1 · noise sweep: snare explosion on the drop, then 4 bars of white noise sweeping down, pumping on every beat
  // pre-rendering: the heavy drop sounds are rendered once when armed, then played back as a buffer (dry + reverb send), so firing them costs almost nothing
  const RC={};const rkey=()=>[G.bpm,G.root,G.scale].join('|');
@@ -4546,7 +4546,7 @@ window.MOODX={
  const _vz=viz;viz=function(){if(OV.stage>=1&&playing){setTimeout(()=>requestAnimationFrame(viz),400);return}return _vz()};
  const _dr=draw;draw=function(T,s){if(OV.stage>=1&&playing&&s>=0)return;return _dr.apply(this,arguments)};
  /* a Launch can block the page for a few hundred ms on a phone: schedule 0.6 s of notes first, so nothing arrives late or in a burst */
- const _g=generate;generate=function(){clear();if(playing&&ctx&&!document.hidden){const o=QOS.la;try{QOS.la=Math.max(o,.6);tick()}catch(e){}finally{QOS.la=o}}return _g.apply(this,arguments)};
+ const _g=generate;generate=function(){clear();if(playing&&ctx&&!document.hidden&&!window.__inTime){const o=QOS.la;try{QOS.la=Math.max(o,.6);tick()}catch(e){}finally{QOS.la=o}}return _g.apply(this,arguments)};
  const _t=toggle;toggle=function(){const r=_t.apply(this,arguments);if(!playing)clear();else if(ctx){const o=QOS.la;try{QOS.la=Math.max(o,.8);tick()}catch(e){}finally{QOS.la=o}} /* starting: the engine finishes building right after this; have 0.8 s scheduled */return r};try{$('#play').onclick=toggle}catch(e){}
  setInterval(()=>{const d=document.querySelector('#diag');if(!d||!d.offsetParent)return;let x=d.querySelector('.ovl');if(!x){x=document.createElement('div');x.className='ovl';x.style.cssText='margin-top:4px;font-size:11px;opacity:.85';d.appendChild(x)}
   const t='overload guard · events '+OV.n+' · '+['full quality','visuals paused','effects lighter','fewest voices'][OV.stage];if(x.textContent!==t)x.textContent=t},1000);
@@ -4894,5 +4894,71 @@ window.MOODX={
    const Q=window.orbQuality;if(Q){Q.gate();Q.slots();if(!TR[4].m&&TR[4].p.mode!=='Acid 303'){Q.bestRotation();Q.bestMelody()}}}catch(e){console.warn('[orbitron] flavour',e)}
   try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync();if(typeof lfoUI==='function')lfoUI()}catch(e){}},0);return r};
  window.orbFlavours=FL}
+</script>
+<script>
+/* ---- v0.24: IN-TIME LAUNCH — while playing, Launch and Random warp wait for the next downbeat (the button shows "next bar"),
+   then the new groove starts exactly on beat 1. Stopped: instant, as before. ---- */
+{let pend=null;
+ const isL=b=>b&&b.closest&&b.closest('#gbox')&&/launch|random warp/i.test(b.textContent||'');
+ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(!isL(b)||b.__orbGo||!playing||!ctx)return;e.stopImmediatePropagation();e.preventDefault();
+  if(pend)return;const lab=b.innerHTML;b.innerHTML='⏳ next bar';b.classList.add('wait');
+  const go=()=>{clearInterval(pend.iv);pend=null;window.__inTime=1;b.__orbGo=1;try{b.innerHTML=lab;b.click()}finally{b.__orbGo=0;window.__inTime=0;b.classList.remove('wait')}};
+  pend={iv:setInterval(()=>{if(!playing){clearInterval(pend.iv);pend=null;b.innerHTML=lab;b.classList.remove('wait');return}if(((tk%16)+16)%16===0)go()},4)}},true)}
+</script>
+<script>
+/* ---- v0.24: SAFETY LOOP — if the audio goes haywire while playing (broken audio values, repeated dropouts, or 2 s of silence while
+   tracks should sound), a four-to-the-floor kick from the current groove keeps the floor going on its own small audio engine while the
+   main engine resets. The live engine comes back on the next bar of that kick, fading in over one bar while the kick fades out. ---- */
+{let S=null,buf=null,bkey='',busy=0,cool=0;
+ const sctx=()=>{if(S&&S.state!=='closed')return S;try{S=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'playback'});S.suspend()}catch(e){S=null}return S};
+ document.addEventListener('pointerdown',()=>{if(!S)sctx()},{once:true,capture:true});
+ const render=()=>{if(!ctx||busy||(window.DR&&DR.rendering)||!window.OfflineAudioContext)return;const K=TR[0],key=[G.bpm,K.p.pitch,K.p.dec,K.p.punch,K.p.drive,K.p.click,K.lv].join('|');if(key===bkey&&buf)return;
+  const sr=ctx.sampleRate,bar=240/G.bpm,n=Math.round(sr*bar),oc=new OfflineAudioContext(1,n+Math.round(sr*.7),sr),sink=oc.createGain(),nul=oc.createGain();sink.connect(oc.destination);
+  const sv={ctx,ks:A.ks,m:A.m,ru:A.ru,dI:A.dI,rI:A.rI,duck,OCT,mt:K.m};
+  try{ctx=oc;A.ks=sink;A.m=sink;A.ru=nul;A.dI=nul;A.rI=nul;duck=()=>{};OCT=0;if(window.DR)DR.rendering=true;K.m=false;for(let i=0;i<4;i++)fireVoice(0,i*bar/4)}
+  catch(e){}finally{if(window.DR)DR.rendering=false;ctx=sv.ctx;A.ks=sv.ks;A.m=sv.m;A.ru=sv.ru;A.dI=sv.dI;A.rI=sv.rI;duck=sv.duck;OCT=sv.OCT;K.m=sv.mt}
+  oc.startRendering().then(r=>{const d=r.getChannelData(0),o=new Float32Array(n);for(let i=0;i<d.length;i++)o[i%n]+=d[i]; /* fold the last kick's tail into the start */
+   const c=sctx();if(!c)return;const b=c.createBuffer(1,n,sr);b.copyToChannel(o,0);buf=b;bkey=key}).catch(()=>{})};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);setTimeout(()=>{try{render()}catch(e){}},1500);return r};
+ setInterval(()=>{try{if(playing)render()}catch(e){}},10000);
+ const _t=toggle;toggle=function(){const r=_t.apply(this,arguments);if(playing)setTimeout(()=>{try{render()}catch(e){}},900);return r};try{$('#play').onclick=toggle}catch(e){}
+ const safety=why=>{if(busy||!playing||performance.now()<cool)return false;const c=sctx();if(!buf||!c){cool=performance.now()+20000;try{window.orbResetWhy?orbResetWhy('haywire · '+why):hardReset('haywire')}catch(e){}return true} /* no kick loop yet: plain reset */
+  busy=1;cool=performance.now()+20000;
+  try{if(typeof say==='function')say('⚠ SAFETY LOOP · '+why.toUpperCase()+' · ENGINE RESETTING')}catch(e){}
+  c.resume().catch(()=>{});const src=c.createBufferSource(),g=c.createGain();src.buffer=buf;src.loop=true;g.gain.value=0;src.connect(g);g.connect(c.destination);
+  const t0=c.currentTime+.02;src.start(t0);g.gain.setTargetAtTime(.9,t0,.02);const bar=buf.duration;
+  try{window.orbResetWhy?orbResetWhy('safety loop · '+why):hardReset('safety loop')}catch(e){}
+  let tries=0;const back=setInterval(()=>{tries++;if(tries>60){clearInterval(back);g.gain.setTargetAtTime(0,c.currentTime,.3);setTimeout(()=>{try{src.stop()}catch(e){}c.suspend();busy=0},1500);return}
+   if(!ctx||ctx.state!=='running'||!playing||!A.m)return;clearInterval(back);
+   const ph=((c.currentTime-t0)%bar+bar)%bar;let wait=bar-ph;if(wait<.35)wait+=bar;const now=ctx.currentTime,start=now+wait;
+   try{A.m.gain.cancelScheduledValues(now);A.m.gain.setValueAtTime(0,now);A.m.gain.setValueAtTime(0,start);A.m.gain.linearRampToValueAtTime(.8,start+bar)}catch(e){}
+   tk=Math.ceil(tk/16)*16;nextT=start;const cs=c.currentTime+wait;g.gain.cancelScheduledValues(cs);g.gain.setValueAtTime(.9,cs);g.gain.linearRampToValueAtTime(0,cs+bar);
+   setTimeout(()=>{try{src.stop()}catch(e){}try{c.suspend()}catch(e){}busy=0;try{if(typeof say==='function')say('▶ ENGINE BACK')}catch(e){}},(wait+bar+.3)*1000)},100);return true};
+ // trigger 1: broken audio values (the NaN watchdog calls orbReset)
+ const _r=window.orbReset;window.orbReset=function(){if(playing&&safety('broken audio'))return;return _r&&_r.apply(this,arguments)};
+ // trigger 2: repeated dropouts (6 within 10 s)
+ let ur=null,ut=[];setInterval(()=>{if(!ctx||!playing)return;let ps=null;try{ps=ctx.playbackStats}catch(e){}if(!ps||ps.underrunEvents==null)return;
+  if(ur!=null&&ps.underrunEvents>ur){const n=performance.now();for(let i=0;i<ps.underrunEvents-ur;i++)ut.push(n);ut=ut.filter(t=>n-t<10000);if(ut.length>=6){ut=[];safety('dropouts')}}ur=ps.underrunEvents},500);
+ // trigger 3: silence for 2 s while tracks should sound
+ let an=null,ab=null,q=0;setInterval(()=>{if(!ctx||!playing||busy||ctx.state!=='running'){q=0;return}
+  const sounding=TR.some(T=>!T.m&&T.pt&&T.pt.some(x=>x));if(!sounding){q=0;return}
+  if(!an||an.context!==ctx){try{an=ctx.createAnalyser();an.fftSize=1024;ab=new Float32Array(1024);(A.sg||A.m).connect(an)}catch(e){an=null;return}}
+  an.getFloatTimeDomainData(ab);let s=0;for(let i=0;i<ab.length;i+=4)s+=ab[i]*ab[i];if(s<1e-10)q++;else q=0;if(q>=4){q=0;safety('silence')}},500);
+ window.orbSafety={trigger:safety,ready:()=>!!buf,render}}
+</script>
+<script>
+/* ---- v0.24: risers and breakdowns release ON THE BEAT. Let go anywhere: the build holds and the drop (or the full groove coming back)
+   lands on the next beat. Armed drop hits fire exactly on that beat too. Pressing again before the beat makes the pending release happen at once. ---- */
+{let pend=null,pass=0;
+ const zones=()=>[document.getElementById('riser'),...[...document.querySelectorAll('#t-perf>.rz')].map(p=>p.children[1])].filter(Boolean);
+ const inZone=t=>zones().find(z=>z===t||z.contains(t));
+ const flush=()=>{if(!pend)return;clearTimeout(pend.tm);const p=pend;pend=null;pass=1;try{p.tgt.dispatchEvent(new PointerEvent(p.type,{bubbles:true,cancelable:true,pointerId:p.id,clientX:p.x,clientY:p.y}))}finally{pass=0;window.__dropT=0}};
+ const hold=e=>{if(pass||!playing||!ctx)return;const z=inZone(e.target);if(!z)return;if(pend)flush();
+  const sd=sdur(),bt=4*sd,a=anchor(),now=ctx.currentTime;let wB=a+Math.ceil((now-a+.001)/bt)*bt;if(wB-now<.06)wB+=bt;
+  e.stopImmediatePropagation();window.__dropT=wB;pend={tgt:e.target,type:e.type,id:e.pointerId,x:e.clientX,y:e.clientY,tm:setTimeout(flush,Math.max(0,(wB-now-(z.id==='riser'?.15:.04))*1000))}}; /* the main riser schedules its drop on the exact beat, so it can be told earlier */
+ window.addEventListener('pointerup',hold,true);window.addEventListener('pointercancel',hold,true);
+ window.addEventListener('pointerdown',e=>{if(pend&&inZone(e.target))flush()},true);
+ const _f=fire;fire=function(k,w){if(k===0&&typeof w==='number'&&window.__kickHold){if(w<window.__kickHold-.005)return;window.__kickHold=0}return _f.apply(this,arguments)};
+ window.orbDropTiming={pending:()=>!!pend,flush}}
 </script>
 </body></html>
