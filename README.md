@@ -13,13 +13,18 @@ Ten tracks — kick, hi-hat, clap, perc, snare, lead, pad, bass, dub stab and su
 
 | File | What it is |
 | --- | --- |
-| `index.html` | The current version (v0.24) |
-| `releases/orbitron-9000-v0.24.html` | Copy of v0.24 (follows `index.html` until v0.24 is frozen) |
+| `index.html` | The current version (v0.25) |
+| `releases/orbitron-9000-v0.25.html` | Copy of v0.25 (follows `index.html` until v0.25 is frozen) |
+| `releases/orbitron-9000-v0.24.html` | Frozen copy of v0.24 |
 | `releases/orbitron-9000-v0.23.html` | Frozen copy of v0.23 |
 | `releases/orbitron-9000-v0.22.html` | Frozen copy of v0.22 |
 | `releases/orbitron-9000-v0.21.html` | Frozen copy of v0.21 |
 | `releases/orbitron-9000-v0.2.html` | Frozen copy of v0.2 |
 | `releases/orbitron-9000-v0.1.html` | Frozen copy of v0.1 |
+
+## What's new in v0.25
+
+- Professional polish of the interface (calmer borders and glows, steady numbers, clean menus and sliders, clear press and focus states); same green / yellow look, no layout changes
 
 ## What's new in v0.24
 
@@ -28,6 +33,8 @@ Ten tracks — kick, hi-hat, clap, perc, snare, lead, pad, bass, dub stab and su
 - Launch picks a drum kit (909, 808, Rumble, Raw) that fits the mood, about 1 in 5 crosses over; bass characters (deep, round, rubbery, gritty); subtle ±15 % sound mutation so no two Launches sound identical
 - PUMP fader on Mix → Channels (sidechain depth and release in one)
 - Interface cleanup: nothing clips on a phone, compact header on Flight, master toggles moved to Bus & FX, help texts folded into ⓘ, compact Sectors grid
+- Mood flavours after the artists (2–3 per mood), space names for every mood, Launch quality (best-of lead lines, quality gate, groove per track, register slots), Lead Octave knob
+- In-time Launch, risers and breakdowns release on the beat, safety loop when the audio goes haywire, recovery from audio output changes
 
 ## What's new in v0.23
 

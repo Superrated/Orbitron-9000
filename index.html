@@ -1852,7 +1852,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden)chBuild();return r};
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.24 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.24';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.25 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.25';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -4960,5 +4960,28 @@ window.MOODX={
  window.addEventListener('pointerdown',e=>{if(pend&&inZone(e.target))flush()},true);
  const _f=fire;fire=function(k,w){if(k===0&&typeof w==='number'&&window.__kickHold){if(w<window.__kickHold-.005)return;window.__kickHold=0}return _f.apply(this,arguments)};
  window.orbDropTiming={pending:()=>!!pend,flush}}
+</script>
+<script>
+/* ---- v0.24: professional polish (CSS only — no layout or behaviour changes). Same green / yellow identity, calmer and more consistent:
+   steady numbers, softer borders and glows, one corner radius, clear press / focus states, refined sliders and menus. ---- */
+{const st=document.createElement('style');st.textContent=`
+html{-webkit-tap-highlight-color:transparent;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+body b,body .spv,#bv,.met,.kinfo{font-variant-numeric:tabular-nums}
+.panel{border-color:rgba(0,255,156,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 6px 18px rgba(0,0,0,.28)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,0) 60%)}
+.panel>h2,.card .hd span,.pph{letter-spacing:.14em!important;font-weight:700!important}
+.panel>h2{opacity:.92}
+button,select,.chip,.pad{transition:background-color .12s ease,border-color .12s ease,box-shadow .12s ease,transform .06s ease,filter .12s ease}
+button:active,.pad:active,.chip:active{transform:scale(.97)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc,#ffe600)!important;outline-offset:2px}
+button:not(.on):not(#play):not(.pad),select{border-color:rgba(0,255,156,.32)}
+@media (hover:hover){button:hover,select:hover{filter:brightness(1.12)}}
+select{background-image:linear-gradient(45deg,transparent 50%,rgba(0,255,156,.8) 50%),linear-gradient(135deg,rgba(0,255,156,.8) 50%,transparent 50%)!important;background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%!important;background-size:5px 5px,5px 5px!important;background-repeat:no-repeat!important;padding-right:24px!important;-webkit-appearance:none;appearance:none}
+input[type=range]::-webkit-slider-runnable-track{border-radius:3px}
+input[type=range]::-webkit-slider-thumb{border-radius:3px!important;box-shadow:0 0 0 1px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.45),0 0 10px rgba(255,230,0,.18)}
+input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(0,0,0,.45)}
+.pad.on,button.on{box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 14px rgba(0,255,156,.16)!important}
+.gnote,.mcap,.snote{color:var(--muted)}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:rgba(0,255,156,.22);border-radius:4px}::-webkit-scrollbar-track{background:transparent}
+.ticker{border-top:1px solid rgba(0,255,156,.14)}`;document.head.appendChild(st)}
 </script>
 </body></html>
