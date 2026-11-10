@@ -1257,15 +1257,16 @@ const _init39=init;init=function(){const nw=!ctx;_init39();if(!nw)return;const p
  pk.type='peaking';pk.frequency.value=3000;pk.Q.value=1;pk.gain.value=-3.5;hs.type='highshelf';hs.frequency.value=8000;hs.gain.value=-2.5;
  c.threshold.value=-22;c.ratio.value=4;c.knee.value=8;c.attack.value=.004;c.release.value=.16;o.gain.value=G.ldOut;A.ldo=o;A.ldc=c;
  {const fd=ctx.createGain(),fi=ctx.createGain(),fz=ctx.createWaveShaper(),ft=ctx.createBiquadFilter(),fw=ctx.createGain();fd.gain.value=1;fi.gain.value=1;fw.gain.value=0;
-  const n=2048,c=new Float32Array(n),k=3,b=.18,o0=Math.tanh(k*b),nm=Math.tanh(k*(1+b))-o0;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=(Math.tanh(k*(x+b))-o0)/nm}fz.curve=c;fz.oversample='2x';
-  ft.type='lowpass';ft.frequency.value=6500;ft.Q.value=.5;A.ld.connect(fd);fd.connect(pk);A.ld.connect(fi);{const fh=ctx.createBiquadFilter();fh.type='highpass';fh.frequency.value=180;fh.Q.value=.6;fi.connect(fh);fh.connect(fz)}fz.connect(ft);ft.connect(fw);fw.connect(pk);A.fz={fd,fi,fw}} // v0.22 lead bus fuzz (LEAD fader)
+  const n=2048,c=new Float32Array(n),k=2.2,b=.1,o0=Math.atan(k*b),nm=Math.atan(k*(1+b))-o0;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=(Math.atan(k*(x+b))-o0)/nm}fz.curve=c;fz.oversample='2x'; /* warm overdrive */
+  ft.type='lowpass';ft.frequency.value=5200;ft.Q.value=.5;A.ld.connect(fd);fd.connect(pk);A.ld.connect(fi);{const fh=ctx.createBiquadFilter(),pe=ctx.createBiquadFilter(),de=ctx.createBiquadFilter();fh.type='highpass';fh.frequency.value=180;fh.Q.value=.6;pe.type=de.type='highshelf';pe.frequency.value=de.frequency.value=1500;pe.gain.value=6;de.gain.value=-6;
+   fi.connect(fh);fh.connect(pe);pe.connect(fz);fz.connect(de);de.connect(ft)} /* brighter notes drive the overdrive harder, like a filter into a pedal */ft.connect(fw);fw.connect(pk);A.fz={fd,fi,fw}} // v0.22 lead bus fuzz (LEAD fader)
  pk.connect(hs);hs.connect(o);o.connect(A.dk);
  /* slow automatic level control: steer the lead bus towards a target loudness */
  const an=ctx.createAnalyser();an.fftSize=2048;hs.connect(an);const buf=new Float32Array(2048);let ema=0,agc=1;
  setInterval(()=>{if(!playing)return;an.getFloatTimeDomainData(buf);let s=0;for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];const r=Math.sqrt(s/buf.length);
   if(r>.004){ema=ema?ema*.9+r*.1:r;agc=Math.max(.35,Math.min(3,G.ldT*(G.ldMul||1)/ema));o.gain.setTargetAtTime(G.ldOut*agc,ctx.currentTime,.6)}},100)};
 const LVQ=[];function leadVoice(g,w){for(let i=LVQ.length-1;i>=0;i--)if(w-LVQ[i].w>2.5)LVQ.splice(i,1);
- while(LVQ.length>=((window.leadMacro&&leadMacro.x>.3)?2:3)){const o=LVQ.shift();try{o.g.gain.cancelScheduledValues(w);o.g.gain.setTargetAtTime(.0001,w,.06)}catch(e){}}LVQ.push({g,w})}
+ while(LVQ.length>=3){const o=LVQ.shift();try{o.g.gain.cancelScheduledValues(w);o.g.gain.setTargetAtTime(.0001,w,.06)}catch(e){}}LVQ.push({g,w})}
 const _gen39=generate;generate=function(){_gen39();const P=TR[4].p,ac=P.mode==='Acid 303';
  if(ac){P.res=Math.min(P.res,12);P.envA=Math.min(P.envA,4200)}
  else{P.res=Math.min(P.res,curMood==='Power'?14:6);if(P.eng==='Stack'||P.eng==='Mini'||P.eng==='Saw'||P.eng==='Pulse'||!P.eng){P.cut=Math.min(P.cut,2600);P.envA=Math.min(P.envA,3500)}P.vib=Math.min(P.vib||0,14);P.uni=Math.min(P.uni||1,5);
@@ -1876,7 +1877,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const nextHit=s=>{const K=TR[0];for(let d=1;d<=16;d++)if((own(s+d)&&!(G.bavoid&&!K.m&&K.pt[(s+d)%K.st]))||(inFill(s+d)&&[10,12,14].includes((s+d)%16)))return d;return 16};
  let lastBassStep=-9;
  function play(w,opt){const P=B.p,sd=sdur(),o={dec:P.dec,cut:P.cut,lv:B.lv},s=tk;window.BFDEC=P.dec;
-  const cap=P.bsus>.01?Math.min(3,16*sd):1.6;if(P.bgt>0)P.dec=Math.max(.05,Math.min(cap,P.bgt*nextHit(s)*sd*.95));else if(P.bsus>.01)P.dec=Math.max(.05,Math.min(cap,nextHit(s)*sd*.95)); // v0.22: with Sustain a note holds until the next bass note (Gate shortens it)
+  const cap=P.bsus>.01?Math.min(4,24*sd):1.6;if(P.bgt>0)P.dec=Math.max(.05,Math.min(cap,P.bgt*nextHit(s)*sd*.95));else if(P.bsus>.01)P.dec=Math.max(.05,Math.min(cap,nextHit(s)*sd*.95)); // v0.22: with Sustain a note holds until the next bass note (Gate shortens it)
   if(opt&&opt.ghost){P.dec=Math.min(P.dec,.09);P.cut=P.cut*.55;B.lv=B.lv*.38}
   if(opt&&opt.roll){if(!(P.bgt>0))P.dec=Math.min(P.dec,sd*.85);B.lv=B.lv*(opt.roll===1?.8:opt.roll===2?1:.9)}
   window.BOVF=window.BNSF||opt&&opt.f||0;const sl=P.bsl>0&&window.BLF&&s-lastBassStep<=4&&hs(7,s%32,Math.floor(tk/32))<P.bsl;window.BSLF=sl?BLF:0;window.BSLT=Math.min(.09,sd*.6);
@@ -3593,7 +3594,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
    pL=ctx.createStereoPanner(),pR=ctx.createStereoPanner(),duck=g(1),out=g(1);pL.pan.value=-.6;pR.pan.value=.6;
   inp.connect(hp);hp.connect(dL);dL.connect(lpL);lpL.connect(pL);lpL.connect(x);x.connect(dR);dR.connect(lpR);lpR.connect(pR);lpR.connect(fb);fb.connect(dL);
   pL.connect(duck);pR.connect(duck);duck.connect(out);out.connect(A.dk);
-  LE={ctx,inp,dL,dR,duck,out,fb};retime();return LE}
+  LE={ctx,inp,dL,dR,duck,out,fb};window.LEX=LE;retime();return LE}
  const retime=()=>{if(!LE)return;const t=.75*60/G.bpm,now=ctx.currentTime;LE.dL.delayTime.setTargetAtTime(t,now,.05);LE.dR.delayTime.setTargetAtTime(t,now,.05);
   LE.out.gain.setTargetAtTime(Math.min(1.2,(G.dly==null?.25:G.dly)*1.6),now,.1)};
  setInterval(()=>{try{if(LE&&LE.ctx===ctx)retime()}catch(e){}},500);
@@ -3835,14 +3836,14 @@ window.MOODX={
    right = longer notes, brighter filter (cutoff + envelope) and more lead echo and reverb. It springs back to the centre slowly (about 2.5 s, eased) when released. */
 {const LM={x:0,raf:0};
  const _f=fire;fire=function(k,w){if(k!==4||Math.abs(LM.x)<.01)return _f.apply(this,arguments);const P=TR[4].p,x=LM.x,
-   o={dec:P.dec,hold:P.hold,rel:P.rel,drv:P.drv,grit:P.grit,pg:P.pg,cut:P.cut,envA:P.envA,ds:P.ds,rs:P.rs};
+   o={dec:P.dec,hold:P.hold,rel:P.rel,drv:P.drv,grit:P.grit,pg:P.pg,cut:P.cut,envA:P.envA,ds:P.ds,rs:P.rs,res:P.res};
   /* v0.22: one even length curve for decay, gate and release together (short side as before, long side up to 2x), plus warm drive on the long side */
   try{const lf=x<0?Math.pow(2,1.5*x):Math.pow(2,x);P.dec=Math.max(.03,Math.min(3,(P.dec||.25)*lf));if(P.hold)P.hold=Math.max(.2,P.hold*lf);if(P.rel!=null)P.rel=Math.max(.01,Math.min(3,P.rel*lf));
-   if(x>0){const hv=Math.max(0,(x-.5)/.5),ad=x<=.5?.3*x:.15+1.2*hv,gr=0; /* no grit: it adds a noise voice per note */ /* warm up to 60 %, then heavy drive + grit to the end */
-    P.drv=Math.min(1.4,(P.drv||0)+ad);if(gr>0)P.grit=Math.min(1,(P.grit||0)+gr);P.pg=(P.pg||1)/(1+ad*.4)/(1+ad*1.2)/(1+gr*.9)}
+   if(x>0){const hv=Math.max(0,(x-.5)/.5),wl=Math.max(0,(x-.8)/.2),ad=x<=.5?.3*x:.15+1.2*hv+.8*wl*wl,gr=0; /* no grit: it adds a noise voice per note */ /* warm up to 60 %, then heavy drive + grit to the end */
+    P.drv=Math.min(2.2,(P.drv||0)+ad);if(hv>0&&P.res!=null)P.res=Math.min(Math.max(P.res,11),P.res+4.5*hv); /* resonance screams into the overdrive */if(gr>0)P.grit=Math.min(1,(P.grit||0)+gr);{const hasD=P.eng!=='Mini',ac=Math.min(ad,1.35);P.pg=(P.pg||1)/(1+ad*.4)/(hasD?1+ac*.75:1)} /* Mini has no drive stage, so only the level term is undone there */}
    if(P.cut!=null)P.cut=Math.max(60,Math.min(12000,P.cut*Math.pow(2,(x<0?1.2:.75)*x)));if(P.envA!=null)P.envA=Math.max(0,P.envA*(1+(x<0?.6:.4)*x));
-   if(x>0){const T=TR[4],n=T.st||16,s0=((tk%n)+n)%n;let d=1;while(d<n&&!T.pt[(s0+d)%n])d++;const gap=d*sdur(); /* long notes fill the gap evenly instead of piling up */
-    P.dec=Math.min(P.dec,Math.max(o.dec||.1,gap*1.6));if(P.hold)P.hold=Math.min(P.hold,Math.max(o.hold||1,d*1.6));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(o.rel||.05,gap*.8))}
+   if(x>0){const T=TR[4],n=T.st||16,d=Math.max(1,n/Math.max(1,T.h||1)),gap=d*sdur(); /* every note gets the same length limit (from the average spacing), so all notes lengthen alike */
+    P.dec=Math.min(P.dec,Math.max(o.dec||.1,gap*2));if(P.hold)P.hold=Math.min(P.hold,Math.max(o.hold||1,d*2));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(o.rel||.05,gap))}
    P.ds=Math.max(0,Math.min(1,(P.ds||0)*(1+x)));P.rs=Math.max(0,Math.min(1,(P.rs||0)*(1+x)));return _f.apply(this,arguments)}
   finally{Object.keys(o).forEach(k=>{if(o[k]===undefined)delete P[k];else P[k]=o[k]})}};
  const st=document.createElement('style');st.textContent=`.lmx{margin-top:8px}.lmx .lmh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}
@@ -3894,8 +3895,8 @@ window.MOODX={
 {const BM={x:0,raf:0};let dep=0;
  const bend=fn=>function(){if(dep||Math.abs(BM.x)<.01)return fn.apply(this,arguments);const B=TR[6],P=B.p,x=BM.x,
    o={dec:P.dec,bgt:P.bgt,bsus:P.bsus,cut:P.cut,envA:P.envA,res:P.res,bsl:P.bsl,lv:B.lv};dep=1;const n={};
-  try{const lf=x<0?Math.pow(2,1.3*x):Math.pow(2,1.32*x);P.dec=Math.max(.04,Math.min(1.2,(P.dec||.13)*lf));
-   if(x<0){if(P.bgt>0)P.bgt=Math.max(.08,P.bgt*lf)}else{if(P.bgt>0)P.bgt=Math.min(1,P.bgt+(1-P.bgt)*x);const s0=P.bsus||0,s1=Math.max(s0,.6*x);P.bsus=s1;if(s1>s0){const lv=v=>v<.05?1:Math.max(.25,.7-.5*v);B.lv=B.lv*lv(s1)/lv(s0)}} // long side: Sustain + legato
+  try{const lf=x<0?Math.pow(2,1.3*x):Math.pow(2,1.7*x);P.dec=Math.max(.04,Math.min(1.8,(P.dec||.13)*lf));
+   if(x<0){if(P.bgt>0)P.bgt=Math.max(.08,P.bgt*lf)}else{if(P.bgt>0)P.bgt=Math.min(1,P.bgt+(1-P.bgt)*x);const s0=P.bsus||0,s1=Math.max(s0,.8*x);P.bsus=s1;if(s1>s0){const lv=v=>v<.05?1:Math.max(.25,.7-.5*v);B.lv=B.lv*lv(s1)/lv(s0)}} // long side: Sustain + legato
    const q=x<0?x:x*x; /* squelch comes in late: a quarter at half-way, full at the end */
    P.cut=Math.max(60,Math.min(6000,(P.cut||500)*Math.pow(2,q)));P.envA=Math.max(0,(P.envA||0)*(1+.5*q));
    const r0=P.res||1;if(x<0)P.res=Math.max(.5,r0*(1+.5*x));else{const top=Math.max(r0,9);P.res=Math.min(top,r0+5*q)}
@@ -4270,7 +4271,8 @@ window.MOODX={
  let lastV=0;const _vz=viz;viz=function(){if(vis==='Full')return _vz();const n=performance.now();
   if(vis==='Off'){setTimeout(()=>requestAnimationFrame(viz),400);return}if(n-lastV<66){requestAnimationFrame(viz);return}lastV=n;return _vz()};
  const _dr=draw;draw=function(T,s){if(vis==='Off'&&playing&&s>=0)return;return _dr.apply(this,arguments)};
- const ui=()=>{const m=$('#mix');if(!m||m.querySelector('.bufsel'))return;const q=[...m.querySelectorAll('label.sl')].find(l=>l.firstChild&&l.firstChild.textContent.trim()==='Engine quality');
+ const ui=()=>{const q=[...document.querySelectorAll('#t-mix label.sl')].find(l=>l.firstChild&&l.firstChild.textContent.trim()==='Engine quality');const m=q?q.parentElement:null; /* Engine panel (Mix → Engine) */
+  if(!m)return;if(m.querySelector('.bufsel'))return;document.querySelectorAll('#t-mix .bufsel,#t-mix .vissel').forEach(e=>e.remove());
   const mk=(lab,opts,val,fn,cls,tip)=>{const l=document.createElement('label');l.className='sl '+cls;l.title=tip;l.appendChild(document.createTextNode(lab));const se=document.createElement('select');opts.forEach(o=>se.add(new Option(o,o)));se.value=val;se.onchange=()=>fn(se.value);l.appendChild(se);return l};
   const b=mk('Audio buffer',Object.keys(BUF),buf,v=>{buf=v;put('orb-buf',v);if(ctx&&window.hardReset)hardReset('audio buffer '+v)},'bufsel','Bigger buffer = fewer dropouts/underruns, but pads and faders respond later. Changing it restarts the audio for a moment; the groove keeps playing.');
   const v=mk('Visuals',VIS,vis,x=>{vis=x;put('orb-vis',x);if(x!=='Off')requestAnimationFrame(()=>{})},'vissel','Low = about 15 frames per second, Off = no live animation. Frees the main thread so notes stay on time on busy devices.');
@@ -4284,6 +4286,7 @@ window.MOODX={
    Level-matched; works on every lead patch, including Mini (which has no drive of its own). ---- */
 {let last=null;setInterval(()=>{try{if(!ctx||!A.fz)return;const x=(window.leadMacro&&leadMacro.x)||0;if(last!==null&&Math.abs(x-last)<.003)return;last=x;
   const a=Math.max(0,Math.min(1,(x-.5)/.5)),t=ctx.currentTime,F=A.fz;
-  F.fi.gain.setTargetAtTime(1+11*a,t,.03);F.fw.gain.setTargetAtTime(.42*a/(1+1.2*a),t,.03);F.fd.gain.setTargetAtTime(1-.75*a,t,.03)}catch(e){}},40)}
+  const wl=Math.max(0,(x-.8)/.2),dr=1+11*a+16*wl*wl;F.fi.gain.setTargetAtTime(dr,t,.03);F.fw.gain.setTargetAtTime(.62*a/(1+1.1*a),t,.03);F.fd.gain.setTargetAtTime(1-.8*a,t,.03);
+  const L=window.LEX;if(L&&L.ctx===ctx){if(L.fb0==null||a===0)L.fb0=L.fb0==null?L.fb.gain.value:L.fb0;const e=Math.max(0,(x-.7)/.3);L.fb.gain.setTargetAtTime(Math.min(.72,L.fb0+.3*e),t,.15)}}catch(e){}},40)}
 </script>
 </body></html>
