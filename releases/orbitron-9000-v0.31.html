@@ -5784,10 +5784,10 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  setInterval(()=>{if(A.tmid&&!A.tmid.__t){A.tmid.__t=1;set()}},500)}
 </script>
 <script>
-/* ---- v0.31: RIFF PICKER (Synths → Lead → Pattern, under Arp mode). All 16 riffs of the four modern families.
+/* ---- v0.31: RIFF PICKER (Synths → Lead → Pattern, under Arp mode). All 16 riffs of the four modern families (named by feel: Rolling, Bounce, Stab, Minimal).
    Picking one switches the lead to Riff mode at the next bar (straight away when stopped) and fits the Euclid ring to the riff's
    rhythm; Off goes back to Motif. Sectors keep the riff. ---- */
-{const FAM=()=>(window.orbModern&&orbModern.FAM)||{},NM={afterlife:'Afterlife',bicep:'Bicep',peak:'Peak-time',minimal:'Minimal'};
+{const FAM=()=>(window.orbModern&&orbModern.FAM)||{},NM={afterlife:'Rolling',bicep:'Bounce',peak:'Stab',minimal:'Minimal'};
  const list=()=>{const o=[];for(const f in FAM())(FAM()[f].riff||[]).forEach((t,i)=>o.push({lab:NM[f]+' '+(i+1),t}));return o};
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const curLab=()=>{const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff')return'Off';const s=JSON.stringify(R.t),h=list().find(x=>JSON.stringify(x.t)===s);return h?h.lab:'Off'};
