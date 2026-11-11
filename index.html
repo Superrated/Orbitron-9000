@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Orbitron 9000 v0.31 — generative Euclidean groovebox
+  Orbitron 9000 v0.32 — generative Euclidean groovebox
   Copyright (c) 2026 Superrated. Designed by Superrated and Claude.
 
   Licensed under the PolyForm Noncommercial License 1.0.0:
@@ -1877,7 +1877,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.31 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.31';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.32 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.32';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -5121,8 +5121,8 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const RIFF={t:null};window.orbRiff=RIFF;
  const fillT=t=>{let last=t.find(x=>x!=null);if(last==null)last=0;return t.map(x=>x==null?last:(last=x))};
  const dg=(v,n)=>v>=10?v-10+n:v;
- const _ln=leadNote;leadNote=function(p){if(p.mode==='Riff'&&RIFF.t){const n=SC[G.scale].length,s=((tk%16)+16)%16,bar=Math.floor(tk/16),t=RIFF.f;let v=dg(t[s],n);
-   if(bar%2===1&&s>=12)v+=v%n===0?2:v%n===2?2:-2;return cur.r+v}return _ln.apply(this,arguments)};
+ const _ln=leadNote;leadNote=function(p){if(p.mode==='Riff'&&RIFF.t){const n=SC[G.scale].length,N=RIFF.f.length||16,s=((tk%N)+N)%N,bar=Math.floor(tk/16),t=RIFF.f;let v=dg(t[s],n);
+   if(N===16&&bar%2===1&&s>=12)v+=v%n===0?2:v%n===2?2:-2;return cur.r+v}return _ln.apply(this,arguments)};
  try{if(!MODES.includes('Riff'))MODES.push('Riff')}catch(e){}
  const MFAM={Melancholic:{rolling:.7,bounce:.3},'Melodic House':{rolling:.5,bounce:.5},Dark:{rolling:.5,peak:.5},Noir:{rolling:.6,bounce:.4},
   Dreamy:{bounce:.6,rolling:.4},Hopeful:{bounce:.7,rolling:.3},Breaks:{bounce:1},Ethereal:{bounce:.5,rolling:.5},Ambient:{bounce:.7,rolling:.3},
@@ -5145,14 +5145,14 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    const F=fam&&FAM[fam];
    RIFF.t=null;window.__bphLock=0;
    if(F&&!L.m){applyLP(pick(F.lead),1);P.rdr=0;try{mot=[];mp=-1;buf=[]}catch(e){}
-    if(R()<.7){const t=pick(F.riff);RIFF.t=t;RIFF.f=fillT(t);P.mode='Riff';const pt=t.map(x=>x==null?0:1);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(L,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}L.pt=pat(L)}
+    if(R()<.7){const t=pick(F.riff);RIFF.t=t;RIFF.f=fillT(t);P.mode='Riff';const pt=t.map(x=>x==null?0:1);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(L,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}L.pt=pt.slice()}
     else{const [md,h,r,st]=pick(F.modes);P.mode=md;Object.assign(L,{st:st||16,h:Math.min(h,st||16),r,ten:0});L.pt=pat(L);P.range=md==='Motif'?(fam==='peak'||fam==='minimal'?1:2):2}}
    else if(!L.m&&!acid){if(BADL.has(P.patch)){const fl=F||FAM[wp(fams||{rolling:.5,bounce:.5})];applyLP(pick(fl.lead),1)}
     if(BADM.has(P.mode)){P.mode=pick(['Motif','Chord arp','Pedal arp','Motif']);try{mot=[];mp=-1;buf=[]}catch(e){}}}
    // bass: rarely muted, modern sound + pattern from the family
    if(B.m&&!acid&&R()<.85)B.m=false;
    if(F&&!B.m){bassSet(pick(F.bass));if(R()<.7){const t=pick(F.bl),pt=t.map(x=>x==null?0:1),ff=fillT(t),A=ff.map(v=>({d:v>=10?v-10:v,o:v>=10?1:0})),A2=A.map((e,i)=>i>=12&&i%2===0&&R()<.5?{d:e.d,o:1-e.o}:Object.assign({},e));
-     B.st=16;try{const ft=bassFit(B,pt);Object.assign(B,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}B.pt=pat(B);Object.assign(BP,{bns:'Phrase',bsty:'Modern '+fam,bsus:0,btn:false,bph:1,bgh:0,blk:'Free'});
+     B.st=16;try{const ft=bassFit(B,pt);Object.assign(B,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}B.pt=pt.slice();Object.assign(BP,{bns:'Phrase',bsty:'Modern '+fam,bsus:0,btn:false,bph:1,bgh:0,blk:'Free'});
      window.BPH={bars:[A,A2],pk:[],chr:0,lead:9,evo:0};window.__bphLock=1}
     else{const [sty,notes]=pick(F.bsty);try{bassStyle(sty)}catch(e){}BP.bns=notes}}
    else if(!B.m&&(BP.bsty==='Custom'||BP.bsty==='Pedal'||['Chord tones','Melodic'].includes(BP.bns))&&R()<.8){const fl=FAM[wp(fams||{rolling:.5,peak:.5})];const [sty,notes]=pick(fl.bsty);try{bassStyle(sty)}catch(e){}BP.bns=notes;if(R()<.6)bassSet(pick(fl.bass))}
@@ -5784,15 +5784,26 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    Picking one switches the lead to Riff mode at the next bar (straight away when stopped) and fits the Euclid ring to the riff's
    rhythm; Off goes back to Motif. Sectors keep the riff. ---- */
 {const FAM=()=>(window.orbModern&&orbModern.FAM)||{},NM={rolling:'Rolling',bounce:'Bounce',peak:'Stab',minimal:'Minimal'};
- const list=()=>{const o=[];for(const f in FAM())(FAM()[f].riff||[]).forEach((t,i)=>o.push({lab:NM[f]+' '+(i+1),t}));return o};
+ /* v0.32: 16 more riffs, two bars each (one rhythm per bar, the melody answers in bar 2), light and mostly within one octave; b = bright (1) or dark (0) */
+ const XR={"italo": [{"b": 1, "t": [0, null, null, 10, null, null, 4, null, null, null, 2, null, null, 4, null, null, 0, null, null, 10, null, null, 5, null, null, null, 4, null, null, 2, null, null]}, {"b": 0, "t": [0, null, null, 0, null, null, 6, null, null, null, null, 4, null, null, null, null, 0, null, null, 0, null, null, 1, null, null, null, null, 0, null, null, null, null]}, {"b": 1, "t": [2, null, null, null, 4, null, null, 5, null, null, null, 4, null, null, null, null, 2, null, null, null, 4, null, null, 10, null, null, null, 5, null, null, null, null]}, {"b": 0, "t": [10, null, null, 6, null, null, 4, null, null, null, 0, null, null, null, null, null, 10, null, null, 6, null, null, 4, null, null, null, 1, null, null, null, null, null]}], "trance": [{"b": 1, "t": [null, null, 4, null, null, null, 4, null, null, null, 5, null, null, null, 4, null, null, null, 2, null, null, null, 2, null, null, null, 4, null, null, null, 10, null]}, {"b": 0, "t": [null, null, 0, null, null, null, 0, null, null, null, 6, null, null, null, 0, null, null, null, 0, null, null, null, 1, null, null, null, 0, null, null, null, 4, null]}, {"b": 1, "t": [4, null, null, 4, null, null, 5, null, null, 4, null, null, 2, null, null, null, 4, null, null, 4, null, null, 10, null, null, 5, null, null, 4, null, null, null]}, {"b": 0, "t": [0, null, null, 0, null, null, null, 4, null, null, null, null, 6, null, null, null, 0, null, null, 0, null, null, null, 4, null, null, null, null, 1, null, null, null]}], "dub": [{"b": 0, "t": [null, null, null, null, 0, null, null, null, null, null, null, null, null, null, 0, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, null, 6, null]}, {"b": 1, "t": [null, null, null, null, null, null, 2, null, null, null, null, null, 4, null, null, null, null, null, null, null, null, null, 2, null, null, null, null, null, 5, null, null, null]}, {"b": 0, "t": [null, null, null, 0, null, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, 1, null, null, null, null, null, null, 0, null, null, null, null, null]}, {"b": 1, "t": [null, null, null, null, 4, null, null, null, null, null, null, 2, null, null, null, null, null, null, null, null, 4, null, null, null, null, null, null, 5, null, null, null, null]}], "breaks": [{"b": 1, "t": [4, null, null, 2, null, null, null, 0, null, null, null, null, null, null, null, null, 4, null, null, 5, null, null, null, 10, null, null, null, null, null, null, null, null]}, {"b": 0, "t": [0, null, 1, null, null, 0, null, null, null, 6, null, null, null, null, null, null, 6, null, 4, null, null, 1, null, null, null, 0, null, null, null, null, null, null]}, {"b": 1, "t": [null, null, 2, null, null, 4, null, null, null, 5, null, null, null, null, null, null, null, null, 10, null, null, 5, null, null, null, 4, null, null, null, null, null, null]}, {"b": 0, "t": [null, 10, null, null, null, 6, null, null, 4, null, null, null, null, null, null, null, null, 0, null, null, null, 1, null, null, 0, null, null, null, null, null, null, null]}]},XN={italo:'Italo',trance:'Trance',dub:'Dub',breaks:'Break'};window.orbRiffX=XR;
+ const list=()=>{const o=[];for(const f in FAM())(FAM()[f].riff||[]).forEach((t,i)=>o.push({lab:NM[f]+' '+(i+1),t}));for(const f in XR)XR[f].forEach((r,i)=>o.push({lab:XN[f]+' '+(i+1),t:r.t,st:f,b:r.b}));return o};
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const curLab=()=>{const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff')return'Off';const s=JSON.stringify(R.t),h=list().find(x=>JSON.stringify(x.t)===s);return h?h.lab:'Off'};
  let pend=null;
  const apply=lab=>{const L=TR[4],P=L.p,R=window.orbRiff;if(!R)return;
   if(lab==='Off'){if(P.mode==='Riff'){P.mode='Motif';R.t=null;try{mot=[];mp=-1;buf=[]}catch(e){}}}
   else{const h=list().find(x=>x.lab===lab);if(!h)return;R.t=h.t;R.f=fillT(h.t);P.mode='Riff';try{mot=[];mp=-1;buf=[]}catch(e){}
-   const pt=h.t.map(x=>x==null?0:1);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(L,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}L.pt=pat(L)}
+   const pt=h.t.slice(0,16).map(x=>x==null?0:1);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(L,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}L.pt=pt.slice()}   /* the riff's own rhythm, exactly; Steps/Hits/Rotate show the nearest Euclid ring */
   setTimeout(()=>{try{build()}catch(e){}try{say('♪ LEAD RIFF · '+lab.toUpperCase())}catch(e){}},0)};
+ // Launch: the new styles where they fit (only when the Launch didn't already choose a riff), bright riffs for bright moods
+ const FIT={Italo:{italo:.45},Hopeful:{italo:.15,breaks:.1},Dreamy:{italo:.1,dub:.1},Noir:{italo:.1,dub:.2},Dark:{italo:.08},'Melodic House':{trance:.25},Ethereal:{trance:.2},
+  Melancholic:{trance:.2},Tense:{trance:.12},Power:{trance:.1},Temporal:{dub:.3},'Deep Space':{dub:.25},Drone:{dub:.15},'Groove Techno':{dub:.15},Breaks:{breaks:.45},Vector:{breaks:.2},Bleep:{breaks:.2}};
+ const BRIGHT=new Set(['Hopeful','Italo','Dreamy','Ethereal','Melodic House','Breaks','Vector']);
+ const _gr=generate;generate=function(){const r=_gr.apply(this,arguments);try{const L=TR[4],P=L.p,f=FIT[curMood];
+   if(f&&!L.m&&P.mode!=='Riff'&&P.mode!=='Acid 303'&&!(MOODS[curMood]||{}).acid){let tot=0;for(const k in f)tot+=f[k];if(R()<tot){let x=R()*tot,st=null;for(const k in f){if((x-=f[k])<0){st=k;break}}st=st||Object.keys(f)[0];
+     const want=BRIGHT.has(curMood)?1:0,pool0=XR[st].filter(q=>q.b===want),pool=pool0.length?pool0:XR[st],q=pool[Math.floor(R()*pool.length)],lab=XN[st]+' '+(XR[st].indexOf(q)+1);
+     if(st==='dub'&&!(P.chd&&P.chd!=='Off'))try{applyLP(pick(['Organ stab','Rhodes stab','Organ stab']),1)}catch(e){}
+     apply(lab)}}}catch(e){console.warn('[orbitron] riffs',e)}return r};
  const _as=arrStep;arrStep=function(w){if(pend&&((tk%16)+16)%16===0){const l=pend;pend=null;apply(l)}return _as.apply(this,arguments)};
  const add=()=>{try{const card=TR[4].mb&&TR[4].mb.closest('.card');if(!card)return;const old=card.querySelector('.lriff');
    const am=[...card.querySelectorAll('label.sl')].find(l=>l.firstChild&&l.firstChild.textContent.trim()==='Arp mode');if(!am)return;
