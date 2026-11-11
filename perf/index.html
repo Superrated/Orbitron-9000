@@ -1187,7 +1187,7 @@ setInterval(()=>{if(!ctx||!playing){QOS.lvl=0;QOS.ml=0}else{const a=QOS.src.size
   if(a>H[0]||QOS.load>.6||(vis&&QOS.ft>30))p=1;if(a>H[1]||QOS.load>.8||QOS.late>0||(vis&&QOS.ft>45))p=2;if(a>H[2]||QOS.load>.95||QOS.late>2)p=3;
   let pa=0;if(a>H[0]||QOS.load>.6)pa=1;if(a>H[1]||QOS.load>.8||QOS.late>1)pa=2;if(a>H[2]||QOS.load>.95||QOS.late>4)pa=3;if(pa>(QOS.ml||0)){QOS.ml=pa;QOS.mc=8}else if(pa<(QOS.ml||0)&&--QOS.mc<=0){QOS.ml--;QOS.mc=6}p=Math.max(p,QOS.floor||0,QOS.stageFloor||0);if(p>QOS.lvl){QOS.lvl=p;QOS.cool=8}else if(p<QOS.lvl&&--QOS.cool<=0){QOS.lvl--;QOS.cool=6}QOS.late=0;if(a>QOS.hard)steal((a-QOS.hard*.8)/2)}
  /* v0.26: the badge shows the level actually in effect (the load meter or the active saving stage, whichever is higher), written only on change */
- {const lv=Math.min(3,Math.max(QOS.ml||0,QOS.lvl||0)),t='CORE '+QOS.nm[lv];if(QB.textContent!==t)QB.textContent=t;if(QB.__l!==lv){QB.__l=lv;QB.style.color=QOS.cl[lv]}}},400);
+ {let q0='Eco';try{q0=localStorage.getItem('orb-q')||'Eco'}catch(e){}const base=q0==='Eco eco'?2:q0==='Eco'?1:0,lvR=QOS.lvl||0,lv=Math.min(3,Math.max(QOS.ml||0,lvR>base?lvR:0)),t='CORE '+QOS.nm[lv]; /* perf 13: the mode's own built-in light setting is not shown as a warning */if(QB.textContent!==t)QB.textContent=t;if(QB.__l!==lv){QB.__l=lv;QB.style.color=QOS.cl[lv]}}},400);
 /* ---- v31: third riser "Shepard climb" — endlessly rising Shepard chord + accelerating chord-tone arp, thins low end, climax swell; release = boom + crash drop ---- */
 {const SH={on:0,p:0,vs:[],ph:0,t:0,iv:0,lt:0,ai:0,km:false,kd:0};
  const st=document.createElement('style');st.textContent='#t-perf{grid-template-columns:repeat(3,minmax(0,1fr))!important}';document.head.appendChild(st);
@@ -1285,7 +1285,7 @@ const _gen36=generate;generate=function(){G.shx=0;_gen36();if(curMood==='Deep Sp
 /* ---- v38: performance — pre-rendered hat metal, lighter master FX, capped visual fps, no hidden redraws, mobile-aware guard, Engine quality (Auto / Eco / Hi-fi) ---- */
 {const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4;
  let q='Eco';try{if(!localStorage.getItem('orb-q2')){localStorage.setItem('orb-q','Eco');localStorage.setItem('orb-q2','1')}q=localStorage.getItem('orb-q')||'Eco'}catch(e){}
- const applyQ=()=>{const hf=q==='Hi-fi';QOS.hi=hf?[260,360,460]:mob?[110,160,220]:[170,240,320];QOS.hard=hf?600:mob?300:420;QOS.floor=q==='Eco eco'?2:0; /* perf 5: Eco no longer forces a saving level — it saves only when the load meter asks for it */QOS.fps=q==='Hi-fi'?60:q==='Eco eco'?15:q==='Eco'?20:(mob?30:45);QOS.eco2=q==='Eco eco'};applyQ();
+ const applyQ=()=>{const hf=q==='Hi-fi';QOS.hi=hf?[260,360,460]:mob?[110,160,220]:[170,240,320];QOS.hard=hf?600:mob?300:420;QOS.floor=q==='Eco eco'?2:q==='Eco'?1:0; /* perf 13: Eco keeps a light floor (unison ≤ 4) and saves more when the load meter asks */QOS.fps=q==='Hi-fi'?60:q==='Eco eco'?15:q==='Eco'?20:(mob?30:45);QOS.eco2=q==='Eco eco'};applyQ();
  QOS.la=.2;document.addEventListener('visibilitychange',()=>{QOS.la=document.hidden?1.2:.2});
  // quality selector in Mission control
  const _mx38=mix;mix=function(){_mx38();const m=$('#mix'),l=document.createElement('label');l.className='sl';l.appendChild(document.createTextNode('Engine quality'));const s=document.createElement('select');[['Hi-fi','Full · best sound'],['Auto','Auto · adapts to the device'],['Eco','Light · saves CPU'],['Eco eco','Ultra light · 64 voices max']].forEach(([x,t])=>s.add(new Option(t,x)));s.value=q;s.onchange=()=>{q=s.value;try{localStorage.setItem('orb-q',q)}catch(e){}applyQ()};l.appendChild(s);m.prepend(l)};
@@ -1326,9 +1326,9 @@ const _gen39=generate;generate=function(){_gen39();const P=TR[4].p,ac=P.mode==='
   if((P.sus||0)>.3)P.pg=Math.min(P.pg||1,2.2)}
  TRIM[4]=(MTRIM[curMood]&&MTRIM[curMood][4]||0)-2;build()};
 /* ---- v40: lean engine — batched dial redraws, one rebuild per Generate, no lead compressor, shorter reverbs on phones/Eco, stronger default shedding on phones, calmer GPU, flight diagnostics ---- */
-{const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4,qual=()=>{try{return localStorage.getItem('orb-q')||'Eco'}catch(e){return 'Eco'}},lean=()=>qual()==='Eco eco'||(mob&&qual()==='Auto'); /* perf 5: Eco keeps the full reverb */
+{const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4,qual=()=>{try{return localStorage.getItem('orb-q')||'Eco'}catch(e){return 'Eco'}},lean=()=>qual()==='Eco'||qual()==='Eco eco'||(mob&&qual()==='Auto'); /* perf 13: Eco uses the 1.4 s reverb again */
  QOS.lateTot=0;QOS.fl0=QOS.floor||0;
- const tierFloor=()=>{const q=qual();return q==='Eco eco'?2:q==='Eco'||q==='Hi-fi'?0:mob?1:0}; /* perf 5 */QOS.floor=tierFloor();
+ const tierFloor=()=>{const q=qual();return q==='Eco eco'?2:q==='Eco'?1:q==='Hi-fi'?0:mob?1:0}; /* perf 13 */QOS.floor=tierFloor();
  if(mob)QOS.la=.3;document.addEventListener('visibilitychange',()=>{QOS.la=document.hidden?1.2:(mob?.3:.2)});
  // reverb impulse lengths per tier (set once the audio engine exists)
  const _init40=init;init=function(){const nw=!ctx;_init40();if(!nw)return;if(lean()){try{A.rcv.buffer=ir2(qual()==='Eco eco'?1.1:qual()==='Eco'?1.4:1.8,.02);A.rmc.buffer=irM(ir(.8,1.6,.06))}catch(e){}}};

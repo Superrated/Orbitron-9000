@@ -61,3 +61,9 @@ landing at roughly the old cost. On the phone, the Perf Test copy should give th
     Timer wake-ups 388/s → 294/s (−24 %).
 13. Visuals step down with load: ≤24 fps at LOAD (existing), 12 fps at SAVING, 6 fps at OVERLOAD or for 3 s after an audio underrun.
 Regression: all moods, no errors, no late steps, worst peak 0.896; every control on every tab pressed twice during playback: no errors.
+
+## Update: lighter Eco (round 4)
+14. Eco = light floor: lead unison up to 4 (was 2 in v0.27, 7 in the previous perf build), 1.4 s reverb; still steps down further when the load meter asks.
+    The CORE badge does not show Eco's own built-in setting as LOAD.
+    Stress test vs live v0.27 (2 rounds, full groove): render load 66–68 % → 58–64 %, quanta over budget 420–574 → 212–326 (≈ −45 %),
+    while the sound stays fuller than live (unison 4 vs 2). Repeated Launches: audio within noise, longest main-thread freeze 176–182 → 71–75 ms.
