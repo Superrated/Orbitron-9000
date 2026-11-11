@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Orbitron 9000 v0.22 — generative Euclidean groovebox
+  Orbitron 9000 v0.26 — generative Euclidean groovebox
   Copyright (c) 2026 Superrated. Designed by Superrated and Claude.
 
   Licensed under the PolyForm Noncommercial License 1.0.0:
@@ -151,6 +151,8 @@ const gauss=()=>(R()+R()+R()-1.5)/.75;
 let XS=0,PX=[],PD=null,PPUSH=0,PTOP=null;
 /* v0.24: lead octave = its own Octave knob plus the +1/+2 octave Thruster while held (they add up) */
 function leadOct(p){return (p.loct||0)+(G.ldUp||0)}
+/* v0.26: lead notes above ~2.4 kHz fold down an octave (Octave knob + Thruster + 3-octave range could reach 15 kHz) */
+function leadFold(f){let n=0;while(f>2400&&n++<4)f/=2;return f}
 function d2f(d,o){if(FIX)return FIX;o+=OCT;const s=SC[G.scale],n=s.length,k=Math.floor(d/n),m=12*(o+1)+G.root+s[((d%n)+n)%n]+12*k+XS;return 440*Math.pow(2,(m-69)/12)}
 const pat=t=>{const a=Array(t.st).fill(0);if(t.pad)return a.fill(1);const on=[];for(let i=0;i<t.st;i++)if((i*t.h)%t.st<t.h)on.push(i);
  // tension: pull hits off the even grid (first hit stays put) — 0 = pure Euclid, 1 = wild, clustered, breakbeat-like
@@ -679,7 +681,7 @@ const VWF=[[800,1150,2900],[400,1600,2700],[270,2140,2950],[450,800,2830],[325,7
 function vowelWave(f,v){const x=Math.max(0,Math.min(1,v))*4,i=Math.min(3,Math.floor(x)),t=x-i,F=VWF[i].map((a,j)=>a+(VWF[i+1][j]-a)*t),key=Math.round(f)+'|'+x.toFixed(2);if(VWC[key])return VWC[key];if(++VWN>400){VWC={};VWN=0}
  const N=Math.max(4,Math.min(80,Math.floor(7000/f))),re=new Float32Array(N+1),im=new Float32Array(N+1),AM=[1,.6,.3],B=[90,110,170];
  for(let n=1;n<=N;n++){const hf=n*f;let a=.04/n;F.forEach((fm,j)=>{const bw=Math.max(B[j]*1.6,f*.7);a+=AM[j]*Math.exp(-Math.pow((hf-fm)/bw,2))});im[n]=a}return VWC[key]=ctx.createPeriodicWave(re,im)}
-function leadPoly(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,d=leadNote(p);lastDeg=d;const f=d2f(d,3+leadOct(p)),
+function leadPoly(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,d=leadNote(p);lastDeg=d;const f=leadFold(d2f(d,3+leadOct(p))),
  hs=Math.sin(((tk%T.st)+1)*12.9898+(p.seed||0)*78.233)*43758.5453,sl=LF>0&&w-LW<=4.2*sd&&hs-Math.floor(hs)<p.glide,f0=sl?LF:f,
  eng=(!p.eng||p.eng==='Saw')?'Stack':p.eng,att=Math.max(.002,(p.att||2)/1000),dec=p.dec*(sl?1.4:1)*Math.pow(2,1.2*mv("Lead decay",w)),susM=(p.sus||0)>.01,gate=Math.max(att+.01,(p.hold||1)*sd),rel=Math.max(.01,p.rel||.1),
  e=w+(susM?gate+rel*1.6:att+dec)+.08,gt=p.gt/1000,nu=Math.max(1,Math.min(eng==='FM'?3:7,Math.round(p.uni||1),QOS.eco2?1:QOS.uni[QOS.lvl])),g=ctx.createGain(),mx=ctx.createGain(),vs=[];
@@ -1543,7 +1545,7 @@ registerProcessor('mini-ladder',class extends AudioWorkletProcessor{static get p
   for(let ch=1;ch<o.length;ch++)o[ch].set(y);return true}})`;
 function ladCap(){let q='Eco';try{q=localStorage.getItem('orb-q')||'Eco'}catch(e){}const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4;return q==='Eco eco'?0:q==='Hi-fi'?16:q==='Eco'?(mob?8:10):(mob?10:14)}
 const _init55=init;init=function(){const nw=!ctx;_init55();A.ladN=0;if(!nw||!ctx.audioWorklet)return;const W=ctx.audioWorklet,ok=()=>{A.ladder=true},viaData=()=>W.addModule('data:application/javascript;base64,'+btoa(LADDER_SRC)).then(ok).catch(()=>{A.ladder=false});try{W.addModule(URL.createObjectURL(new Blob([LADDER_SRC],{type:'application/javascript'}))).then(ok).catch(viaData)}catch(e){viaData()}};
-function miniVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,d=leadNote(p);lastDeg=d;const f=d2f(d,3+leadOct(p)),glk=(p.glk||0)/1000,sl=glk>.001&&LF>0&&w-LW<4*sd,f0=sl?LF:f;
+function miniVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,d=leadNote(p);lastDeg=d;const f=leadFold(d2f(d,3+leadOct(p))),glk=(p.glk||0)/1000,sl=glk>.001&&LF>0&&w-LW<4*sd,f0=sl?LF:f;
  const att=Math.max(.002,(p.att||2)/1000),dec=Math.max(.02,p.dec*Math.pow(2,1.2*mv("Lead decay",w))),susM=(p.sus||0)>.01,gate=Math.max(att+.01,(p.hold||1)*sd),rel=p.dsw?dec:Math.max(.01,p.rel||.05),
   e=w+(susM?gate+rel*1.6:att+dec+.03)+.04,mix=ctx.createGain(),vs=[];
  let vib=null;if(p.vib>.5){const l=osc('sine',p.vibr||5.5,w,e);vib=ctx.createGain();vib.gain.setValueAtTime(0,w);vib.gain.linearRampToValueAtTime(p.vib,w+.2);l.connect(vib)}
@@ -1852,7 +1854,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden)chBuild();return r};
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.25 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.25';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.26 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.26';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -1912,7 +1914,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const nextHit=s=>{const K=TR[0];for(let d=1;d<=16;d++)if((own(s+d)&&!(G.bavoid&&!K.m&&K.pt[(s+d)%K.st]))||(inFill(s+d)&&[10,12,14].includes((s+d)%16)))return d;return 16};
  let lastBassStep=-9;
  function play(w,opt){const P=B.p,sd=sdur(),o={dec:P.dec,cut:P.cut,lv:B.lv},s=tk;window.BFDEC=P.dec;
-  const cap=P.bsus>.01?Math.min(4,24*sd):1.6;if(P.bgt>0)P.dec=Math.max(.05,Math.min(cap,P.bgt*nextHit(s)*sd*.95));else if(P.bsus>.01)P.dec=Math.max(.05,Math.min(cap,nextHit(s)*sd*.95)); // v0.22: with Sustain a note holds until the next bass note (Gate shortens it)
+  const cap=P.bsus>.01?Math.min(4,24*sd):1.6;if(P.bgt>0)P.dec=Math.max(.05,Math.min(cap,P.bgt*nextHit(s)*sd*.95));else if(P.bsus>.01)P.dec=Math.max(.05,Math.min(cap,nextHit(s)*sd*.95));if(window.BPHL)P.dec=Math.max(.05,Math.min(1.6,nextHit(s)*sd*.95));else if(window.BPHS)P.dec=Math.min(P.dec,sd*.9); // v0.26 Phrase long/short notes. v0.22: with Sustain a note holds until the next bass note (Gate shortens it)
   if(opt&&opt.ghost){P.dec=Math.min(P.dec,.09);P.cut=P.cut*.55;B.lv=B.lv*.38}
   if(opt&&opt.roll){if(!(P.bgt>0))P.dec=Math.min(P.dec,sd*.85);B.lv=B.lv*(opt.roll===1?.8:opt.roll===2?1:.9)}
   window.BOVF=window.BNSF||opt&&opt.f||0;const held=P.bsus>.01,touch=window.BLE&&w<=BLE+.012,sl=P.bsl>0&&window.BLF&&(held?touch:s-lastBassStep<=4)&&hs(7,s%32,Math.floor(tk/32))<(held?Math.min(1,P.bsl*2):P.bsl);window.BSLF=sl?BLF:0;window.BSLT=held?Math.min(.14,sd*.9):Math.min(.09,sd*.6); /* v0.22: held bass slides only between touching notes, a little slower */
@@ -2461,20 +2463,26 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  const BAD=/(.)\1\1|aa|ii|uu|yy|ae|ia|eo|uo|ou/;
  const pnm=()=>{for(let t=0;t<200;t++){const n=(pick(PC_)+pick(PV_)+pick(PE_));const w=n.charAt(0).toUpperCase()+n.slice(1).toLowerCase();if(BAD.test(w.toLowerCase())||w.length>8)continue;const f=(w+pick(PS_)).trim();if(f.length<=8&&!SL.some(x=>x&&x.nm===f))return f}return 'Orb-'+Math.floor(R()*900+100)};
  SL.forEach(x=>{if(x&&!x.nm)x.nm=pnm()});
+ /* v0.26: 4 banks (A–D) of 16 slots; bank A is the old store, so existing sectors stay where they were */
+ let bank=0;const BK=[SL];for(let b=1;b<4;b++){let a=[];try{a=JSON.parse(localStorage.getItem(KEY+'-b'+b)||'[]')}catch(e){}if(!Array.isArray(a))a=[];while(a.length<N)a.push(null);a.length=N;a.forEach(x=>{if(x&&!x.nm)x.nm=pnm()});BK.push(a)}
+ try{bank=Math.max(0,Math.min(3,Math.round(+localStorage.getItem(KEY+'-bank')||0)))}catch(e){}SL=BK[bank];const BL='ABCD';
  const SS={prot:1,keepM:0,save:0,q:null,qi:-1,act:-1,held:0};try{const o=JSON.parse(localStorage.getItem(KEY+'-ui')||'{}');if(o.prot!=null)SS.prot=o.prot;SS.keepM=0}catch(e){}
+ SS._q=-1;SS._a=-1;SS.qn='';
+ const acc=k=>({get(){const g=SS[k];return g<0?-1:Math.floor(g/N)===bank?g%N:-2},set(v){SS[k]=v>=0?bank*N+v:-1},configurable:true});Object.defineProperty(SS,'qi',acc('_q'));Object.defineProperty(SS,'act',acc('_a'));
  const saveUI=()=>{try{localStorage.setItem(KEY+'-ui',JSON.stringify({prot:SS.prot,keepM:SS.keepM}))}catch(e){}};
  const cl=(v,d=0)=>{if(v==null)return v;const ty=typeof v;if(ty==='number')return isFinite(v)?v:0;if(ty!=='object')return ty==='function'?undefined:v;if(d>7)return undefined;
   if(Array.isArray(v))return v.map(x=>{const c=cl(x,d+1);return c===undefined?null:c});if(Object.getPrototypeOf(v)!==Object.prototype)return undefined;const o={};for(const k in v){const c=cl(v[k],d+1);if(c!==undefined)o[k]=c}return o};
  function snap(){const g={};for(const k in G){if(EXG.has(k))continue;const c=cl(G[k]);if(c!==undefined)g[k]=c}
   return{v:1,mood:curMood,sel:$('#mood').value,padStyle,G:g,TR:TR.map(T=>{const o={};for(const k of Object.keys(T)){if(SKIPT.has(k))continue;const c=cl(T[k]);if(c!==undefined)o[k]=c}return o}),
-   LF:cl(LFOS),TRIM:TRIM.slice(),prog:prog.slice(),pshape:pshape.slice(),PX:PX.slice(),PD:PD?PD.slice():null,PPUSH,mot:mot.slice(),buf:cl(buf)}}
- const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(SL))}catch(e){msg('▲ SECTOR MEMORY FULL · could not store on this device')}};
+   LF:cl(LFOS),TRIM:TRIM.slice(),prog:prog.slice(),pshape:pshape.slice(),PX:PX.slice(),PD:PD?PD.slice():null,PPUSH,mot:mot.slice(),buf:cl(buf),BPH:cl(window.BPH||null),TU:window.TURING?TURING.get():[]}}
+ const persist=()=>{try{localStorage.setItem(KEY+(bank?'-b'+bank:''),JSON.stringify(SL))}catch(e){msg('▲ SECTOR MEMORY FULL · could not store on this device')}};
  // pre-render the sector's drum hits while it waits, staggered, so the boundary itself costs nothing
  function prewarm(S){if(!ctx||!window.DR||!window.OfflineAudioContext)return;[0,7,2].forEach((k,j)=>setTimeout(()=>{try{const o=S.TR[k];if(!o||!o.p)return;const T=TR[k],sv=T.p,p=Object.assign({},sv,o.p);T.p=p;
    try{const key=DR.key(k,p);if(key&&!DR.cache.has(key)&&!DR.pend.has(key)){DR.pend.add(key);DR.render(k,key,FIX)}}finally{T.p=sv}}catch(e){}},60+j*90));
   try{if(S.G&&S.G.shx>0&&typeof shimmerInit==='function')setTimeout(()=>{try{shimmerInit()}catch(e){}},400)}catch(e){}}
  function apply(S,w){const mm=TR.map(T=>T.m),kb=G.bpm,kr=G.root,ksc=G.scale;
-  TR.forEach((T,k)=>{const o=S.TR[k];if(!o)return;for(const key in o){if(key==='p'&&T.p&&o.p)Object.assign(T.p,o.p);else T[key]=o[key]}});
+  TR.forEach((T,k)=>{const o=S.TR[k];if(!o)return;for(const key in o){if(key==='p'&&T.p&&o.p)Object.assign(T.p,o.p);else T[key]=o[key]}if(!('tsd' in o))delete T.tsd});
+  ['bchar','flav'].forEach(k=>{if(S.G&&!(k in S.G))delete G[k]});window.BPH=S.BPH||null;try{if(window.TURING){if(S.TU&&S.TU.length)TURING.set(S.TU);else TURING.reset()}}catch(e){}
   if(SS.keepM)TR.forEach((T,k)=>T.m=mm[k]);
   for(const k in S.G)if(!EXG.has(k))G[k]=S.G[k];if(G.bpmLock)G.bpm=kb;if(G.keyLock){G.root=kr;G.scale=ksc}
   if(Array.isArray(S.LF))S.LF.forEach((L,i)=>{if(LFOS[i]&&L)Object.assign(LFOS[i],L)});if(Array.isArray(S.TRIM))S.TRIM.forEach((v,i)=>TRIM[i]=v||0);
@@ -2491,7 +2499,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   $('#root').value=G.root;$('#scale').value=G.scale;$('#bpm').value=G.bpm;$('#bv').textContent=G.bpm}catch(e){}
   try{syncMix()}catch(e){}requestAnimationFrame(()=>{try{build()}catch(e){}try{kl()}catch(e){}})}
  // the scheduler hook: runs first in every step, before any track fires
- const _as=arrStep;arrStep=function(w){if(SS.q&&tk%64===0&&!SS.held){const S=SS.q,i=SS.qi;SS.q=null;SS.qi=-1;try{apply(S,w);SS.act=i;window._mstLearn=performance.now()+9000;msg('▶ ARRIVED AT '+((SL[i]&&SL[i].nm)||'SECTOR '+(i+1)).toUpperCase()+' · '+MN(curMood))}catch(e){console.warn('sector',e)}paint()}return _as.apply(this,arguments)};
+ const _as=arrStep;arrStep=function(w){if(SS.q&&tk%64===0&&!SS.held){const S=SS.q,gq=SS._q,qn=SS.qn;SS.q=null;SS._q=-1;try{apply(S,w);SS._a=gq;window._mstLearn=performance.now()+9000;msg('▶ ARRIVED AT '+(qn||'SECTOR').toUpperCase()+' · '+MN(curMood))}catch(e){console.warn('sector',e)}paint()}return _as.apply(this,arguments)};
  // hold off while a riser / breakdown pad is held (they restore their own snapshot on release)
  document.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('#t-perf .rz'))SS.held++},true);
  const rel=()=>{if(SS.held)SS.held=0};['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,rel,true));
@@ -2500,6 +2508,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  pan.innerHTML='<h2>Sectors</h2><div class="sctl"><button class="ssave">💾 Save</button><button class="skeep"></button><button class="sprot"></button><button class="sdel">🗑 Delete</button></div><div class="sgrid"></div><p class="gnote snote"></p>';
  const kp=$('#kbox')&&$('#kbox').closest('.panel');if(kp)kp.before(pan);else host.appendChild(pan);
  const grid=pan.querySelector('.sgrid'),bD=pan.querySelector('.sdel'),bS=pan.querySelector('.ssave'),bP=pan.querySelector('.sprot'),bK=pan.querySelector('.skeep'),note=pan.querySelector('.snote');
+ const bkr=document.createElement('div');bkr.className='sbank';grid.before(bkr);const bkb=[...BL].map((c,b)=>{const x=document.createElement('button');x.type='button';x.dataset.b=b;x.onclick=()=>{if(SS.save||SS.del){}bank=b;SL=BK[b];try{localStorage.setItem(KEY+'-bank',b)}catch(e){}paint()};bkr.appendChild(x);return x});
  const btns=[];for(let i=0;i<N;i++){const b=document.createElement('button');b.className='sl';b.dataset.i=i;grid.appendChild(b);btns.push(b);let t0=0,raf=0,ate=0;
   b.onclick=()=>{if(ate){ate=0;return}tap(i)};b.addEventListener('contextmenu',e=>e.preventDefault());
   const stop=()=>{if(raf){cancelAnimationFrame(raf);raf=0;b.style.background='';paint()}};
@@ -2510,13 +2519,13 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop))}
  const MC={Dark:'#8f7bff',Melancholic:'#6aa7ff',Dreamy:'#ff9de6',Tense:'#ff5d73',Ethereal:'#9ff4ff',Hopeful:'#ffe44d',Noir:'#b9a27a',Drone:'#7fd0ff',Acid:'#b6ff3b',Power:'#ff8a3d',Italo:'#ff6bd6',Breaks:'#ffd36b','Deep Space':'#5d7bff',Bleep:'#00ff9c','Melodic House':'#ff9ab0','Distorted Electro':'#ff3d3d',Ambient:'#9ff0d0','Groove Techno':'#ffb347',Temporal:'#b8c8d8',Vector:'#7af0ff'};
  let blink=0;
- function paint(){const st=playing&&ctx?(64-((tk%64)+64)%64):0,bars=Math.ceil(st/16);
+ function paint(){bkb.forEach((x,b)=>{const n=BK[b].filter(Boolean).length,h='Bank '+BL[b]+(n?' <small>'+n+'</small>':'');if(x._h!==h){x._h=h;x.innerHTML=h}x.classList.toggle('on',b===bank);x.classList.toggle('qd',SS._q>=0&&Math.floor(SS._q/N)===b&&b!==bank)});const st=playing&&ctx?(64-((tk%64)+64)%64):0,bars=Math.ceil(st/16);
   btns.forEach((b,i)=>{const s=SL[i],q=SS.qi===i;b.classList.toggle('full',!!s);b.classList.toggle('act',SS.act===i&&!q);b.classList.toggle('q',q);b.classList.toggle('blk',q&&blink);
    b.style.setProperty('--sc',s&&MC[s.mood]||'#00ff9c');b.title=s?(s.nm+' · slot '+(i+1)):'Slot '+(i+1)+' (empty)';const h='<u>'+(i+1)+'</u>'+(s?'<b>'+s.nm+'</b>':'<b class="e">'+(i+1)+'</b>')+(q?'<i>'+(playing?'in '+bars+' bar'+(bars>1?'s':''):'…')+'</i>':'');if(b._h!==h){b._h=h;b.innerHTML=h}});
   bS.classList.toggle('on',!!SS.save);bS.textContent=SS.save?'💾 Pick a slot…':'💾 Save';if(SS.prot&&SS.del)SS.del=0;bD.classList.toggle('on',!!SS.del);bD.classList.toggle('dim',!!SS.prot);bD.textContent=SS.del?'🗑 Pick a planet…':'🗑 Delete';grid.classList.toggle('delmode',!!SS.del);
   if(!bP.style.background)bP.textContent=SS.prot?'🔒 Protected':'🔓 Unlocked';bP.classList.toggle('on',!!SS.prot);
   bK.textContent=SS.keepM?'Keep mutes ✓':'Keep mutes ✗';bK.classList.toggle('on',!!SS.keepM);
-  note.textContent=SS.del?'Tap the planet to delete (tap 🗑 again to cancel).':SS.save?(SS.prot?'Tap an empty slot to store the groove (filled slots are protected).':'Tap any slot to store the groove — filled slots will be overwritten.'):SS.q?((SL[SS.qi]&&SL[SS.qi].nm)||'Sector '+(SS.qi+1))+' lands '+(playing?'on the next 4-bar boundary'+(SS.held?' after you release the pad':''):'now')+' · tap it again to cancel.':SS.prot?'Tap a planet to travel there on the next 4-bar boundary. Hold 🔒 for 3 s to unlock.':'Unlocked: saving can overwrite, and holding a planet for 3 s deletes it. Tap 🔓 to lock again.'}
+  note.textContent=SS.del?'Tap the planet to delete (tap 🗑 again to cancel).':SS.save?(SS.prot?'Tap an empty slot to store the groove (filled slots are protected).':'Tap any slot to store the groove — filled slots will be overwritten.'):SS.q?(SS.qn||'Sector')+' lands '+(playing?'on the next 4-bar boundary'+(SS.held?' after you release the pad':''):'now')+' · tap it again to cancel.':SS.prot?'Tap a planet to travel there on the next 4-bar boundary. Hold 🔒 for 3 s to unlock.':'Unlocked: saving can overwrite, and holding a planet for 3 s deletes it. Tap 🔓 to lock again.'}
  function tap(i){try{ensure()}catch(e){}
   if(SS.del){if(!SL[i])return;if(SS.prot){SS.del=0;paint();return}const nm=SL[i].nm;SL[i]=null;if(SS.qi===i){SS.q=null;SS.qi=-1}if(SS.act===i)SS.act=-1;persist();SS.del=0;msg('✖ '+(nm||'SECTOR').toUpperCase()+' DELETED · slot '+(i+1)+' is empty');paint();return}
   if(SS.save){if(SL[i]&&SS.prot){msg('▲ '+SL[i].nm.toUpperCase()+' IS PROTECTED · turn off 🔒 to overwrite');btns[i].classList.add('deny');setTimeout(()=>btns[i].classList.remove('deny'),400);return}
@@ -2524,7 +2533,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   if(!SL[i])return;if(SS.qi===i){SS.q=null;SS.qi=-1;paint();return}
   let S;try{S=JSON.parse(JSON.stringify(SL[i]))}catch(e){return}
   if(!playing||!ctx){apply(S,ctx?ctx.currentTime:0);SS.act=i;paint();return}
-  SS.q=S;SS.qi=i;prewarm(S);paint()}
+  SS.q=S;SS.qi=i;SS.qn=SL[i].nm+(bank?' ('+BL[bank]+')':'');prewarm(S);paint()}
  bS.onclick=()=>{SS.save=SS.save?0:1;SS.del=0;paint()};
  bD.onclick=()=>{if(SS.prot){SS.del=0;msg('▲ UNLOCK FIRST · hold 🔒 for 3 s, then Delete');bP.classList.add('deny');setTimeout(()=>bP.classList.remove('deny'),400);return}SS.del=SS.del?0:1;SS.save=0;paint()};bP.style.touchAction='none';{let t0=0,raf=0;const stop=()=>{cancelAnimationFrame(raf);raf=0;bP.style.background='';paint()};
   const step=()=>{const k=Math.min(1,(performance.now()-t0)/3000);bP.style.background='linear-gradient(90deg,rgba(255,93,115,.5) '+k*100+'%,transparent '+k*100+'%)';if(k>=1){raf=0;bP.style.background='';SS.prot=0;saveUI();paint();msg('🔓 SECTORS UNLOCKED · tap to lock again');return}bP.textContent='HOLD '+Math.ceil(3-(performance.now()-t0)/1000)+'… to unlock';raf=requestAnimationFrame(step)};
@@ -2538,11 +2547,11 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  const bE=io.querySelector('.sexp'),bI=io.querySelector('.simp'),fin=io.querySelector('input');
  const stamp=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes())};
  bE.onclick=async()=>{const n=SL.filter(Boolean).length;if(!n){msg('▲ NO SECTORS TO EXPORT');return}
-  const txt=JSON.stringify({app:'orbitron-9000',kind:'sectors',v:1,saved:new Date().toISOString(),slots:SL}),base='orbitron-sectors-'+stamp();
+  const txt=JSON.stringify({app:'orbitron-9000',kind:'sectors',v:1,saved:new Date().toISOString(),bank:BL[bank],slots:SL}),base='orbitron-sectors-'+BL[bank]+'-'+stamp();
   let dl=null;try{dl=window.claude&&claude.use?await claude.use('downloads'):null}catch(e){dl=null}
-  if(dl){try{await dl.save({filename:base+'.orbit.json',data:txt});msg('⇪ '+n+' SECTORS EXPORTED');note.textContent='Exported as '+base+'.orbit.json (the Claude app only saves standard file types; renaming it to .orbit is fine).'}
+  if(dl){try{await dl.save({filename:base+'.orbit.json',data:txt});msg('⇪ BANK '+BL[bank]+' · '+n+' SECTORS EXPORTED');note.textContent='Exported as '+base+'.orbit.json (the Claude app only saves standard file types; renaming it to .orbit is fine).'}
    catch(e){const c=e&&e.code;note.textContent=c==='declined'?'Export cancelled.':c==='rate_limited'?'A save prompt is already open — finish that one first.':'Export is not available in this view.'}return}
-  try{const r=await window.orbSave(base+'.orbit',new Blob([txt],{type:'application/octet-stream'}));if(r==='cancelled'){note.textContent='Export cancelled.';return}if(r==='blocked'||r==='maybe-blocked'){note.textContent='This view blocks downloads (e.g. a preview pane). Open the app directly in Chrome, Safari or Firefox to export.';if(r==='blocked')return}msg('⇪ '+n+' SECTORS EXPORTED');if(r!=='maybe-blocked')note.textContent=(r==='shared'?'Shared ':'Exported ')+base+'.orbit'}catch(e){note.textContent='Export is not available in this view.'}};
+  try{const r=await window.orbSave(base+'.orbit',new Blob([txt],{type:'application/octet-stream'}));if(r==='cancelled'){note.textContent='Export cancelled.';return}if(r==='blocked'||r==='maybe-blocked'){note.textContent='This view blocks downloads (e.g. a preview pane). Open the app directly in Chrome, Safari or Firefox to export.';if(r==='blocked')return}msg('⇪ BANK '+BL[bank]+' · '+n+' SECTORS EXPORTED');if(r!=='maybe-blocked')note.textContent=(r==='shared'?'Shared ':'Exported ')+base+'.orbit'}catch(e){note.textContent='Export is not available in this view.'}};
  const valid=o=>o&&typeof o==='object'&&Array.isArray(o.TR)&&o.G&&typeof o.G==='object'&&o.TR.length<=TR.length;
  const esc=t=>String(t).replace(/[<>&"]/g,'');
  function offer(txt,src){let d;try{d=JSON.parse(String(txt).trim())}catch(e){d=null}
@@ -2552,7 +2561,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
    iq.hidden=false;iq.innerHTML='<span>'+cnt+' sector'+(cnt>1?'s':'')+' in '+esc(src)+(clash?' · '+clash+' would replace filled slots':'')+'</span><button data-m="fill">Into empty slots ('+free+')</button><button data-m="all"'+(SS.prot&&clash?' disabled title="Unlock (hold 🔒 for 3 s) to replace filled slots"':'')+'>Replace all 16</button><button data-m="x">Cancel</button>';
    iq.onclick=e=>{const m=e.target.dataset&&e.target.dataset.m;if(!m||e.target.disabled)return;iq.hidden=true;iq.onclick=null;if(m==='x')return;
     if(m==='all'){for(let i=0;i<N;i++)SL[i]=null;sl.forEach((x,i)=>{if(x){if(!x.nm)x.nm=pnm();SL[i]=x}});SS.act=-1}else sl.forEach((x,i)=>{if(x&&!SL[i]){if(!x.nm||SL.some(y=>y&&y.nm===x.nm))x.nm=pnm();SL[i]=x}});
-    persist();paint();msg('⇩ SECTORS IMPORTED');note.textContent=m==='all'?'All 16 slots replaced.':'Filled '+free+' empty slot'+(free===1?'':'s')+'.'};return true}
+    persist();paint();msg('⇩ SECTORS IMPORTED INTO BANK '+BL[bank]);note.textContent=m==='all'?'All 16 slots replaced.':'Filled '+free+' empty slot'+(free===1?'':'s')+'.'};return true}
  // tapping the label opens the picker natively; if the page never loses focus, the picker did not open here — offer the text route
  let pk=0;const opened=()=>{clearTimeout(pk);pk=0};window.addEventListener('blur',opened);document.addEventListener('visibilitychange',opened);
  bI.addEventListener('click',()=>{fin.value='';clearTimeout(pk);pk=setTimeout(()=>{pk=0;note.textContent='No file picker opened? Open Orbitron in Chrome and import there.'},1600)});
@@ -2673,26 +2682,28 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  const wrap=(fn,g)=>function(){if(LP.v>=.999||!ctx||(window.DR&&DR.rendering))return fn.apply(this,arguments);const gg=typeof g==='function'?g(arguments[0]):g;if(!gg)return fn.apply(this,arguments);prep();const o=CURG;CURG=gg;try{return fn.apply(this,arguments)}finally{CURG=o}};
  fire=wrap(fire,k=>k===0?null:DRK.has(k)?'drm':k===5?'pad':'syn');window.lpRun=(g,fn)=>wrap(fn,g)();pad=wrap(pad,'pad');grains=wrap(grains,'syn');
  // energy thinning: stage 1 from 65 % of travel, 2 below ~39 %, 3 below ~18 %. Strong positions survive; the kick never thins.
- const thin=()=>{const v=VV();return v<=.47?3:v<=.56?2:v<=.66?1:0};   // all three stages arrive before the drum filter starts (DZ .45)
+ /* v0.26: thinning has its own THIN fader (0 = every note … 1 = only the strongest hits); the low-pass is filter only */
+ const TH={v:0};window.THIN=TH;const thin=()=>{const t=TH.v;return t>=.9?4:t>=.65?3:t>=.4?2:t>=.12?1:0};   // all three stages arrive before the drum filter starts (DZ .45)
  const pushed=k=>(k===1&&window.rigidHats&&rigidHats.on())||(window.breakFX&&breakFX.is()&&(k===1||k===2||k===3||k===7)); /* v0.22: a percussion push keeps every hit of its own track */
  const drop=(k,s)=>{const st=thin();if(!st||k===0||pushed(k))return false;const o16=s%2===1,off8=s%4===2;
   if(k===3)return st>=1&&o16||st>=2&&off8;                       // perc
-  if(k===1)return st>=2&&o16;                                     // hats: 16ths → 8ths
+  if(k===1)return st>=2&&o16||st>=4&&s%4!==2;                      // hats: 16ths → 8ths → off-beats only
   if(k===2||k===7)return st>=2&&s%8!==4||st>=3&&s!==12;           // clap / snare: backbeats, then half time
-  if(k===4)return st>=2&&o16||st>=3&&off8;                         // lead
-  if(k===6||k===8||k===9)return st>=3&&o16;                        // bass, dub stab, sub
+  if(k===4)return st>=1&&o16||st>=2&&off8||st>=3&&s%8!==0;        // lead: 16ths → quarters → half notes
+  if(k===6)return st>=2&&o16||st>=3&&off8||st>=4&&s%8!==0;         // bass
+  if(k===8||k===9)return st>=3&&o16||st>=4&&s%4!==0;               // dub stab, sub
   if(k===5)return false;return st>=2&&o16};
- const DC={};const _ft=fire;fire=function(k){try{if(VV()<.65&&drop(k,((tk%16)+16)%16)){DC[k]=(DC[k]||0)+1;return}}catch(e){}return _ft.apply(this,arguments)};
+ const DC={};const _ft=fire;fire=function(k){try{if(thin()&&drop(k,((tk%16)+16)%16)){DC[k]=(DC[k]||0)+1;return}}catch(e){}return _ft.apply(this,arguments)};
  const _gt=grains;grains=function(){try{if(thin()>=2&&R()<.5)return}catch(e){}return _gt.apply(this,arguments)};
  // ---- UI ----
  const host=$('#t-perf');const pan=document.createElement('div');pan.className='panel lpf';
- pan.innerHTML='<div class="lph"><span>LOW-PASS</span><small>filter + fewer notes · kick stays</small><b class="lpv">OPEN</b></div><div class="lpt" title="Drag to close the filter; it stays where you leave it. Double-tap to open fully."><div class="lpz drm"></div><div class="lpz pad"></div><div class="lpfill"></div><div class="lpk"></div><i>CLOSED</i><i>OPEN</i></div>';
+ pan.innerHTML='<div class="lph"><span>LOW-PASS</span><small>filter · kick stays</small><b class="lpv">OPEN</b></div><div class="lpt" title="Drag to close the filter; it stays where you leave it. Double-tap to open fully."><div class="lpz drm"></div><div class="lpz pad"></div><div class="lpfill"></div><div class="lpk"></div><i>CLOSED</i><i>OPEN</i></div>';
  const tr=pan.querySelector('.lpt'),kn=pan.querySelector('.lpk'),fill=pan.querySelector('.lpfill'),val=pan.querySelector('.lpv');
  const fmt=h=>h>=1000?(h/1000).toFixed(h>=10000?0:1)+'k':Math.round(h)+'';
  function show(){const c=cur();kn.style.left=(LP.v*100)+'%';fill.style.width=((1-LP.v)*100)+'%';pan.classList.toggle('on',LP.v<.999);
-  const th=thin();val.textContent=LP.v>=.999?'OPEN':LP.v>=PZ?'PADS '+fmt(c.pad[0]):'SYN '+fmt(c.syn[0])+' · DRM '+(c.drm[0]>=19000?'open':fmt(c.drm[0]))+(th?' · THIN '+th:'')}
+  const th=thin();val.textContent=LP.v>=.999?'OPEN':LP.v>=PZ?'PADS '+fmt(c.pad[0]):'SYN '+fmt(c.syn[0])+' · DRM '+(c.drm[0]>=19000?'open':fmt(c.drm[0]))}
  function set(v){LP.v=Math.max(0,Math.min(1,v));if(LP.v>.9995)LP.v=1;if(ctx)prep();apply();show()}
- window.lpReset=()=>{tgt=null;if(raf)cancelAnimationFrame(raf);raf=0;lt=0;set(1)};
+ window.lpReset=()=>{tgt=null;if(raf)cancelAnimationFrame(raf);raf=0;lt=0;set(1);try{window.thinSet&&thinSet(0)}catch(e){}};
  // glide toward a target. Tap: constant speed, so the time follows the distance (full sweep ≈ 4 s, a small nudge is quick),
  // eased in the last stretch. Drag: follows the finger closely.
  const SPD=.25;let tgt=null,mode='tap',raf=0,lt=0;
@@ -2753,7 +2764,7 @@ body .panel.top .stg{height:22px!important;min-height:22px!important}}
 /* ---- v135: Bassline toolkit — Style picker, Notes (note source), Kick avoid, Turnaround, 🎲 New bassline;
    sound: Pitch punch (a fast pitch drop at each note) and Growl (wavefolder before the drive). ---- */
 window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=(1-a*.7)*x+a*.7*Math.sin(x*Math.PI*k)/1.15}let m=0;for(const v of c)m=Math.max(m,Math.abs(v));for(let i=0;i<n;i++)c[i]/=m||1;return c};
-{const BNS=['Auto','Root','Pedal','Octave','Root + fifth','Chord tones','Scale walk','Arp up','Arp down','Melodic'];
+{const BNS=['Auto','Root','Pedal','Octave','Root + fifth','Chord tones','Scale walk','Arp up','Arp down','Melodic','Phrase'];
  const STY={'Octave bounce':['xxxxxxxxxxxxxxxx','Octave',.35,0,0],'Off-beat':['..x...x...x...x.','Root',.5,0,.1],'Gallop':['x.xxx.xxx.xxx.xx','Root',.4,0,0],
   'Rolling 16ths':['.xxx.xxx.xxx.xxx','Root',.25,0,.15],'Syncopated':['x..x..x...x..x..','Chord tones',.55,.15,0],'Walking':['x.x.x.x.x.x.x.x.','Scale walk',.65,.1,0],
   'Pedal':['x.x.x.x.x.x.x.x.','Pedal',.4,0,.1],'Acid run':['xx.xx.xxx.xx.x.x','Chord tones',.3,.35,.2],'Octave 8ths':['x.x.x.x.x.x.x.x.','Octave',.45,0,0],'Disco run':['x.xx.xx.x.xx.xx.','Octave',.4,.1,0]};
@@ -2777,6 +2788,10 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   else idx=t=>((Math.floor(t/L)%n)+n)%n;
   const i0=idx(tk),i1=idx(tk+d);return i1===i0?null:prog[i1]};
  function noteF(P){const r=cur.r,o=Math.round(P.oct)||1,F=d=>d2f(d,o),n=bn++;
+  if(P.bns==='Phrase'){if(!window.BPH&&window.orbBassPhrase)orbBassPhrase();const B=window.BPH;if(B&&B.bars&&B.bars.length){const L=B.bars.length,bi=((Math.floor(tk/16)%L)+L)%L,e=B.bars[bi][st16()]||{d:0};
+    window.BPHL=e.l?1:0;window.BPHS=e.s?1:0;let t=null;try{t=nextRoot()}catch(x){}
+    if(t!=null&&t!==r){window.BPHS=1;window.BPHL=0;return B.chr?F(t)*Math.pow(2,(t>r?-1:1)/12):F(t>r?t-1:t+1)}  /* approach note into the next chord */
+    return F(r+e.d)*(e.o?2:1)}}
   if(P.bns==='Melodic'){let t=null;try{t=nextRoot()}catch(e){}if(t!=null&&t!==r)return F(t>r?t-1:t+1);return F(r+[0,4,0,2][n%4])}
   switch(P.bns){case'Root':return F(r);case'Pedal':return F(0);case'Octave':return F(r)*(n%2?2:1);case'Root + fifth':return F(n%2?r+4:r);
    case'Chord tones':return F(r+[0,2,4][Math.floor(R()*3)])*(R()<.15?2:1);case'Scale walk':return F(r+[0,1,2,3,4,3,2,1][n%8]);
@@ -2787,7 +2802,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   if(P.btn&&!TURN&&bar4()&&st16()>=12)return;                       // turnaround replaces the last beat of every 4th bar
   if(G.bavoid&&!TURN){const K=TR[0];if(!K.m&&K.pt[((tk%K.st)+K.st)%K.st])return}   // avoid kick: never land with the kick
   let f=TURN;const own=!f&&P.bns&&P.bns!=='Auto';if(own)f=calc(()=>noteF(P));if(!f)return _fb.apply(this,arguments);
-  const ob=window.BOVF,on=window.BNSF,c0=window.BLFN;window.BOVF=f;window.BNSF=f;try{return _fb.apply(this,arguments)}finally{window.BOVF=ob;window.BNSF=on;if(own&&window.BLFN===c0)bn=Math.max(0,bn-1)}};
+  const ob=window.BOVF,on=window.BNSF,c0=window.BLFN;window.BOVF=f;window.BNSF=f;try{return _fb.apply(this,arguments)}finally{window.BOVF=ob;window.BNSF=on;window.BPHL=0;window.BPHS=0;if(own&&window.BLFN===c0)bn=Math.max(0,bn-1)}};
  const _ab=arrStep;arrStep=function(w){const r=_ab.apply(this,arguments);try{const s=st16();if(s===0)bn=0;const P=TR[6].p;
   if(P.btn&&playing&&!TR[6].m&&bar4()&&s>=12){TURN=calc(()=>d2f(cur.r+[0,1,2,4][s-12],Math.round(P.oct)||1)*(s===15?1:1));try{fire(6,w)}finally{TURN=0}}}catch(e){TURN=0}return r};
  function roll(W0){const W=W0||[['Octave bounce',2],['Off-beat',2],['Gallop',2],['Rolling 16ths',2],['Syncopated',2],['Walking',1],['Pedal',1],['Acid run',2],['Octave 8ths',1],['Disco run',1]];
@@ -5010,4 +5025,79 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);last='';sync();setTimeout(window.orbMuteSync,60);setTimeout(window.orbMuteSync,400);return r};
  const _b=build;build=function(){const r=_b.apply(this,arguments);last='';setTimeout(sync,0);return r}}
 </script>
+<script>
+/* ---- v0.26: lead generator fix — Interval mode with almost no Spread got stuck on one note; it now always walks a little ---- */
+{const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const P=TR[4].p;if(P.mode==='Interval'&&!(P.spread>=.3))P.spread=+(.3+R()*.15).toFixed(2)}catch(e){}return r}}
+</script>
+<script>
+/* ---- v0.26: PHRASE BASSLINES — a 2- or 4-bar riff written at Launch: motif (bar 1), variation (bar 2), the motif lifted with octave notes (bar 3),
+   and an answer (bar 4) with pickup notes rolling into the next phrase. Notes sit on the chord root so the riff follows the chords;
+   the note before a chord change approaches the new root by a step (or a semitone). Long and short notes alternate; every 8 bars one note
+   evolves; it leaves room where the lead plays and only adds pickups where the lead rests. Notes menu → Phrase. ---- */
+{const CT=new Set([0,2,4,7,-3]);
+ const wpick=a=>{let t=a.reduce((x,y)=>x+y[1],0)*R();for(const[x,w]of a)if((t-=w)<0)return x;return a[0][0]};
+ const clamp=d=>Math.max(-3,Math.min(9,d));
+ const step=prev=>wpick([[prev-2,1],[prev-1,1.5],[prev+1,1.5],[prev+2,1],[0,1.5],[2,1],[4,1.5],[7,1],[prev,.7]].map(([d,w])=>[clamp(d),CT.has(clamp(d))?w*1.6:w]));
+ function half(start,prev){const a=[];for(let s=start;s<start+8;s++){let d;if(s===0)d=0;else if(s%4===0)d=wpick([[0,3],[4,1.4],[7,.8],[prev,.6]]);else d=step(prev);a.push({d,o:0});prev=d}return a}
+ function motif(){const a=half(0,0);a.push(...half(8,a[7].d));const lp=pick([0,0,8,4,10]);a.forEach((e,s)=>{if(s===lp)e.l=1;else if(s%2===1&&R()<.5)e.s=1});return a}
+ const cp=b=>b.map(e=>Object.assign({},e));
+ function build(){const A=motif(),L=R()<.65?4:2;
+  const A2=cp(A);half(8,A[7].d).forEach((e,i)=>{A2[8+i].d=e.d;A2[8+i].o=0});
+  const A3=cp(A);A3.forEach((e,s)=>{if(s%4!==0&&R()<.3)e.o=1});
+  const Bb=cp(A);let pv=A[7].d;for(let s=8;s<16;s++){const d=s>=14?pick([4,7,2]):step(pv);Bb[s].d=d;Bb[s].o=s%2&&R()<.25?1:0;pv=d}
+  const pk=pick([[15],[14,15],[13,15],[11,13,15]]);
+  window.BPH={bars:L===4?[A,A2,A3,Bb]:[A,Bb],pk,chr:R()<.5?1:0,evo:0};return window.BPH}
+ window.orbBassPhrase=build;
+ // slow evolution + pickups (arrStep runs once per 16th step)
+ const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);try{const B=TR[6],P=B.p,H=window.BPH;if(!H||P.bns!=='Phrase'||!playing||B.m)return r;
+   const s=((tk%16)+16)%16,bar=Math.floor(tk/16),L=H.bars.length,bi=((bar%L)+L)%L;
+   if(s===0&&bar>0&&bar%8===0){const b=pick(H.bars),i=pick([1,2,3,5,6,7,9,10,11,13,14,15]);const e=b[i];if(R()<.25)e.o=e.o?0:1;else e.d=clamp(e.d+pick([-2,-1,1,2]));H.evo++}
+   if(bi===L-1&&H.pk.includes(s)&&!B.pt[((tk%B.st)+B.st)%B.st]){const Ld=TR[4];if(!(!Ld.m&&Ld.pt[((tk%Ld.st)+Ld.st)%Ld.st])){const lv=B.lv;B.lv=lv*.8;try{fire(6,w)}finally{B.lv=lv}}}}catch(e){}return r};
+ // lead-aware: off-beat bass notes step aside where a busy lead plays
+ const _f=fire;fire=function(k,w){if(k===6){const P=TR[6].p;if(P.bns==='Phrase'){const s=((tk%16)+16)%16,Ld=TR[4];if(s%4!==0&&!Ld.m&&Ld.h>=5&&Ld.pt[((tk%Ld.st)+Ld.st)%Ld.st]&&Ld.p.mode!=='Acid 303')return}}return _f.apply(this,arguments)};
+ // Launch: selected moods get a phrase bassline
+ const CH={'Melodic House':.55,Melancholic:.5,Hopeful:.5,Dreamy:.45,Noir:.45,Italo:.4,Breaks:.4,'Groove Techno':.35};
+ const STY={Italo:['Gallop','Disco run','Octave 8ths'],'Groove Techno':['Rolling 16ths','Syncopated'],Breaks:['Syncopated','Gallop'],'Melodic House':['Syncopated','Walking','Gallop']};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{window.BPH=null;const B=TR[6],P=B.p;let ch=CH[curMood]||0;if(/Booka/.test(G.flav||''))ch=.8;
+   if(!B.m&&ch&&!(MOODS[curMood]||{}).acid&&R()<ch){try{bassStyle(pick(STY[curMood]||['Syncopated','Walking']))}catch(e){}
+    Object.assign(P,{bns:'Phrase',bsus:0,btn:false,bph:1,bgh:0});P.bsl=Math.max(P.bsl||0,.12);build();
+    setTimeout(()=>{try{window.bassSync&&bassSync()}catch(e){}},300);setTimeout(()=>{try{if(typeof say==='function')say('♪ BASS PHRASE · '+(window.BPH.bars.length)+' BARS')}catch(e){}},700)}}catch(e){}return r}}
+</script>
+
+<style>.sbank{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0 0 6px}.sbank button{min-height:30px!important;padding:2px 4px!important;font-size:11px!important;opacity:.6}.sbank button.on{opacity:1;color:var(--acc,#ffe44d);border-color:var(--acc,#ffe44d)}.sbank button.qd{animation:sbq 1s infinite}.sbank small{opacity:.7;margin-left:4px}@keyframes sbq{50%{opacity:1}}</style>
+<script>
+/* ---- v0.26: THIN fader on Flight, under the low-pass — fewer notes (drums, lead, bass, stab), the kick never thins. Double-tap = off. Resets on Launch. ---- */
+{const lp=document.querySelector('#t-perf .lpf');if(lp&&window.THIN){const TH=window.THIN;const row=document.createElement('div');row.className='thr';
+  row.innerHTML='<span>THIN</span><div class="tht" title="Drag right for fewer notes. Double-tap to switch off."><div class="thfill"></div><div class="thk"></div></div><b class="thv">OFF</b>';lp.appendChild(row);
+  const tr=row.querySelector('.tht'),kn=row.querySelector('.thk'),fl=row.querySelector('.thfill'),val=row.querySelector('.thv');
+  const st=()=>{const t=TH.v;return t>=.9?4:t>=.65?3:t>=.4?2:t>=.12?1:0};
+  const show=()=>{kn.style.left=(TH.v*100)+'%';fl.style.width=(TH.v*100)+'%';const n=st(),t=n?['','LIGHT','HALF','SPARSE','BONES'][n]:'OFF';if(val.textContent!==t)val.textContent=t;row.classList.toggle('on',n>0)};
+  window.thinSet=v=>{TH.v=Math.max(0,Math.min(1,v));if(TH.v<.02)TH.v=0;show()};
+  let drag=0,last=0;const pos=e=>{const r=tr.getBoundingClientRect();return (e.clientX-r.left)/r.width};
+  tr.addEventListener('pointerdown',e=>{e.preventDefault();const n=performance.now();if(n-last<300){thinSet(0);last=0;return}last=n;drag=1;try{tr.setPointerCapture(e.pointerId)}catch(x){}thinSet(pos(e))});
+  tr.addEventListener('pointermove',e=>{if(drag)thinSet(pos(e))});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{drag=0}));
+  tr.addEventListener('contextmenu',e=>e.preventDefault());show();
+  const css=document.createElement('style');css.textContent=`.lpf .thr{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;letter-spacing:.12em}.lpf .thr>span{font-weight:700;color:var(--acc,#ffe44d);width:44px}
+.lpf .thr>b{width:58px;text-align:right;font-size:10.5px;opacity:.7}.lpf .thr.on>b{opacity:1;color:var(--acc,#ffe44d)}
+.lpf .tht{position:relative;flex:1;height:30px;border:1px solid rgba(255,228,77,.35);border-radius:10px;background:rgba(0,0,0,.35);touch-action:none;user-select:none;cursor:ew-resize;overflow:hidden}
+.lpf .thfill{position:absolute;left:0;top:0;bottom:0;width:0;background:repeating-linear-gradient(90deg,rgba(255,228,77,.18) 0 6px,transparent 6px 12px)}
+.lpf .thk{position:absolute;top:3px;bottom:3px;width:16px;margin-left:-8px;left:0;border-radius:6px;background:var(--acc,#ffe44d);box-shadow:0 0 8px rgba(255,228,77,.5)}
+@media (max-width:640px){body #t-perf>.rz>div{height:clamp(34px,calc((100dvh - 828px)/2),118px)!important}.lpf .tht{height:28px}}`;document.head.appendChild(css)}}
+</script>
+<style>/* v0.26: tablet / desktop — every page uses the full width (Flight already did) */
+@media (min-width:1000px){
+ body{max-width:none!important;padding-left:20px!important;padding-right:20px!important}
+ #t-gen:not([hidden]),#t-lfo:not([hidden]){display:grid!important;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:10px;align-items:start}
+ #t-gen>*,#t-lfo>*{margin:0!important;min-width:0}
+ #t-gen>.sio{grid-column:1/-1}
+ #t-drums .body,#t-synth .body{flex-direction:row!important;align-items:flex-start!important}
+ #t-drums .body>canvas,#t-synth .body>canvas{width:150px!important;height:150px!important;align-self:flex-start!important}
+ #t-drums .body .grid,#t-synth .body .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))!important}
+ #mix{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))!important}
+ #viz{max-width:min(100%,calc(100vh - 160px))!important}
+}</style>
+<style>/* v0.26: phone — smaller sector slots and bank tabs so the whole Launch page fits without scrolling */
+@media (max-width:640px){.sgrid button.sl{height:28px!important;min-height:28px!important;padding-top:0!important;padding-bottom:0!important}.sgrid{gap:4px!important}
+ .sbank{margin:0 0 4px!important;gap:4px}.sbank button{height:24px!important;min-height:24px!important}}
+@media (max-width:640px) and (max-height:740px){.sgrid button.sl{height:24px!important;min-height:24px!important}}</style>
 </body></html>
