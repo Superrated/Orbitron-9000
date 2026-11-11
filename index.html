@@ -1169,7 +1169,8 @@ const QB=document.createElement('span');QB.style.cssText='font:700 10px ui-monos
 setInterval(()=>{if(!ctx||!playing){QOS.lvl=0;QOS.ml=0}else{const a=QOS.src.size,H=QOS.hi,vis=!document.hidden;let p=0;
   if(a>H[0]||QOS.load>.6||(vis&&QOS.ft>30))p=1;if(a>H[1]||QOS.load>.8||QOS.late>0||(vis&&QOS.ft>45))p=2;if(a>H[2]||QOS.load>.95||QOS.late>2)p=3;
   let pa=0;if(a>H[0]||QOS.load>.6)pa=1;if(a>H[1]||QOS.load>.8||QOS.late>1)pa=2;if(a>H[2]||QOS.load>.95||QOS.late>4)pa=3;if(pa>(QOS.ml||0)){QOS.ml=pa;QOS.mc=8}else if(pa<(QOS.ml||0)&&--QOS.mc<=0){QOS.ml--;QOS.mc=6}p=Math.max(p,QOS.floor||0,QOS.stageFloor||0);if(p>QOS.lvl){QOS.lvl=p;QOS.cool=8}else if(p<QOS.lvl&&--QOS.cool<=0){QOS.lvl--;QOS.cool=6}QOS.late=0;if(a>QOS.hard)steal((a-QOS.hard*.8)/2)}
- QB.textContent='CORE '+QOS.nm[QOS.ml||0];QB.style.color=QOS.cl[QOS.ml||0]},400);
+ /* v0.26: the badge shows the level actually in effect (the load meter or the active saving stage, whichever is higher), written only on change */
+ {const lv=Math.min(3,Math.max(QOS.ml||0,QOS.lvl||0)),t='CORE '+QOS.nm[lv];if(QB.textContent!==t)QB.textContent=t;if(QB.__l!==lv){QB.__l=lv;QB.style.color=QOS.cl[lv]}}},400);
 /* ---- v31: third riser "Shepard climb" — endlessly rising Shepard chord + accelerating chord-tone arp, thins low end, climax swell; release = boom + crash drop ---- */
 {const SH={on:0,p:0,vs:[],ph:0,t:0,iv:0,lt:0,ai:0,km:false,kd:0};
  const st=document.createElement('style');st.textContent='#t-perf{grid-template-columns:repeat(3,minmax(0,1fr))!important}';document.head.appendChild(st);
@@ -2427,7 +2428,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   OFF={hp:10,sub:0,mud:0,mf:300,pres:0,air:0,w:0,rt:20000,pre:0,tr:0,mono:0};
  G.fin=1;try{const v=localStorage.getItem('orb-fin');if(v!=null)G.fin=+v}catch(e){}
  window.MOODFIN=FIN;let F=null;
- function build(){if(!ctx||!A.sg||!A.glue||!A.rO||!A.dk)return;if(F&&F.ctx===ctx)return;
+ function finBuild(){if(!ctx||!A.sg||!A.glue||!A.rO||!A.dk)return;if(F&&F.ctx===ctx)return;
   const bq=(ty,f,q,gn)=>{const b=ctx.createBiquadFilter();b.type=ty;b.frequency.value=f;if(q!=null)b.Q.value=q;if(gn!=null)b.gain.value=gn;return b},gn=v=>{const g=ctx.createGain();g.gain.value=v;return g};
   const hp=bq('highpass',10,.6),sub=bq('lowshelf',70,null,0),mud=bq('peaking',300,1,0),pres=bq('peaking',3200,.8,0),air=bq('highshelf',10000,null,0),tr=gn(1);
   const sp=ctx.createChannelSplitter(2),mg=ctx.createChannelMerger(2),M=gn(1),S=gn(1),mL=gn(.5),mR=gn(.5),sL=gn(.5),sR=gn(-.5),sh=bq('highpass',120,.7),sh2=bq('highpass',120,.7),ga=gn(1),gb=gn(0),X=gn(1),Xn=gn(-1),L=gn(1),Rr=gn(1);
@@ -2444,7 +2445,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   z(F.hp.frequency,c.hp);z(F.sub.gain,c.sub);z(F.mud.gain,c.mud);z(F.mud.frequency,c.mf);z(F.pres.gain,c.pres);z(F.air.gain,c.air);z(F.tr.gain,Math.pow(10,c.tr/20));
   const mo=c.mono?1:0;z(F.ga.gain,1-mo);z(F.gb.gain,mo*(1+c.w+(G.space||0)*.35));z(F.rl.frequency,c.rt);F.pd.delayTime.cancelScheduledValues(t);F.pd.delayTime.setTargetAtTime((G.fin?Math.max(12,Math.min(35,60000/(G.bpm||124)/16)):c.pre)/1000,t,now?.005:.4)}window.finApply=apply;
  window.moodFinish={apply:()=>apply(0),cfg:()=>G.fin?FIN[curMood]:OFF,ok:()=>!!F&&F.ctx===ctx};
- const _in=init;init=function(){const r=_in.apply(this,arguments);try{build()}catch(e){console.warn('finish',e)}return r};
+ const _in=init;init=function(){const r=_in.apply(this,arguments);try{finBuild()}catch(e){console.warn('finish',e)}return r};
  const _gf=generate;generate=function(){const r=_gf.apply(this,arguments);try{apply(0)}catch(e){}return r};
  const mp=document.querySelector('#t-mix .panel');if(mp){const b=document.createElement('button');b.className='finb';
   const lab=()=>{const h=G.fin?'✦ Mood finish <b>ON</b> · '+MN(curMood):'✧ Mood finish <b>OFF</b> · raw mix';if(b.innerHTML!==h)b.innerHTML=h;b.classList.toggle('on',!!G.fin)};lab();setInterval(lab,1000);
@@ -3231,7 +3232,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
 {let on=true;try{const v=localStorage.getItem('orb-mst');if(v!=null)on=v==='1'}catch(e){}
  const DRV=Math.pow(10,-1.5/20),TARGET=-9,AMT={Ambient:.35,'Deep Space':.4,Ethereal:.5,Dreamy:.6,Drone:.7,Noir:.65,Melancholic:.65,Hopeful:.7,'Melodic House':.65,Vector:.65,Bleep:.6,Italo:.7};
  let M=null,agDb=0,hist=[],stv=-70,pk=-70,pkT=0;const MEM={};try{Object.assign(MEM,JSON.parse(localStorage.getItem('orb-mstmem')||'{}'))}catch(e){}setInterval(()=>{try{localStorage.setItem('orb-mstmem',JSON.stringify(MEM))}catch(e){}},10000);
- function build(){if(!ctx||!A.lim||!A.out)return;if(M&&M.ctx===ctx)return;
+ function mstBuild(){if(!ctx||!A.lim||!A.out)return;if(M&&M.ctx===ctx)return;
   const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},bq=(t,f)=>{const b=ctx.createBiquadFilter();b.type=t;b.frequency.value=f;b.Q.value=.7071;return b},
    cp=(th,ra,at,re)=>{const c=ctx.createDynamicsCompressor();c.threshold.value=th;c.ratio.value=ra;c.attack.value=at;c.release.value=re;c.knee.value=10;return c};
   const inp=g(1),dry=g(on?0:1),wet=g(on?1:0),ag=g(1),sum=g(1);
@@ -3260,7 +3261,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   if(on&&playing&&stv>-45&&hist.length>=12&&performance.now()<(window._mstLearn||0)){const err=TARGET-stv,lp=window.LOWPASS?LOWPASS.get():1;
    if(!(err>0&&(stv<TARGET-8||lp<.999))){agDb=Math.max(-8,Math.min(1,agDb+Math.max(-.25,Math.min(.25,err*.2))));MEM[curMood]=agDb;M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.5)}}
   show()},250);
- const _in=init;init=function(){const r=_in.apply(this,arguments);try{setTimeout(()=>{try{build();if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1}catch(e){console.warn('master+',e)}},0)}catch(e){}return r};
+ const _in=init;init=function(){const r=_in.apply(this,arguments);try{setTimeout(()=>{try{mstBuild();if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1}catch(e){console.warn('master+',e)}},0)}catch(e){}return r};
  const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();window._mstLearn=performance.now()+9000;if(on&&M&&M.ctx===ctx){agDb=MEM[curMood]!=null?MEM[curMood]:-2.5;hist=[];M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.15)}}catch(e){}return r};
  // UI under Mood finish
  let box=null;const lab=()=>{if(!box)return;const b=box.querySelector('button');{const h=on?'▲ Master+ <b>ON</b> · peak control + −9 LUFS':'△ Master+ <b>OFF</b> · previous master';if(b.innerHTML!==h)b.innerHTML=h}b.classList.toggle('on',on)};
@@ -3532,7 +3533,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  if(G.dbus==null)G.dbus=.35;let B=null,inDrum=0;
  const satC=k=>{const n=1024,c=new Float32Array(n),t=Math.tanh(k);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(k*x)/t}return c};
  const wetGain=v=>Math.pow(v,1.3)*1.1;   // fader → blend of the squashed copy
- function ensure(){if(!ctx||!A.m||!A.ks)return false;if(B&&B.ctx===ctx)return true;
+ function dbEnsure(){if(!ctx||!A.m||!A.ks)return false;if(B&&B.ctx===ctx)return true;
   const g=v=>{const n=ctx.createGain();n.gain.value=v;return n};
   const bus=g(1),hp=ctx.createBiquadFilter(),cmp=ctx.createDynamicsCompressor(),pre=g(.7),sat=ctx.createWaveShaper(),tone=ctx.createBiquadFilter(),wet=g(wetGain(G.dbus||0));
   hp.type='highpass';hp.frequency.value=45;hp.Q.value=.6;
@@ -3545,7 +3546,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  // drum voices connect to the bus instead of the master (only while a drum fires, only on the live context)
  const oc=AudioNode.prototype.connect;
  AudioNode.prototype.connect=function(d,...r){if(inDrum&&B&&d===A.m&&this.context===B.ctx&&!(window.DR&&DR.rendering))return oc.call(this,B.bus,...r);return oc.call(this,d,...r)};
- const _f=fire;fire=function(k,w){if(!DK.has(k))return _f.apply(this,arguments);if(!(B&&B.ctx===ctx))ensure();inDrum++;try{return _f.apply(this,arguments)}finally{inDrum--}};
+ const _f=fire;fire=function(k,w){if(!DK.has(k))return _f.apply(this,arguments);if(!(B&&B.ctx===ctx))dbEnsure();inDrum++;try{return _f.apply(this,arguments)}finally{inDrum--}};
  // a mood-matched amount on every Launch
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{drumBus.set((window.MOODX&&MOODX[curMood]||{}).bus!=null?(window.MOODX&&MOODX[curMood]||{}).bus:AMT[curMood]!=null?AMT[curMood]:.35);show()}catch(e){}return r};
  // UI: one fader at the top of Mix, under Space
@@ -4630,7 +4631,10 @@ window.MOODX={
    /* v0.23 perf: once this chord has faded in, the previous chord's remaining tail is shortened to about 1 s */
    try{if(prev&&prev.g&&ctx&&!(ctx instanceof OfflineAudioContext)&&typeof prev.g.gain.cancelAndHoldAtTime==='function'){const t0=w+Math.min(1.5,Math.max(.2,(P.att||.3)*dur*.6));
      if(prev.end>t0+1.6){prev.g.gain.cancelAndHoldAtTime(t0);prev.g.gain.setTargetAtTime(.0001,t0,.25);const pid=prev.id,ts=t0+1.4;for(const n of QOS.src)if(n.__pc===pid&&n.__e!==Infinity&&n.__e>ts)try{n.stop(ts)}catch(e){}prev.end=ts}}}catch(e){}
-   if(me.g)prev=me}}}
+   if(me.g)prev=me}};
+ /* v0.26: Stop fades the sounding pad chord over about a second instead of letting a long chord ring on for up to 10 s */
+ const _tg=toggle;toggle=function(){const r=_tg.apply(this,arguments);try{if(!playing&&ctx&&prev&&prev.g){const t=ctx.currentTime;prev.g.gain.cancelAndHoldAtTime(t);prev.g.gain.setTargetAtTime(.0001,t,.3);
+   const pid=prev.id;for(const n of QOS.src)if(n.__pc===pid&&n.__e>t+1.6)try{n.stop(t+1.6)}catch(e){}prev.end=t+1.6}}catch(e){}return r};try{$('#play').onclick=toggle}catch(e){}}
 </script>
 <script>
 /* ---- v0.23: Thrusters and mutes no longer fight. Your mutes (Planet mutes, Mute buttons, Launch) and the temporary mutes of held Thrusters
@@ -5215,4 +5219,14 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  ren();setTimeout(ren,300);let sig='';setInterval(()=>{ren();const p=S.p,g=[p.role,p.snd,p.mot,p.reg].join('|');if(g!==sig){sig=g;reCtl()}else ctl()},800);setTimeout(ctl,200);window.orbSatellite={regOct,reCtl}}
 </script>
 
+<script>
+/* ---- v0.26: card rebuilds are live again (two internal helpers were accidentally named build/ensure and had replaced the global ones).
+   To keep that smooth: cards are only rebuilt while the Drums or Synths page is showing (otherwise when you open it), never while a finger
+   is on the screen, and the scroll position is kept. ---- */
+{let down=0,pend=0;const vis=()=>['#t-drums','#t-synth'].some(q=>{const e=document.querySelector(q);return e&&!e.hidden});
+ const _b=build;build=function(){if(down||!vis()){pend=1;return}const y=window.scrollY;const r=_b.apply(this,arguments);setTimeout(()=>{if(Math.abs(window.scrollY-y)>2)window.scrollTo(0,y)},0);return r};
+ document.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('#t-drums,#t-synth'))down=1},true);
+ const up=()=>{if(!down)return;down=0;if(pend&&vis()){pend=0;setTimeout(()=>build(),0)}};['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,up,true));
+ document.addEventListener('click',()=>setTimeout(()=>{if(pend&&!down&&vis()){pend=0;build()}},0),true)}
+</script>
 </body></html>
