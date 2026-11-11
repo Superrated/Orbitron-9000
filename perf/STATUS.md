@@ -18,3 +18,12 @@ Separate copy: `perf/index.html` (the original `index.html` on main is untouched
 2. Main thread: Launch cost (245 ms task), timer gaps during UI interaction.
 3. Review CPU modes / buffer modes.
 4. Before/after table on the same machine.
+
+## Update (v0.27 base)
+- New baseline on v0.27 (4x CPU, heavy): audio render load mean ~63%, over-budget quanta ~280 per 20 s; ~185 AudioNodes created/s.
+- Experiment 1 (in `perf/index-wip.html`): disconnect each source node as soon as it ends.
+  3 alternating A/B runs: render load mean 62.9% -> 55.4%, over-budget quanta 283 -> 157. Main thread unchanged.
+  A per-node trace disagreed (more node visits), so this needs one more isolated check before it is kept.
+- Experiment 2: dub stab uses one panner + one level per side/waveform instead of per note: nodes created/s 183 -> 153, same sound.
+- Main thread: 84 intervals together ~4-5% of the main thread at 4x throttle (none dominant); card rebuilds 30-140 ms but only on opening Drums/Synths.
+- Biggest remaining cost: the number of live nodes visited per audio quantum (600-1100), not any single effect. Convolution reverb ~6%.
