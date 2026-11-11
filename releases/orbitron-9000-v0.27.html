@@ -5429,6 +5429,8 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    (mood, flavour, sounds, styles, groove scores, fixes). Everything stays in this browser; Export ratings saves a file to hand back. ---- */
 {const KEY='orb-ratings',TK='orb-tester';let on=false;try{on=localStorage.getItem(TK)==='1'}catch(e){}
  let RT=[];try{RT=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(RT))RT=[]}catch(e){RT=[]}
+ /* v0.27: ratings made before v0.27 are cleared once (they rated the old sounds) */
+ try{if(localStorage.getItem('orb-ratings-reset')!=='0.27'){RT=RT.filter(r=>parseFloat(r.v)>=0.27);localStorage.setItem(KEY,JSON.stringify(RT));localStorage.setItem('orb-ratings-reset','0.27')}}catch(e){}
  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(RT.slice(-2000)))}catch(e){}};
  const msg=t=>{try{if(typeof say==='function')say(t)}catch(e){}};
  let cur=null,seq=0;
