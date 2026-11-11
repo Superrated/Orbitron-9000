@@ -5433,7 +5433,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const msg=t=>{try{if(typeof say==='function')say(t)}catch(e){}};
  let cur=null,seq=0;
  const fp=()=>{const L=TR[4],P=L.p,PD=TR[5],B=TR[6],S=TR[9],m=k=>!!TR[k].m;let g=null;try{g=window.orbGroove&&orbGroove.last}catch(e){}
-  return{id:Date.now().toString(36)+'-'+(++seq),t:new Date().toISOString(),v:window.ORB_VERSION,mood:curMood,name:MN(curMood),auto:$('#mood').value==='Auto',flav:G.flav||null,
+  return{id:Date.now().toString(36)+'-'+(++seq),t:new Date().toISOString(),v:window.ORB_VERSION,mood:curMood,name:MN(curMood),auto:$('#mood').value==='Auto',flav:G.flav||null,fam:(window.orbModern&&orbModern.last)||null,swing:+(G.swing||0).toFixed(2),fx:{rev:G.rev,dly:G.dly,duck:G.duck},
    bpm:G.bpm,scale:G.scale,kit:G.kit||null,
    lead:{m:m(4),patch:P.patch||null,mode:P.mode,eng:P.eng||null,hits:L.h,steps:L.st,range:P.range,oct:P.loct||0,arp:!!G.arpOn,drift:P.rdr||0},
    pad:{m:m(5),patch:PD.p.patch||null,notes:PD.p.size,style:typeof padStyle!=='undefined'?padStyle:null},
