@@ -43,3 +43,12 @@ landing at roughly the old cost. On the phone, the Perf Test copy should give th
 - 84 setInterval timers remain (≈3.5% main thread at 4x); none dominant.
 - Headless Chrome does not throttle the audio thread, so audio numbers are desktop-class; real A56 numbers need the on-device comparison.
 - AudioWorklet: not used for new DSP — no single custom DSP block is expensive enough to justify it (the Mini ladder already uses one).
+
+## Update: quick wins round 2
+6. Launch: ring fitting memoised, master clip curve computed once and only re-sent on change, Mix channel strips / bass card / card menus only sync while visible.
+   `generate()` median 13.7 ms → 2.6 ms, mean 16.3 → 4.3 ms (60 Launches over 12 moods, desktop).
+7. Shimmer reverb impulse (2.5 s, ≈100 ms of maths) prepared in idle time after start instead of during the first Deep Space Launch; drum pre-renders use idle time.
+8. Tried: disconnecting rumble/shimmer when turned to 0 — no measurable gain (Chrome already skips silent branches); not kept.
+9. Old master limiter removed (the master's own limiter catches peaks; worst peak in the all-mood run 0.908, no clipping); the static 20 kHz safety low-pass removed;
+   the master low-pass that breakdowns/risers use now joins the path only while it moves. CPU gain ~1–2% (within noise); sound path is shorter.
+10. "Small · 26 ms" audio buffer option added (also on main).
