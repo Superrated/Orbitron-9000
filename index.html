@@ -4750,7 +4750,6 @@ window.MOODX={
 .gnote:not(.gopen),.mcap:not(.gopen){font-size:0!important;line-height:0!important;height:16px;overflow:hidden;cursor:pointer;margin:2px 0!important;padding:0!important;white-space:nowrap}
 .gnote:not(.gopen)::before,.mcap:not(.gopen)::before{content:'ⓘ';font-size:13px;line-height:16px;opacity:.65}
 .gnote.gopen,.mcap.gopen{cursor:pointer;white-space:normal!important}
-.sgrid button.sl.hx{display:none!important}
 .smore{display:block;margin:8px auto 0;padding:6px 14px;font:700 11px ui-monospace,monospace;letter-spacing:.1em;background:none;border:1px dashed currentColor;border-radius:8px;color:var(--acc,#ffe44d);cursor:pointer}`;document.head.appendChild(st);
  document.addEventListener('click',e=>{const n=e.target.closest&&e.target.closest('.gnote,.mcap');if(n)n.classList.toggle('gopen')});
  // 3: master toggles to Bus & FX
@@ -4758,7 +4757,9 @@ window.MOODX={
   ['.finb','.mstx'].forEach(sel=>{const el=ch.querySelector(':scope>'+sel);if(el){(h?h.after(el):bus.prepend(el))}});
   const f=bus.querySelector(':scope>.finb'),m=bus.querySelector(':scope>.mstx');if(f&&m&&f.nextElementSibling!==m)f.after(m)};
  // 5: sector grid
- let open=false;const sectors=()=>{const g=document.querySelector('.sgrid');if(!g||!g.offsetParent)return;const bs=[...g.querySelectorAll('button.sl')],emp=b=>/\(empty\)/.test(b.title||'');
+ /* v0.25: all 16 slots always visible again (compact view removed) */
+ const sectors=()=>{const g=document.querySelector('.sgrid');if(!g)return;g.querySelectorAll('button.sl.hx').forEach(b=>b.classList.remove('hx'));const mb=g.parentElement.querySelector('.smore');if(mb)mb.remove()};
+ const sectorsOld=()=>{let open=false;const g=document.querySelector('.sgrid');if(!g||!g.offsetParent)return;const bs=[...g.querySelectorAll('button.sl')],emp=b=>/\(empty\)/.test(b.title||'');
   const first=bs.find(emp),hidden=bs.filter(b=>emp(b)&&b!==first);bs.forEach(b=>b.classList.toggle('hx',!open&&hidden.includes(b)));
   let mb=g.parentElement.querySelector('.smore');if(!mb){mb=document.createElement('button');mb.type='button';mb.className='smore';mb.onclick=()=>{open=!open;sectors()};g.after(mb)}
   const t=hidden.length?(open?'− fewer':'＋ more ('+hidden.length+' empty)'):'';if(mb.textContent!==t)mb.textContent=t;mb.style.display=t?'':'none'};
@@ -4920,15 +4921,16 @@ window.MOODX={
 </script>
 <script>
 /* ---- v0.24: SAFETY LOOP — if the audio goes haywire while playing (broken audio values, repeated dropouts, or 2 s of silence while
-   tracks should sound), a four-to-the-floor kick from the current groove keeps the floor going on its own small audio engine while the
+   tracks should sound), a copy of the current kick pattern (4/4 if the kick is muted or empty) keeps the floor going on its own small audio engine while the
    main engine resets. The live engine comes back on the next bar of that kick, fading in over one bar while the kick fades out. ---- */
 {let S=null,buf=null,bkey='',busy=0,cool=0;
  const sctx=()=>{if(S&&S.state!=='closed')return S;try{S=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'playback'});S.suspend()}catch(e){S=null}return S};
  document.addEventListener('pointerdown',()=>{if(!S)sctx()},{once:true,capture:true});
- const render=()=>{if(!ctx||busy||(window.DR&&DR.rendering)||!window.OfflineAudioContext)return;const K=TR[0],key=[G.bpm,K.p.pitch,K.p.dec,K.p.punch,K.p.drive,K.p.click,K.lv].join('|');if(key===bkey&&buf)return;
-  const sr=ctx.sampleRate,bar=240/G.bpm,n=Math.round(sr*bar),oc=new OfflineAudioContext(1,n+Math.round(sr*.7),sr),sink=oc.createGain(),nul=oc.createGain();sink.connect(oc.destination);
+ const render=()=>{if(!ctx||busy||(window.DR&&DR.rendering)||!window.OfflineAudioContext)return;const K=TR[0],kp=(K.pt||[]).map(x=>x?1:0),use=!K.m&&kp.some(x=>x),ks=use?K.st:4,steps=use&&16%ks&&ks%16?64:16,
+   key=[G.bpm,K.p.pitch,K.p.dec,K.p.punch,K.p.drive,K.p.click,K.lv,use?ks+':'+kp.join(''):'4/4'].join('|');if(key===bkey&&buf)return;
+  const sr=ctx.sampleRate,bar=240/G.bpm,n=Math.round(sr*bar*steps/16),oc=new OfflineAudioContext(1,n+Math.round(sr*.7),sr),sink=oc.createGain(),nul=oc.createGain();sink.connect(oc.destination);
   const sv={ctx,ks:A.ks,m:A.m,ru:A.ru,dI:A.dI,rI:A.rI,duck,OCT,mt:K.m};
-  try{ctx=oc;A.ks=sink;A.m=sink;A.ru=nul;A.dI=nul;A.rI=nul;duck=()=>{};OCT=0;if(window.DR)DR.rendering=true;K.m=false;for(let i=0;i<4;i++)fireVoice(0,i*bar/4)}
+  try{ctx=oc;A.ks=sink;A.m=sink;A.ru=nul;A.dI=nul;A.rI=nul;duck=()=>{};OCT=0;if(window.DR)DR.rendering=true;K.m=false;for(let i=0;i<steps;i++)if(use?kp[i%ks]:i%4===0)fireVoice(0,i*bar/16)}
   catch(e){}finally{if(window.DR)DR.rendering=false;ctx=sv.ctx;A.ks=sv.ks;A.m=sv.m;A.ru=sv.ru;A.dI=sv.dI;A.rI=sv.rI;duck=sv.duck;OCT=sv.OCT;K.m=sv.mt}
   oc.startRendering().then(r=>{const d=r.getChannelData(0),o=new Float32Array(n);for(let i=0;i<d.length;i++)o[i%n]+=d[i]; /* fold the last kick's tail into the start */
    const c=sctx();if(!c)return;const b=c.createBuffer(1,n,sr);b.copyToChannel(o,0);buf=b;bkey=key}).catch(()=>{})};
@@ -4939,11 +4941,11 @@ window.MOODX={
   busy=1;cool=performance.now()+20000;
   try{if(typeof say==='function')say('⚠ SAFETY LOOP · '+why.toUpperCase()+' · ENGINE RESETTING')}catch(e){}
   c.resume().catch(()=>{});const src=c.createBufferSource(),g=c.createGain();src.buffer=buf;src.loop=true;g.gain.value=0;src.connect(g);g.connect(c.destination);
-  const t0=c.currentTime+.02;src.start(t0);g.gain.setTargetAtTime(.9,t0,.02);const bar=buf.duration;
+  const t0=c.currentTime+.02;src.start(t0);g.gain.setTargetAtTime(.9,t0,.02);const bar=240/G.bpm,lp=buf.duration;
   try{window.orbResetWhy?orbResetWhy('safety loop · '+why):hardReset('safety loop')}catch(e){}
   let tries=0;const back=setInterval(()=>{tries++;if(tries>60){clearInterval(back);g.gain.setTargetAtTime(0,c.currentTime,.3);setTimeout(()=>{try{src.stop()}catch(e){}c.suspend();busy=0},1500);return}
    if(!ctx||ctx.state!=='running'||!playing||!A.m)return;clearInterval(back);
-   const ph=((c.currentTime-t0)%bar+bar)%bar;let wait=bar-ph;if(wait<.35)wait+=bar;const now=ctx.currentTime,start=now+wait;
+   const ph=((c.currentTime-t0)%lp+lp)%lp;let wait=(lp-ph)%bar||bar;if(wait<.35)wait+=bar;const now=ctx.currentTime,start=now+wait;
    try{A.m.gain.cancelScheduledValues(now);A.m.gain.setValueAtTime(0,now);A.m.gain.setValueAtTime(0,start);A.m.gain.linearRampToValueAtTime(.8,start+bar)}catch(e){}
    tk=Math.ceil(tk/16)*16;nextT=start;const cs=c.currentTime+wait;g.gain.cancelScheduledValues(cs);g.gain.setValueAtTime(.9,cs);g.gain.linearRampToValueAtTime(0,cs+bar);
    setTimeout(()=>{try{src.stop()}catch(e){}try{c.suspend()}catch(e){}busy=0;try{if(typeof say==='function')say('▶ ENGINE BACK')}catch(e){}},(wait+bar+.3)*1000)},100);return true};
@@ -4996,5 +4998,16 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 .gnote,.mcap,.snote{color:var(--muted)}
 ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:rgba(0,255,156,.22);border-radius:4px}::-webkit-scrollbar-track{background:transparent}
 .ticker{border-top:1px solid rgba(0,255,156,.14)}`;document.head.appendChild(st)}
+</script>
+<script>
+/* ---- v0.25: mute buttons always show the real mute state — synced on their own (the visuals loop skips frames when Visuals are Off
+   or the engine is under load, which left the buttons stale after a Launch) ---- */
+{let last='';const sync=()=>{try{const st=TR.map(T=>T.m?1:0).join('');if(st===last)return;last=st;
+  TR.forEach((T,k)=>{if(typeof pads!=='undefined'&&pads[k])pads[k].classList.toggle('off',!!T.m);if(T.mb)T.mb.classList.toggle('m',!!T.m)});
+  document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('m',!!TR[+b.dataset.k].m))}catch(e){}};
+ window.orbMuteSync=()=>{last='';sync()};setInterval(sync,120);
+ document.addEventListener('click',()=>setTimeout(sync,0),true);
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);last='';sync();setTimeout(window.orbMuteSync,60);setTimeout(window.orbMuteSync,400);return r};
+ const _b=build;build=function(){const r=_b.apply(this,arguments);last='';setTimeout(sync,0);return r}}
 </script>
 </body></html>
