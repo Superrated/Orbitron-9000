@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Orbitron 9000 v0.26 — generative Euclidean groovebox
+  Orbitron 9000 v0.27 — generative Euclidean groovebox
   Copyright (c) 2026 Superrated. Designed by Superrated and Claude.
 
   Licensed under the PolyForm Noncommercial License 1.0.0:
@@ -279,7 +279,8 @@ function acidVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,s=tk%16,d=acidNot
  const f=d2f(d,2+(G.ldUp||0)),acc=AC.a[s]?1:0,sl=AC.s[s]&&LF>0&&w-LW<=2.2*sd,nx=AC.s[(s+1)%16],dur=sd*(nx?1.15:.55),e=w+dur+.06,
   o=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e),q1=ctx.createBiquadFilter(),q2=ctx.createBiquadFilter(),pre=ctx.createGain(),g=ctx.createGain();
  if(sl)o.frequency.setTargetAtTime(f,w,.02);
- q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(16,p.res)*.55;q2.Q.value=.55;
+ /* v0.27: a second, slightly detuned oscillator for a fatter tone */const o2=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e);o2.detune.value=9;if(sl)o2.frequency.setTargetAtTime(f,w,.02);const o2g=ctx.createGain();o2g.gain.value=.55;o2.connect(o2g);
+ q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(14,p.res)*.38;q2.Q.value=.55; /* v0.27: rounder resonance peak */
  AC.chg=(AC.chg||0)*Math.exp(-Math.max(0,w-(AC.tw||w))/.35);AC.tw=w;if(acc)AC.chg=Math.min(2.5,AC.chg+1);
  const cm=Math.pow(2,2.5*mv("Lead cutoff",w)),base=Math.max(40,p.cut*cm),ea=p.envA*(acc?1.5+p.acc3*.8+.35*AC.chg:1),
   cd=acc?Math.min(.2,Math.max(.06,p.dec*.6)):Math.max(.06,p.dec*Math.pow(2,1.2*mv("Lead decay",w)));
@@ -289,11 +290,12 @@ function acidVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,s=tk%16,d=acidNot
  const pk=v*.3*(acc?1.35+p.acc3*.4:1)*(1+(p.drv||0)*.2);
  if(sl)g.gain.setValueAtTime(pk,w);else{g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(pk,w+.003)}
  g.gain.setValueAtTime(pk,w+dur);g.gain.linearRampToValueAtTime(.0001,w+dur+.02);
- pre.gain.value=1+(acc?.3:0);o.connect(pre);pre.connect(q1);q1.connect(q2);
+ pre.gain.value=1+(acc?.3:0);o.connect(pre);o2g.connect(pre);pre.connect(q1);q1.connect(q2);
  if(p.subosc>.01){const so=osc('sine',f*.5,w,e),sg=ctx.createGain();sg.gain.value=p.subosc*.9;so.connect(sg);sg.connect(g)}
  if(p.grit>.01){const ns=ctx.createBufferSource(),ng=ctx.createGain(),nf=ctx.createBiquadFilter();ns.buffer=A.nb;nf.type='highpass';nf.frequency.value=1500;ng.gain.setValueAtTime(p.grit*.4,w);ng.gain.exponentialRampToValueAtTime(.001,w+.06);ns.connect(nf);nf.connect(ng);ng.connect(g);ns.start(w,R()*.5);ns.stop(w+.08)}
  let tl=q2;if(p.drv>.01){const dg=ctx.createGain(),dw=ctx.createWaveShaper();dg.gain.value=.6+p.drv*2.4;dw.curve=curve(p.drv*10);q2.connect(dg);dg.connect(dw);tl=dw}
  if(p.crush>.01){const cr=ctx.createWaveShaper();cr.curve=crushCurve(p.crush);tl.connect(cr);tl=cr}
+ {const tm=ctx.createBiquadFilter();tm.type='lowpass';tm.frequency.value=4200;tm.Q.value=.5;tl.connect(tm);tl=tm} /* v0.27: tame the fizz */
  tl.connect(g);send(g,A.ld||A.dk,p.ds,p.rs);leadVoice(g,w);LF=f;LW=w}
 function foldCurve(){if(!FC){FC=new Float32Array(4097);for(let i=0;i<4097;i++){const u=(i/2048-1)*8;FC[i]=2/Math.PI*Math.asin(Math.sin(Math.PI/2*u))}}return FC}
 function fireVoice(k,w){const T=TR[k],p=T.p,v=T.lv;if(window.DR&&DR.on(k,w,v,p))return;
@@ -1855,7 +1857,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden)chBuild();return r};
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.26 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.26';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.27 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.27';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -5035,6 +5037,119 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 {const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const P=TR[4].p;if(P.mode==='Interval'&&!(P.spread>=.3))P.spread=+(.3+R()*.15).toFixed(2)}catch(e){}return r}}
 </script>
 <script>
+/* ---- v0.27: MODERN SOUND PASS (from the first 154 rated Launches + "more modern" brief)
+   Four modern families: Afterlife (Anyma / Tale Of Us), Bicep / Fred again.., peak-time techno, minimal / tech house.
+   New lead presets: Afterlife saw, Anyma pluck, Bicep keys, FM stab, Hypno stab, Rubber blip.
+   New bass sounds: Rolling sub, Reese mid, Rubber, FM round.
+   Launch: the lowest-rated sounds never come up any more (Hollow BP, PPG wave, West Coast fold, Glass and Soft sine as leads,
+   Interval and Turing loop note modes, Wind pad); Air pad and the Rumble kit become rare; the bass is rarely muted;
+   most Launches pick a modern family for the mood and set lead sound + pattern and bass sound + pattern from it.
+   The old sounds stay selectable by hand. ---- */
+{Object.assign(LPRE,{
+  'Afterlife saw':{pg:.62,eng:'Stack',uni:7,usp:16,wid:.85,ft:'LP24',cut:650,res:2,envA:3600,dec:.3,sus:.15,hold:1,rel:.35,att:3,kt:.35,subosc:.15,oct2:.1,drv:0,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.3,rs:.45},
+  'Anyma pluck':{pg:.8,eng:'Stack',uni:5,usp:10,wid:.7,ft:'LP24',cut:850,res:4,envA:4000,dec:.2,sus:0,att:1,kt:.5,subosc:0,oct2:.22,drv:0,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.4,rs:.35},
+  'Bicep keys':{pg:.95,eng:'Pulse',pw:.45,uni:2,usp:6,wid:.4,ft:'LP12',cut:1000,res:1.5,envA:2300,dec:.45,sus:.2,hold:.8,rel:.3,att:3,kt:.5,subosc:.1,oct2:0,drv:0,crush:0,fold:0,penv:.08,pdec:.03,glide:0,vib:2,vibr:4.5,ds:.3,rs:.3},
+  'FM stab':{pg:.75,eng:'FM',fmr:2,fmi:3,fenv:1,uni:2,usp:8,wid:.4,ft:'LP12',cut:2000,res:2,envA:2400,dec:.18,sus:0,att:1,kt:.3,subosc:0,oct2:0,drv:.2,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.35,rs:.2},
+  'Hypno stab':{pg:.8,eng:'Stack',uni:3,usp:8,wid:.5,ft:'LP24',cut:480,res:7,envA:2000,dec:.16,sus:0,att:1,kt:.35,subosc:.1,oct2:0,drv:.15,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.45,rs:.25},
+  'Rubber blip':{pg:1.05,eng:'Sine',uni:1,usp:0,wid:0,ft:'LP12',cut:1300,res:6,envA:2200,dec:.14,sus:0,att:1,kt:.5,subosc:0,oct2:0,drv:0,crush:0,fold:.2,fenv:.5,penv:.6,pdec:.015,glide:0,vib:0,ds:.3,rs:.15}});
+ const BASSP={'Rolling sub':{sub:.9,cut:230,res:1.5,envA:1.8,det:4,sqm:0,bpp:.15,bdrv:.1,bgr:0,dec:.22},
+  'Reese mid':{sub:.6,cut:380,res:2,envA:1.2,det:22,sqm:.15,bpp:0,bdrv:.3,bgr:0,dec:.3},
+  'Rubber':{sub:.5,cut:300,res:7,envA:3,det:0,sqm:.4,bpp:.5,bdrv:0,bgr:0,dec:.16},
+  'FM round':{sub:1,cut:260,res:1,envA:1,det:6,sqm:0,bpp:.25,bdrv:0,bgr:.25,dec:.3}};
+ const FAM={
+  afterlife:{lead:['Afterlife saw','Anyma pluck','Afterlife saw','String pluck'],modes:[['Chord arp',16,0],['Up/Down',12,0],['Motif',7,0],['Chord arp',8,2]],bass:['Rolling sub','Reese mid'],bsty:[['Rolling 16ths','Root'],['Off-beat','Root'],['Rolling 16ths','Root']]},
+  bicep:{lead:['Bicep keys','Anyma pluck','Bicep keys','String pluck','Juno pulse'],modes:[['Motif',3,0,8],['Pedal arp',5,0],['Motif',5,1],['Chord arp',7,0]],bass:['FM round','Rolling sub'],bsty:[['Syncopated','Phrase'],['Off-beat','Root'],['Syncopated','Root']]},
+  peak:{lead:['FM stab','Hypno stab','Hard sync','Techno stab'],modes:[['Motif',3,0],['Motif',4,2],['Motif',5,0]],bass:['Reese mid','Rolling sub'],bsty:[['Rolling 16ths','Root'],['Off-beat','Root']]},
+  minimal:{lead:['Rubber blip','FM stab'],modes:[['Motif',3,1],['Motif',4,0],['Pedal arp',3,0]],bass:['Rubber','FM round'],bsty:[['Syncopated','Root'],['Gallop','Root'],['Off-beat','Octave']]}};
+ /* drum programming per family (after the artists' records):
+    Afterlife – deep 4/4, off-beat open hats, big clap on 2 & 4, sparse congas, almost straight;
+    Bicep – broken kick some of the time, snare with ghost notes, swung 16th hats, congas, 808 kit;
+    peak-time – 4/4, driving 16th hats with accents, clap, off-beat ride or sparse cowbell, dead straight, 909 or Raw;
+    minimal / tech house – 4/4, shuffled hats, ghosty clap, syncopated conga/cowbell/rim lines, heavy swing. */
+ FAM.afterlife.dr=()=>({kick:{h:4},hat:{h:4,r:2,acc:.2,gho:0},clap:{h:2,r:4,vari:.1},snare:null,perc:R()<.6?{pv:'Conga',h:3,r:pick([3,5,7]),ten:.3,gho:.2}:null,hp:{open:.55,dec:.06},sw:.03+R()*.03,kit:'909'});
+ FAM.bicep.dr=()=>({kick:R()<.55?{h:3,ten:.35}:{h:4},hat:{h:pick([7,9]),r:1,acc:.35,gho:.3},clap:R()<.5?{h:2,r:4}:null,snare:{h:2,r:4,gho:.35,vari:.25},perc:{pv:pick(['Conga','Conga','Blip']),h:5,r:pick([1,3]),ten:.2,gho:.2},hp:{open:.12,dec:.05},sw:.12+R()*.06,kit:'808'});
+ FAM.peak.dr=()=>({kick:{h:4},hat:{h:pick([16,12]),r:0,acc:.45,gho:0},clap:{h:2,r:4},snare:null,perc:R()<.6?{pv:'Ride',h:4,r:2}:{pv:'Cowbell',h:3,r:pick([3,6]),ten:.1},hp:{open:.08,dec:.035},sw:0,kit:R()<.6?'909':'Raw'});
+ FAM.minimal.dr=()=>({kick:{h:4},hat:{h:pick([6,7]),r:1,acc:.5,gho:.25},clap:{h:2,r:4,gho:.25,vari:.3},snare:null,perc:{pv:pick(['Conga','Cowbell','Conga']),h:pick([5,7]),r:Math.floor(R()*16),ten:.15,gho:.15},hp:{open:.2,dec:.045},sw:.18+R()*.07,kit:'909'});
+ /* lead riffs and bass lines after modern records — 16 steps, scale degrees on the current chord root (10+ = an octave up), _ = rest.
+    The lead ring is fitted to the riff's rhythm; bar 2 of every pair answers (the last quarter moves up a chord tone). */
+ const _=null;
+ FAM.afterlife.riff=[[0,2,4,10,4,2,0,2,0,2,4,10,12,10,4,2],[0,4,10,4,12,10,4,10,0,4,10,4,14,12,10,4],[0,_,2,_,4,_,2,_,10,_,4,_,2,_,4,_],[10,_,_,4,_,_,2,_,4,_,_,0,_,_,2,_]];
+ FAM.bicep.riff=[[4,_,_,4,_,_,2,_,4,_,_,4,_,_,10,_],[0,_,10,_,4,_,_,2,_,0,_,10,_,4,_,_],[2,_,4,_,_,10,_,4,_,2,_,_,0,_,_,_],[4,_,_,2,_,_,0,_,_,_,2,_,4,_,_,_]];
+ FAM.peak.riff=[[0,_,_,0,_,_,0,_,_,_,0,_,_,_,_,_],[0,_,_,_,_,_,1,_,_,_,0,_,_,_,_,_],[0,_,0,_,_,_,_,_,0,_,_,10,_,_,_,_],[_,_,0,_,_,0,_,_,_,_,0,_,_,_,1,_]];
+ FAM.minimal.riff=[[_,_,0,_,_,_,_,0,_,_,4,_,_,_,_,_],[_,0,_,_,0,_,_,2,_,_,0,_,_,_,_,_],[_,_,10,_,_,0,_,_,_,_,10,_,_,0,_,4],[0,_,_,_,_,_,0,_,_,4,_,_,_,_,_,_]];
+ FAM.afterlife.bl=[[_,0,0,0,_,0,0,10,_,0,0,0,_,0,10,0],[_,_,0,_,_,_,0,_,_,_,0,_,_,_,0,10],[_,0,0,_,_,0,0,_,_,0,0,_,_,0,10,_]];
+ FAM.bicep.bl=[[0,_,_,0,_,_,10,_,_,0,_,_,4,_,_,_],[0,_,_,_,_,_,0,_,_,_,4,_,2,_,_,_],[0,_,_,10,_,_,0,_,_,_,_,0,_,4,_,_]];
+ FAM.peak.bl=[[_,_,0,_,_,_,0,_,_,_,0,_,_,_,0,_],[_,0,0,_,_,0,0,_,_,0,0,_,_,0,0,_],[_,_,0,0,_,_,0,_,_,_,0,0,_,_,0,_]];
+ FAM.minimal.bl=[[0,_,_,0,_,0,_,_,0,_,_,0,_,_,10,_],[_,_,0,_,_,0,_,10,_,_,0,_,_,_,0,_],[0,_,_,_,0,_,_,0,_,_,4,_,_,0,_,_]];
+ /* chords per family: scale degrees of the chord roots + chord shapes (tri, 7, 9, add9, sus2, sus4, quart) */
+ const rr=(a,b)=>+(a+R()*(b-a)).toFixed(2);
+ FAM.afterlife.ch=()=>({prog:pick([[0,5,2,6],[0,3,5,4],[0,6,5,6],[0,5,3,4]]),sh:['tri','add9','sus2','tri','7'],scale:'Minor'});
+ FAM.bicep.ch=()=>({prog:pick([[0,5,3,4],[0,3,6,5],[0,2,5,3],[3,4,0,0]]),sh:['7','9','add9','7'],scale:'Dorian'});
+ FAM.peak.ch=()=>({prog:pick([[0,0,0,0],[0,0,1,0],[0,0,5,0]]),sh:['tri','quart','sus4'],scale:'Minor'});
+ FAM.minimal.ch=()=>({prog:pick([[0,0,0,0],[0,3,0,3],[0,0,3,3]]),sh:['7','9','7'],scale:'Dorian'});
+ /* effects per family, using the existing delay, reverb, shimmer, sidechain, rumble and bus grit
+    Afterlife: big dark space and heavy pump · Bicep: warm delay throws, medium room · peak-time: short room, rumble, a touch of grit · minimal: dry and close */
+ FAM.afterlife.fx=()=>({rev:rr(.38,.46),shim:rr(.5,.7),dly:rr(.2,.28),fb:.45,dt:.75,duck:rr(.75,.85),rel:.22,rumble:rr(.22,.32),rcut:120});
+ FAM.bicep.fx=()=>({rev:rr(.26,.32),shim:rr(.18,.3),dly:rr(.3,.38),fb:.5,dt:pick([.75,.5]),duck:rr(.5,.6),rel:.18,rumble:rr(.06,.12)});
+ FAM.peak.fx=()=>({rev:rr(.16,.22),shim:rr(.05,.12),dly:rr(.1,.15),fb:.35,dt:.5,duck:rr(.65,.75),rel:.15,rumble:rr(.35,.45),rcut:140,bgrit:rr(.12,.2)});
+ FAM.minimal.fx=()=>({rev:rr(.12,.18),shim:rr(.02,.08),dly:rr(.08,.14),fb:.3,dt:pick([.5,.375]),duck:rr(.5,.6),rel:.14,rumble:rr(.06,.12)});
+ const RIFF={t:null};window.orbRiff=RIFF;
+ const fillT=t=>{let last=t.find(x=>x!=null);if(last==null)last=0;return t.map(x=>x==null?last:(last=x))};
+ const dg=(v,n)=>v>=10?v-10+n:v;
+ const _ln=leadNote;leadNote=function(p){if(p.mode==='Riff'&&RIFF.t){const n=SC[G.scale].length,s=((tk%16)+16)%16,bar=Math.floor(tk/16),t=RIFF.f;let v=dg(t[s],n);
+   if(bar%2===1&&s>=12)v+=v%n===0?2:v%n===2?2:-2;return cur.r+v}return _ln.apply(this,arguments)};
+ try{if(!MODES.includes('Riff'))MODES.push('Riff')}catch(e){}
+ const MFAM={Melancholic:{afterlife:.7,bicep:.3},'Melodic House':{afterlife:.5,bicep:.5},Dark:{afterlife:.5,peak:.5},Noir:{afterlife:.6,bicep:.4},
+  Dreamy:{bicep:.6,afterlife:.4},Hopeful:{bicep:.7,afterlife:.3},Breaks:{bicep:1},Ethereal:{bicep:.5,afterlife:.5},Ambient:{bicep:.7,afterlife:.3},
+  Drone:{afterlife:1},'Deep Space':{afterlife:.7,bicep:.3},Power:{peak:1},Tense:{peak:1},'Distorted Electro':{peak:1},Temporal:{peak:.6,minimal:.4},
+  'Groove Techno':{minimal:.6,peak:.4},Vector:{minimal:.5,bicep:.5},Bleep:{minimal:1},Italo:{bicep:.5,afterlife:.5}};
+ const MCH={Italo:.35};                                  // Satellite Disco already rated well: modern sound only sometimes
+ const BADL=new Set(['Hollow BP','PPG wave','West Coast fold','Glass','Soft sine']),BADM=new Set(['Interval','Turing loop']);
+ const AMB=new Set(['Ambient','Ethereal','Drone','Deep Space']);
+ const wp=o=>{let t=Object.values(o).reduce((a,b)=>a+b,0)*R();for(const k in o)if((t-=o[k])<0)return k;return Object.keys(o)[0]};
+ window.orbModern={FAM,MFAM,BASSP,last:null};
+ const bassSet=(name)=>{const P=TR[6].p;Object.assign(P,BASSP[name]);G.bchar=name};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{
+   const L=TR[4],P=L.p,B=TR[6],BP=B.p,PD=TR[5],acid=P.mode==='Acid 303'||(MOODS[curMood]||{}).acid,fams=MFAM[curMood];let fam=null;
+   // ambient moods: more pulse — at least ~100 BPM, a soft beat, hats and a bass most of the time
+   if(AMB.has(curMood)){if(G.bpm<100){G.bpm=100+Math.round(R()*12);try{$('#bpm').value=G.bpm;$('#bv').textContent=G.bpm;if(A.dl){A.dl.delayTime.value=(G.dt||.75)*60/G.bpm;A.dl2.delayTime.value=(G.dt||.75)*60/G.bpm}}catch(e){}}
+    const K=TR[0];if(K.m&&R()<.8){K.m=false;Object.assign(K,{st:16,h:4,r:0,ten:0});K.pt=pat(K);K.lv=Math.min(K.lv||.9,.75)}
+    const H=TR[1];if((H.m||H.h<3)&&R()<.8){H.m=false;Object.assign(H,{st:16,h:pick([4,4,6]),r:2,ten:0});H.pt=pat(H)}}
+   // modern family for this Launch
+   if(!acid&&fams&&R()<(MCH[curMood]||.75))fam=wp(fams);
+   const F=fam&&FAM[fam];
+   RIFF.t=null;window.__bphLock=0;
+   if(F&&!L.m){applyLP(pick(F.lead),1);P.rdr=0;try{mot=[];mp=-1;buf=[]}catch(e){}
+    if(R()<.7){const t=pick(F.riff);RIFF.t=t;RIFF.f=fillT(t);P.mode='Riff';const pt=t.map(x=>x==null?0:1);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(L,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}L.pt=pat(L)}
+    else{const [md,h,r,st]=pick(F.modes);P.mode=md;Object.assign(L,{st:st||16,h:Math.min(h,st||16),r,ten:0});L.pt=pat(L);P.range=md==='Motif'?(fam==='peak'||fam==='minimal'?1:2):2}}
+   else if(!L.m&&!acid){if(BADL.has(P.patch)){const fl=F||FAM[wp(fams||{afterlife:.5,bicep:.5})];applyLP(pick(fl.lead),1)}
+    if(BADM.has(P.mode)){P.mode=pick(['Motif','Chord arp','Pedal arp','Motif']);try{mot=[];mp=-1;buf=[]}catch(e){}}}
+   // bass: rarely muted, modern sound + pattern from the family
+   if(B.m&&!acid&&R()<.85)B.m=false;
+   if(F&&!B.m){bassSet(pick(F.bass));if(R()<.7){const t=pick(F.bl),pt=t.map(x=>x==null?0:1),ff=fillT(t),A=ff.map(v=>({d:v>=10?v-10:v,o:v>=10?1:0})),A2=A.map((e,i)=>i>=12&&i%2===0&&R()<.5?{d:e.d,o:1-e.o}:Object.assign({},e));
+     B.st=16;try{const ft=bassFit(B,pt);Object.assign(B,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}B.pt=pat(B);Object.assign(BP,{bns:'Phrase',bsty:'Modern '+fam,bsus:0,btn:false,bph:1,bgh:0,blk:'Free'});
+     window.BPH={bars:[A,A2],pk:[],chr:0,lead:9,evo:0};window.__bphLock=1}
+    else{const [sty,notes]=pick(F.bsty);try{bassStyle(sty)}catch(e){}BP.bns=notes}}
+   else if(!B.m&&(BP.bsty==='Custom'||BP.bsty==='Pedal'||['Chord tones','Melodic'].includes(BP.bns))&&R()<.8){const fl=FAM[wp(fams||{afterlife:.5,peak:.5})];const [sty,notes]=pick(fl.bsty);try{bassStyle(sty)}catch(e){}BP.bns=notes;if(R()<.6)bassSet(pick(fl.bass))}
+   // pads and kit
+   if(PD.p.patch==='Wind'||(PD.p.patch==='Air'&&R()<.8))PD.p.patch=pick(['Poly','Strings','EP chords','Glass','Tape','Choir','Abyss'].filter(x=>{try{return typeof PGAIN==='undefined'||x in PGAIN||true}catch(e){return true}}));
+   if(G.kit==='Rumble'&&R()<.7)try{orbKit(R()<.6?'909':'808')}catch(e){}
+   // drums in the family's style: groove, swing, hat character, perc voice and rhythm (the kick stays four-to-the-floor unless the family breaks it)
+   if(F&&F.dr){const D=F.dr,ring=(k,o)=>{const T=TR[k];if(!o){T.m=true;return}Object.assign(T,{m:false,st:o.st||16,h:o.h,r:o.r||0,ten:o.ten||0});['acc','gho','vari'].forEach(x=>{if(o[x]!=null)T[x]=o[x]});T.pt=pat(T)};
+    const d=typeof D==='function'?D():D;if(d.kick)ring(0,d.kick);ring(1,d.hat);ring(2,d.clap);ring(7,d.snare);if(d.perc){ring(3,d.perc);try{setPercSound(d.perc.pv)}catch(e){TR[3].p.pv=d.perc.pv}}else ring(3,null);
+    Object.assign(TR[1].p,d.hp||{});G.swing=d.sw;if(d.kit)try{orbKit(d.kit)}catch(e){}}
+   // chords and effects in the family's style (existing effects only)
+   if(F&&F.ch){const c=F.ch(),PDT=TR[5],nc=Math.max(1,Math.round(PDT.st)||4);
+    if(['Min pentatonic','Major pentatonic','Sus pentatonic','Whole tone','Hirajoshi'].includes(G.scale)){G.scale=c.scale;try{$('#scale').value=G.scale}catch(e){}}
+    prog=Array.from({length:nc},(_,i)=>c.prog[i%c.prog.length]);pshape=prog.map(()=>pick(c.sh));try{PX=prog.map(()=>0);pmean=null;PTOP=null}catch(e){}
+    try{mot=[];mp=-1;buf=[]}catch(e){}
+    const fx=F.fx();Object.assign(G,fx);try{applyFX()}catch(e){}}
+   setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},60);
+   orbModern.last=fam;if(fam)setTimeout(()=>{try{if(typeof say==='function')say('◆ '+({afterlife:'AFTERLIFE',bicep:'BICEP',peak:'PEAK-TIME',minimal:'MINIMAL'})[fam]+' · '+TR[4].p.patch.toUpperCase()+' · '+(G.bchar||'').toUpperCase())}catch(e){}},1200)
+ }catch(e){console.warn('[orbitron] modern',e)}return r}}
+</script>
+
+<script>
 /* ---- v0.26: PHRASE BASSLINES — a 2- or 4-bar riff written at Launch: motif (bar 1), variation (bar 2), the motif lifted with octave notes (bar 3),
    and an answer (bar 4) with pickup notes rolling into the next phrase. Notes sit on the chord root so the riff follows the chords;
    the note before a chord change approaches the new root by a step (or a semitone). Long and short notes alternate; every 8 bars one note
@@ -5074,7 +5189,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const _f=fire;fire=function(k,w){if(k===6){const P=TR[6].p,H=window.BPH;if(P.bns==='Phrase'&&H){const s=((tk%16)+16)%16,Ld=TR[4];
    if(s%2===1&&!Ld.m&&Ld.h>=(H.lead||7)&&Ld.h/Ld.st<.75&&Ld.pt[((tk%Ld.st)+Ld.st)%Ld.st]&&Ld.p.mode!=='Acid 303')return}}return _f.apply(this,arguments)};
  // Launch: selected moods get a phrase bassline
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{window.BPH=null;const B=TR[6],P=B.p,pf=pro();
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(window.__bphLock)return r;window.BPH=null;const B=TR[6],P=B.p,pf=pro();
    if(!B.m&&pf.ch&&!(MOODS[curMood]||{}).acid&&R()<pf.ch){
     // keep the rhythm the Launch chose when it already has room for a line (5+ hits on 16 steps); otherwise pick a mood style
     if(!(B.st===16&&B.h>=5&&B.h<=12)||P.bsus>.01){try{bassStyle(pick(pf.sty))}catch(e){}}
@@ -5147,51 +5262,72 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    Few controls: Role, Sound, Motion, Register (Auto / Low / High), Amount, Tone, Space, Level. Thinned by THIN, filtered by the low-pass,
    lifted by the +1/+2 octave Thrusters. Launch adds it sparingly in melodic, spacious and groovy moods. ---- */
 {const S=TR[9];S.pt=pat(S);
- const SND={Counter:['Warm saw','Strings','Reed'],Sparkle:['Glass bell','Pluck','Music box']};
+ const SND={Counter:['Super saw','Juno','Keys','FM pluck','Strings'],Sparkle:['Mallet','Glass bell','FM pluck','Music box']};
+ const OLDSND={'Warm saw':'Super saw',Reed:'Juno',Pluck:'FM pluck'};
  try{['Amount','Role','Motion','Register'].forEach(x=>{if(!PATL.includes(x))PATL.push(x)})}catch(e){}
  /* v0.26: Attack and Release knobs (each sound sets its own starting values), and an Arp motion: short chord-tone stabs running up and down, two notes together on the half bars */
- const SDEF={'Warm saw':[.2,.32],Strings:[.6,.45],Reed:[.25,.28],'Glass bell':[.03,.85],Pluck:[.02,.4],'Music box':[.01,.65]};
+ const SDEF={'Super saw':[.3,.4],Juno:[.15,.3],Keys:[.05,.35],'FM pluck':[.02,.35],Strings:[.6,.45],Mallet:[.01,.5],'Glass bell':[.03,.7],'Music box':[.01,.6]};
  const sdef=p=>{const d=SDEF[p.snd];if(d){p.att=d[0];p.rel=d[1]}};
  let cp=null,lPrev=0,ai=0;
  const regOct=p=>{const L=TR[4],r=p.reg||'Auto';if(p.role==='Sparkle')return r==='Low'?4:r==='High'?6:5;
   if(r==='Low')return 2;if(r==='High')return 4;if(L.m)return 3;return (Math.round(L.p.range)||1)>=2||(L.p.loct||0)>0?2:4};
  const nextHit=()=>{const T=S;for(let i=1;i<=32;i++)if(T.pt[((tk+i)%T.st+T.st)%T.st])return i;return 16};
+ /* v0.27: Satellite rebuilt — composed parts instead of random notes, after how techno, electro and house records use a second line:
+    Long   · guide tones: the 3rd / 5th / 7th of each chord, moving as little as possible (house pads and Detroit strings);
+    Answer · call and response: in bars 3–4 it echoes what the lead played in bars 1–2, an 8th later and an octave away, only where the lead rests;
+    Arp    · electro / house stab figures from a small library, the 4th bar answers;
+    Sparkle· short bell cascades in bars 2 and 4, in the lead's gaps.
+    Richer sounds: Super saw (5 detuned saws, wide), Juno (two pulses + sub), Keys, FM pluck, Strings, Mallet, Glass bell, Music box. */
+ const _=null,SPK=[[_,_,10,_,_,_,12,_,_,_,14,_,_,_,_,_],[_,_,_,_,_,_,14,_,12,_,_,_,10,_,_,_],[_,_,4,_,10,_,_,_,_,_,12,_,_,_,_,_],[_,_,_,10,_,_,_,_,_,_,12,_,_,14,_,_]],
+  ARPT=[[0,_,4,_,10,_,4,_,0,_,4,_,12,_,10,_],[2,_,_,2,_,_,4,_,_,_,2,_,_,4,_,_],[0,10,_,0,10,_,0,_,0,10,_,0,10,_,4,_],[_,_,4,_,_,_,4,_,_,_,4,_,_,2,_,_]];
+ const SST={tpl:null,mem:{},cp:null};window.orbSatState=SST;
+ const fitRing=t=>{const pt=t.map(x=>x==null?0:1);S.st=16;try{const ft=bassFit(S,pt);Object.assign(S,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(S,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}S.pt=pat(S)};
+ window.orbSatRing=()=>{const p=S.p,L=TR[4];SST.mem={};SST.cp=null;
+  if(p.role==='Sparkle'){SST.tpl=pick(SPK);fitRing(SST.tpl)}
+  else if(p.mot==='Arp'){SST.tpl=pick(ARPT);fitRing(SST.tpl)}
+  else if(p.mot==='Answer'){SST.tpl=null;Object.assign(S,{st:L.st||16,h:Math.max(3,L.h||5),r:((L.r||0)+2)%(L.st||16),ten:L.ten||0});S.pt=pat(S)}
+  else{SST.tpl=null;Object.assign(S,{st:16,h:2,r:0,ten:0});S.pt=pat(S)}};
+ // remember the lead's notes in bars 1–2 of every 4 (for Answer)
+ const _fl=fire;fire=function(k,w){const r=_fl.apply(this,arguments);if(k===4){const bar=Math.floor(tk/16);if(((bar%4)+4)%4<2)SST.mem[(((bar%2)+2)%2)*16+((tk%16)+16)%16]=lastDeg}return r};
+ const dg=(v,n)=>v>=10?v-10+n:v;
  subDrone=function(w){const T=S,p=T.p,L=TR[4],n=SC[G.scale].length,sd=60/G.bpm/4;if(!ctx)return;
-  const lOn=!L.m&&L.p.mode!=='Acid 303',lp=lOn&&L.pt[((tk%L.st)+L.st)%L.st],lpp=lOn&&L.pt[(((tk-1)%L.st)+L.st)%L.st];
-  const sp=p.role==='Sparkle',ans=!sp&&p.mot==='Answer',arp=!sp&&p.mot==='Arp',amt=p.amt==null?.5:p.amt;
-  if(sp){if(lp||lpp||(QOS.ml||0)>=3||R()>.3+amt*.7)return}else if(ans){if(lp||R()>.45+amt*.55)return}else if(arp){if(R()>.7+amt*.3)return}else if(R()>.55+amt*.45)return;
-  const ct=[...new Set(cur.n.map(x=>((x%n)+n)%n))];let d,d2=null;
-  if(arp){const arr=ct.slice().sort((a,b)=>a-b);arr.push(...arr.map(x=>x+n));const Ln=arr.length,m=ai++%Math.max(1,2*(Ln-1)),i=m<Ln?m:2*(Ln-1)-m;d=arr[i];if(((tk%8)+8)%8===0&&Ln>2)d2=arr[Math.min(Ln-1,i+2)]}
-  else if(sp){d=R()<.35&&lOn?((lastDeg%n)+n)%n:pick(ct);if(R()<.3)d+=n}
-  else{const ld=Math.sign(lastDeg-lPrev);lPrev=lastDeg;const lpc=((lastDeg%n)+n)%n;if(cp==null)cp=ct[0];
-   if(ans&&R()<.6){cp+=pick([-1,1,-2,2,-1,1])}
-   else{let best=cp,bs=1e9;for(const o of[-n,0,n])for(const c of ct){const q=c+o;if(q<-2||q>n+4)continue;const mv=q-cp;let sc=Math.abs(mv);if(ld&&Math.sign(mv)===ld)sc+=2.5;if(mv===0)sc+=1.5;if(((q%n)+n)%n===lpc&&lOn)sc+=3;sc+=R()*1.2;if(sc<bs){bs=sc;best=q}}cp=best}
-   cp=Math.max(-3,Math.min(n+5,cp));d=cp}
-  let f=d2f(d,regOct(p)+(G.ldUp||0));let f2=d2!=null?d2f(d2,regOct(p)+(G.ldUp||0)):0;while(f>(sp?2000:1000)){f/=2;f2/=2}const FQ=f2?[f,f2]:[f];   /* v0.26: Sparkle stays under ~2 kHz, Counter under ~1 kHz */
+  const s=((tk%16)+16)%16,bar=Math.floor(tk/16),q=((bar%4)+4)%4,lOn=!L.m&&L.p.mode!=='Acid 303',lp=lOn&&L.pt[((tk%L.st)+L.st)%L.st];
+  const sp=p.role==='Sparkle',mot=sp?'Sparkle':(p.mot||'Long'),amt=p.amt==null?.5:p.amt;let d,d2=null;
+  if(!SST.tpl&&(mot==='Sparkle'||mot==='Arp'))orbSatRing();
+  if(mot==='Sparkle'){if(q%2===0||lp)return;const v=SST.tpl[s];if(v==null)return;if(amt<.4&&s%4!==2)return;d=cur.r+dg(v,n)}
+  else if(mot==='Arp'){const v=SST.tpl[s];if(v==null)return;if(amt<.4&&s%2===1)return;d=cur.r+dg(v,n);if(q===3&&s>=12)d+=2;if(s%8===0&&amt>.55)d2=d+4}
+  else if(mot==='Answer'){if(q<2||lp)return;const m=SST.mem[(((bar%2)+2)%2)*16+((s-2+16)%16)];if(m==null)return;d=m-n}
+  else{if(s!==0&&!(s===8&&amt>.6))return;const tgt=[2,4,6].map(x=>cur.r+x);let best=null,bs=1e9;const c0=SST.cp==null?tgt[0]:SST.cp;
+   for(const o of[-n,0,n])for(const t of tgt){const v=t+o;if(v<-3||v>n+5)continue;const sc=Math.abs(v-c0)+(v>c0?.01:0);if(sc<bs){bs=sc;best=v}}SST.cp=best;d=best}
+  let f=d2f(d,regOct(p)+(G.ldUp||0)),f2=d2!=null?d2f(d2,regOct(p)+(G.ldUp||0)):0;while(f>(sp?2000:1000)){f/=2;f2/=2}const FQ=f2?[f,f2]:[f];
   const tone=p.tone==null?.5:p.tone,space=p.space==null?.4:p.space,trim=(typeof dbg==='function'&&typeof TRIM!=='undefined')?dbg(TRIM[9]||0):1,
-   g=ctx.createGain(),out=A.ld||A.dk;g.__k=9;let e;const lv=T.lv*trim*(sp?.22:arp?(f2?.2:.26):.3),AT=.003+Math.pow(p.att==null?.2:p.att,2)*.6,RL=.08+Math.pow(p.rel==null?.32:p.rel,2)*2.4;
+   g=ctx.createGain(),out=A.ld||A.dk;g.__k=9;let e;const lv=T.lv*trim*(sp?.24:mot==='Arp'?(f2?.2:.25):.3)/Math.sqrt(FQ.length),
+   AT=.003+Math.pow(p.att==null?.2:p.att,2)*.6,RL=.08+Math.pow(p.rel==null?.32:p.rel,2)*2.4;
   const env=(a,hold,rl)=>{g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(lv,w+a);g.gain.setValueAtTime(lv,w+Math.max(a,hold));g.gain.setTargetAtTime(.0001,w+Math.max(a,hold),rl/3);e=w+Math.max(a,hold)+rl+.1};
-  /* v0.26: one low-pass on the whole Satellite voice, set by Tone (≈600 Hz dark … 1.7 kHz middle … 4.8 kHz bright); every sound's own filter stays under it */
   const cap=600*Math.pow(2,tone*3);
-  const lpF=(c,q)=>{const x=ctx.createBiquadFilter();x.type='lowpass';x.frequency.value=Math.min(cap*1.4,c);x.Q.value=q;x.connect(g);return x};
-  const s=p.snd||SND[p.role][0];
-  if(!sp){const hold=arp?sd*.7:ans?sd*1.6:Math.min(3,nextHit()*sd*.97),at=arp?Math.min(AT,.03):AT,rl=arp?Math.min(RL,.35):RL;
-   if(s==='Strings'){env(at,hold,rl);const fl=lpF(f*(1.5+tone*4),.6);FQ.forEach(fq=>(f2?[-8,8]:[-10,0,10]).forEach(dt=>{const o=osc('sawtooth',fq,w,e);o.detune.value=dt;o.connect(fl)}))}
-   else if(s==='Reed'){env(at,hold,rl);const fl=lpF(f*(2+tone*3),2.5);FQ.forEach(fq=>{const o=osc('square',fq,w,e),o2=osc('sawtooth',fq*2,w,e),g2=ctx.createGain();g2.gain.value=.25;o.connect(fl);o2.connect(g2);g2.connect(fl)})}
-   else{env(at,hold,rl);const fl=lpF(f*(1.2+tone*5),.8);fl.frequency.setValueAtTime(Math.min(cap*1.4,f*(2+tone*7)),w);fl.frequency.setTargetAtTime(Math.min(cap*1.4,f*(1.2+tone*5)),w+.01,.12);FQ.forEach(fq=>[0,7].forEach(dt=>{const o=osc('sawtooth',fq,w,e);o.detune.value=dt;o.connect(fl)}))}}
-  else if(s==='Pluck'){env(AT,AT+.007,RL);const fl=lpF(f*1.2,1);fl.frequency.setValueAtTime(Math.min(cap*1.4,f*(4+tone*8)),w);fl.frequency.setTargetAtTime(Math.min(cap*1.4,f*1.2),w+.005,.07);osc('sawtooth',f,w,e).connect(fl);const t=osc('triangle',f*2,w,e),tg=ctx.createGain();tg.gain.value=.3;t.connect(tg);tg.connect(fl)}
-  else if(s==='Music box'){env(AT,AT+.004,RL);const fl=lpF(cap,.5);osc('sine',f,w,e).connect(fl);const o=osc('sine',f*4,w,e),og=ctx.createGain();og.gain.setValueAtTime(.05+tone*.15,w);og.gain.setTargetAtTime(0,w,.12);o.connect(og);og.connect(fl)}
-  else{env(AT,AT+.007,RL);const fl=lpF(cap,.5),c=osc('sine',f,w,e),m=osc('sine',f*3.5,w,e),mg=ctx.createGain();mg.gain.setValueAtTime(f*(.35+tone*1.1),w);mg.gain.setTargetAtTime(0,w,.25);m.connect(mg);mg.connect(c.frequency);c.connect(fl)}
-  const ml=ctx.createBiquadFilter(),ml2=ctx.createBiquadFilter();ml.type=ml2.type='lowpass';ml.frequency.value=ml2.frequency.value=cap;ml.Q.value=.6;ml2.Q.value=.5;g.connect(ml);ml.connect(ml2);ml2.__k=9;   /* 24 dB/oct */
+  const lpF=(c,q2)=>{const x=ctx.createBiquadFilter();x.type='lowpass';x.frequency.value=Math.min(cap*1.4,c);x.Q.value=q2;x.connect(g);return x};
+  const nh=()=>{for(let i=1;i<=32;i++)if(T.pt[((tk+i)%T.st+T.st)%T.st])return i;return 16};
+  const snd=OLDSND[p.snd]||p.snd||SND[p.role][0],hold=mot==='Arp'?sd*.7:mot==='Answer'?sd*1.4:mot==='Long'?Math.min(3.2,nh()*sd*.97):sd,
+   at=mot==='Arp'?Math.min(AT,.03):AT,rl=mot==='Arp'?Math.min(RL,.35):RL;
+  if(snd==='Super saw'){env(at,hold,rl);const fl=lpF(f*(1.3+tone*4),.7);fl.frequency.setValueAtTime(Math.min(cap*1.4,f*(2+tone*6)),w);fl.frequency.setTargetAtTime(Math.min(cap*1.4,f*(1.3+tone*4)),w+.01,.15);
+   FQ.forEach(fq=>[-14,-7,0,7,14].forEach((dt,i)=>{const o=osc('sawtooth',fq,w,e),pn=ctx.createStereoPanner(),vg=ctx.createGain();o.detune.value=dt+(R()-.5)*3;pn.pan.value=(i-2)*.32;vg.gain.value=.45;o.connect(vg);vg.connect(pn);pn.connect(fl)}))}
+  else if(snd==='Juno'){env(at,hold,rl);const fl=lpF(f*(1.5+tone*4),1.4);FQ.forEach(fq=>{[0,6].forEach(dt=>{const o=ctx.createOscillator();o.setPeriodicWave(pulseWave(.4));o.frequency.value=fq;o.detune.value=dt;o.start(w);o.stop(e);o.connect(fl)});const sb=osc('square',fq/2,w,e),sg=ctx.createGain();sg.gain.value=.25;sb.connect(sg);sg.connect(fl)})}
+  else if(snd==='Keys'){env(Math.min(at,.02),Math.min(hold,sd*2),Math.max(rl,.25));const fl=lpF(f*(2+tone*5),.8);fl.frequency.setTargetAtTime(Math.min(cap*1.4,f*1.5),w+.02,.25);FQ.forEach(fq=>{const o=ctx.createOscillator();o.setPeriodicWave(pulseWave(.45));o.frequency.value=fq;o.start(w);o.stop(e);o.connect(fl);const t=osc('triangle',fq*2,w,e),tg=ctx.createGain();tg.gain.value=.2;t.connect(tg);tg.connect(fl)})}
+  else if(snd==='FM pluck'){env(.003,.01,Math.max(.25,rl));const fl=lpF(cap,.6);FQ.forEach(fq=>{const c=osc('sine',fq,w,e),m=osc('sine',fq*2,w,e),mg=ctx.createGain();mg.gain.setValueAtTime(fq*(1.2+tone*2),w);mg.gain.setTargetAtTime(0,w,.05);m.connect(mg);mg.connect(c.frequency);c.connect(fl)})}
+  else if(snd==='Strings'){env(Math.max(at,.15),hold,rl);const fl=lpF(f*(1.5+tone*4),.6);FQ.forEach(fq=>[-10,0,10].forEach(dt=>{const o=osc('sawtooth',fq,w,e);o.detune.value=dt;o.connect(fl)}))}
+  else if(snd==='Mallet'){env(.002,.006,Math.max(.3,rl));const fl=lpF(cap*.8,.5);FQ.forEach(fq=>{osc('sine',fq,w,e).connect(fl);const o=osc('sine',fq*4,w,e),og=ctx.createGain();og.gain.setValueAtTime(.18,w);og.gain.setTargetAtTime(0,w,.03);o.connect(og);og.connect(fl);const m=osc('sine',fq*3,w,e),mg=ctx.createGain();mg.gain.setValueAtTime(fq*.5,w);mg.gain.setTargetAtTime(0,w,.08);m.connect(mg)})}
+  else if(snd==='Music box'){env(.002,.005,Math.max(.4,rl));const fl=lpF(cap,.5);FQ.forEach(fq=>{osc('sine',fq,w,e).connect(fl);const o=osc('sine',fq*4,w,e),og=ctx.createGain();og.gain.setValueAtTime(.05+tone*.15,w);og.gain.setTargetAtTime(0,w,.12);o.connect(og);og.connect(fl)})}
+  else{env(.004,.01,Math.max(.5,rl));const fl=lpF(cap,.5);FQ.forEach(fq=>{const c=osc('sine',fq,w,e),m=osc('sine',fq*3.5,w,e),mg=ctx.createGain();mg.gain.setValueAtTime(fq*(.35+tone*1.1),w);mg.gain.setTargetAtTime(0,w,.25);m.connect(mg);mg.connect(c.frequency);c.connect(fl)})}
+  const ml=ctx.createBiquadFilter(),ml2=ctx.createBiquadFilter();ml.type=ml2.type='lowpass';ml.frequency.value=ml2.frequency.value=cap;ml.Q.value=.6;ml2.Q.value=.5;g.connect(ml);ml.connect(ml2);ml2.__k=9;
   send(ml2,out,(sp?.15:.08)+space*(sp?.5:.35),.08+space*(sp?.5:.4))};
  // card controls (Role, Sound, Motion, Register)
  const ctl=()=>{try{const card=S.mb&&S.mb.closest('.card'),g=card&&card.querySelector('.grid');if(!g||g.querySelector('.satc'))return;const p=S.p;
    const sep=document.createElement('div');sep.className='bksep satc';sep.textContent='Satellite';g.prepend(sep);const els=[];
    const add=(el,grp)=>{el.classList.add('satc');el.dataset.g=grp;els.push([el,grp]);sep.after(...[el]);return el};
    const reg=mkSel('Register',['Auto','Low','High'],p.reg||'Auto',v=>{p.reg=v});
-   const mo=mkSel('Motion',['Long','Answer','Arp'],p.mot||'Long',v=>{p.mot=v;cp=null;ai=0});
+   const mo=mkSel('Motion',['Long','Answer','Arp'],p.mot||'Long',v=>{p.mot=v;cp=null;ai=0;orbSatRing()});
    const sn=mkSel('Sound',SND[p.role]||SND.Counter,p.snd,v=>{p.snd=v;sdef(p);try{window.syncFaders&&syncFaders()}catch(e){}});
-   const ro=mkSel('Role',['Counter','Sparkle'],p.role,v=>{p.role=v;p.snd=SND[v][0];sdef(p);cp=null;g.querySelectorAll('.satc').forEach(x=>x.remove());ctl()});
+   const ro=mkSel('Role',['Counter','Sparkle'],p.role,v=>{p.role=v;p.snd=SND[v][0];sdef(p);cp=null;orbSatRing();g.querySelectorAll('.satc').forEach(x=>x.remove());ctl()});
    add(reg,'pat');if(p.role!=='Sparkle')add(mo,'pat');add(sn,'snd');add(ro,'pat');
    const fix=()=>els.forEach(([el,grp])=>el.dataset.g=grp);queueMicrotask(fix);setTimeout(fix,0);setTimeout(fix,200)}catch(e){}};
  const reCtl=()=>{try{const card=S.mb&&S.mb.closest('.card');if(card)card.querySelectorAll('.satc').forEach(x=>x.remove())}catch(e){}ctl()};
@@ -5203,20 +5339,21 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   Ethereal:[.4,.25,'long'],'Deep Space':[.35,.2,'long'],Ambient:[.4,.35,'long'],Drone:[.3,.3,'long'],
   Italo:[.3,.8,'answer'],'Groove Techno':[.25,.7,'answer'],Temporal:[.3,.6,'mix'],Vector:[.25,.3,'answer']};
  const DEFP={role:'Counter',snd:'Warm saw',mot:'Long',reg:'Auto',amt:.5,tone:.5,space:.4,att:.2,rel:.32};
- const norm=()=>{const P=S.p;['oct','hold','harm','cut','follow'].forEach(k=>delete P[k]);for(const k in DEFP)if(P[k]==null)P[k]=DEFP[k];if(!SND[P.role])P.role='Counter';if(!SND[P.role].includes(P.snd))P.snd=SND[P.role][0];if(S.n!=='Satellite')S.n='Satellite'};
+ const norm=()=>{const P=S.p;['oct','hold','harm','cut','follow'].forEach(k=>delete P[k]);for(const k in DEFP)if(P[k]==null)P[k]=DEFP[k];if(!SND[P.role])P.role='Counter';if(OLDSND[P.snd])P.snd=OLDSND[P.snd];if(!SND[P.role].includes(P.snd))P.snd=SND[P.role][0];if(S.n!=='Satellite')S.n='Satellite'};
  setInterval(norm,2000);
  const ARPS={Italo:.45,Vector:.45,Hopeful:.35,Temporal:.35,'Groove Techno':.35,'Melodic House':.3,Dreamy:.2};   // share of Satellite Launches that arp
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{norm();const L=TR[4],c=SAT[curMood];S.m=true;cp=null;ai=0;
    const take=L.m&&(MEL.has(curMood)||SPC.has(curMood));
    if(c&&R()<(take?.4:c[0])){const p=S.p,wantArp=!take&&R()<(ARPS[curMood]||0),role=take||wantArp||R()<c[1]?'Counter':'Sparkle';p.role=role;p.snd=pick(SND[role]);p.reg='Auto';
     p.mot=take?'Long':c[2]==='mix'?pick(['Long','Answer']):c[2]==='long'?'Long':'Answer';
-    if(wantArp){p.mot='Arp';p.snd=pick(['Warm saw','Reed','Warm saw'])}
+    if(wantArp){p.mot='Arp';p.snd=pick(['Juno','Keys','FM pluck','Super saw'])}
+    {const fm=window.orbModern&&orbModern.last;if(fm&&role==='Counter'&&p.mot!=='Arp')p.snd=({afterlife:pick(['Super saw','Strings']),bicep:pick(['Keys','Juno']),peak:'FM pluck',minimal:pick(['FM pluck','Keys'])})[fm];if(fm&&role==='Sparkle')p.snd=({afterlife:'Glass bell',bicep:'Mallet',peak:'Mallet',minimal:'FM pluck'})[fm]}
     sdef(p);if(p.mot==='Arp'){p.att=.05;p.rel=.2}
     if(role==='Counter'&&p.mot==='Arp')Object.assign(S,{st:16,h:pick([8,8,6,12]),r:pick([0,2]),ten:0});
     else if(role==='Counter'&&p.mot==='Long')Object.assign(S,{st:16,h:pick([2,2,3]),r:0,ten:0});
     else if(role==='Counter')Object.assign(S,{st:16,h:pick([4,5,6]),r:Math.floor(R()*16),ten:0});
     else Object.assign(S,{st:pick([16,16,12]),h:pick([3,4,5]),r:Math.floor(R()*12),ten:0});
-    S.pt=pat(S);p.amt=+(.4+R()*.25).toFixed(2);p.tone=+((SPC.has(curMood)?.2:.3)+R()*.2).toFixed(2);p.space=+((role==='Sparkle'?.5:.25)+R()*.2).toFixed(2);S.lv=.4;S.m=false;
+    orbSatRing();p.amt=+(.45+R()*.25).toFixed(2);p.tone=+((SPC.has(curMood)?.2:.3)+R()*.2).toFixed(2);p.space=+((role==='Sparkle'?.5:.25)+R()*.2).toFixed(2);S.lv=.4;S.m=false;
     // make room so the arrangement stays airy: never Sparkle over a dense lead or arp; a busy lead turns Answers into Long notes;
     // Counter thins the pad a little and takes the lead down a notch when it answers; the dub stab steps back; too many layers → less Satellite
     const PD=TR[5],ST=TR[8],ld=!L.m?L.h/Math.max(1,L.st):0;
@@ -5292,11 +5429,13 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    (mood, flavour, sounds, styles, groove scores, fixes). Everything stays in this browser; Export ratings saves a file to hand back. ---- */
 {const KEY='orb-ratings',TK='orb-tester';let on=false;try{on=localStorage.getItem(TK)==='1'}catch(e){}
  let RT=[];try{RT=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(RT))RT=[]}catch(e){RT=[]}
+ /* v0.27: ratings made before v0.27 are cleared once (they rated the old sounds) */
+ try{if(localStorage.getItem('orb-ratings-reset')!=='0.27'){RT=RT.filter(r=>parseFloat(r.v)>=0.27);localStorage.setItem(KEY,JSON.stringify(RT));localStorage.setItem('orb-ratings-reset','0.27')}}catch(e){}
  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(RT.slice(-2000)))}catch(e){}};
  const msg=t=>{try{if(typeof say==='function')say(t)}catch(e){}};
  let cur=null,seq=0;
  const fp=()=>{const L=TR[4],P=L.p,PD=TR[5],B=TR[6],S=TR[9],m=k=>!!TR[k].m;let g=null;try{g=window.orbGroove&&orbGroove.last}catch(e){}
-  return{id:Date.now().toString(36)+'-'+(++seq),t:new Date().toISOString(),v:window.ORB_VERSION,mood:curMood,name:MN(curMood),auto:$('#mood').value==='Auto',flav:G.flav||null,
+  return{id:Date.now().toString(36)+'-'+(++seq),t:new Date().toISOString(),v:window.ORB_VERSION,mood:curMood,name:MN(curMood),auto:$('#mood').value==='Auto',flav:G.flav||null,fam:(window.orbModern&&orbModern.last)||null,swing:+(G.swing||0).toFixed(2),fx:{rev:G.rev,dly:G.dly,duck:G.duck},
    bpm:G.bpm,scale:G.scale,kit:G.kit||null,
    lead:{m:m(4),patch:P.patch||null,mode:P.mode,eng:P.eng||null,hits:L.h,steps:L.st,range:P.range,oct:P.loct||0,arp:!!G.arpOn,drift:P.rdr||0},
    pad:{m:m(5),patch:PD.p.patch||null,notes:PD.p.size,style:typeof padStyle!=='undefined'?padStyle:null},
@@ -5337,4 +5476,47 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 .orate .orx,.orate .orc{flex:0 0 34px}.orate [data-w]{font-size:10px!important;letter-spacing:.02em}`;document.head.appendChild(st)}
 </script>
 
+<script>
+/* ---- v0.26: Flight — LOW-PASS and THIN laid out exactly like the LEAD and BASS faders (two side-by-side boxes, same header, same track) ---- */
+{const lp=document.querySelector('#t-perf .lpf'),th=lp&&lp.querySelector('.thr');if(lp&&th&&!lp.querySelector('.mxrow')){
+  const row=document.createElement('div');row.className='mxrow lpr';const a=document.createElement('div'),b=document.createElement('div');a.className='lmx lpa';b.className='bmx tha';
+  const h=lp.querySelector('.lph'),t=lp.querySelector('.lpt');h.classList.add('lmh');t.classList.add('lmt');a.append(h,t);
+  const hh=document.createElement('div');hh.className='lmh';hh.innerHTML='<span>THIN</span><small>fewer notes · kick stays</small>';const v=th.querySelector('.thv');hh.appendChild(v);
+  const tt=th.querySelector('.tht');tt.classList.add('lmt');tt.insertAdjacentHTML('beforeend','<i style="left:4px">ALL</i><i style="right:4px">BONES</i>');b.append(hh,tt);
+  row.append(a,b);th.remove();lp.appendChild(row);lp.classList.add('mxp');
+  const copy=()=>{const ref=document.querySelector('#t-perf .mxp:not(.lpf) .lmt'),rb=document.querySelector('#t-perf .mxp:not(.lpf) .lmh b');if(!ref)return;const c=getComputedStyle(ref);
+   [t,tt].forEach(x=>{['height','borderTopWidth','borderStyle','borderColor','borderRadius','backgroundColor','backgroundImage','boxShadow'].forEach(k=>x.style[k]=c[k]);x.style.borderWidth=c.borderTopWidth});
+   const kn=document.querySelector('#t-perf .mxp:not(.lpf) .lmk');if(kn){const k=getComputedStyle(kn),tk=tt.querySelector('.thk'),lk=t.querySelector('.lpk');[tk,lk].forEach(x=>{if(!x)return;x.style.width=k.width;x.style.height=k.height;x.style.borderRadius=k.borderRadius;x.style.marginLeft='-'+(parseFloat(k.width)/2)+'px';x.style.top='50%';x.style.bottom='auto';x.style.transform='translateY(-50%)'})}
+   if(rb){const k=getComputedStyle(rb);[v,h.querySelector('b')].forEach(x=>{if(x){x.style.color=k.color;x.style.fontSize=k.fontSize}})}};
+  copy();setTimeout(copy,300);window.addEventListener('resize',()=>setTimeout(copy,50));
+  const st=document.createElement('style');st.textContent=`#t-perf .lpf.mxp{padding:8px 12px 10px!important}
+#t-perf .lpf .lph.lmh{display:flex;align-items:baseline;gap:6px;margin:0 0 4px}#t-perf .lpf .lph.lmh b{margin-left:auto}
+#t-perf .lpf .lpt.lmt,#t-perf .lpf .tht.lmt{position:relative;overflow:hidden;touch-action:none;user-select:none}
+#t-perf .lpf .tht.lmt{border:inherit}#t-perf .lpf .tht .thfill{left:0;top:0;bottom:0}
+#t-perf .lpf .tht .thk{top:50%;bottom:auto;transform:translateY(-50%);height:70%;width:18px;margin-left:-9px;border-radius:5px}
+#t-perf .lpf .lpt i,#t-perf .lpf .tht i{position:absolute;top:50%;transform:translateY(-50%);font-style:normal;font-size:9px;letter-spacing:.14em;opacity:.45;pointer-events:none}
+#t-perf .lpf .lpt i:first-of-type{left:6px}#t-perf .lpf .lpt i:last-of-type{right:6px}
+#t-perf .lpf .tha .thv{font-size:inherit;opacity:1;width:auto}#t-perf .lpf .tha .lmh .thv{color:inherit}`;document.head.appendChild(st)}}
+</script>
+<script>
+/* ---- v0.27: ACID 303 RIFFS — instead of random notes, every Launch picks a riff in the style of the classic acid records
+   (Phuture, Hardfloor, rolling octave squelch, dark sparse, melodic acid): notes, accents and slides belong together.
+   Bars 1–3 play the riff, bar 4 answers an octave up at the end; every 8 bars one accent or note evolves, so it develops without losing the riff. ---- */
+{const _=null,AT=[
+  [[0,1,0],[0,0,0],[10,1,0],[0,0,0],[0,0,1],[2,0,0],[0,0,0],[10,1,0],[0,0,0],_,[6,0,1],[0,0,0],[3,1,0],_,[4,0,1],[0,0,0]],
+  [[0,1,0],[0,0,1],[0,0,0],[10,1,0],[0,0,0],[0,0,1],[3,0,0],[0,1,0],[0,0,0],[0,0,1],[10,0,0],[6,1,0],[0,0,0],[4,0,1],[0,0,0],[10,1,0]],
+  [[0,1,0],_,_,[0,0,1],[1,0,0],_,[0,1,0],_,_,[10,0,1],[0,0,0],_,[1,1,0],_,[0,0,1],_],
+  [[0,0,0],[10,1,1],[0,0,0],[10,1,1],[0,0,0],[6,0,0],[10,1,1],[0,0,0],[0,0,0],[10,1,1],[0,0,0],[4,0,1],[3,1,0],[2,0,1],[0,0,0],[10,1,0]],
+  [[0,1,0],[2,0,1],[4,0,0],[0,0,0],[6,1,0],[4,0,1],[2,0,0],[0,0,0],[0,1,0],[2,0,1],[4,0,0],[10,1,0],[6,0,1],[4,0,0],[2,0,1],[0,0,0]]];
+ window.orbAcid={tpl:null};
+ acidGen=function(p){const n=SC[G.scale].length,t=orbAcid.tpl||(orbAcid.tpl=pick(AT));AC.n=[];AC.a=[];AC.s=[];let last=0;
+  for(let i=0;i<16;i++){const e=t[i];if(e){last=e[0]>=10?e[0]-10+n:e[0];AC.n.push(last);AC.a.push(e[1]);AC.s.push(e[2]&&(p.glide>=.1||i%4===3)?1:0)}else{AC.n.push(last);AC.a.push(0);AC.s.push(0)}}
+  AC.key=G.scale+'|'+p.seed+'|'+p.glide.toFixed(2)+'|'+p.accp.toFixed(2)};
+ acidNote=function(p){const s=((tk%16)+16)%16,n=SC[G.scale].length;if(AC.key!==G.scale+'|'+p.seed+'|'+p.glide.toFixed(2)+'|'+p.accp.toFixed(2))acidGen(p);
+  const bar=Math.floor(tk/16);if(s===0&&bar>0&&bar%8===0&&AC.ev!==bar){AC.ev=bar;const i=pick([2,5,7,9,11,13,14]);if(R()<.5)AC.a[i]=AC.a[i]?0:1;else AC.n[i]=AC.n[i]>=n?AC.n[i]-n:AC.n[i]+n}
+  let d=AC.n[s];if(bar%4===3&&s>=12&&d<n)d+=n;AC.last=s;return d};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],P=L.p;if(P.mode==='Acid 303'&&!L.m){orbAcid.tpl=pick(AT);AC.key='';
+   const pt=orbAcid.tpl.map(x=>x?1:0);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}L.pt=pat(L);
+   P.subosc=Math.max(P.subosc||0,.35);P.drv=Math.min(P.drv||0,.35);P.res=Math.min(P.res||8,12)}}catch(e){}return r}}
+</script>
 </body></html>
