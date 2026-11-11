@@ -2984,7 +2984,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   'Turing loop':'A random loop of Loop len notes that drifts: now and then one note changes and the rest stay (Déjà vu = how rarely). Chord lock pulls notes to the chord.',
   'Converge':'Plays the chord from the outside in: lowest, highest, second-lowest, second-highest… then starts again.',
   'Diverge':'Plays the chord from the middle out to the lowest and highest notes, then starts again.',
-  'Pedal arp':'Every other note returns to the chord root while the notes in between climb the chord: the Italo / Moroder figure.'};
+  'Pedal arp':'Every other note returns to the chord root while the notes in between climb the chord: the Italo sequencer figure.'};
  try{MOODS.Italo.md.push('Pedal arp');['Deep Space','Bleep','Dark'].forEach(k=>{if(MOODS[k]&&MOODS[k].md)MOODS[k].md.push('Turing loop')});MOODS.Dreamy.md.push('Converge');MOODS.Hopeful.md.push('Diverge')}catch(e){}
  const _gc=generate;generate=function(){const r=_gc.apply(this,arguments);const P=TR[4].p;P.cyc=0;P.nrep=P.mode==='Pedal arp'&&R()<.4?2:1;P.rst=0;resetPos(P.mode);cnt=0;rep=0;return r};
  build()}
@@ -3224,26 +3224,26 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
 .spc .spr{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px;align-items:center}.spc input{width:100%;height:28px;margin:0;accent-color:var(--acc,#ffe44d)}.spc .spv{text-align:right;color:var(--acc,#ffe44d);font:700 11px ui-monospace,monospace}`;document.head.appendChild(st)}
 
 
-/* ---- v150: "Vector" mood — Floating Points-style modular house. Each Launch picks a flavour: LesAlpx (rubbery modular plucks on odd rings,
-   melodic bass, a long slow filter build), Cascade (driving acid-tinged modular riff, brighter stabs) or Nuits Sonores (jazzy 7th/9th chords on
+/* ---- v150: "Vector" mood — modular house. Each Launch picks a flavour: Rubber (rubbery modular plucks on odd rings,
+   melodic bass, a long slow filter build), Cascade (driving acid-tinged modular riff, brighter stabs) or Night (jazzy 7th/9th chords on
    Rhodes-like keys, walking bass) — and, separately, broken / shuffled drums or four-on-the-floor ---- */
 {const NM='Vector';
  MOODS[NM]={sc:['Dorian','Minor','Mixolydian','Dorian','Major'],pr:[[0,3,6,2],[1,4,0,5],[0,5,1,4],[0,2,5,4],[1,4,2,5],[0,3,1,4]],sh:['9','7','add9'],b:[120,130],cut:800,sw:1500,att:.3,lh:[6,7,9],sp:.35,bias:.5,dv:.92,md:['Turing loop','Marbles','Converge','Motif'],wave:.3,dec:.2,res:4,pt:['Bell pad','Poly','Strings','Tape','Glass'],hat:[[16,6,2],[16,12,0]],kick:{pitch:50,dec:.38,punch:4,drive:2},duck:.6,grit:.05,padlv:.35,mute:[8],hr:.12};
- MP[NM]={sty:'Modular house (à la Floating Points)',b:[120,130],sw:[.04,.1],gr:.65,kick:{pitch:50,dec:.38,punch:4,drive:2,click:.7},hat:{tone:9500,dec:.04,open:.25,acc:.55,metal:.4},hp:[[16,6,2],[16,12,0]],clap:{tone:1600,spread:11,tail:.3,rv:.35},cl:.5,sn:0,
+ MP[NM]={sty:'Modular house',b:[120,130],sw:[.04,.1],gr:.65,kick:{pitch:50,dec:.38,punch:4,drive:2,click:.7},hat:{tone:9500,dec:.04,open:.25,acc:.55,metal:.4},hp:[[16,6,2],[16,12,0]],clap:{tone:1600,spread:11,tail:.3,rv:.35},cl:.5,sn:0,
   fx:{rumble:.05,rcut:140,rfeed:1,dly:.35,fb:.5,dt:.75,rev:.4,shim:.4,dens:.3,duck:.6,bgrit:.05,glue:.5,clip:.3},lh:[6,7,9],gate:0,perc:.6,lfo:[['Lead cutoff',0,16,.35],['Delay feedback',1,32,.2]]};
  LMOOD[NM]=['Pluck','FM bell','Mini sparkle','Glass','FM keys','Mini acid','Square chip'];MTRIM[NM]=Object.assign({},MTRIM.Melancholic);
  $('#mood').add(new Option(NM,NM));
  const ring=(T,st,h,r,ten)=>{T.st=st;T.h=Math.max(1,Math.min(h,st));T.r=((r||0)%st+st)%st;if(ten!=null)T.ten=ten;T.pt=pat(T)};
  const bs=n=>{try{window.bassStyle&&bassStyle(n)}catch(e){}};
  const _gv=generate;generate=function(){const r=_gv.apply(this,arguments);try{if(curMood!==NM)return r;const K=TR[0],H=TR[1],C=TR[2],P=TR[3],L=TR[4],PD=TR[5],B=TR[6],SN=TR[7];
-  const fl=pick(['lesalpx','cascade','nuits']),broken=fl==='nuits'?R()<.3:R()<.5;G.vecFlav=fl+(broken?' · broken':' · four-on-the-floor');
-  G.bpm=fl==='nuits'?120+Math.floor(R()*5):fl==='cascade'?128+Math.floor(R()*5):125+Math.floor(R()*6);
+  const fl=pick(['rubber','cascade','night']),broken=fl==='night'?R()<.3:R()<.5;G.vecFlav=fl+(broken?' · broken':' · four-on-the-floor');
+  G.bpm=fl==='night'?120+Math.floor(R()*5):fl==='cascade'?128+Math.floor(R()*5):125+Math.floor(R()*6);
   if(broken){ring(K,16,pick([4,5]),pick([0,3,6]),pick([.4,.55]));Object.assign(K,{acc:.4,gho:0,vari:.4,m:false});
    ring(SN,16,2,4,0);Object.assign(SN,{acc:.3,gho:.45,vari:.5,m:false});C.m=R()<.6;ring(H,16,pick([10,12]),1,.2);Object.assign(H,{acc:.6,gho:.25,vari:.3,m:false})}
   else{ring(K,16,4,0,0);Object.assign(K,{acc:0,gho:0,vari:0,m:false});SN.m=true;ring(C,16,2,4,0);C.m=false;ring(H,16,pick([4,6,12]),2,0);Object.assign(H,{acc:.55,gho:.1,vari:.2,m:false})}
   ring(P,pick([10,12,14]),pick([4,5]),Math.floor(R()*8),pick([0,.2]));P.m=R()<.25;P.p.rdr=pick([0,8]);
   const lst=pick([10,12,14,16]);ring(L,lst,Math.round(lst*pick([.45,.55,.6])),pick([0,1,3]),pick([0,.2]));L.m=false;
-  if(fl==='lesalpx'){Object.assign(L.p,{mode:pick(['Turing loop','Marbles','Turing loop']),len:pick([5,7,8]),dv:.93,range:2,lock:.7,spread:.4,bias:.5,nrep:pick([1,1,2]),cyc:0,rst:0,glide:pick([0,.15])});
+  if(fl==='rubber'){Object.assign(L.p,{mode:pick(['Turing loop','Marbles','Turing loop']),len:pick([5,7,8]),dv:.93,range:2,lock:.7,spread:.4,bias:.5,nrep:pick([1,1,2]),cyc:0,rst:0,glide:pick([0,.15])});
    bs(pick(['Syncopated','Walking']));B.p.bns='Chord tones';PD.lv=.28;Object.assign(LFOS[2],{tg:'Master low-pass',sh:0,sync:1,div:128,d:.3,ph:0})}
   else if(fl==='cascade'){Object.assign(L.p,{mode:pick(['Motif','Pedal arp']),len:pick([4,8]),dv:.96,range:2,lock:.75,nrep:1,cyc:0,rst:0,glide:.3});L.p.res=Math.max(L.p.res||4,6);
    bs(pick(['Rolling 16ths','Octave 8ths']));PD.m=R()<.5;TR[8].m=R()<.5;Object.assign(LFOS[2],{tg:'Master low-pass',sh:0,sync:1,div:64,d:.2,ph:0})}
@@ -3654,8 +3654,8 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);G.dfeel=null;try{const mx=(window.MOODX&&MOODX[curMood]||{}),m='grv' in mx?mx.grv:MM[curMood];if(m&&R()<m[0]){grooveFamily(pk(m.slice(1)));build();setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}}catch(e){console.warn('[orbitron] groove',e)}return r}}
 </script>
 <script>
-/* v168: contemporary leads — Cinematic arp (Afterlife), Donk (tech house),
-   Rave stab (Bicep / Kettama rave revival). Each is a lead patch with its own pattern; Launch picks them in moods they fit. */
+/* v168: contemporary leads — Cinematic arp (melodic techno), Donk (tech house),
+   Rave stab (rave revival). Each is a lead patch with its own pattern; Launch picks them in moods they fit. */
 {const NEW={
   'Cinematic arp':{pg:1.5,eng:'Stack',uni:5,usp:18,wid:.8,det:9,wave:.3,ft:'LP24',cut:700,res:6,envA:2600,dec:.2,sus:0,att:2,kt:.4,subosc:.15,oct2:.2,ds:.4,rs:.55,glide:0,vib:0,drv:0,crush:0,fold:0,penv:0,
    mode:'Up/Down',range:2,cyc:0,nrep:1,rst:0,xv:'arp',_t:{st:16,h:16,r:0,ten:0}},
@@ -4599,11 +4599,7 @@ window.MOODX={
  window.orbGuard={state:()=>OV,test:()=>esc('test'),clear}}
 </script>
 <script>
-/* ---- v0.23: mood refinement pass. Fewer cluttered or cheesy launches, clearer identity per mood, levels fixed per mood. Reference points:
-   Dark – Surgeon/Regis · Tense – Jeff Mills · Power – Dave Clarke · Drone – Donato Dozzy · Groove Techno – Robert Hood · Temporal – Basic Channel ·
-   Acid – Phuture/Hardfloor · Distorted Electro – Gesaffelstein/Vitalic · Melancholic – Stephan Bodzin · Dreamy – Four Tet · Ethereal – Boards of Canada ·
-   Hopeful – Orbital/Underworld · Melodic House – Rodriguez Jr./Booka Shade (hook flavour) · Vector – Floating Points · Noir – Massive Attack/Burial ·
-   Italo – Moroder · Breaks – LTJ Bukem · Bleep – LFO · Deep Space – Biosphere · Ambient – Brian Eno.
+/* ---- v0.23: mood refinement pass. Fewer cluttered or cheesy launches, clearer identity per mood, levels fixed per mood. Reference points: each mood's own genre and era.
    Only existing parameters are set; everything stays editable by hand. ---- */
 {// harmony data
  try{MOODS.Dark.pr=[[0,0,0,0],[0,0,0,1],[0,1,0,1],[0,0,5,0],[0,0,0,3]];MOODS.Tense.md=['Motif','Interval','Motif'];
@@ -4634,7 +4630,7 @@ window.MOODX={
    // lead density
    if(C.thin&&!L.m&&!acid){const h=Math.max(2,Math.round(L.st*C.thin));if(L.h>h){L.h=h;L.pt=pat(L)}}
    // mood specifics
-   if(m==='Tense'&&!L.m&&!acid){if(P.mode==='Marbles')P.mode='Motif';P.len=pick([2,3,4]);P.dv=.97;P.range=1;buf=[];mot=[];mp=-1}                 // Mills: short repeating motifs
+   if(m==='Tense'&&!L.m&&!acid){if(P.mode==='Marbles')P.mode='Motif';P.len=pick([2,3,4]);P.dv=.97;P.range=1;buf=[];mot=[];mp=-1}                 // Loop techno: short repeating motifs
    if(m==='Breaks'&&!L.m&&!acid){ring(L,16,3,pick([2,6,10]));P.len=3}                                                                        // a short phrase, not one note a bar
    if(m==='Hopeful'&&!L.m&&!(P.rdr>0)&&R()<.5)P.rdr=8;                                                                                         // the arp keeps evolving
    if(m==='Melodic House'){const K3=TR[3];
@@ -4642,9 +4638,9 @@ window.MOODX={
     if(R()<.65){try{window.setPercSound&&setPercSound('Blip')}catch(e){}}else{K3.p.filt=pick([1800,2200,2600]);K3.p.wtn=0;K3.lv=Math.min(K3.lv,.42)}
     // no random pad gate (it chopped the pad on odd timing): cinematic = never; hook = sometimes an even off-beat pump
     if(G.mhFlav==='hook'&&R()<.25){PD.p.pgate=.5;PD.p.pgpat=[0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1]}else PD.p.pgate=0}
-   if(m==='Melodic House'&&G.mhFlav==='hook'){B.p.bns=pick(['Chord tones','Melodic']);const h=Math.max(2,Math.round(L.st*.4));if(!L.m&&L.h>h){L.h=h;L.pt=pat(L)}} // Booka Shade: the bass carries the hook
+   if(m==='Melodic House'&&G.mhFlav==='hook'){B.p.bns=pick(['Chord tones','Melodic']);const h=Math.max(2,Math.round(L.st*.4));if(!L.m&&L.h>h){L.h=h;L.pt=pat(L)}} // Hook house: the bass carries the hook
    if(m==='Distorted Electro'&&G.deFlav==='techno'&&R()<.35&&!acid){L.m=false;ring(L,16,pick([5,6]),pick([0,3]));Object.assign(P,{mode:'Motif',len:4,dv:.98,range:1,lock:1});buf=[];mot=[];mp=-1;
-    const F=LFOS[0];if(F)Object.assign(F,{tg:'Lead cutoff',sh:0,sync:1,div:32,d:.4,ph:0})}                                                      // Vitalic: one driven riff, slowly filtered
+    const F=LFOS[0];if(F)Object.assign(F,{tg:'Lead cutoff',sh:0,sync:1,div:32,d:.4,ph:0})}                                                      // Electro: one driven riff, slowly filtered
    // levels (dB on the mood trim)
    for(const k in (C.lvl||{}))TRIM[k]=(TRIM[k]||0)+C.lvl[k];
   }catch(e){console.warn('[orbitron] v023 refine',e)}
@@ -4696,7 +4692,7 @@ window.MOODX={
 </script>
 <script>
 /* ---- v0.24: more sound variety. All built from existing engine parameters; everything stays editable.
-   Leads: Hard sync (Vitalic/Justice), String pluck (Four Tet), West Coast fold (Floating Points), PPG wave (Bodzin/Moderat), Juno pulse (Orbital/Underworld).
+   Leads: Hard sync (French electro), String pluck (folk electronica), West Coast fold (modular house), PPG wave (melodic techno), Juno pulse (90s rave).
    Pads: EP chords, Abyss, Sync sweep, Wind (see pad()). Perc: Conga/bongo and Cowbell/rim. Launch: drum kits (909 · 808 · Rumble · Raw),
    bass characters (deep · round · rubbery · gritty), and a subtle ±15 % "mutation" of the chosen sounds, so no two Launches sound identical. ---- */
 {// ---------- leads
@@ -4883,45 +4879,45 @@ window.MOODX={
    drum kit, lead sound and pattern style, pad, perc and a bass figure of its own (so basslines stop sounding generic).
    Moods that already had flavours keep them and gain the new sounds. Afterwards two clean-up rules run on every Launch:
    · no plain, unfiltered oscillators: simple leads get a closed-down filter with an envelope (and sines a touch of fold)
-   · no cheesy note runs: straight 16th up/down arps only in the flavours that are built on them (Orbital, Patrick Cowley, Cascade) ---- */
+   · no cheesy note runs: straight 16th up/down arps only in the flavours that are built on them (Twin arps, Hi-NRG, Cascade) ---- */
 {const RI=(a,b)=>a+Math.floor(R()*(b-a+1));
  const FL={
-  Dark:[{n:'Surgeon loop',bpm:[132,136],kit:'Raw',lead:{p:['Hard sync','Techno stab','Metal FM'],m:['Motif'],len:[2,3],h:[3,5],mute:.2},pad:{p:['Sync sweep'],mute:.6},bass:{s:['Rolling 16ths','Gallop'],n:['Root','Root + fifth'],ch:'gritty'},perc:{mute:.3}},
-   {n:'Regis industrial',bpm:[128,133],kit:'Raw',lead:{p:['Metal FM','Hollow BP','Hard sync'],m:['Interval','Motif'],len:[2,4],h:[2,4],mute:.4},pad:{p:['Abyss'],mute:.5},bass:{s:['Syncopated','Off-beat'],n:['Root'],ch:'gritty'}},
-   {n:'Dozzy hypnotic',bpm:[124,128],kit:'Rumble',lead:{p:['Hollow BP','Mini lead','Reese'],m:['Turing loop'],len:[5,7],h:[4,6],mute:.3},pad:{p:['Abyss'],mute:.3},bass:{s:['Pedal','Off-beat'],n:['Pedal','Root'],ch:'deep'},drift:1}],
-  Tense:[{n:'Jeff Mills loop',bpm:[134,138],kit:'909',lead:{p:['Hard sync','Mini edge','Techno stab'],m:['Motif'],len:[2,3],h:[4,6]},pad:{mute:.9},bass:{s:['Rolling 16ths','Syncopated'],n:['Root'],ch:'rubbery'}},
-   {n:'Ben Klock wash',bpm:[130,134],kit:'Rumble',lead:{p:['Hollow BP','Metal FM'],m:['Interval'],len:[3,4],h:[2,4],mute:.3},pad:{p:['Sync sweep'],mute:.2},bass:{s:['Off-beat','Gallop'],n:['Root','Root + fifth'],ch:'deep'}}],
-  Power:[{n:'Dave Clarke',kit:'Rumble',pad:{mute:.8},bass:{s:['Rolling 16ths'],ch:'gritty'}},{n:'Chris Liebing',kit:'Raw',pad:{p:['Sync sweep','Abyss'],mute:.3},bass:{s:['Gallop','Off-beat'],ch:'deep'}}],
-  Drone:[{n:'Donato Dozzy',kit:'Rumble',lead:{m:['Turing loop'],h:[3,5],mute:.4},pad:{p:['Wind','Abyss'],mute:0},bass:{held:.6,ch:'deep'}},
-   {n:'Gas',bpm:[118,124],kit:'Rumble',lead:{mute:.8},pad:{p:['Wind'],mute:0},bass:{held:.8,ch:'round'},perc:{mute:.7}}],
-  'Groove Techno':[{n:'Robert Hood',kit:'909',lead:{p:['Techno stab','Hard sync'],m:['Motif'],len:[2,3],h:[2,4],mute:.3},pad:{mute:.8},bass:{s:['Off-beat','Syncopated'],n:['Root'],ch:'rubbery'},perc:{pv:'Cowbell',ch:.35}},
-   {n:'Ben Sims',kit:'909',lead:{mute:.6},bass:{s:['Rolling 16ths','Gallop'],ch:'deep'},perc:{pv:'Conga',ch:.4}}],
-  Temporal:()=>R()<.33?{n:'Basic Channel',kit:'Rumble',lead:{mute:1},pad:{p:['EP chords','Organ'],mute:0},bass:{s:['Pedal','Off-beat'],ch:'deep'}}:null,
-  Acid:[{n:'Phuture raw',bpm:[124,128],kit:'808',pad:{mute:.8}},{n:'Hardfloor rolling',bpm:[136,142],kit:'909',pad:{mute:.7}}],
-  'Distorted Electro':()=>G.deFlav==='techno'&&R()<.5?{n:'Gesaffelstein',kit:'Raw',lead:{p:['Hard sync','Aggro','Techno stab']},pad:{p:['Sync sweep'],mute:.2}}:null,
-  Melancholic:[{n:'Stephan Bodzin',bpm:[120,124],kit:'909',lead:{p:['PPG wave','Mini lead','Hollow BP'],m:['Motif','Turing loop'],len:[4,6],h:[4,6]},pad:{p:['Abyss','Strings'],mute:.2},bass:{s:['Syncopated','Pedal'],n:['Melodic','Root + fifth'],ch:'round'}},
-   {n:'Moderat',bpm:[118,122],kit:'808',lead:{p:['Juno pulse','Glass'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords','Tape'],mute:.1},bass:{held:.4,s:['Off-beat'],n:['Chord tones'],ch:'deep'}}],
-  'Melodic House':()=>R()<.33?{n:'Âme',kit:'808',lead:{p:['String pluck','FM keys'],m:['Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords'],mute:0},bass:{s:['Walking','Syncopated'],n:['Melodic'],ch:'round'},perc:{pv:'Conga',ch:.6}}
-   :G.mhFlav==='cinematic'?{n:'Rodriguez Jr.',lead:R()<.5?{p:['PPG wave']}:null}:{n:'Booka Shade',lead:R()<.5?{p:['String pluck']}:null},
-  Noir:[{n:'Massive Attack',bpm:[118,122],kit:'808',lead:{mute:.7},pad:{p:['EP chords','Abyss'],mute:0},bass:{s:['Pedal','Syncopated'],n:['Root'],ch:'deep'}},
-   {n:'Burial',bpm:[124,128],kit:'Rumble',lead:{p:['PPG wave','Mist'],m:['Turing loop'],h:[2,4],mute:.4},pad:{p:['Wind','Abyss'],mute:0},bass:{s:['Off-beat'],ch:'deep',held:.3}}],
-  Vector:()=>G.vecFlav&&/lesalpx/.test(G.vecFlav)&&R()<.4?{n:'LesAlpx fold',lead:{p:['West Coast fold']}}:G.vecFlav&&/nuits/.test(G.vecFlav)&&R()<.5?{n:'Nuits EP',pad:{p:['EP chords'],mute:0}}:null,
-  Dreamy:[{n:'Four Tet',bpm:[118,122],kit:'808',lead:{p:['String pluck','Glass'],m:['Motif','Marbles'],len:[4,6],h:[4,7]},pad:{p:['EP chords','Bell pad'],mute:.2},bass:{s:['Syncopated','Walking'],n:['Melodic'],ch:'round'},perc:{pv:'Conga',ch:.5}},
-   {n:'Caribou',bpm:[120,124],kit:'909',lead:{p:['Juno pulse','Soft sine'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['Glass','Poly'],mute:.2},bass:{s:['Octave bounce','Off-beat'],n:['Root + fifth'],ch:'rubbery'}}],
-  Ethereal:[{n:'Boards of Canada',bpm:[100,110],kit:'808',lead:{p:['Soft sine','Glass'],m:['Motif'],h:[2,4]},pad:{p:['Tape','Air'],mute:0},bass:{held:.6,ch:'round'}},
-   {n:'Aphex ambient',bpm:[108,116],kit:'Rumble',lead:{p:['West Coast fold','Glass'],m:['Turing loop'],h:[3,5]},pad:{p:['Wind','Glass'],mute:0},bass:{held:.4,ch:'deep'}}],
-  Hopeful:[{n:'Orbital',bpm:[124,128],kit:'909',arp:1,lead:{p:['Juno pulse'],m:['Pedal arp','Chord arp'],h:[8,12]},pad:{p:['Strings','Glass'],mute:0},bass:{s:['Octave bounce','Off-beat'],ch:'rubbery'}},
-   {n:'Underworld',bpm:[126,130],kit:'909',lead:{p:['String pluck','Pluck'],m:['Motif'],len:[3,4],h:[5,7]},pad:{p:['Poly'],mute:.4},bass:{s:['Rolling 16ths','Syncopated'],ch:'deep'}}],
-  Italo:[{n:'Giorgio Moroder',bpm:[116,120],kit:'808',lead:{p:['Juno pulse','Mini lead'],m:['Motif'],len:[4,8],h:[5,7]},pad:{mute:.5},bass:{s:['Octave 8ths','Octave bounce'],ch:'rubbery'}},
-   {n:'Patrick Cowley',bpm:[122,126],kit:'909',arp:1,lead:{p:['Juno pulse','Mini edge'],m:['Pedal arp'],h:[8,12]},bass:{s:['Octave 8ths','Disco run'],ch:'gritty'},perc:{pv:'Cowbell',ch:.6}}],
-  Breaks:[{n:'LTJ Bukem',kit:'808',lead:{p:['Soft sine','Glass'],h:[3,3]},pad:{p:['EP chords','Wind','Air'],mute:0},bass:{s:['Syncopated'],ch:'deep'},perc:{pv:'Conga',ch:.5}},
-   {n:'Goldie',kit:'Rumble',lead:{p:['Reese','Hollow BP'],h:[2,3]},pad:{p:['Abyss','Strings'],mute:.2},bass:{s:['Syncopated','Rolling 16ths'],ch:'gritty'}}],
-  Bleep:[{n:'LFO',kit:'909',lead:{p:['Bleep','Hollow BP'],m:['Motif'],h:[3,5]},pad:{mute:.8},bass:{s:['Off-beat','Syncopated'],n:['Root'],ch:'deep'}},
-   {n:'Sweet Exorcist',kit:'808',lead:{p:['West Coast fold','Bleep'],m:['Interval'],h:[2,4]},pad:{mute:.7},bass:{s:['Syncopated'],ch:'round'},perc:{pv:'Cowbell',ch:.5}}],
-  'Deep Space':[{n:'Biosphere',kit:'Rumble',lead:{p:['Mist','Soft sine'],h:[1,2]},pad:{p:['Wind','Air'],mute:0}},
-   {n:'Jeff Mills space',kit:'Rumble',lead:{p:['PPG wave','Mini drone'],m:['Turing loop'],h:[2,3]},pad:{p:['Abyss','Glass'],mute:0}}],
-  Ambient:[{n:'Brian Eno',lead:{p:['Glass','Soft sine'],h:[1,3]},pad:{p:['Wind','EP chords'],mute:0}},{n:'Stars of the Lid',lead:{mute:.7},pad:{p:['Strings','Abyss','Air'],mute:0}}]};
- const ARPOK=()=>G.arpOn||G.flav==='Orbital'||G.flav==='Patrick Cowley'||(curMood==='Vector'&&/cascade/.test(G.vecFlav||''));
+  Dark:[{n:'Raw loop',bpm:[132,136],kit:'Raw',lead:{p:['Hard sync','Techno stab','Metal FM'],m:['Motif'],len:[2,3],h:[3,5],mute:.2},pad:{p:['Sync sweep'],mute:.6},bass:{s:['Rolling 16ths','Gallop'],n:['Root','Root + fifth'],ch:'gritty'},perc:{mute:.3}},
+   {n:'Industrial',bpm:[128,133],kit:'Raw',lead:{p:['Metal FM','Hollow BP','Hard sync'],m:['Interval','Motif'],len:[2,4],h:[2,4],mute:.4},pad:{p:['Abyss'],mute:.5},bass:{s:['Syncopated','Off-beat'],n:['Root'],ch:'gritty'}},
+   {n:'Hypnotic loop',bpm:[124,128],kit:'Rumble',lead:{p:['Hollow BP','Mini lead','Reese'],m:['Turing loop'],len:[5,7],h:[4,6],mute:.3},pad:{p:['Abyss'],mute:.3},bass:{s:['Pedal','Off-beat'],n:['Pedal','Root'],ch:'deep'},drift:1}],
+  Tense:[{n:'Loop techno',bpm:[134,138],kit:'909',lead:{p:['Hard sync','Mini edge','Techno stab'],m:['Motif'],len:[2,3],h:[4,6]},pad:{mute:.9},bass:{s:['Rolling 16ths','Syncopated'],n:['Root'],ch:'rubbery'}},
+   {n:'Wash techno',bpm:[130,134],kit:'Rumble',lead:{p:['Hollow BP','Metal FM'],m:['Interval'],len:[3,4],h:[2,4],mute:.3},pad:{p:['Sync sweep'],mute:.2},bass:{s:['Off-beat','Gallop'],n:['Root','Root + fifth'],ch:'deep'}}],
+  Power:[{n:'Hard drive',kit:'Rumble',pad:{mute:.8},bass:{s:['Rolling 16ths'],ch:'gritty'}},{n:'Dark grind',kit:'Raw',pad:{p:['Sync sweep','Abyss'],mute:.3},bass:{s:['Gallop','Off-beat'],ch:'deep'}}],
+  Drone:[{n:'Deep drone',kit:'Rumble',lead:{m:['Turing loop'],h:[3,5],mute:.4},pad:{p:['Wind','Abyss'],mute:0},bass:{held:.6,ch:'deep'}},
+   {n:'Fog loop',bpm:[118,124],kit:'Rumble',lead:{mute:.8},pad:{p:['Wind'],mute:0},bass:{held:.8,ch:'round'},perc:{mute:.7}}],
+  'Groove Techno':[{n:'Minimal groove',kit:'909',lead:{p:['Techno stab','Hard sync'],m:['Motif'],len:[2,3],h:[2,4],mute:.3},pad:{mute:.8},bass:{s:['Off-beat','Syncopated'],n:['Root'],ch:'rubbery'},perc:{pv:'Cowbell',ch:.35}},
+   {n:'Tool groove',kit:'909',lead:{mute:.6},bass:{s:['Rolling 16ths','Gallop'],ch:'deep'},perc:{pv:'Conga',ch:.4}}],
+  Temporal:()=>R()<.33?{n:'Dub chord techno',kit:'Rumble',lead:{mute:1},pad:{p:['EP chords','Organ'],mute:0},bass:{s:['Pedal','Off-beat'],ch:'deep'}}:null,
+  Acid:[{n:'Raw acid',bpm:[124,128],kit:'808',pad:{mute:.8}},{n:'Rolling acid',bpm:[136,142],kit:'909',pad:{mute:.7}}],
+  'Distorted Electro':()=>G.deFlav==='techno'&&R()<.5?{n:'Dark electro',kit:'Raw',lead:{p:['Hard sync','Aggro','Techno stab']},pad:{p:['Sync sweep'],mute:.2}}:null,
+  Melancholic:[{n:'Dark arp',bpm:[120,124],kit:'909',lead:{p:['PPG wave','Mini lead','Hollow BP'],m:['Motif','Turing loop'],len:[4,6],h:[4,6]},pad:{p:['Abyss','Strings'],mute:.2},bass:{s:['Syncopated','Pedal'],n:['Melodic','Root + fifth'],ch:'round'}},
+   {n:'Melancholic synth',bpm:[118,122],kit:'808',lead:{p:['Juno pulse','Glass'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords','Tape'],mute:.1},bass:{held:.4,s:['Off-beat'],n:['Chord tones'],ch:'deep'}}],
+  'Melodic House':()=>R()<.33?{n:'Deep arp',kit:'808',lead:{p:['String pluck','FM keys'],m:['Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords'],mute:0},bass:{s:['Walking','Syncopated'],n:['Melodic'],ch:'round'},perc:{pv:'Conga',ch:.6}}
+   :G.mhFlav==='cinematic'?{n:'Melodic hook',lead:R()<.5?{p:['PPG wave']}:null}:{n:'Hook house',lead:R()<.5?{p:['String pluck']}:null},
+  Noir:[{n:'Trip-hop dub',bpm:[118,122],kit:'808',lead:{mute:.7},pad:{p:['EP chords','Abyss'],mute:0},bass:{s:['Pedal','Syncopated'],n:['Root'],ch:'deep'}},
+   {n:'Rain garage',bpm:[124,128],kit:'Rumble',lead:{p:['PPG wave','Mist'],m:['Turing loop'],h:[2,4],mute:.4},pad:{p:['Wind','Abyss'],mute:0},bass:{s:['Off-beat'],ch:'deep',held:.3}}],
+  Vector:()=>G.vecFlav&&/rubber/.test(G.vecFlav)&&R()<.4?{n:'Modular fold',lead:{p:['West Coast fold']}}:G.vecFlav&&/night/.test(G.vecFlav)&&R()<.5?{n:'Night modular',pad:{p:['EP chords'],mute:0}}:null,
+  Dreamy:[{n:'Folk electronica',bpm:[118,122],kit:'808',lead:{p:['String pluck','Glass'],m:['Motif','Marbles'],len:[4,6],h:[4,7]},pad:{p:['EP chords','Bell pad'],mute:.2},bass:{s:['Syncopated','Walking'],n:['Melodic'],ch:'round'},perc:{pv:'Conga',ch:.5}},
+   {n:'Warm psych',bpm:[120,124],kit:'909',lead:{p:['Juno pulse','Soft sine'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['Glass','Poly'],mute:.2},bass:{s:['Octave bounce','Off-beat'],n:['Root + fifth'],ch:'rubbery'}}],
+  Ethereal:[{n:'Tape nostalgia',bpm:[100,110],kit:'808',lead:{p:['Soft sine','Glass'],m:['Motif'],h:[2,4]},pad:{p:['Tape','Air'],mute:0},bass:{held:.6,ch:'round'}},
+   {n:'Glacial ambient',bpm:[108,116],kit:'Rumble',lead:{p:['West Coast fold','Glass'],m:['Turing loop'],h:[3,5]},pad:{p:['Wind','Glass'],mute:0},bass:{held:.4,ch:'deep'}}],
+  Hopeful:[{n:'Twin arps',bpm:[124,128],kit:'909',arp:1,lead:{p:['Juno pulse'],m:['Pedal arp','Chord arp'],h:[8,12]},pad:{p:['Strings','Glass'],mute:0},bass:{s:['Octave bounce','Off-beat'],ch:'rubbery'}},
+   {n:'Trance pulse',bpm:[126,130],kit:'909',lead:{p:['String pluck','Pluck'],m:['Motif'],len:[3,4],h:[5,7]},pad:{p:['Poly'],mute:.4},bass:{s:['Rolling 16ths','Syncopated'],ch:'deep'}}],
+  Italo:[{n:'Sequencer disco',bpm:[116,120],kit:'808',lead:{p:['Juno pulse','Mini lead'],m:['Motif'],len:[4,8],h:[5,7]},pad:{mute:.5},bass:{s:['Octave 8ths','Octave bounce'],ch:'rubbery'}},
+   {n:'Hi-NRG',bpm:[122,126],kit:'909',arp:1,lead:{p:['Juno pulse','Mini edge'],m:['Pedal arp'],h:[8,12]},bass:{s:['Octave 8ths','Disco run'],ch:'gritty'},perc:{pv:'Cowbell',ch:.6}}],
+  Breaks:[{n:'Liquid atmos',kit:'808',lead:{p:['Soft sine','Glass'],h:[3,3]},pad:{p:['EP chords','Wind','Air'],mute:0},bass:{s:['Syncopated'],ch:'deep'},perc:{pv:'Conga',ch:.5}},
+   {n:'Jungle sweep',kit:'Rumble',lead:{p:['Reese','Hollow BP'],h:[2,3]},pad:{p:['Abyss','Strings'],mute:.2},bass:{s:['Syncopated','Rolling 16ths'],ch:'gritty'}}],
+  Bleep:[{n:'Sub bleep',kit:'909',lead:{p:['Bleep','Hollow BP'],m:['Motif'],h:[3,5]},pad:{mute:.8},bass:{s:['Off-beat','Syncopated'],n:['Root'],ch:'deep'}},
+   {n:'Bleep bass',kit:'808',lead:{p:['West Coast fold','Bleep'],m:['Interval'],h:[2,4]},pad:{mute:.7},bass:{s:['Syncopated'],ch:'round'},perc:{pv:'Cowbell',ch:.5}}],
+  'Deep Space':[{n:'Arctic drone',kit:'Rumble',lead:{p:['Mist','Soft sine'],h:[1,2]},pad:{p:['Wind','Air'],mute:0}},
+   {n:'Space techno',kit:'Rumble',lead:{p:['PPG wave','Mini drone'],m:['Turing loop'],h:[2,3]},pad:{p:['Abyss','Glass'],mute:0}}],
+  Ambient:[{n:'Generative ambient',lead:{p:['Glass','Soft sine'],h:[1,3]},pad:{p:['Wind','EP chords'],mute:0}},{n:'Slow strings',lead:{mute:.7},pad:{p:['Strings','Abyss','Air'],mute:0}}]};
+ const ARPOK=()=>G.arpOn||G.flav==='Twin arps'||G.flav==='Hi-NRG'||(curMood==='Vector'&&/cascade/.test(G.vecFlav||''));
  /* v0.25: quick arp leads in the moods they belong to — filtered, a slow filter sweep on a free LFO, a touch of echo; never a bare oscillator */
  const ARPM={Melancholic:.45,'Melodic House':.4,Hopeful:.5,Italo:.35,Vector:.3,Dreamy:.3,Tense:.25};
  const ARPP={Melancholic:['PPG wave','Pluck','Mini lead','Cinematic arp'],'Melodic House':['Cinematic arp','PPG wave','Pluck','String pluck'],Hopeful:['Juno pulse','Pluck','String pluck'],
@@ -5066,17 +5062,17 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 </script>
 <script>
 /* ---- v0.27: MODERN SOUND PASS (from the first 154 rated Launches + "more modern" brief)
-   Four modern families: Afterlife (Anyma / Tale Of Us), Bicep / Fred again.., peak-time techno, minimal / tech house.
-   New lead presets: Afterlife saw, Anyma pluck, Bicep keys, FM stab, Hypno stab, Rubber blip.
+   Four modern families: Rolling (melodic techno), Bounce (UK house and breaks), peak-time techno, minimal / tech house.
+   New lead presets: Wide saw, Bright pluck, Soft keys, FM stab, Hypno stab, Rubber blip.
    New bass sounds: Rolling sub, Reese mid, Rubber, FM round.
    Launch: the lowest-rated sounds never come up any more (Hollow BP, PPG wave, West Coast fold, Glass and Soft sine as leads,
    Interval and Turing loop note modes, Wind pad); Air pad and the Rumble kit become rare; the bass is rarely muted;
    most Launches pick a modern family for the mood and set lead sound + pattern and bass sound + pattern from it.
    The old sounds stay selectable by hand. ---- */
 {Object.assign(LPRE,{
-  'Afterlife saw':{pg:.62,eng:'Stack',uni:7,usp:16,wid:.85,ft:'LP24',cut:650,res:2,envA:3600,dec:.3,sus:.15,hold:1,rel:.35,att:3,kt:.35,subosc:.15,oct2:.1,drv:0,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.3,rs:.45},
-  'Anyma pluck':{pg:.8,eng:'Stack',uni:5,usp:10,wid:.7,ft:'LP24',cut:850,res:4,envA:4000,dec:.2,sus:0,att:1,kt:.5,subosc:0,oct2:.22,drv:0,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.4,rs:.35},
-  'Bicep keys':{pg:.95,eng:'Pulse',pw:.45,uni:2,usp:6,wid:.4,ft:'LP12',cut:1000,res:1.5,envA:2300,dec:.45,sus:.2,hold:.8,rel:.3,att:3,kt:.5,subosc:.1,oct2:0,drv:0,crush:0,fold:0,penv:.08,pdec:.03,glide:0,vib:2,vibr:4.5,ds:.3,rs:.3},
+  'Wide saw':{pg:.62,eng:'Stack',uni:7,usp:16,wid:.85,ft:'LP24',cut:650,res:2,envA:3600,dec:.3,sus:.15,hold:1,rel:.35,att:3,kt:.35,subosc:.15,oct2:.1,drv:0,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.3,rs:.45},
+  'Bright pluck':{pg:.8,eng:'Stack',uni:5,usp:10,wid:.7,ft:'LP24',cut:850,res:4,envA:4000,dec:.2,sus:0,att:1,kt:.5,subosc:0,oct2:.22,drv:0,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.4,rs:.35},
+  'Soft keys':{pg:.95,eng:'Pulse',pw:.45,uni:2,usp:6,wid:.4,ft:'LP12',cut:1000,res:1.5,envA:2300,dec:.45,sus:.2,hold:.8,rel:.3,att:3,kt:.5,subosc:.1,oct2:0,drv:0,crush:0,fold:0,penv:.08,pdec:.03,glide:0,vib:2,vibr:4.5,ds:.3,rs:.3},
   'FM stab':{pg:.75,eng:'FM',fmr:2,fmi:3,fenv:1,uni:2,usp:8,wid:.4,ft:'LP12',cut:2000,res:2,envA:2400,dec:.18,sus:0,att:1,kt:.3,subosc:0,oct2:0,drv:.2,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.35,rs:.2},
   'Hypno stab':{pg:.8,eng:'Stack',uni:3,usp:8,wid:.5,ft:'LP24',cut:480,res:7,envA:2000,dec:.16,sus:0,att:1,kt:.35,subosc:.1,oct2:0,drv:.15,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.45,rs:.25},
   'Rubber blip':{pg:1.05,eng:'Sine',uni:1,usp:0,wid:0,ft:'LP12',cut:1300,res:6,envA:2200,dec:.14,sus:0,att:1,kt:.5,subosc:0,oct2:0,drv:0,crush:0,fold:.2,fenv:.5,penv:.6,pdec:.015,glide:0,vib:0,ds:.3,rs:.15}});
@@ -5085,41 +5081,41 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   'Rubber':{sub:.5,cut:300,res:7,envA:3,det:0,sqm:.4,bpp:.5,bdrv:0,bgr:0,dec:.16},
   'FM round':{sub:1,cut:260,res:1,envA:1,det:6,sqm:0,bpp:.25,bdrv:0,bgr:.25,dec:.3}};
  const FAM={
-  afterlife:{lead:['Afterlife saw','Anyma pluck','Afterlife saw','String pluck'],modes:[['Chord arp',16,0],['Up/Down',12,0],['Motif',7,0],['Chord arp',8,2]],bass:['Rolling sub','Reese mid'],bsty:[['Rolling 16ths','Root'],['Off-beat','Root'],['Rolling 16ths','Root']]},
-  bicep:{lead:['Bicep keys','Anyma pluck','Bicep keys','String pluck','Juno pulse'],modes:[['Motif',3,0,8],['Pedal arp',5,0],['Motif',5,1],['Chord arp',7,0]],bass:['FM round','Rolling sub'],bsty:[['Syncopated','Phrase'],['Off-beat','Root'],['Syncopated','Root']]},
+  rolling:{lead:['Wide saw','Bright pluck','Wide saw','String pluck'],modes:[['Chord arp',16,0],['Up/Down',12,0],['Motif',7,0],['Chord arp',8,2]],bass:['Rolling sub','Reese mid'],bsty:[['Rolling 16ths','Root'],['Off-beat','Root'],['Rolling 16ths','Root']]},
+  bounce:{lead:['Soft keys','Bright pluck','Soft keys','String pluck','Juno pulse'],modes:[['Motif',3,0,8],['Pedal arp',5,0],['Motif',5,1],['Chord arp',7,0]],bass:['FM round','Rolling sub'],bsty:[['Syncopated','Phrase'],['Off-beat','Root'],['Syncopated','Root']]},
   peak:{lead:['FM stab','Hypno stab','Hard sync','Techno stab'],modes:[['Motif',3,0],['Motif',4,2],['Motif',5,0]],bass:['Reese mid','Rolling sub'],bsty:[['Rolling 16ths','Root'],['Off-beat','Root']]},
   minimal:{lead:['Rubber blip','FM stab'],modes:[['Motif',3,1],['Motif',4,0],['Pedal arp',3,0]],bass:['Rubber','FM round'],bsty:[['Syncopated','Root'],['Gallop','Root'],['Off-beat','Octave']]}};
- /* drum programming per family (after the artists' records):
-    Afterlife – deep 4/4, off-beat open hats, big clap on 2 & 4, sparse congas, almost straight;
-    Bicep – broken kick some of the time, snare with ghost notes, swung 16th hats, congas, 808 kit;
+ /* drum programming per family (by style):
+    Rolling – deep 4/4, off-beat open hats, big clap on 2 & 4, sparse congas, almost straight;
+    Bounce – broken kick some of the time, snare with ghost notes, swung 16th hats, congas, 808 kit;
     peak-time – 4/4, driving 16th hats with accents, clap, off-beat ride or sparse cowbell, dead straight, 909 or Raw;
     minimal / tech house – 4/4, shuffled hats, ghosty clap, syncopated conga/cowbell/rim lines, heavy swing. */
- FAM.afterlife.dr=()=>({kick:{h:4},hat:{h:4,r:2,acc:.2,gho:0},clap:{h:2,r:4,vari:.1},snare:null,perc:R()<.6?{pv:'Conga',h:3,r:pick([3,5,7]),ten:.3,gho:.2}:null,hp:{open:.55,dec:.06},sw:.03+R()*.03,kit:'909'});
- FAM.bicep.dr=()=>({kick:R()<.55?{h:3,ten:.35}:{h:4},hat:{h:pick([7,9]),r:1,acc:.35,gho:.3},clap:R()<.5?{h:2,r:4}:null,snare:{h:2,r:4,gho:.35,vari:.25},perc:{pv:pick(['Conga','Conga','Blip']),h:5,r:pick([1,3]),ten:.2,gho:.2},hp:{open:.12,dec:.05},sw:.12+R()*.06,kit:'808'});
+ FAM.rolling.dr=()=>({kick:{h:4},hat:{h:4,r:2,acc:.2,gho:0},clap:{h:2,r:4,vari:.1},snare:null,perc:R()<.6?{pv:'Conga',h:3,r:pick([3,5,7]),ten:.3,gho:.2}:null,hp:{open:.55,dec:.06},sw:.03+R()*.03,kit:'909'});
+ FAM.bounce.dr=()=>({kick:R()<.55?{h:3,ten:.35}:{h:4},hat:{h:pick([7,9]),r:1,acc:.35,gho:.3},clap:R()<.5?{h:2,r:4}:null,snare:{h:2,r:4,gho:.35,vari:.25},perc:{pv:pick(['Conga','Conga','Blip']),h:5,r:pick([1,3]),ten:.2,gho:.2},hp:{open:.12,dec:.05},sw:.12+R()*.06,kit:'808'});
  FAM.peak.dr=()=>({kick:{h:4},hat:{h:pick([16,12]),r:0,acc:.45,gho:0},clap:{h:2,r:4},snare:null,perc:R()<.6?{pv:'Ride',h:4,r:2}:{pv:'Cowbell',h:3,r:pick([3,6]),ten:.1},hp:{open:.08,dec:.035},sw:0,kit:R()<.6?'909':'Raw'});
  FAM.minimal.dr=()=>({kick:{h:4},hat:{h:pick([6,7]),r:1,acc:.5,gho:.25},clap:{h:2,r:4,gho:.25,vari:.3},snare:null,perc:{pv:pick(['Conga','Cowbell','Conga']),h:pick([5,7]),r:Math.floor(R()*16),ten:.15,gho:.15},hp:{open:.2,dec:.045},sw:.18+R()*.07,kit:'909'});
  /* lead riffs and bass lines after modern records — 16 steps, scale degrees on the current chord root (10+ = an octave up), _ = rest.
     The lead ring is fitted to the riff's rhythm; bar 2 of every pair answers (the last quarter moves up a chord tone). */
  /* v0.29: six riffs moved one note by a step so every riff fits the Euclid ring exactly (what you hear is what was written) */
  const _=null;
- FAM.afterlife.riff=[[0,2,4,10,4,2,0,2,0,2,4,10,12,10,4,2],[0,4,10,4,12,10,4,10,0,4,10,4,14,12,10,4],[0,_,2,_,4,_,2,_,10,_,4,_,2,_,4,_],[10,_,_,4,_,_,2,_,4,_,_,0,_,_,2,_]];
- FAM.bicep.riff=[[4,_,_,4,_,_,2,_,4,_,_,4,_,_,10,_],[0,_,10,_,4,_,_,2,_,0,_,10,_,4,_,_],[2,_,4,_,_,10,_,4,_,2,_,_,0,_,_,_],[4,_,_,2,_,_,0,_,_,_,2,_,_,4,_,_]];
+ FAM.rolling.riff=[[0,2,4,10,4,2,0,2,0,2,4,10,12,10,4,2],[0,4,10,4,12,10,4,10,0,4,10,4,14,12,10,4],[0,_,2,_,4,_,2,_,10,_,4,_,2,_,4,_],[10,_,_,4,_,_,2,_,4,_,_,0,_,_,2,_]];
+ FAM.bounce.riff=[[4,_,_,4,_,_,2,_,4,_,_,4,_,_,10,_],[0,_,10,_,4,_,_,2,_,0,_,10,_,4,_,_],[2,_,4,_,_,10,_,4,_,2,_,_,0,_,_,_],[4,_,_,2,_,_,0,_,_,_,2,_,_,4,_,_]];
  FAM.peak.riff=[[0,_,_,0,_,_,0,_,_,_,0,_,_,_,_,_],[0,_,_,_,_,_,1,_,_,_,0,_,_,_,_,_],[0,_,_,_,_,0,_,_,0,_,_,10,_,_,_,_],[_,_,0,_,_,_,0,_,_,_,0,_,_,_,1,_]];
  FAM.minimal.riff=[[_,_,0,_,_,_,_,0,_,_,_,_,_,4,_,_],[_,0,_,_,0,_,_,2,_,_,_,_,0,_,_,_],[_,_,10,_,_,0,_,_,_,_,10,_,_,0,_,4],[0,_,_,_,_,_,0,_,_,_,_,4,_,_,_,_]];
- FAM.afterlife.bl=[[_,0,0,0,_,0,0,10,_,0,0,0,_,0,10,0],[_,_,0,_,_,_,0,_,_,_,0,_,_,_,0,10],[_,0,0,_,_,0,0,_,_,0,0,_,_,0,10,_]];
- FAM.bicep.bl=[[0,_,_,0,_,_,10,_,_,0,_,_,4,_,_,_],[0,_,_,_,_,_,0,_,_,_,4,_,2,_,_,_],[0,_,_,10,_,_,0,_,_,_,_,0,_,4,_,_]];
+ FAM.rolling.bl=[[_,0,0,0,_,0,0,10,_,0,0,0,_,0,10,0],[_,_,0,_,_,_,0,_,_,_,0,_,_,_,0,10],[_,0,0,_,_,0,0,_,_,0,0,_,_,0,10,_]];
+ FAM.bounce.bl=[[0,_,_,0,_,_,10,_,_,0,_,_,4,_,_,_],[0,_,_,_,_,_,0,_,_,_,4,_,2,_,_,_],[0,_,_,10,_,_,0,_,_,_,_,0,_,4,_,_]];
  FAM.peak.bl=[[_,_,0,_,_,_,0,_,_,_,0,_,_,_,0,_],[_,0,0,_,_,0,0,_,_,0,0,_,_,0,0,_],[_,_,0,0,_,_,0,_,_,_,0,0,_,_,0,_]];
  FAM.minimal.bl=[[0,_,_,0,_,0,_,_,0,_,_,0,_,_,10,_],[_,_,0,_,_,0,_,10,_,_,0,_,_,_,0,_],[0,_,_,_,0,_,_,0,_,_,4,_,_,0,_,_]];
  /* chords per family: scale degrees of the chord roots + chord shapes (tri, 7, 9, add9, sus2, sus4, quart) */
  const rr=(a,b)=>+(a+R()*(b-a)).toFixed(2);
- FAM.afterlife.ch=()=>({prog:pick([[0,5,2,6],[0,3,5,4],[0,6,5,6],[0,5,3,4]]),sh:['tri','add9','sus2','tri','7'],scale:'Minor'});
- FAM.bicep.ch=()=>({prog:pick([[0,5,3,4],[0,3,6,5],[0,2,5,3],[3,4,0,0]]),sh:['7','9','add9','7'],scale:'Dorian'});
+ FAM.rolling.ch=()=>({prog:pick([[0,5,2,6],[0,3,5,4],[0,6,5,6],[0,5,3,4]]),sh:['tri','add9','sus2','tri','7'],scale:'Minor'});
+ FAM.bounce.ch=()=>({prog:pick([[0,5,3,4],[0,3,6,5],[0,2,5,3],[3,4,0,0]]),sh:['7','9','add9','7'],scale:'Dorian'});
  FAM.peak.ch=()=>({prog:pick([[0,0,0,0],[0,0,1,0],[0,0,5,0]]),sh:['tri','quart','sus4'],scale:'Minor'});
  FAM.minimal.ch=()=>({prog:pick([[0,0,0,0],[0,3,0,3],[0,0,3,3]]),sh:['7','9','7'],scale:'Dorian'});
  /* effects per family, using the existing delay, reverb, shimmer, sidechain, rumble and bus grit
-    Afterlife: big dark space and heavy pump · Bicep: warm delay throws, medium room · peak-time: short room, rumble, a touch of grit · minimal: dry and close */
- FAM.afterlife.fx=()=>({rev:rr(.38,.46),shim:rr(.5,.7),dly:rr(.2,.28),fb:.45,dt:.75,duck:rr(.75,.85),rel:.22,rumble:rr(.22,.32),rcut:120});
- FAM.bicep.fx=()=>({rev:rr(.26,.32),shim:rr(.18,.3),dly:rr(.3,.38),fb:.5,dt:pick([.75,.5]),duck:rr(.5,.6),rel:.18,rumble:rr(.06,.12)});
+    Rolling: big dark space and heavy pump · Bounce: warm delay throws, medium room · peak-time: short room, rumble, a touch of grit · minimal: dry and close */
+ FAM.rolling.fx=()=>({rev:rr(.38,.46),shim:rr(.5,.7),dly:rr(.2,.28),fb:.45,dt:.75,duck:rr(.75,.85),rel:.22,rumble:rr(.22,.32),rcut:120});
+ FAM.bounce.fx=()=>({rev:rr(.26,.32),shim:rr(.18,.3),dly:rr(.3,.38),fb:.5,dt:pick([.75,.5]),duck:rr(.5,.6),rel:.18,rumble:rr(.06,.12)});
  FAM.peak.fx=()=>({rev:rr(.16,.22),shim:rr(.05,.12),dly:rr(.1,.15),fb:.35,dt:.5,duck:rr(.65,.75),rel:.15,rumble:rr(.35,.45),rcut:140,bgrit:rr(.12,.2)});
  FAM.minimal.fx=()=>({rev:rr(.12,.18),shim:rr(.02,.08),dly:rr(.08,.14),fb:.3,dt:pick([.5,.375]),duck:rr(.5,.6),rel:.14,rumble:rr(.06,.12)});
  const RIFF={t:null};window.orbRiff=RIFF;
@@ -5128,10 +5124,10 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const _ln=leadNote;leadNote=function(p){if(p.mode==='Riff'&&RIFF.t){const n=SC[G.scale].length,s=((tk%16)+16)%16,bar=Math.floor(tk/16),t=RIFF.f;let v=dg(t[s],n);
    if(bar%2===1&&s>=12)v+=v%n===0?2:v%n===2?2:-2;return cur.r+v}return _ln.apply(this,arguments)};
  try{if(!MODES.includes('Riff'))MODES.push('Riff')}catch(e){}
- const MFAM={Melancholic:{afterlife:.7,bicep:.3},'Melodic House':{afterlife:.5,bicep:.5},Dark:{afterlife:.5,peak:.5},Noir:{afterlife:.6,bicep:.4},
-  Dreamy:{bicep:.6,afterlife:.4},Hopeful:{bicep:.7,afterlife:.3},Breaks:{bicep:1},Ethereal:{bicep:.5,afterlife:.5},Ambient:{bicep:.7,afterlife:.3},
-  Drone:{afterlife:1},'Deep Space':{afterlife:.7,bicep:.3},Power:{peak:1},Tense:{peak:1},'Distorted Electro':{peak:1},Temporal:{peak:.6,minimal:.4},
-  'Groove Techno':{minimal:.6,peak:.4},Vector:{minimal:.5,bicep:.5},Bleep:{minimal:1},Italo:{bicep:.5,afterlife:.5}};
+ const MFAM={Melancholic:{rolling:.7,bounce:.3},'Melodic House':{rolling:.5,bounce:.5},Dark:{rolling:.5,peak:.5},Noir:{rolling:.6,bounce:.4},
+  Dreamy:{bounce:.6,rolling:.4},Hopeful:{bounce:.7,rolling:.3},Breaks:{bounce:1},Ethereal:{bounce:.5,rolling:.5},Ambient:{bounce:.7,rolling:.3},
+  Drone:{rolling:1},'Deep Space':{rolling:.7,bounce:.3},Power:{peak:1},Tense:{peak:1},'Distorted Electro':{peak:1},Temporal:{peak:.6,minimal:.4},
+  'Groove Techno':{minimal:.6,peak:.4},Vector:{minimal:.5,bounce:.5},Bleep:{minimal:1},Italo:{bounce:.5,rolling:.5}};
  const MCH={Italo:.35};                                  // Satellite Disco already rated well: modern sound only sometimes
  const BADL=new Set(['Hollow BP','PPG wave','West Coast fold','Glass','Soft sine']),BADM=new Set(['Interval','Turing loop']);
  const AMB=new Set(['Ambient','Ethereal','Drone','Deep Space']);
@@ -5151,7 +5147,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    if(F&&!L.m){applyLP(pick(F.lead),1);P.rdr=0;try{mot=[];mp=-1;buf=[]}catch(e){}
     if(R()<.7){const t=pick(F.riff);RIFF.t=t;RIFF.f=fillT(t);P.mode='Riff';const pt=t.map(x=>x==null?0:1);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(L,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}L.pt=pat(L)}
     else{const [md,h,r,st]=pick(F.modes);P.mode=md;Object.assign(L,{st:st||16,h:Math.min(h,st||16),r,ten:0});L.pt=pat(L);P.range=md==='Motif'?(fam==='peak'||fam==='minimal'?1:2):2}}
-   else if(!L.m&&!acid){if(BADL.has(P.patch)){const fl=F||FAM[wp(fams||{afterlife:.5,bicep:.5})];applyLP(pick(fl.lead),1)}
+   else if(!L.m&&!acid){if(BADL.has(P.patch)){const fl=F||FAM[wp(fams||{rolling:.5,bounce:.5})];applyLP(pick(fl.lead),1)}
     if(BADM.has(P.mode)){P.mode=pick(['Motif','Chord arp','Pedal arp','Motif']);try{mot=[];mp=-1;buf=[]}catch(e){}}}
    // bass: rarely muted, modern sound + pattern from the family
    if(B.m&&!acid&&R()<.85)B.m=false;
@@ -5159,7 +5155,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
      B.st=16;try{const ft=bassFit(B,pt);Object.assign(B,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}B.pt=pat(B);Object.assign(BP,{bns:'Phrase',bsty:'Modern '+fam,bsus:0,btn:false,bph:1,bgh:0,blk:'Free'});
      window.BPH={bars:[A,A2],pk:[],chr:0,lead:9,evo:0};window.__bphLock=1}
     else{const [sty,notes]=pick(F.bsty);try{bassStyle(sty)}catch(e){}BP.bns=notes}}
-   else if(!B.m&&(BP.bsty==='Custom'||BP.bsty==='Pedal'||['Chord tones','Melodic'].includes(BP.bns))&&R()<.8){const fl=FAM[wp(fams||{afterlife:.5,peak:.5})];const [sty,notes]=pick(fl.bsty);try{bassStyle(sty)}catch(e){}BP.bns=notes;if(R()<.6)bassSet(pick(fl.bass))}
+   else if(!B.m&&(BP.bsty==='Custom'||BP.bsty==='Pedal'||['Chord tones','Melodic'].includes(BP.bns))&&R()<.8){const fl=FAM[wp(fams||{rolling:.5,peak:.5})];const [sty,notes]=pick(fl.bsty);try{bassStyle(sty)}catch(e){}BP.bns=notes;if(R()<.6)bassSet(pick(fl.bass))}
    // pads and kit
    if(PD.p.patch==='Wind'||(PD.p.patch==='Air'&&R()<.8))PD.p.patch=pick(['Poly','Strings','EP chords','Glass','Tape','Choir','Abyss'].filter(x=>{try{return typeof PGAIN==='undefined'||x in PGAIN||true}catch(e){return true}}));
    if(G.kit==='Rumble'&&R()<.7)try{orbKit(R()<.6?'909':'808')}catch(e){}
@@ -5174,7 +5170,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
     try{mot=[];mp=-1;buf=[]}catch(e){}
     const fx=F.fx();Object.assign(G,fx);try{applyFX()}catch(e){}}
    setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},60);
-   orbModern.last=fam;if(fam)setTimeout(()=>{try{if(typeof say==='function')say('◆ '+({afterlife:'AFTERLIFE',bicep:'BICEP',peak:'PEAK-TIME',minimal:'MINIMAL'})[fam]+' · '+TR[4].p.patch.toUpperCase()+' · '+(G.bchar||'').toUpperCase())}catch(e){}},1200)
+   orbModern.last=fam;if(fam)setTimeout(()=>{try{if(typeof say==='function')say('◆ '+({rolling:'ROLLING',bounce:'BOUNCE',peak:'PEAK-TIME',minimal:'MINIMAL'})[fam]+' · '+TR[4].p.patch.toUpperCase()+' · '+(G.bchar||'').toUpperCase())}catch(e){}},1200)
  }catch(e){console.warn('[orbitron] modern',e)}return r}}
 </script>
 
@@ -5195,7 +5191,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   Breaks:        {ch:.4, mv:.6,oct:.2,chr:.4,lng:.3,L4:.6,pk:[[13,15],[11,13,15]],sty:['Syncopated','Gallop'],lead:7},
   'Groove Techno':{ch:.35,mv:.3,oct:.15,chr:.5,lng:0,L4:.5,pk:[[15],[14,15]],sty:['Rolling 16ths','Syncopated'],lead:9}};
  const DEF={ch:0,mv:.5,oct:.2,chr:.3,lng:.5,L4:.65,pk:[[15],[14,15],[13,15]],sty:['Syncopated','Walking'],lead:7};
- const pro=()=>{const p=Object.assign({},DEF,PRO[curMood]||{});if(/Booka/.test(G.flav||'')||G.mhFlav==='hook')Object.assign(p,{ch:.8,mv:.7,L4:.9});return p};
+ const pro=()=>{const p=Object.assign({},DEF,PRO[curMood]||{});if(/Hook house/.test(G.flav||'')||G.mhFlav==='hook')Object.assign(p,{ch:.8,mv:.7,L4:.9});return p};
  const wpick=a=>{let t=a.reduce((x,y)=>x+y[1],0)*R();for(const[x,w]of a)if((t-=w)<0)return x;return a[0][0]};
  const clamp=d=>Math.max(-3,Math.min(9,d));
  // mv = how far the line moves: low mv stays on root/fifth (techno), high mv walks through chord and scale tones
@@ -5376,7 +5372,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    if(c&&R()<(take?.4:c[0])){const p=S.p,wantArp=!take&&R()<(ARPS[curMood]||0),role=take||wantArp||R()<c[1]?'Counter':'Sparkle';p.role=role;p.snd=pick(SND[role]);p.reg='Auto';
     p.mot=take?'Long':c[2]==='mix'?pick(['Long','Answer']):c[2]==='long'?'Long':'Answer';
     if(wantArp){p.mot='Arp';p.snd=pick(['Juno','Keys','FM pluck','Super saw'])}
-    {const fm=window.orbModern&&orbModern.last;if(fm&&role==='Counter'&&p.mot!=='Arp')p.snd=({afterlife:pick(['Super saw','Strings']),bicep:pick(['Keys','Juno']),peak:'FM pluck',minimal:pick(['FM pluck','Keys'])})[fm];if(fm&&role==='Sparkle')p.snd=({afterlife:'Glass bell',bicep:'Mallet',peak:'Mallet',minimal:'FM pluck'})[fm]}
+    {const fm=window.orbModern&&orbModern.last;if(fm&&role==='Counter'&&p.mot!=='Arp')p.snd=({rolling:pick(['Super saw','Strings']),bounce:pick(['Keys','Juno']),peak:'FM pluck',minimal:pick(['FM pluck','Keys'])})[fm];if(fm&&role==='Sparkle')p.snd=({rolling:'Glass bell',bounce:'Mallet',peak:'Mallet',minimal:'FM pluck'})[fm]}
     sdef(p);if(p.mot==='Arp'){p.att=.05;p.rel=.2}
     if(role==='Counter'&&p.mot==='Arp')Object.assign(S,{st:16,h:pick([8,8,6,12]),r:pick([0,2]),ten:0});
     else if(role==='Counter'&&p.mot==='Long')Object.assign(S,{st:16,h:pick([2,2,3]),r:0,ten:0});
@@ -5531,7 +5527,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 </script>
 <script>
 /* ---- v0.27: ACID 303 RIFFS — instead of random notes, every Launch picks a riff in the style of the classic acid records
-   (Phuture, Hardfloor, rolling octave squelch, dark sparse, melodic acid): notes, accents and slides belong together.
+   (classic squelch, rolling octave squelch, dark sparse, melodic acid): notes, accents and slides belong together.
    Bars 1–3 play the riff, bar 4 answers an octave up at the end; every 8 bars one accent or note evolves, so it develops without losing the riff. ---- */
 {const _=null,AT=[
   [[0,1,0],[0,0,0],[10,1,0],[0,0,0],[0,0,1],[2,0,0],[0,0,0],[10,1,0],[0,0,0],_,[6,0,1],[0,0,0],[3,1,0],_,[4,0,1],[0,0,0]],
@@ -5703,13 +5699,13 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  // ---------- Launch: new sounds, lead rhythms, bass roles, bed ----------
  const AMB=new Set(['Ambient','Ethereal','Drone','Deep Space']);
  const rp=a=>a[Math.floor(R()*a.length)],wp=o=>{let t=Object.values(o).reduce((a,b)=>a+b,0)*R();for(const k in o)if((t-=o[k])<0)return k;return Object.keys(o)[0]};
- const NEWL={bicep:[.35,{'Rave stab':1,'House piano':1,'Rhodes stab':1}],peak:[.3,{'Organ stab':1,'Rave stab':1}],minimal:[.3,{'Organ stab':1,'Rhodes stab':.7}],afterlife:[.08,{'Rhodes stab':1}]};
+ const NEWL={bounce:[.35,{'Rave stab':1,'House piano':1,'Rhodes stab':1}],peak:[.3,{'Organ stab':1,'Rave stab':1}],minimal:[.3,{'Organ stab':1,'Rhodes stab':.7}],rolling:[.08,{'Rhodes stab':1}]};
  const MOODL={Italo:[.25,{'House piano':1}],Hopeful:[.3,{'House piano':1,'Rhodes stab':1}],'Melodic House':[.35,{'Rhodes stab':2,'House piano':1}],Breaks:[.3,{'Rave stab':1,'House piano':.5}],'Groove Techno':[.25,{'Organ stab':1}],Dreamy:[.2,{'Rhodes stab':1}]};
- const RHY={afterlife:['x.xx.xx.x.xx.xx.','x..x..x..x..x.x.'],bicep:['x..x..x.x..x..x.','..x..x....x..x..','x.x...x...x.x...'],peak:['x..x..x.........','..x...x...x.....','x.....x...x.....'],minimal:['...x..x....x....','.x....x..x......','..x..x..x.......']};
+ const RHY={rolling:['x.xx.xx.x.xx.xx.','x..x..x..x..x.x.'],bounce:['x..x..x.x..x..x.','..x..x....x..x..','x.x...x...x.x...'],peak:['x..x..x.........','..x...x...x.....','x.....x...x.....'],minimal:['...x..x....x....','.x....x..x......','..x..x..x.......']};
  const SPARSE=['x..x..x.........','..x...x...x.....','...x..x....x....','x.....x...x.....','..x..x....x..x..'];
  const pt16=s=>[...s].map(c=>c==='x'?1:0);
  const setRing=(T,pt)=>{T.st=16;try{const ft=bassFit(T,pt);Object.assign(T,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(T,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}T.pt=pt.slice()};
- const ROLE={afterlife:{Rolling:.65,Anchor:.35},bicep:{Answer:.45,'808':.35,Rolling:.2},peak:{Anchor:.5,Rolling:.5},minimal:{Rolling:.5,Answer:.5}};
+ const ROLE={rolling:{Rolling:.65,Anchor:.35},bounce:{Answer:.45,'808':.35,Rolling:.2},peak:{Anchor:.5,Rolling:.5},minimal:{Rolling:.5,Answer:.5}};
  const RSND={Rolling:['Rolling pluck','Rolling sub','Rolling pluck'],Anchor:['Reese mid','Rolling sub'],Answer:['FM round','Rubber','Rolling pluck'],'808':['808 glide']};
  const RT={Rolling:[[_,0,0,0,_,0,0,0,_,0,0,0,_,0,0,0],[_,0,0,_,_,0,0,10,_,0,0,_,_,0,0,4],[_,0,10,0,_,0,10,0,_,0,10,0,_,0,4,0],[_,_,0,0,_,_,0,0,_,_,0,0,_,_,0,10]],
   Anchor:[[0,_,_,_,_,_,_,_,0,_,_,_,_,_,10,_],[0,_,_,_,_,_,0,_,_,_,_,_,_,_,10,_],[0,_,_,10,_,_,0,_,_,_,_,_,_,_,4,10]],
@@ -5726,14 +5722,14 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   window.BPH={bars:[A1,A2],pk:[],chr:0,lead:9,evo:0};window.__bphLock=1;G.brole=role};
  const BEDM={Ambient:['Air','Rain'],Ethereal:['Air','Rain'],Drone:['Air','Tape'],'Deep Space':['Air'],Melancholic:['Rain','Tape','Vinyl'],Dreamy:['Tape','Air','Rain'],Noir:['Vinyl','Rain'],Hopeful:['Tape','Vinyl'],
   'Melodic House':['Tape','Air'],Italo:['Tape'],Breaks:['Vinyl','Tape'],Dark:['Air','Tape'],Tense:['Air','Tape'],Power:['Tape','Air'],'Distorted Electro':['Tape','Vinyl'],'Groove Techno':['Vinyl','Tape'],Bleep:['Tape','Vinyl'],Temporal:['Air','Tape'],Vector:['Vinyl','Tape']};
- const FAMB={afterlife:['Air','Rain','Tape'],bicep:['Vinyl','Tape','Rain'],peak:['Tape','Air'],minimal:['Vinyl','Tape']};
+ const FAMB={rolling:['Air','Rain','Tape'],bounce:['Vinyl','Tape','Rain'],peak:['Tape','Air'],minimal:['Vinyl','Tape']};
  const rr=(a,b)=>+(a+R()*(b-a)).toFixed(2);
  const _g=generate;generate=function(){TR[6].p.beng='';G.brole='';const r=_g.apply(this,arguments);try{
    const fam=orbModern.last,L=TR[4],P=L.p,B=TR[6],acid=P.mode==='Acid 303'||(MOODS[curMood]||{}).acid;
    if(!L.m&&!acid){const o=fam?NEWL[fam]:MOODL[curMood];if(o&&R()<o[0]){applyLP(wp(o[1]),1);if(P.mode!=='Riff'){P.mode='Motif';try{mot=[];mp=-1;buf=[]}catch(e){}P.range=2}}
     // modern lead rhythm for the family (the Riff mode keeps its own rhythm)
     if(P.mode!=='Riff'){const ch=P.chd&&P.chd!=='Off';if(ch&&(L.h>7||['Chord arp','Up/Down','Up','Random'].includes(P.mode))){P.mode='Motif';try{mot=[];mp=-1;buf=[]}catch(e){}setRing(L,pt16(rp(SPARSE)))}
-     else if(fam&&RHY[fam]&&R()<(fam==='afterlife'?(P.mode==='Motif'?.35:0):.6))setRing(L,pt16(rp(RHY[fam])))}}
+     else if(fam&&RHY[fam]&&R()<(fam==='rolling'?(P.mode==='Motif'?.35:0):.6))setRing(L,pt16(rp(RHY[fam])))}}
    if(fam&&!B.m&&!acid&&R()<.8)bassRole(fam);
    G.bed=fam&&R()<.6?rp(FAMB[fam]):rp(BEDM[curMood]||['Tape','Vinyl','Air']);G.bedLv=AMB.has(curMood)?rr(.5,.7):fam==='peak'?rr(.25,.35):rr(.3,.5);prep(G.bed);
    setTimeout(()=>{try{bedUI();bedTick();const s=document.querySelector('.bsnd select');if(s)s.value=BP[G.bchar]?G.bchar:'Classic';window.bassSync&&bassSync()}catch(e){}},80)
@@ -5787,7 +5783,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 /* ---- v0.31: RIFF PICKER (Synths → Lead → Pattern, under Arp mode). All 16 riffs of the four modern families (named by feel: Rolling, Bounce, Stab, Minimal).
    Picking one switches the lead to Riff mode at the next bar (straight away when stopped) and fits the Euclid ring to the riff's
    rhythm; Off goes back to Motif. Sectors keep the riff. ---- */
-{const FAM=()=>(window.orbModern&&orbModern.FAM)||{},NM={afterlife:'Rolling',bicep:'Bounce',peak:'Stab',minimal:'Minimal'};
+{const FAM=()=>(window.orbModern&&orbModern.FAM)||{},NM={rolling:'Rolling',bounce:'Bounce',peak:'Stab',minimal:'Minimal'};
  const list=()=>{const o=[];for(const f in FAM())(FAM()[f].riff||[]).forEach((t,i)=>o.push({lab:NM[f]+' '+(i+1),t}));return o};
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const curLab=()=>{const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff')return'Off';const s=JSON.stringify(R.t),h=list().find(x=>JSON.stringify(x.t)===s);return h?h.lab:'Off'};
