@@ -279,7 +279,8 @@ function acidVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,s=tk%16,d=acidNot
  const f=d2f(d,2+(G.ldUp||0)),acc=AC.a[s]?1:0,sl=AC.s[s]&&LF>0&&w-LW<=2.2*sd,nx=AC.s[(s+1)%16],dur=sd*(nx?1.15:.55),e=w+dur+.06,
   o=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e),q1=ctx.createBiquadFilter(),q2=ctx.createBiquadFilter(),pre=ctx.createGain(),g=ctx.createGain();
  if(sl)o.frequency.setTargetAtTime(f,w,.02);
- q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(16,p.res)*.55;q2.Q.value=.55;
+ /* v0.27: a second, slightly detuned oscillator for a fatter tone */const o2=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e);o2.detune.value=9;if(sl)o2.frequency.setTargetAtTime(f,w,.02);const o2g=ctx.createGain();o2g.gain.value=.55;o2.connect(o2g);
+ q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(14,p.res)*.38;q2.Q.value=.55; /* v0.27: rounder resonance peak */
  AC.chg=(AC.chg||0)*Math.exp(-Math.max(0,w-(AC.tw||w))/.35);AC.tw=w;if(acc)AC.chg=Math.min(2.5,AC.chg+1);
  const cm=Math.pow(2,2.5*mv("Lead cutoff",w)),base=Math.max(40,p.cut*cm),ea=p.envA*(acc?1.5+p.acc3*.8+.35*AC.chg:1),
   cd=acc?Math.min(.2,Math.max(.06,p.dec*.6)):Math.max(.06,p.dec*Math.pow(2,1.2*mv("Lead decay",w)));
@@ -289,11 +290,12 @@ function acidVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,s=tk%16,d=acidNot
  const pk=v*.3*(acc?1.35+p.acc3*.4:1)*(1+(p.drv||0)*.2);
  if(sl)g.gain.setValueAtTime(pk,w);else{g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(pk,w+.003)}
  g.gain.setValueAtTime(pk,w+dur);g.gain.linearRampToValueAtTime(.0001,w+dur+.02);
- pre.gain.value=1+(acc?.3:0);o.connect(pre);pre.connect(q1);q1.connect(q2);
+ pre.gain.value=1+(acc?.3:0);o.connect(pre);o2g.connect(pre);pre.connect(q1);q1.connect(q2);
  if(p.subosc>.01){const so=osc('sine',f*.5,w,e),sg=ctx.createGain();sg.gain.value=p.subosc*.9;so.connect(sg);sg.connect(g)}
  if(p.grit>.01){const ns=ctx.createBufferSource(),ng=ctx.createGain(),nf=ctx.createBiquadFilter();ns.buffer=A.nb;nf.type='highpass';nf.frequency.value=1500;ng.gain.setValueAtTime(p.grit*.4,w);ng.gain.exponentialRampToValueAtTime(.001,w+.06);ns.connect(nf);nf.connect(ng);ng.connect(g);ns.start(w,R()*.5);ns.stop(w+.08)}
  let tl=q2;if(p.drv>.01){const dg=ctx.createGain(),dw=ctx.createWaveShaper();dg.gain.value=.6+p.drv*2.4;dw.curve=curve(p.drv*10);q2.connect(dg);dg.connect(dw);tl=dw}
  if(p.crush>.01){const cr=ctx.createWaveShaper();cr.curve=crushCurve(p.crush);tl.connect(cr);tl=cr}
+ {const tm=ctx.createBiquadFilter();tm.type='lowpass';tm.frequency.value=4200;tm.Q.value=.5;tl.connect(tm);tl=tm} /* v0.27: tame the fizz */
  tl.connect(g);send(g,A.ld||A.dk,p.ds,p.rs);leadVoice(g,w);LF=f;LW=w}
 function foldCurve(){if(!FC){FC=new Float32Array(4097);for(let i=0;i<4097;i++){const u=(i/2048-1)*8;FC[i]=2/Math.PI*Math.asin(Math.sin(Math.PI/2*u))}}return FC}
 function fireVoice(k,w){const T=TR[k],p=T.p,v=T.lv;if(window.DR&&DR.on(k,w,v,p))return;
@@ -5079,6 +5081,18 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  FAM.bicep.bl=[[0,_,_,0,_,_,10,_,_,0,_,_,4,_,_,_],[0,_,_,_,_,_,0,_,_,_,4,_,2,_,_,_],[0,_,_,10,_,_,0,_,_,_,_,0,_,4,_,_]];
  FAM.peak.bl=[[_,_,0,_,_,_,0,_,_,_,0,_,_,_,0,_],[_,0,0,_,_,0,0,_,_,0,0,_,_,0,0,_],[_,_,0,0,_,_,0,_,_,_,0,0,_,_,0,_]];
  FAM.minimal.bl=[[0,_,_,0,_,0,_,_,0,_,_,0,_,_,10,_],[_,_,0,_,_,0,_,10,_,_,0,_,_,_,0,_],[0,_,_,_,0,_,_,0,_,_,4,_,_,0,_,_]];
+ /* chords per family: scale degrees of the chord roots + chord shapes (tri, 7, 9, add9, sus2, sus4, quart) */
+ const rr=(a,b)=>+(a+R()*(b-a)).toFixed(2);
+ FAM.afterlife.ch=()=>({prog:pick([[0,5,2,6],[0,3,5,4],[0,6,5,6],[0,5,3,4]]),sh:['tri','add9','sus2','tri','7'],scale:'Minor'});
+ FAM.bicep.ch=()=>({prog:pick([[0,5,3,4],[0,3,6,5],[0,2,5,3],[3,4,0,0]]),sh:['7','9','add9','7'],scale:'Dorian'});
+ FAM.peak.ch=()=>({prog:pick([[0,0,0,0],[0,0,1,0],[0,0,5,0]]),sh:['tri','quart','sus4'],scale:'Minor'});
+ FAM.minimal.ch=()=>({prog:pick([[0,0,0,0],[0,3,0,3],[0,0,3,3]]),sh:['7','9','7'],scale:'Dorian'});
+ /* effects per family, using the existing delay, reverb, shimmer, sidechain, rumble and bus grit
+    Afterlife: big dark space and heavy pump · Bicep: warm delay throws, medium room · peak-time: short room, rumble, a touch of grit · minimal: dry and close */
+ FAM.afterlife.fx=()=>({rev:rr(.38,.46),shim:rr(.5,.7),dly:rr(.2,.28),fb:.45,dt:.75,duck:rr(.75,.85),rel:.22,rumble:rr(.22,.32),rcut:120});
+ FAM.bicep.fx=()=>({rev:rr(.26,.32),shim:rr(.18,.3),dly:rr(.3,.38),fb:.5,dt:pick([.75,.5]),duck:rr(.5,.6),rel:.18,rumble:rr(.06,.12)});
+ FAM.peak.fx=()=>({rev:rr(.16,.22),shim:rr(.05,.12),dly:rr(.1,.15),fb:.35,dt:.5,duck:rr(.65,.75),rel:.15,rumble:rr(.35,.45),rcut:140,bgrit:rr(.12,.2)});
+ FAM.minimal.fx=()=>({rev:rr(.12,.18),shim:rr(.02,.08),dly:rr(.08,.14),fb:.3,dt:pick([.5,.375]),duck:rr(.5,.6),rel:.14,rumble:rr(.06,.12)});
  const RIFF={t:null};window.orbRiff=RIFF;
  const fillT=t=>{let last=t.find(x=>x!=null);if(last==null)last=0;return t.map(x=>x==null?last:(last=x))};
  const dg=(v,n)=>v>=10?v-10+n:v;
@@ -5124,6 +5138,13 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    if(F&&F.dr){const D=F.dr,ring=(k,o)=>{const T=TR[k];if(!o){T.m=true;return}Object.assign(T,{m:false,st:o.st||16,h:o.h,r:o.r||0,ten:o.ten||0});['acc','gho','vari'].forEach(x=>{if(o[x]!=null)T[x]=o[x]});T.pt=pat(T)};
     const d=typeof D==='function'?D():D;if(d.kick)ring(0,d.kick);ring(1,d.hat);ring(2,d.clap);ring(7,d.snare);if(d.perc){ring(3,d.perc);try{setPercSound(d.perc.pv)}catch(e){TR[3].p.pv=d.perc.pv}}else ring(3,null);
     Object.assign(TR[1].p,d.hp||{});G.swing=d.sw;if(d.kit)try{orbKit(d.kit)}catch(e){}}
+   // chords and effects in the family's style (existing effects only)
+   if(F&&F.ch){const c=F.ch(),PDT=TR[5],nc=Math.max(1,Math.round(PDT.st)||4);
+    if(['Min pentatonic','Major pentatonic','Sus pentatonic','Whole tone','Hirajoshi'].includes(G.scale)){G.scale=c.scale;try{$('#scale').value=G.scale}catch(e){}}
+    prog=Array.from({length:nc},(_,i)=>c.prog[i%c.prog.length]);pshape=prog.map(()=>pick(c.sh));try{PX=prog.map(()=>0);pmean=null;PTOP=null}catch(e){}
+    try{mot=[];mp=-1;buf=[]}catch(e){}
+    const fx=F.fx();Object.assign(G,fx);try{applyFX()}catch(e){}}
+   setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},60);
    orbModern.last=fam;if(fam)setTimeout(()=>{try{if(typeof say==='function')say('◆ '+({afterlife:'AFTERLIFE',bicep:'BICEP',peak:'PEAK-TIME',minimal:'MINIMAL'})[fam]+' · '+TR[4].p.patch.toUpperCase()+' · '+(G.bchar||'').toUpperCase())}catch(e){}},1200)
  }catch(e){console.warn('[orbitron] modern',e)}return r}}
 </script>
@@ -5474,5 +5495,26 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 #t-perf .lpf .lpt i,#t-perf .lpf .tht i{position:absolute;top:50%;transform:translateY(-50%);font-style:normal;font-size:9px;letter-spacing:.14em;opacity:.45;pointer-events:none}
 #t-perf .lpf .lpt i:first-of-type{left:6px}#t-perf .lpf .lpt i:last-of-type{right:6px}
 #t-perf .lpf .tha .thv{font-size:inherit;opacity:1;width:auto}#t-perf .lpf .tha .lmh .thv{color:inherit}`;document.head.appendChild(st)}}
+</script>
+<script>
+/* ---- v0.27: ACID 303 RIFFS — instead of random notes, every Launch picks a riff in the style of the classic acid records
+   (Phuture, Hardfloor, rolling octave squelch, dark sparse, melodic acid): notes, accents and slides belong together.
+   Bars 1–3 play the riff, bar 4 answers an octave up at the end; every 8 bars one accent or note evolves, so it develops without losing the riff. ---- */
+{const _=null,AT=[
+  [[0,1,0],[0,0,0],[10,1,0],[0,0,0],[0,0,1],[2,0,0],[0,0,0],[10,1,0],[0,0,0],_,[6,0,1],[0,0,0],[3,1,0],_,[4,0,1],[0,0,0]],
+  [[0,1,0],[0,0,1],[0,0,0],[10,1,0],[0,0,0],[0,0,1],[3,0,0],[0,1,0],[0,0,0],[0,0,1],[10,0,0],[6,1,0],[0,0,0],[4,0,1],[0,0,0],[10,1,0]],
+  [[0,1,0],_,_,[0,0,1],[1,0,0],_,[0,1,0],_,_,[10,0,1],[0,0,0],_,[1,1,0],_,[0,0,1],_],
+  [[0,0,0],[10,1,1],[0,0,0],[10,1,1],[0,0,0],[6,0,0],[10,1,1],[0,0,0],[0,0,0],[10,1,1],[0,0,0],[4,0,1],[3,1,0],[2,0,1],[0,0,0],[10,1,0]],
+  [[0,1,0],[2,0,1],[4,0,0],[0,0,0],[6,1,0],[4,0,1],[2,0,0],[0,0,0],[0,1,0],[2,0,1],[4,0,0],[10,1,0],[6,0,1],[4,0,0],[2,0,1],[0,0,0]]];
+ window.orbAcid={tpl:null};
+ acidGen=function(p){const n=SC[G.scale].length,t=orbAcid.tpl||(orbAcid.tpl=pick(AT));AC.n=[];AC.a=[];AC.s=[];let last=0;
+  for(let i=0;i<16;i++){const e=t[i];if(e){last=e[0]>=10?e[0]-10+n:e[0];AC.n.push(last);AC.a.push(e[1]);AC.s.push(e[2]&&(p.glide>=.1||i%4===3)?1:0)}else{AC.n.push(last);AC.a.push(0);AC.s.push(0)}}
+  AC.key=G.scale+'|'+p.seed+'|'+p.glide.toFixed(2)+'|'+p.accp.toFixed(2)};
+ acidNote=function(p){const s=((tk%16)+16)%16,n=SC[G.scale].length;if(AC.key!==G.scale+'|'+p.seed+'|'+p.glide.toFixed(2)+'|'+p.accp.toFixed(2))acidGen(p);
+  const bar=Math.floor(tk/16);if(s===0&&bar>0&&bar%8===0&&AC.ev!==bar){AC.ev=bar;const i=pick([2,5,7,9,11,13,14]);if(R()<.5)AC.a[i]=AC.a[i]?0:1;else AC.n[i]=AC.n[i]>=n?AC.n[i]-n:AC.n[i]+n}
+  let d=AC.n[s];if(bar%4===3&&s>=12&&d<n)d+=n;AC.last=s;return d};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],P=L.p;if(P.mode==='Acid 303'&&!L.m){orbAcid.tpl=pick(AT);AC.key='';
+   const pt=orbAcid.tpl.map(x=>x?1:0);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}L.pt=pat(L);
+   P.subosc=Math.max(P.subosc||0,.35);P.drv=Math.min(P.drv||0,.35);P.res=Math.min(P.res||8,12)}}catch(e){}return r}}
 </script>
 </body></html>
