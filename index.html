@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Orbitron 9000 v0.3 — generative Euclidean groovebox
+  Orbitron 9000 v0.31 — generative Euclidean groovebox
   Copyright (c) 2026 Superrated. Designed by Superrated and Claude.
 
   Licensed under the PolyForm Noncommercial License 1.0.0:
@@ -1624,8 +1624,11 @@ const SDC={};let SDG=2.2;function dubStab(w){OCT=G.oct||0;const T=TR[8],p=T.p,sd
  const sm=Math.pow(2,2*mv("Stab cutoff",w))*stabSweep(p,w),sm2=stabSweep(p,w+p.dec),res=Math.max(.5,p.res||6),cb=Math.max(40,Math.min(14000,p.cut*sm)),cb2=Math.max(40,Math.min(14000,p.cut*sm2)),pk=Math.min(17000,cb+(p.envA||0)*Math.sqrt(sm));
  [q1,q2].forEach(q=>{q.type='lowpass';q.frequency.setValueAtTime(pk,w);q.frequency.exponentialRampToValueAtTime(Math.max(40,cb2),w+Math.max(.02,p.fdec||.22))});q1.Q.value=res;q2.Q.value=.7;
  const dr=p.drv||0,dk=Math.round((1+dr*3)*20)/20;ws.curve=SDC[dk]||(SDC[dk]=(()=>{const n=1024,c=new Float32Array(n),tk=Math.tanh(dk);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*dk)/tk}return c})());mix.gain.value=.3;
- const wv=p.wave||0,ns=cur.n.slice(0,Math.round(p.size));ns.forEach((d,j)=>[-1,1].forEach(c=>{const f=d2f(d,p.oct),pn=ctx.createStereoPanner();pn.pan.value=c*(p.wid||0)*(.5+.5*(j%2?-1:1)*c*.0+.5)*.8;
-   [['sawtooth',1-wv],['square',wv*.42]].forEach(([ty,lv])=>{if(lv<.02)return;const o=osc(ty,f,w,e),og=ctx.createGain();o.detune.value=c*p.det+(R()-.5)*4+(p.chop?Math.sin(w*.37)*9*p.chop:0);og.gain.value=lv;o.connect(og);og.connect(pn)});pn.connect(mix)}));
+ /* v0.31: the two side panners are shared by all chord notes (same pan for every note anyway), gains at full level are skipped,
+    and on Eco / Eco eco each note plays one oscillator on alternating sides instead of a detuned pair (level made up) */
+ const wv=p.wave||0,ns=cur.n.slice(0,Math.round(p.size)),lite=(QOS.floor||0)>=1,PNS={},pnFor=c=>{if(PNS[c])return PNS[c];const x=ctx.createStereoPanner();x.pan.value=c*(p.wid||0)*.8;x.connect(mix);return PNS[c]=x};
+ ns.forEach((d,j)=>(lite?[j%2?1:-1]:[-1,1]).forEach(c=>{const f=d2f(d,p.oct),pn=pnFor(c);
+   [['sawtooth',1-wv],['square',wv*.42]].forEach(([ty,lv])=>{if(lv<.02)return;lv*=lite?1.9:1;const o=osc(ty,f,w,e);o.detune.value=c*p.det+(R()-.5)*4+(p.chop?Math.sin(w*.37)*9*p.chop:0);if(Math.abs(lv-1)<.01)o.connect(pn);else{const og=ctx.createGain();og.gain.value=lv;o.connect(og);og.connect(pn)}})}));
  if(p.air>.01){const s=ctx.createBufferSource(),ag=ctx.createGain();s.buffer=A.nb;s.loop=true;ag.gain.setValueAtTime(.0001,w);ag.gain.linearRampToValueAtTime(p.air*.9,w+.01);ag.gain.exponentialRampToValueAtTime(.0001,w+p.dec+.2);s.connect(ag);ag.connect(mix);s.start(w,R()*.5);s.stop(e)}
  mix.connect(ws);ws.connect(q1);q1.connect(q2);if((p.chop||0)>.01){const cr=ctx.createWaveShaper(),hp=ctx.createBiquadFilter(),lp=ctx.createBiquadFilter(),cg=ctx.createGain();cr.curve=crushCurve(.55+.3*p.chop);hp.type='highpass';hp.frequency.value=160+140*p.chop;lp.type='lowpass';lp.frequency.value=7500-2500*p.chop;cg.gain.value=1+.4*p.chop;q2.connect(cr);cr.connect(hp);hp.connect(lp);lp.connect(cg);cg.connect(g)}else q2.connect(g);
  const rc=SDG/(1+Math.max(0,res-2)*.06)/(1+dr*.5);env(g,w,T.lv*.15*rc,p.dec+.05,.004);send(g,A.dk,p.ds,p.rs);
@@ -1874,7 +1877,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.3 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.3';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.31 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.31';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -4378,7 +4381,9 @@ window.MOODX={
    and "Visuals" (Full / Low / Off — frees the main thread that schedules the notes). Both in Mix → Bus & FX under Engine quality. ---- */
 {const BUF={'Small · 26 ms':.025,'Standard':'playback','Large · 52 ms':.05, /* v0.27: Small = lowest latency for fast pads and faders; may crackle on busy phones */'Extra large · 102 ms':.1,'Max · 186 ms':.2},VIS=['Full','Low','Off'];
  const get=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},put=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
- let buf=get('orb-buf2','Extra large · 102 ms');if(!(buf in BUF))buf='Extra large · 102 ms'; /* v0.22 stability: 0.1 s is the default (new key, so an old 'Standard' choice does not stick) */let vis=get('orb-vis','Full');if(!VIS.includes(vis))vis='Full';
+ let buf=get('orb-buf2','Extra large · 102 ms');if(!(buf in BUF))buf='Extra large · 102 ms'; /* v0.22 stability: 0.1 s is the default (new key, so an old 'Standard' choice does not stick) *//* v0.31: until you pick Visuals yourself, Eco and Eco eco start with Low visuals (about 15 fps) and Hi-fi/Auto with Full */
+ let visSet=get('orb-vis','');const visNow=()=>VIS.includes(visSet)?visSet:(['Eco','Eco eco'].includes(get('orb-q','Eco'))?'Low':'Full');let vis=visNow();
+ setInterval(()=>{if(!VIS.includes(visSet)){const v=visNow();if(v!==vis){vis=v;document.querySelectorAll('#t-mix .vissel select').forEach(s=>s.value=v)}}},1000);
  window.orbBufHint=()=>BUF[buf];
  // visuals
  let lastV=0;const _vz=viz;viz=function(){if(vis==='Full')return _vz();const n=performance.now();
@@ -4388,7 +4393,7 @@ window.MOODX={
   if(!m)return;if(m.querySelector('.bufsel'))return;document.querySelectorAll('#t-mix .bufsel,#t-mix .vissel').forEach(e=>e.remove());
   const mk=(lab,opts,val,fn,cls,tip)=>{const l=document.createElement('label');l.className='sl '+cls;l.title=tip;l.appendChild(document.createTextNode(lab));const se=document.createElement('select');opts.forEach(o=>se.add(new Option(o,o)));se.value=val;se.onchange=()=>fn(se.value);l.appendChild(se);return l};
   const b=mk('Audio buffer',Object.keys(BUF),buf,v=>{buf=v;put('orb-buf2',v);if(ctx&&window.hardReset)hardReset('audio buffer '+v)},'bufsel','Bigger buffer = fewer dropouts/underruns, but pads and faders respond later. Changing it restarts the audio for a moment; the groove keeps playing.');
-  const v=mk('Visuals',VIS,vis,x=>{vis=x;put('orb-vis',x);if(x!=='Off')requestAnimationFrame(()=>{})},'vissel','Low = about 15 frames per second, Off = no live animation. Frees the main thread so notes stay on time on busy devices.');
+  const v=mk('Visuals',VIS,vis,x=>{vis=x;visSet=x;put('orb-vis',x);if(x!=='Off')requestAnimationFrame(()=>{})},'vissel','Low = about 15 frames per second, Off = no live animation. Frees the main thread so notes stay on time on busy devices.');
   if(q){q.after(b);b.after(v)}else{m.prepend(v);m.prepend(b)}};
  const _mx=mix;mix=function(){const r=_mx.apply(this,arguments);try{ui()}catch(e){}return r};try{ui()}catch(e){}setInterval(()=>{try{ui()}catch(e){}},1500);
  window.orbPerf={buf:()=>buf,vis:()=>vis}}
@@ -5777,5 +5782,30 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const _afx=applyFX;applyFX=function(){const r=_afx.apply(this,arguments);set();return r};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);set();return r};
  setInterval(()=>{if(A.tmid&&!A.tmid.__t){A.tmid.__t=1;set()}},500)}
+</script>
+<script>
+/* ---- v0.31: RIFF PICKER (Synths → Lead → Pattern, under Arp mode). All 16 riffs of the four modern families.
+   Picking one switches the lead to Riff mode at the next bar (straight away when stopped) and fits the Euclid ring to the riff's
+   rhythm; Off goes back to Motif. Sectors keep the riff. ---- */
+{const FAM=()=>(window.orbModern&&orbModern.FAM)||{},NM={afterlife:'Afterlife',bicep:'Bicep',peak:'Peak-time',minimal:'Minimal'};
+ const list=()=>{const o=[];for(const f in FAM())(FAM()[f].riff||[]).forEach((t,i)=>o.push({lab:NM[f]+' '+(i+1),t}));return o};
+ const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
+ const curLab=()=>{const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff')return'Off';const s=JSON.stringify(R.t),h=list().find(x=>JSON.stringify(x.t)===s);return h?h.lab:'Off'};
+ let pend=null;
+ const apply=lab=>{const L=TR[4],P=L.p,R=window.orbRiff;if(!R)return;
+  if(lab==='Off'){if(P.mode==='Riff'){P.mode='Motif';R.t=null;try{mot=[];mp=-1;buf=[]}catch(e){}}}
+  else{const h=list().find(x=>x.lab===lab);if(!h)return;R.t=h.t;R.f=fillT(h.t);P.mode='Riff';try{mot=[];mp=-1;buf=[]}catch(e){}
+   const pt=h.t.map(x=>x==null?0:1);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(L,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}L.pt=pat(L)}
+  setTimeout(()=>{try{build()}catch(e){}try{say('♪ LEAD RIFF · '+lab.toUpperCase())}catch(e){}},0)};
+ const _as=arrStep;arrStep=function(w){if(pend&&((tk%16)+16)%16===0){const l=pend;pend=null;apply(l)}return _as.apply(this,arguments)};
+ const add=()=>{try{const card=TR[4].mb&&TR[4].mb.closest('.card');if(!card)return;const old=card.querySelector('.lriff');
+   const am=[...card.querySelectorAll('label.sl')].find(l=>l.firstChild&&l.firstChild.textContent.trim()==='Arp mode');if(!am)return;
+   const s=mkSel('Riff',['Off',...list().map(x=>x.lab)],curLab(),v=>{if(playing)pend=v;else apply(v)});s.classList.add('lriff');s.dataset.g='pat';s.dataset.keep='pat';
+   if(old)old.replaceWith(s);else am.after(s);
+   const sel=am.querySelector('select');if(sel&&!sel.__rf){sel.__rf=1;sel.addEventListener('change',()=>{const r=card.querySelector('.lriff select');if(r)r.value=curLab()})}}catch(e){}};
+ const _b=build;build=function(){const r=_b.apply(this,arguments);add();return r};
+ // cards can be rebuilt by deferred code that calls an older reference: re-add the picker whenever it is missing (only while the lead card is on screen)
+ setInterval(()=>{try{const card=TR[4].mb&&TR[4].mb.closest('.card');if(card&&card.offsetParent&&!card.querySelector('.lriff'))add();else if(card&&card.offsetParent){const r=card.querySelector('.lriff select');if(r&&document.activeElement!==r&&r.value!==curLab())r.value=curLab()}}catch(e){}},400);
+ try{build()}catch(e){}}
 </script>
 </body></html>
