@@ -127,6 +127,17 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
 <section class="tp" id="t-lfo" hidden></section>
 <section class="tp" id="t-viz" hidden><div class="panel"><canvas id="viz" width="720" height="720" style="width:100%;height:auto;max-width:560px;display:block;margin:auto"></canvas><div class="lg" id="lg"></div></div></section>
 <section class="tp" id="t-perf" hidden></section>
+<script>
+/* ---- v0.35: background pre-renders (drums, hats, perc, claps, drop sounds, the safety loop) run one at a time with a short pause in
+   between, and wait a little longer while the app is under load — after a Launch they used to start all at once and could make a phone stutter.
+   A short stutter in the first 10 s after a Launch no longer rebuilds the audio engine (that rebuild is what left Android's audio "suspended"). ---- */
+{const O=window.OfflineAudioContext;if(O&&O.prototype.startRendering){const SR=O.prototype.startRendering;let busy=false,last=0;const q=[];
+ const pump=()=>{if(busy||!q.length)return;const gap=(window.QOS&&((QOS.ml||0)>=2||(QOS.lvl||0)>=2))?200:40,wait=Math.max(0,last+gap-performance.now());
+  if(wait>0){setTimeout(pump,wait);return}const j=q.shift();busy=true;let p;try{p=SR.call(j.c)}catch(e){busy=false;last=performance.now();j.no(e);pump();return}
+  p.then(b=>{busy=false;last=performance.now();j.ok(b);pump()},e=>{busy=false;last=performance.now();j.no(e);pump()})};
+ O.prototype.startRendering=function(){const c=this;return new Promise((ok,no)=>{q.push({c,ok,no});pump()})};
+ window.orbRenderQ={len:()=>q.length+(busy?1:0)}}}
+</script>
 <script>try{if(localStorage.getItem('orb-q')==='Eco eco')localStorage.setItem('orb-q','Survival')}catch(e){} /* v0.34: Eco eco is now called Survival */</script>
 <script>
 /* ---- perf 11: one heartbeat for the slow screen timers. Every setInterval of 200 ms or more (UI refreshes, menus, meters, autosave…) runs
@@ -5001,7 +5012,7 @@ window.MOODX={
  const _r=window.orbReset;window.orbReset=function(){if(playing&&safety('broken audio'))return;return _r&&_r.apply(this,arguments)};
  // trigger 2: repeated dropouts (6 within 10 s)
  let ur=null,ut=[];setInterval(()=>{if(!ctx||!playing)return;let ps=null;try{ps=ctx.playbackStats}catch(e){}if(!ps||ps.underrunEvents==null)return;
-  if(ur!=null&&ps.underrunEvents>ur){const n=performance.now();for(let i=0;i<ps.underrunEvents-ur;i++)ut.push(n);ut=ut.filter(t=>n-t<10000);if(ut.length>=6){ut=[];safety('dropouts')}}ur=ps.underrunEvents},500);
+  if(ur!=null&&ps.underrunEvents>ur){const n=performance.now();for(let i=0;i<ps.underrunEvents-ur;i++)ut.push(n);ut=ut.filter(t=>n-t<10000);if(ut.length>=6){ut=[];if(performance.now()-(window.__launchT||-1e9)>10000)safety('dropouts')}}ur=ps.underrunEvents},500);
  // trigger 3: silence for 2 s while tracks should sound
  let an=null,ab=null,q=0;setInterval(()=>{if(!ctx||!playing||busy||ctx.state!=='running'){q=0;return}
   const sounding=TR.some(T=>!T.m&&T.pt&&T.pt.some(x=>x));if(!sounding){q=0;return}
@@ -6019,5 +6030,8 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   try{if(a){const s=mv(a,w);if(s)T.lv=lv*Math.max(.3,s>=0?1+.35*s:1+.7*s)}
    if(p){const s=mv(p,w);if(s)T.pan=Math.max(-1,Math.min(1,(+pn||0)+.85*s))}}catch(e){}
   try{return _f(k,w)}finally{T.lv=lv;T.pan=pn}}}
+</script>
+<script>
+{const _g=generate;generate=function(){window.__launchT=performance.now();return _g.apply(this,arguments)}}
 </script>
 </body></html>
