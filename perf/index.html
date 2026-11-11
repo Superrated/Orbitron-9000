@@ -128,6 +128,11 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
 <section class="tp" id="t-viz" hidden><div class="panel"><canvas id="viz" width="720" height="720" style="width:100%;height:auto;max-width:560px;display:block;margin:auto"></canvas><div class="lg" id="lg"></div></div></section>
 <section class="tp" id="t-perf" hidden></section>
 <script>
+/* ---- perf 1: a finished sound source is disconnected right away, so the filters and gains behind it fall silent and drop out of the audio graph
+   instead of being processed until garbage collection ---- */
+{const P=AudioScheduledSourceNode.prototype,st=P.start;P.start=function(){const r=st.apply(this,arguments);try{if(!(this.context instanceof OfflineAudioContext))this.addEventListener('ended',()=>{try{this.disconnect()}catch(e){}},{once:true})}catch(e){}return r}}
+</script>
+<script>
 /* v172: display names for moods (internal keys unchanged, so sectors, exports and settings keep working) */
 window.MOODNAME={Dark:'Event Horizon',Melancholic:'Lost Signal',Dreamy:'Nebula',Tense:'Countdown',Ethereal:'Aurora',Hopeful:'First Light',Noir:'Dark Side',Drone:'Orbital Hum',Power:'Max Q',Ambient:'Low Orbit',
  /* v0.24 */Acid:'Solar Flare',Italo:'Satellite Disco',Breaks:'Meteor Shower',Bleep:'Telemetry','Melodic House':'Afterglow','Distorted Electro':'Ion Storm','Groove Techno':'Gravity Assist',Temporal:'Time Dilation',Vector:'Trajectory','Deep Space':'Outer Rim'};
@@ -419,7 +424,7 @@ function chips(){[['#t-drums',[0,1,2,3,7]],['#t-synth',[4,5,6,8,9]]].forEach(([i
  c.prepend(cap);c.prepend(seg);c.prepend(bar);show()});tagCtl();applyMode()}
 const _b4=build;build=function(){_b4();chips()};
 setInterval(()=>{const t=NN[G.root]+' '+G.scale+' \u00b7 '+MN(curMood),k=$('#kinfo'),s=$('#gsum');if(k)k.textContent=t+' \u00b7 '+G.bpm;if(s)s.textContent='Now: '+t+(typeof MP!=='undefined'&&MP[curMood]?' ('+MP[curMood].sty+')':'')+' \u00b7 '+G.bpm+' BPM \u00b7 lead: '+(TR[4].p.patch||'custom')+' \u00b7 pad: '+TR[5].p.patch+(G.dfeel?' \u00b7 drums: '+G.dfeel:'')+(G.hfam?' \u00b7 harmony: '+G.hfam:'')},400);
-setInterval(()=>document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('m',!!TR[+b.dataset.k].m)),300);
+/* perf 4: chip mute state is kept in sync on change by the v0.25 mute sync; this 300 ms poll is no longer needed */
 [rp,Q3].forEach(p=>p.classList.add('rz'));
 const QD=document.createElement('div');QD.className='panel';QD.innerHTML='<h2>Dub stabs</h2><div class="pads"></div>';
 {const g=QD.children[1],sb={on:0,t:0,iv:0},mk=(l,dn,up)=>{const b=document.createElement('button');b.className='pad';b.innerHTML=l;g.appendChild(b);if(!up){b.onclick=dn;return}let on=0;const U=()=>{if(!on)return;on=0;b.classList.remove('on');up()};b.addEventListener('pointerdown',e=>{e.preventDefault();if(on)return;on=1;b.classList.add('on');dn()});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,U))};
@@ -1270,7 +1275,7 @@ const _gen36=generate;generate=function(){G.shx=0;_gen36();if(curMood==='Deep Sp
 /* ---- v38: performance — pre-rendered hat metal, lighter master FX, capped visual fps, no hidden redraws, mobile-aware guard, Engine quality (Auto / Eco / Hi-fi) ---- */
 {const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4;
  let q='Eco';try{if(!localStorage.getItem('orb-q2')){localStorage.setItem('orb-q','Eco');localStorage.setItem('orb-q2','1')}q=localStorage.getItem('orb-q')||'Eco'}catch(e){}
- const applyQ=()=>{const hf=q==='Hi-fi';QOS.hi=hf?[260,360,460]:mob?[110,160,220]:[170,240,320];QOS.hard=hf?600:mob?300:420;QOS.floor=q==='Eco eco'?2:q==='Eco'?1:0;QOS.fps=q==='Hi-fi'?60:q==='Eco eco'?15:q==='Eco'?20:(mob?30:45);QOS.eco2=q==='Eco eco'};applyQ();
+ const applyQ=()=>{const hf=q==='Hi-fi';QOS.hi=hf?[260,360,460]:mob?[110,160,220]:[170,240,320];QOS.hard=hf?600:mob?300:420;QOS.floor=q==='Eco eco'?2:0; /* perf 5: Eco no longer forces a saving level — it saves only when the load meter asks for it */QOS.fps=q==='Hi-fi'?60:q==='Eco eco'?15:q==='Eco'?20:(mob?30:45);QOS.eco2=q==='Eco eco'};applyQ();
  QOS.la=.2;document.addEventListener('visibilitychange',()=>{QOS.la=document.hidden?1.2:.2});
  // quality selector in Mission control
  const _mx38=mix;mix=function(){_mx38();const m=$('#mix'),l=document.createElement('label');l.className='sl';l.appendChild(document.createTextNode('Engine quality'));const s=document.createElement('select');[['Hi-fi','Full · best sound'],['Auto','Auto · adapts to the device'],['Eco','Light · saves CPU'],['Eco eco','Ultra light · 64 voices max']].forEach(([x,t])=>s.add(new Option(t,x)));s.value=q;s.onchange=()=>{q=s.value;try{localStorage.setItem('orb-q',q)}catch(e){}applyQ()};l.appendChild(s);m.prepend(l)};
@@ -1311,14 +1316,14 @@ const _gen39=generate;generate=function(){_gen39();const P=TR[4].p,ac=P.mode==='
   if((P.sus||0)>.3)P.pg=Math.min(P.pg||1,2.2)}
  TRIM[4]=(MTRIM[curMood]&&MTRIM[curMood][4]||0)-2;build()};
 /* ---- v40: lean engine — batched dial redraws, one rebuild per Generate, no lead compressor, shorter reverbs on phones/Eco, stronger default shedding on phones, calmer GPU, flight diagnostics ---- */
-{const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4,qual=()=>{try{return localStorage.getItem('orb-q')||'Eco'}catch(e){return 'Eco'}},lean=()=>qual()==='Eco'||qual()==='Eco eco'||(mob&&qual()!=='Hi-fi');
+{const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4,qual=()=>{try{return localStorage.getItem('orb-q')||'Eco'}catch(e){return 'Eco'}},lean=()=>qual()==='Eco eco'||(mob&&qual()==='Auto'); /* perf 5: Eco keeps the full reverb */
  QOS.lateTot=0;QOS.fl0=QOS.floor||0;
- const tierFloor=()=>{const q=qual();return q==='Eco'||q==='Eco eco'?2:q==='Hi-fi'?0:mob?1:0};QOS.floor=tierFloor();
+ const tierFloor=()=>{const q=qual();return q==='Eco eco'?2:q==='Eco'||q==='Hi-fi'?0:mob?1:0}; /* perf 5 */QOS.floor=tierFloor();
  if(mob)QOS.la=.3;document.addEventListener('visibilitychange',()=>{QOS.la=document.hidden?1.2:(mob?.3:.2)});
  // reverb impulse lengths per tier (set once the audio engine exists)
  const _init40=init;init=function(){const nw=!ctx;_init40();if(!nw)return;if(lean()){try{A.rcv.buffer=ir2(qual()==='Eco eco'?1.1:qual()==='Eco'?1.4:1.8,.02);A.rmc.buffer=irM(ir(.8,1.6,.06))}catch(e){}}};
  // batched step-dial redraws (one timer instead of ~90 per second)
- setInterval(()=>{if(!ctx||!DQ.length)return;const now=ctx.currentTime+.01;let i=0;while(i<DQ.length&&DQ[i][2]<=now){const [T,s]=DQ[i];if(playing)draw(T,s);i++}if(i)DQ.splice(0,i);if(!playing)DQ.length=0},33);
+ setInterval(()=>{if(!ctx||!DQ.length)return;const now=ctx.currentTime+.01;let i=0;const sh=!$('#t-drums').hidden||!$('#t-synth').hidden; /* perf 4: ring playheads are only drawn while a card page is on screen */while(i<DQ.length&&DQ[i][2]<=now){const [T,s]=DQ[i];if(playing&&sh)draw(T,s);i++}if(i)DQ.splice(0,i);if(!playing)DQ.length=0},33);
  // one rebuild per task, however many wrappers ask for it
  let BQ=0;const _b40=build;build=function(){if(BQ)return;BQ=1;queueMicrotask(()=>{BQ=0;_b40()})};
  // count late scheduler steps for diagnostics
@@ -3462,7 +3467,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  window.syncMenus=sync;
  const _sf=window.syncFaders;if(_sf)window.syncFaders=function(){_sf.apply(this,arguments);sync()};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);setTimeout(sync,0);setTimeout(sync,150);return r};
- setInterval(()=>{if(!document.hidden)sync()},700)}
+ setInterval(()=>{if(!document.hidden&&['#t-drums','#t-synth'].some(q=>{const e=document.querySelector(q);return e&&!e.hidden}))sync()},700)}  /* perf 3: only while the cards are on screen */
 </script>
 <script>
 /* v163: "Temporal" mood — Neapolitan loop techno after Gaetano Parisio / Conform: stripped-back, loop-driven, gritty but funky.
@@ -5538,5 +5543,18 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   btn=old.cloneNode(true);old.replaceWith(btn);btn.style.setProperty('--col','#ff9b5d');
   btn.addEventListener('click',e=>{e.preventDefault();try{ensure()}catch(x){}if(!playing){apply();return}pend=pend?0:1;paint()});paint();return true};
  if(!hook())setTimeout(hook,500);setInterval(paint,500);window.orbKickSwitch={isFour,apply}}
+</script>
+<script>
+/* ---- perf 3: card fader/menu sync (syncFaders) was run synchronously several times per Launch (~14 ms each on desktop, ~60 ms on a slow phone)
+   even when no card is on screen. Now: calls in the same moment are merged into one, and while Drums/Synths are hidden the sync waits until you open them. ---- */
+{const vis=()=>['#t-drums','#t-synth'].some(q=>{const e=document.querySelector(q);return e&&!e.hidden});let dirty=0,queued=0;const real=window.syncFaders;
+ const run=()=>{queued=0;if(!vis()){dirty=1;return}dirty=0;try{real()}catch(e){}};
+ window.syncFaders=function(){if(!queued){queued=1;setTimeout(run,0)}};
+ document.addEventListener('click',()=>setTimeout(()=>{if(dirty&&vis())run()},0),true);
+ /* the Mix page (all its faders) was rebuilt on every Launch too; now only when it is on screen, otherwise when you open it */
+ const mv=()=>{const e=document.querySelector('#t-mix');return e&&!e.hidden};let md=0,mq=0;const realMix=syncMix;
+ const mrun=()=>{mq=0;if(!mv()){md=1;return}md=0;try{realMix()}catch(e){}};
+ syncMix=function(){if(!mq){mq=1;setTimeout(mrun,0)}};
+ document.addEventListener('click',()=>setTimeout(()=>{if(md&&mv())mrun()},0),true)}
 </script>
 </body></html>
