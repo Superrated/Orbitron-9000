@@ -649,7 +649,8 @@ setInterval(lfTick,30);
 /* ---- v12: production engine — master glue/clip/limit, groove, song mode, smarter generator ---- */
 Object.assign(G,{glue:.45,clip:.3,groove:.6,bavoid:true});
 const HH={g:null};
-function clipCurve(dr){const n=2048,c=new Float32Array(n),k=.3+3*dr,nm=Math.tanh(k);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=Math.tanh(x*k)/nm}return c} /* v0.22: covers ±2 (input is padded by 6 dB) */
+const CLC={};function clipCurve(dr){const kk=Math.round(dr*1000);if(CLC[kk])return CLC[kk];return CLC[kk]=clipCurve0(dr)}
+function clipCurve0(dr){const n=2048,c=new Float32Array(n),k=.3+3*dr,nm=Math.tanh(k);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=Math.tanh(x*k)/nm}return c} /* v0.22: covers ±2 (input is padded by 6 dB) */
 function wsCurve2(){const n=2048,c=new Float32Array(n);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=Math.tanh(x)}return c}
 function satCurve(k){const n=1024,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*k)/k}return c}
 /* damped stereo room/hall: pre-delay, sparse early reflections, exponential tail whose highs die faster */
@@ -799,7 +800,7 @@ const MP={
  Power:{sty:'Peak-time techno',kick:{click:1.2},hat:{tone:9000,dec:.035,open:.1,acc:.5,metal:.8},clap:{tone:1200,spread:9,tail:.3,rv:.3},cl:.55,
   fx:{dly:.2,fb:.5,dt:.75,rev:.35,shim:.2,dens:.15,glue:.6,clip:.6},gate:0,lfo:[['Master low-pass',0,32,.2],['Lead decay',0,32,0]]}};
 const rr=v=>Array.isArray(v)?v[0]+R()*(v[1]-v[0]):v;
-function applyFX(){if(!A.dO)return;A.dO.gain.value=G.dly;A.dF.gain.value=G.fb;A.rO.gain.value=G.rev;A.sh.gain.value=G.shim;A.rg.gain.value=G.rumble;A.rl.frequency.value=G.rcut;A.gr.gain.value=G.bgrit*.3;A.glue.threshold.value=-3-12*G.glue;A.clip.curve=clipCurve(G.clip);const dt=(G.dt||.75)*60/G.bpm;A.dl.delayTime.value=dt;A.dl2.delayTime.value=dt}
+function applyFX(){if(!A.dO)return;A.dO.gain.value=G.dly;A.dF.gain.value=G.fb;A.rO.gain.value=G.rev;A.sh.gain.value=G.shim;A.rg.gain.value=G.rumble;A.rl.frequency.value=G.rcut;A.gr.gain.value=G.bgrit*.3;A.glue.threshold.value=-3-12*G.glue;if(A.clip.__cv!==G.clip){A.clip.__cv=G.clip;A.clip.curve=clipCurve(G.clip)}const dt=(G.dt||.75)*60/G.bpm; /* perf 6 */A.dl.delayTime.value=dt;A.dl2.delayTime.value=dt}
 const _init16=init;init=function(){const n=!ctx;_init16();if(n)applyFX()};
 function gateUI(){const g2=$('#gate');if(!g2)return;g2.innerHTML='';sl(g2,'Gate depth',0,1,GT.depth,.01,v=>{GT.depth=v});sl(g2,'Gate steps',2,32,GT.st,1,v=>{GT.st=v;gtPat()});sl(g2,'Gate hits',1,32,GT.h,1,v=>{GT.h=v;gtPat()});sl(g2,'Gate rotate',0,31,GT.r,1,v=>{GT.r=v;gtPat()});sl(g2,'Gate length',.1,1,GT.len,.01,v=>{GT.len=v})}
 function lfoUI(){document.querySelectorAll('#t-lfo .panel').forEach((pn,n)=>{const L=LFOS[n],s=pn.querySelectorAll('select'),r=pn.querySelectorAll('input[type=range]');if(s.length<4)return;s[0].value=L.tg;s[1].value=L.sh;s[2].value=L.sync;s[3].value=L.div;s[3].hidden=!L.sync;
@@ -1255,7 +1256,7 @@ h1{display:flex;align-items:center;gap:0}.orb{margin-right:10px}
 /* ---- v36: real shimmer reverb (octave-up pitch-shifted feedback through a long reverb), fed from the synth bus; Deep Space uses it heavily; "Space shimmer" mix slider ---- */
 G.shx=0;const SHM={on:0};
 function shimmerInit(){if(SHM.on||!ctx)return;SHM.on=1;const g=(v=1)=>{const n=ctx.createGain();n.gain.value=v;return n};
- const inp=g(0),cv=ctx.createConvolver(),out=g(.9),fb=g(.55),hp=ctx.createBiquadFilter(),lp=ctx.createBiquadFilter(),sum=g(1);cv.buffer=ir2(2.5,.03); /* v0.22 stability: was 4 s */hp.type='highpass';hp.frequency.value=300;lp.type='lowpass';lp.frequency.value=7000;
+ const inp=g(0),cv=ctx.createConvolver(),out=g(.9),fb=g(.55),hp=ctx.createBiquadFilter(),lp=ctx.createBiquadFilter(),sum=g(1);cv.buffer=(SHM.irb&&SHM.irb.sampleRate===ctx.sampleRate)?SHM.irb:ir2(2.5,.03); /* perf 7: impulse prepared in idle time */ /* v0.22 stability: was 4 s */hp.type='highpass';hp.frequency.value=300;lp.type='lowpass';lp.frequency.value=7000;
  inp.connect(sum);sum.connect(cv);cv.connect(out);out.connect(A.gt);SHM.cv=cv;
  // doppler octave-up shifter: two crossfaded delay taps swept by sawtooth LFOs
  const f=16.67,w=.06,T=ctx.currentTime+.05,mix=g(1);
@@ -1431,7 +1432,7 @@ window.DR={cache:new Map(),pend:new Set(),rendering:false,vr:1,hits:0,live:0,
   if(k===0){if(A.ksd!==p.drive){A.ks.curve=curve(p.drive);A.ksd=p.drive}g.connect(A.ks);const r=ctx.createGain();r.gain.value=.55*(G.rfeed||1);g.connect(r);r.connect(A.ru);duck(w)}
   else if(k===3)send(g,A.m,p.ds,p.rs);else send(g,A.m,0,p.rv);
   s.start(w);s.stop(w+c.b.duration+.01);this.hits++;return true},
- request(k,key,v,snap){if(this.pend.has(key)||!window.OfflineAudioContext)return;this.pend.add(key);const fx=FIX;setTimeout(()=>this.render(k,key,fx,snap),0)},
+ request(k,key,v,snap){if(this.pend.has(key)||!window.OfflineAudioContext)return;this.pend.add(key);const fx=FIX;(window.requestIdleCallback?f=>requestIdleCallback(f,{timeout:250}):f=>setTimeout(f,0))(()=>this.render(k,key,fx,snap))}, /* perf 7: drum pre-renders run in idle time, not right on top of the scheduler */
  render(k,key,fx,snap){const T=TR[k],p=T.p,keep=snap?Object.assign({},p):null;if(snap)Object.assign(p,snap); /* v0.22: render exactly the settings that played (tuned kick, varied clap) */
   try{this._render(k,key,fx,!!snap)}finally{if(keep){for(const q in p)if(!(q in keep))delete p[q];Object.assign(p,keep)}}},
  _render(k,key,fx,snapped){const T=TR[k],p=T.p,sr=ctx.sampleRate,len=k===0||k===7?p.dec+.08:k===2?3*p.spread/1e3+p.tail+.08:p.dec+.08,oc=new OfflineAudioContext(1,Math.ceil(sr*Math.min(1.5,len)),sr);
@@ -1861,7 +1862,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
    CH.appendChild(c)})})}
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
- const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden)chBuild();return r};
+ const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
  const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.27 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.27';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
@@ -2779,6 +2780,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const NAMES=Object.keys(STY);
  function fit(T,pt){const n=pt.length,h=pt.reduce((a,c)=>a+c,0);let best={h,r:0,ten:0,sc:-1};
   for(let ti=0;ti<=20&&best.sc<n;ti++)for(let r=0;r<n;r++){const ten=ti/20,q=pat(Object.assign({},T,{st:n,h,r,ten}));let sc=0;for(let i=0;i<n;i++)if(q[i]===pt[i])sc++;if(sc>best.sc){best={h,r,ten,sc};if(sc===n)break}}return best}
+ /* perf 6: ring fitting is a brute-force search; remember results */{const C=new Map(),f0=fit;fit=function(T,pt){const k=pt.join('')+'|'+(T.tsd||T.n||'');let r=C.get(k);if(!r){r=f0(T,pt);if(C.size>500)C.clear();C.set(k,r)}return Object.assign({},r)}}
  function style(name,rot){const S=STY[name];if(!S)return;const T=TR[6],P=T.p;let pt=[...S[0]].map(c=>c==='x'?1:0);if(rot)pt=pt.slice(-rot).concat(pt.slice(0,-rot));
   T.st=16;const ft=fit(T,pt);T.h=ft.h;T.r=ft.r;T.ten=ft.ten;T.pt=pat(T);Object.assign(P,{bns:S[1],bgt:S[2],bsl:S[3],bgh:S[4],fifth:0,jump:0,bsty:name,blk:'Free'});P.oct=Math.max(0,Math.min(2,Math.round(P.oct)||1))}
  window.bassStyle=style;window.bassFit=fit;setTimeout(()=>{window.bassRoll=roll},0);
@@ -3466,7 +3468,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   set(s,i>=0?lib[i]:'(custom)')}
  window.syncMenus=sync;
  const _sf=window.syncFaders;if(_sf)window.syncFaders=function(){_sf.apply(this,arguments);sync()};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);setTimeout(sync,0);setTimeout(sync,150);return r};
+ const cv=()=>['#t-drums','#t-synth'].some(q=>{const e=document.querySelector(q);return e&&!e.hidden});const _g=generate;generate=function(){const r=_g.apply(this,arguments);if(cv()){setTimeout(sync,0);setTimeout(sync,150)}return r}; /* perf 6 */
  setInterval(()=>{if(!document.hidden&&['#t-drums','#t-synth'].some(q=>{const e=document.querySelector(q);return e&&!e.hidden}))sync()},700)}  /* perf 3: only while the cards are on screen */
 </script>
 <script>
@@ -4358,7 +4360,7 @@ window.MOODX={
 <script>
 /* ---- v0.22 performance: "Audio buffer" (bigger buffer = fewer underruns, more delay; restarts the engine for a moment, groove kept)
    and "Visuals" (Full / Low / Off — frees the main thread that schedules the notes). Both in Mix → Bus & FX under Engine quality. ---- */
-{const BUF={'Standard':'playback','Large · 52 ms':.05,'Extra large · 102 ms':.1,'Max · 186 ms':.2},VIS=['Full','Low','Off'];
+{const BUF={'Small · 26 ms':.025,'Standard':'playback','Large · 52 ms':.05, /* v0.27: Small = lowest latency for fast pads and faders; may crackle on busy phones */'Extra large · 102 ms':.1,'Max · 186 ms':.2},VIS=['Full','Low','Off'];
  const get=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},put=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
  let buf=get('orb-buf2','Extra large · 102 ms');if(!(buf in BUF))buf='Extra large · 102 ms'; /* v0.22 stability: 0.1 s is the default (new key, so an old 'Standard' choice does not stick) */let vis=get('orb-vis','Full');if(!VIS.includes(vis))vis='Full';
  window.orbBufHint=()=>BUF[buf];
@@ -5556,5 +5558,17 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const mrun=()=>{mq=0;if(!mv()){md=1;return}md=0;try{realMix()}catch(e){}};
  syncMix=function(){if(!mq){mq=1;setTimeout(mrun,0)}};
  document.addEventListener('click',()=>setTimeout(()=>{if(md&&mv())mrun()},0),true)}
+</script>
+<script>
+/* ---- perf 6: the bass card's controls were re-synced on every Launch even with the Synths page hidden; now when it is on screen ---- */
+{const vis=()=>{const e=document.querySelector('#t-synth');return e&&!e.hidden};let dirty=0;const real=window.bassSync;if(real){
+ window.bassSync=function(){if(!vis()){dirty=1;return}dirty=0;return real.apply(this,arguments)};
+ document.addEventListener('click',()=>setTimeout(()=>{if(dirty&&vis()){dirty=0;try{real()}catch(e){}}},0),true)}}
+</script>
+<script>
+/* ---- perf 7: the shimmer reverb's 2.5 s impulse (≈100 ms of maths, ≈400 ms on a slow phone) was computed the first time a mood used shimmer —
+   in the middle of a Launch. It is now prepared in idle time a few seconds after the engine starts. ---- */
+{const _i=init;init=function(){const nw=!ctx;const r=_i.apply(this,arguments);if(nw&&ctx){const go=()=>{try{if(typeof SHM!=='undefined'&&!SHM.on&&!SHM.irb&&window.ir2)SHM.irb=ir2(2.5,.03)}catch(e){}};
+  setTimeout(()=>{window.requestIdleCallback?requestIdleCallback(go,{timeout:4000}):go()},3000)}return r}}
 </script>
 </body></html>
