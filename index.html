@@ -5519,4 +5519,24 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    const pt=orbAcid.tpl.map(x=>x?1:0);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}L.pt=pat(L);
    P.subosc=Math.max(P.subosc||0,.35);P.drv=Math.min(P.drv||0,.35);P.res=Math.min(P.res||8,12)}}catch(e){}return r}}
 </script>
+<script>
+/* ---- v0.27: Flight — the Echo throw thruster becomes KICK SWITCH. Tap: a four-to-the-floor kick switches to a broken pattern
+   (the last one you had, or one from a small library: breaks, tresillo, half-step, electro, skip); any other kick switches to four-to-the-floor.
+   The change lands on the next bar. ---- */
+{const LIB=['x.....x...x.....','x..x..x...x.....','x.........x.x...','x.....x.x.......','x..x....x..x....','x.....x...x..x..'];
+ let alt=null,pend=0;
+ const hits=()=>{const T=TR[0],o=[];for(let i=0;i<16;i++)if(T.pt[i%T.st])o.push(i);return o};
+ const isFour=()=>{const h=hits();return h.length===4&&h.every((x,i)=>x===i*4)};
+ const setPat=str=>{const T=TR[0],pt=[...str].map(c=>c==='x'?1:0);T.st=16;try{const ft=bassFit(T,pt);Object.assign(T,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}T.pt=pat(T);
+  /* bassFit finds the closest ring; if it is not exact, use the pattern as is */if(T.pt.join('')!==pt.join(''))T.pt=pt;try{draw(T,-1)}catch(e){}};
+ const cur16=()=>{const T=TR[0];let s='';for(let i=0;i<16;i++)s+=T.pt[i%T.st]?'x':'.';return s};
+ const apply=()=>{if(isFour()){setPat(alt||pick(LIB));msg('KICK · BROKEN')}else{alt=cur16();setPat('x...x...x...x...');msg('KICK · FOUR TO THE FLOOR')}paint()};
+ const msg=t=>{try{if(typeof say==='function')say('◉ '+t)}catch(e){}};
+ const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);try{if(pend&&((tk%16)+16)%16===0){pend=0;apply()}}catch(e){}return r};
+ let btn=null;const paint=()=>{if(!btn)return;const st=pend?'⏳ next bar':isFour()?'4/4 → broken':'broken → 4/4';const h='KICK SWITCH<span> '+st+'</span>';if(btn._h!==h){btn._h=h;btn.innerHTML=h}btn.classList.toggle('on',!!pend)};
+ const hook=()=>{const old=[...document.querySelectorAll('#t-perf button.pad')].find(b=>/^Echo throw/i.test(b.textContent));if(!old)return false;
+  btn=old.cloneNode(true);old.replaceWith(btn);btn.style.setProperty('--col','#ff9b5d');
+  btn.addEventListener('click',e=>{e.preventDefault();try{ensure()}catch(x){}if(!playing){apply();return}pend=pend?0:1;paint()});paint();return true};
+ if(!hook())setTimeout(hook,500);setInterval(paint,500);window.orbKickSwitch={isFour,apply}}
+</script>
 </body></html>
