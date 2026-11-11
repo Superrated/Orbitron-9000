@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Orbitron 9000 v0.27 — generative Euclidean groovebox
+  Orbitron 9000 v0.28 — generative Euclidean groovebox
   Copyright (c) 2026 Superrated. Designed by Superrated and Claude.
 
   Licensed under the PolyForm Noncommercial License 1.0.0:
@@ -128,6 +128,20 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
 <section class="tp" id="t-viz" hidden><div class="panel"><canvas id="viz" width="720" height="720" style="width:100%;height:auto;max-width:560px;display:block;margin:auto"></canvas><div class="lg" id="lg"></div></div></section>
 <section class="tp" id="t-perf" hidden></section>
 <script>
+/* ---- perf 11: one heartbeat for the slow screen timers. Every setInterval of 200 ms or more (UI refreshes, menus, meters, autosave…) runs
+   from a single shared 100 ms clock instead of its own timer, so the phone wakes up once instead of dozens of times. Fast timers (LFOs, delay sync,
+   playheads, the scheduler) keep their own exact timers. ---- */
+(function(){const si=window.setInterval.bind(window),ci=window.clearInterval.bind(window);const J=new Map();let id=1e6,beat=null;
+ const run=()=>{const n=performance.now();for(const [k,j] of J){if(n>=j.due){j.due=n+j.ms-(n-j.due>j.ms?0:Math.min(j.ms*.5,n-j.due));try{j.fn.apply(window,j.a)}catch(e){setTimeout(()=>{throw e})}}}};
+ window.setInterval=function(fn,ms,...a){if(typeof fn!=='function'||!(ms>=200))return si(fn,ms,...a);const k=++id;J.set(k,{fn,ms,a,due:performance.now()+ms});if(!beat)beat=si(run,100);return k};
+ window.clearInterval=function(k){if(J.has(k)){J.delete(k);return}return ci(k)};window.orbBeat={count:()=>J.size}})();
+</script>
+<script>
+/* ---- perf 1: a finished sound source is disconnected right away, so the filters and gains behind it fall silent and drop out of the audio graph
+   instead of being processed until garbage collection ---- */
+{const P=AudioScheduledSourceNode.prototype,st=P.start;P.start=function(){const r=st.apply(this,arguments);try{if(!(this.context instanceof OfflineAudioContext))this.addEventListener('ended',()=>{try{this.disconnect()}catch(e){}},{once:true})}catch(e){}return r}}
+</script>
+<script>
 /* v172: display names for moods (internal keys unchanged, so sectors, exports and settings keep working) */
 window.MOODNAME={Dark:'Event Horizon',Melancholic:'Lost Signal',Dreamy:'Nebula',Tense:'Countdown',Ethereal:'Aurora',Hopeful:'First Light',Noir:'Dark Side',Drone:'Orbital Hum',Power:'Max Q',Ambient:'Low Orbit',
  /* v0.24 */Acid:'Solar Flare',Italo:'Satellite Disco',Breaks:'Meteor Shower',Bleep:'Telemetry','Melodic House':'Afterglow','Distorted Electro':'Ion Storm','Groove Techno':'Gravity Assist',Temporal:'Time Dilation',Vector:'Trajectory','Deep Space':'Outer Rim'};
@@ -197,7 +211,7 @@ function curve(k){const n=512,c=new Float32Array(n);for(let i=0;i<n;i++){const x
 function init(){if(ctx){ctx.resume();return}
  ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:window.orbBufHint?orbBufHint():'playback'});window.LAMIN=Math.max(0,(ctx.baseLatency||0)*1.6+.06);
  const g=(v=1)=>{const n=ctx.createGain();n.gain.value=v;return n};
- A.m=g(.8);{const ws=ctx.createWaveShaper(),c=ctx.createDynamicsCompressor();ws.curve=wsCurve2();ws.oversample="none";A.hp=ctx.createBiquadFilter();A.hp.type="highpass";A.hp.frequency.value=10;A.lp=ctx.createBiquadFilter();A.lp.type="lowpass";A.lp.frequency.value=20000;A.lp.Q.value=.7;A.sg=ctx.createGain();c.threshold.value=-14;c.ratio.value=3;c.knee.value=12;c.attack.value=.01;c.release.value=.2;{const wi=g(.5);A.m.connect(wi);wi.connect(ws)}ws.connect(A.hp); /* v0.22 gain staging: 6 dB headroom into the master shaper (same curve below 0 dBFS, no hard clip above) */A.hp.connect(A.lp);A.arh=ctx.createBiquadFilter();A.arh.type='highpass';A.arh.frequency.value=10;A.arh.Q.value=.9;A.arf=ctx.createBiquadFilter();A.arf.type='lowpass';A.arf.frequency.value=20000;A.arf.Q.value=.9;A.lp.connect(A.arh);A.arh.connect(A.arf);A.arf.connect(A.sg);A.glue=c;c.attack.value=.025;c.release.value=.15;c.ratio.value=2.5;c.knee.value=8;c.threshold.value=-3-12*G.glue;A.sg.connect(c);const ls=ctx.createBiquadFilter(),hs=ctx.createBiquadFilter();ls.type='lowshelf';ls.frequency.value=90;ls.gain.value=1.5;hs.type='highshelf';hs.frequency.value=9500;hs.gain.value=2;A.clip=ctx.createWaveShaper();A.clip.curve=clipCurve(G.clip);A.clip.oversample='2x';const lim=ctx.createDynamicsCompressor();lim.threshold.value=-2;lim.ratio.value=20;lim.knee.value=0;lim.attack.value=.001;lim.release.value=.08;A.lim=lim;A.out=g(.84);c.connect(ls);ls.connect(hs);{const ci=g(.5);hs.connect(ci);ci.connect(A.clip)} /* v0.22: same headroom into the Loudness clipper */A.clip.connect(lim);lim.connect(A.out);A.out.connect(ctx.destination)}
+ A.m=g(.8);{const ws=ctx.createWaveShaper(),c=ctx.createDynamicsCompressor();ws.curve=wsCurve2();ws.oversample="none";A.hp=ctx.createBiquadFilter();A.hp.type="highpass";A.hp.frequency.value=10;A.lp=ctx.createBiquadFilter();A.lp.type="lowpass";A.lp.frequency.value=20000;A.lp.Q.value=.7;A.sg=ctx.createGain();c.threshold.value=-14;c.ratio.value=3;c.knee.value=12;c.attack.value=.01;c.release.value=.2;{const wi=g(.5);A.m.connect(wi);wi.connect(ws)}ws.connect(A.hp); /* v0.22 gain staging: 6 dB headroom into the master shaper (same curve below 0 dBFS, no hard clip above) */A.hp.connect(A.lp);A.arh=ctx.createBiquadFilter();A.arh.type='highpass';A.arh.frequency.value=10;A.arh.Q.value=.9;A.arf=ctx.createBiquadFilter();A.arf.type='lowpass';A.arf.frequency.value=20000;A.arf.Q.value=.9;A.lp.connect(A.arh);A.arh.connect(A.sg); /* perf 9: 20 kHz safety low-pass (A.arf) removed */A.glue=c;c.attack.value=.025;c.release.value=.15;c.ratio.value=2.5;c.knee.value=8;c.threshold.value=-3-12*G.glue;A.sg.connect(c);const ls=ctx.createBiquadFilter(),hs=ctx.createBiquadFilter();ls.type='lowshelf';ls.frequency.value=90;ls.gain.value=1.5;hs.type='highshelf';hs.frequency.value=9500;hs.gain.value=2;A.clip=ctx.createWaveShaper();A.clip.curve=clipCurve(G.clip);A.clip.oversample='2x';const lim=ctx.createGain(); /* perf 9: old limiter removed — the master's own limiter catches the peaks */A.lim=lim;A.out=g(.84);c.connect(ls);ls.connect(hs);{const ci=g(.5);hs.connect(ci);ci.connect(A.clip)} /* v0.22: same headroom into the Loudness clipper */A.clip.connect(lim);lim.connect(A.out);A.out.connect(ctx.destination)}
  {const hh=ctx.createBiquadFilter(),gw=ctx.createWaveShaper();hh.type='highpass';hh.frequency.value=250;gw.curve=curve(14);gw.oversample='none';A.gr=g(G.bgrit*.3);A.m.connect(hh);hh.connect(gw);gw.connect(A.gr);A.gr.connect(A.hp)}
  A.dk=g();A.gt=g();A.dk.connect(A.gt);A.gt.connect(A.m);A.dkb=g();A.dkb.connect(A.m);
  const nb=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate),d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=R()*2-1;A.nb=nb;
@@ -419,7 +433,7 @@ function chips(){[['#t-drums',[0,1,2,3,7]],['#t-synth',[4,5,6,8,9]]].forEach(([i
  c.prepend(cap);c.prepend(seg);c.prepend(bar);show()});tagCtl();applyMode()}
 const _b4=build;build=function(){_b4();chips()};
 setInterval(()=>{const t=NN[G.root]+' '+G.scale+' \u00b7 '+MN(curMood),k=$('#kinfo'),s=$('#gsum');if(k)k.textContent=t+' \u00b7 '+G.bpm;if(s)s.textContent='Now: '+t+(typeof MP!=='undefined'&&MP[curMood]?' ('+MP[curMood].sty+')':'')+' \u00b7 '+G.bpm+' BPM \u00b7 lead: '+(TR[4].p.patch||'custom')+' \u00b7 pad: '+TR[5].p.patch+(G.dfeel?' \u00b7 drums: '+G.dfeel:'')+(G.hfam?' \u00b7 harmony: '+G.hfam:'')},400);
-setInterval(()=>document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('m',!!TR[+b.dataset.k].m)),300);
+/* perf 4: chip mute state is kept in sync on change by the v0.25 mute sync; this 300 ms poll is no longer needed */
 [rp,Q3].forEach(p=>p.classList.add('rz'));
 const QD=document.createElement('div');QD.className='panel';QD.innerHTML='<h2>Dub stabs</h2><div class="pads"></div>';
 {const g=QD.children[1],sb={on:0,t:0,iv:0},mk=(l,dn,up)=>{const b=document.createElement('button');b.className='pad';b.innerHTML=l;g.appendChild(b);if(!up){b.onclick=dn;return}let on=0;const U=()=>{if(!on)return;on=0;b.classList.remove('on');up()};b.addEventListener('pointerdown',e=>{e.preventDefault();if(on)return;on=1;b.classList.add('on');dn()});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,U))};
@@ -644,7 +658,8 @@ setInterval(lfTick,30);
 /* ---- v12: production engine — master glue/clip/limit, groove, song mode, smarter generator ---- */
 Object.assign(G,{glue:.45,clip:.3,groove:.6,bavoid:true});
 const HH={g:null};
-function clipCurve(dr){const n=2048,c=new Float32Array(n),k=.3+3*dr,nm=Math.tanh(k);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=Math.tanh(x*k)/nm}return c} /* v0.22: covers ±2 (input is padded by 6 dB) */
+const CLC={};function clipCurve(dr){const kk=Math.round(dr*1000);if(CLC[kk])return CLC[kk];return CLC[kk]=clipCurve0(dr)}
+function clipCurve0(dr){const n=2048,c=new Float32Array(n),k=.3+3*dr,nm=Math.tanh(k);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=Math.tanh(x*k)/nm}return c} /* v0.22: covers ±2 (input is padded by 6 dB) */
 function wsCurve2(){const n=2048,c=new Float32Array(n);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=Math.tanh(x)}return c}
 function satCurve(k){const n=1024,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*k)/k}return c}
 /* damped stereo room/hall: pre-delay, sparse early reflections, exponential tail whose highs die faster */
@@ -794,7 +809,7 @@ const MP={
  Power:{sty:'Peak-time techno',kick:{click:1.2},hat:{tone:9000,dec:.035,open:.1,acc:.5,metal:.8},clap:{tone:1200,spread:9,tail:.3,rv:.3},cl:.55,
   fx:{dly:.2,fb:.5,dt:.75,rev:.35,shim:.2,dens:.15,glue:.6,clip:.6},gate:0,lfo:[['Master low-pass',0,32,.2],['Lead decay',0,32,0]]}};
 const rr=v=>Array.isArray(v)?v[0]+R()*(v[1]-v[0]):v;
-function applyFX(){if(!A.dO)return;A.dO.gain.value=G.dly;A.dF.gain.value=G.fb;A.rO.gain.value=G.rev;A.sh.gain.value=G.shim;A.rg.gain.value=G.rumble;A.rl.frequency.value=G.rcut;A.gr.gain.value=G.bgrit*.3;A.glue.threshold.value=-3-12*G.glue;A.clip.curve=clipCurve(G.clip);const dt=(G.dt||.75)*60/G.bpm;A.dl.delayTime.value=dt;A.dl2.delayTime.value=dt}
+function applyFX(){if(!A.dO)return;A.dO.gain.value=G.dly;A.dF.gain.value=G.fb;A.rO.gain.value=G.rev;A.sh.gain.value=G.shim;A.rg.gain.value=G.rumble;A.rl.frequency.value=G.rcut;A.gr.gain.value=G.bgrit*.3;A.glue.threshold.value=-3-12*G.glue;if(A.clip.__cv!==G.clip){A.clip.__cv=G.clip;A.clip.curve=clipCurve(G.clip)}const dt=(G.dt||.75)*60/G.bpm; /* perf 6 */A.dl.delayTime.value=dt;A.dl2.delayTime.value=dt}
 const _init16=init;init=function(){const n=!ctx;_init16();if(n)applyFX()};
 function gateUI(){const g2=$('#gate');if(!g2)return;g2.innerHTML='';sl(g2,'Gate depth',0,1,GT.depth,.01,v=>{GT.depth=v});sl(g2,'Gate steps',2,32,GT.st,1,v=>{GT.st=v;gtPat()});sl(g2,'Gate hits',1,32,GT.h,1,v=>{GT.h=v;gtPat()});sl(g2,'Gate rotate',0,31,GT.r,1,v=>{GT.r=v;gtPat()});sl(g2,'Gate length',.1,1,GT.len,.01,v=>{GT.len=v})}
 function lfoUI(){document.querySelectorAll('#t-lfo .panel').forEach((pn,n)=>{const L=LFOS[n],s=pn.querySelectorAll('select'),r=pn.querySelectorAll('input[type=range]');if(s.length<4)return;s[0].value=L.tg;s[1].value=L.sh;s[2].value=L.sync;s[3].value=L.div;s[3].hidden=!L.sync;
@@ -1172,7 +1187,7 @@ setInterval(()=>{if(!ctx||!playing){QOS.lvl=0;QOS.ml=0}else{const a=QOS.src.size
   if(a>H[0]||QOS.load>.6||(vis&&QOS.ft>30))p=1;if(a>H[1]||QOS.load>.8||QOS.late>0||(vis&&QOS.ft>45))p=2;if(a>H[2]||QOS.load>.95||QOS.late>2)p=3;
   let pa=0;if(a>H[0]||QOS.load>.6)pa=1;if(a>H[1]||QOS.load>.8||QOS.late>1)pa=2;if(a>H[2]||QOS.load>.95||QOS.late>4)pa=3;if(pa>(QOS.ml||0)){QOS.ml=pa;QOS.mc=8}else if(pa<(QOS.ml||0)&&--QOS.mc<=0){QOS.ml--;QOS.mc=6}p=Math.max(p,QOS.floor||0,QOS.stageFloor||0);if(p>QOS.lvl){QOS.lvl=p;QOS.cool=8}else if(p<QOS.lvl&&--QOS.cool<=0){QOS.lvl--;QOS.cool=6}QOS.late=0;if(a>QOS.hard)steal((a-QOS.hard*.8)/2)}
  /* v0.26: the badge shows the level actually in effect (the load meter or the active saving stage, whichever is higher), written only on change */
- {const lv=Math.min(3,Math.max(QOS.ml||0,QOS.lvl||0)),t='CORE '+QOS.nm[lv];if(QB.textContent!==t)QB.textContent=t;if(QB.__l!==lv){QB.__l=lv;QB.style.color=QOS.cl[lv]}}},400);
+ {let q0='Eco';try{q0=localStorage.getItem('orb-q')||'Eco'}catch(e){}const base=q0==='Eco eco'?2:q0==='Eco'?1:0,lvR=QOS.lvl||0,lv=Math.min(3,Math.max(QOS.ml||0,lvR>base?lvR:0)),t='CORE '+QOS.nm[lv]; /* perf 13: the mode's own built-in light setting is not shown as a warning */if(QB.textContent!==t)QB.textContent=t;if(QB.__l!==lv){QB.__l=lv;QB.style.color=QOS.cl[lv]}}},400);
 /* ---- v31: third riser "Shepard climb" — endlessly rising Shepard chord + accelerating chord-tone arp, thins low end, climax swell; release = boom + crash drop ---- */
 {const SH={on:0,p:0,vs:[],ph:0,t:0,iv:0,lt:0,ai:0,km:false,kd:0};
  const st=document.createElement('style');st.textContent='#t-perf{grid-template-columns:repeat(3,minmax(0,1fr))!important}';document.head.appendChild(st);
@@ -1250,7 +1265,7 @@ h1{display:flex;align-items:center;gap:0}.orb{margin-right:10px}
 /* ---- v36: real shimmer reverb (octave-up pitch-shifted feedback through a long reverb), fed from the synth bus; Deep Space uses it heavily; "Space shimmer" mix slider ---- */
 G.shx=0;const SHM={on:0};
 function shimmerInit(){if(SHM.on||!ctx)return;SHM.on=1;const g=(v=1)=>{const n=ctx.createGain();n.gain.value=v;return n};
- const inp=g(0),cv=ctx.createConvolver(),out=g(.9),fb=g(.55),hp=ctx.createBiquadFilter(),lp=ctx.createBiquadFilter(),sum=g(1);cv.buffer=ir2(2.5,.03); /* v0.22 stability: was 4 s */hp.type='highpass';hp.frequency.value=300;lp.type='lowpass';lp.frequency.value=7000;
+ const inp=g(0),cv=ctx.createConvolver(),out=g(.9),fb=g(.55),hp=ctx.createBiquadFilter(),lp=ctx.createBiquadFilter(),sum=g(1);cv.buffer=(SHM.irb&&SHM.irb.sampleRate===ctx.sampleRate)?SHM.irb:ir2(2.5,.03); /* perf 7: impulse prepared in idle time */ /* v0.22 stability: was 4 s */hp.type='highpass';hp.frequency.value=300;lp.type='lowpass';lp.frequency.value=7000;
  inp.connect(sum);sum.connect(cv);cv.connect(out);out.connect(A.gt);SHM.cv=cv;
  // doppler octave-up shifter: two crossfaded delay taps swept by sawtooth LFOs
  const f=16.67,w=.06,T=ctx.currentTime+.05,mix=g(1);
@@ -1270,7 +1285,7 @@ const _gen36=generate;generate=function(){G.shx=0;_gen36();if(curMood==='Deep Sp
 /* ---- v38: performance — pre-rendered hat metal, lighter master FX, capped visual fps, no hidden redraws, mobile-aware guard, Engine quality (Auto / Eco / Hi-fi) ---- */
 {const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4;
  let q='Eco';try{if(!localStorage.getItem('orb-q2')){localStorage.setItem('orb-q','Eco');localStorage.setItem('orb-q2','1')}q=localStorage.getItem('orb-q')||'Eco'}catch(e){}
- const applyQ=()=>{const hf=q==='Hi-fi';QOS.hi=hf?[260,360,460]:mob?[110,160,220]:[170,240,320];QOS.hard=hf?600:mob?300:420;QOS.floor=q==='Eco eco'?2:q==='Eco'?1:0;QOS.fps=q==='Hi-fi'?60:q==='Eco eco'?15:q==='Eco'?20:(mob?30:45);QOS.eco2=q==='Eco eco'};applyQ();
+ const applyQ=()=>{const hf=q==='Hi-fi';QOS.hi=hf?[260,360,460]:mob?[110,160,220]:[170,240,320];QOS.hard=hf?600:mob?300:420;QOS.floor=q==='Eco eco'?2:q==='Eco'?1:0; /* perf 13: Eco keeps a light floor (unison ≤ 4) and saves more when the load meter asks */QOS.fps=q==='Hi-fi'?60:q==='Eco eco'?15:q==='Eco'?20:(mob?30:45);QOS.eco2=q==='Eco eco'};applyQ();
  QOS.la=.2;document.addEventListener('visibilitychange',()=>{QOS.la=document.hidden?1.2:.2});
  // quality selector in Mission control
  const _mx38=mix;mix=function(){_mx38();const m=$('#mix'),l=document.createElement('label');l.className='sl';l.appendChild(document.createTextNode('Engine quality'));const s=document.createElement('select');[['Hi-fi','Full · best sound'],['Auto','Auto · adapts to the device'],['Eco','Light · saves CPU'],['Eco eco','Ultra light · 64 voices max']].forEach(([x,t])=>s.add(new Option(t,x)));s.value=q;s.onchange=()=>{q=s.value;try{localStorage.setItem('orb-q',q)}catch(e){}applyQ()};l.appendChild(s);m.prepend(l)};
@@ -1311,14 +1326,14 @@ const _gen39=generate;generate=function(){_gen39();const P=TR[4].p,ac=P.mode==='
   if((P.sus||0)>.3)P.pg=Math.min(P.pg||1,2.2)}
  TRIM[4]=(MTRIM[curMood]&&MTRIM[curMood][4]||0)-2;build()};
 /* ---- v40: lean engine — batched dial redraws, one rebuild per Generate, no lead compressor, shorter reverbs on phones/Eco, stronger default shedding on phones, calmer GPU, flight diagnostics ---- */
-{const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4,qual=()=>{try{return localStorage.getItem('orb-q')||'Eco'}catch(e){return 'Eco'}},lean=()=>qual()==='Eco'||qual()==='Eco eco'||(mob&&qual()!=='Hi-fi');
+{const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4,qual=()=>{try{return localStorage.getItem('orb-q')||'Eco'}catch(e){return 'Eco'}},lean=()=>qual()==='Eco'||qual()==='Eco eco'||(mob&&qual()==='Auto'); /* perf 13: Eco uses the 1.4 s reverb again */
  QOS.lateTot=0;QOS.fl0=QOS.floor||0;
- const tierFloor=()=>{const q=qual();return q==='Eco'||q==='Eco eco'?2:q==='Hi-fi'?0:mob?1:0};QOS.floor=tierFloor();
+ const tierFloor=()=>{const q=qual();return q==='Eco eco'?2:q==='Eco'?1:q==='Hi-fi'?0:mob?1:0}; /* perf 13 */QOS.floor=tierFloor();
  if(mob)QOS.la=.3;document.addEventListener('visibilitychange',()=>{QOS.la=document.hidden?1.2:(mob?.3:.2)});
  // reverb impulse lengths per tier (set once the audio engine exists)
  const _init40=init;init=function(){const nw=!ctx;_init40();if(!nw)return;if(lean()){try{A.rcv.buffer=ir2(qual()==='Eco eco'?1.1:qual()==='Eco'?1.4:1.8,.02);A.rmc.buffer=irM(ir(.8,1.6,.06))}catch(e){}}};
  // batched step-dial redraws (one timer instead of ~90 per second)
- setInterval(()=>{if(!ctx||!DQ.length)return;const now=ctx.currentTime+.01;let i=0;while(i<DQ.length&&DQ[i][2]<=now){const [T,s]=DQ[i];if(playing)draw(T,s);i++}if(i)DQ.splice(0,i);if(!playing)DQ.length=0},33);
+ setInterval(()=>{if(!ctx||!DQ.length)return;const now=ctx.currentTime+.01;let i=0;const sh=!$('#t-drums').hidden||!$('#t-synth').hidden; /* perf 4: ring playheads are only drawn while a card page is on screen */while(i<DQ.length&&DQ[i][2]<=now){const [T,s]=DQ[i];if(playing&&sh)draw(T,s);i++}if(i)DQ.splice(0,i);if(!playing)DQ.length=0},33);
  // one rebuild per task, however many wrappers ask for it
  let BQ=0;const _b40=build;build=function(){if(BQ)return;BQ=1;queueMicrotask(()=>{BQ=0;_b40()})};
  // count late scheduler steps for diagnostics
@@ -1426,7 +1441,7 @@ window.DR={cache:new Map(),pend:new Set(),rendering:false,vr:1,hits:0,live:0,
   if(k===0){if(A.ksd!==p.drive){A.ks.curve=curve(p.drive);A.ksd=p.drive}g.connect(A.ks);const r=ctx.createGain();r.gain.value=.55*(G.rfeed||1);g.connect(r);r.connect(A.ru);duck(w)}
   else if(k===3)send(g,A.m,p.ds,p.rs);else send(g,A.m,0,p.rv);
   s.start(w);s.stop(w+c.b.duration+.01);this.hits++;return true},
- request(k,key,v,snap){if(this.pend.has(key)||!window.OfflineAudioContext)return;this.pend.add(key);const fx=FIX;setTimeout(()=>this.render(k,key,fx,snap),0)},
+ request(k,key,v,snap){if(this.pend.has(key)||!window.OfflineAudioContext)return;this.pend.add(key);const fx=FIX;(window.requestIdleCallback?f=>requestIdleCallback(f,{timeout:250}):f=>setTimeout(f,0))(()=>this.render(k,key,fx,snap))}, /* perf 7: drum pre-renders run in idle time, not right on top of the scheduler */
  render(k,key,fx,snap){const T=TR[k],p=T.p,keep=snap?Object.assign({},p):null;if(snap)Object.assign(p,snap); /* v0.22: render exactly the settings that played (tuned kick, varied clap) */
   try{this._render(k,key,fx,!!snap)}finally{if(keep){for(const q in p)if(!(q in keep))delete p[q];Object.assign(p,keep)}}},
  _render(k,key,fx,snapped){const T=TR[k],p=T.p,sr=ctx.sampleRate,len=k===0||k===7?p.dec+.08:k===2?3*p.spread/1e3+p.tail+.08:p.dec+.08,oc=new OfflineAudioContext(1,Math.ceil(sr*Math.min(1.5,len)),sr);
@@ -1856,8 +1871,8 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
    CH.appendChild(c)})})}
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
- const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden)chBuild();return r};
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.27 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.27';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.28 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.28';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -1955,13 +1970,18 @@ const _gen72=generate;generate=function(){_gen72();if(curMood!=='Power')return;c
  G.ldMul=.75;G.pedal=true;buf=[];mot=[];mp=-1;if(typeof lfoUI==='function')lfoUI();build()};
 /* ---- v73: CPU easy wins — pre-rendered hi-hats (2 nodes per hit instead of 8, one shared panner), ladder filter swapped for the cheap version under load, lower visual frame caps ---- */
 {const HC={},HV=3;let busy=0;
- const hkey=p=>[Math.round(p.tone),Math.round((p.dec||0)*1000),Math.round((p.metal==null?.6:p.metal)*100),ctx.sampleRate].join('|');
- const lfoOnHat=()=>LFOS.some(L=>L.d>0&&/^Hat/.test(L.tg));
+ /* perf 10: the hat cache key used the exact tone, which the analog drift moves all the time, so the cache kept missing and re-rendering.
+    Keys now use 1 % tone steps, 2 ms decay steps and 5 % metal steps (far below hearing), and the hits are rendered at exactly those values.
+    Only LFOs that move the hat SOUND (tone, decay) bypass the cache; a Hat hits LFO no longer does. */
+ const qv=p=>({tone:Math.pow(1.01,Math.round(Math.log(Math.max(500,+p.tone||7500))/Math.log(1.01))),dec:Math.round((+p.dec||.05)*500)/500,metal:Math.round((p.metal==null?.6:p.metal)*20)/20});
+ const hkey=p=>{const q=qv(p);return [Math.round(q.tone),Math.round(q.dec*1000),Math.round(q.metal*100),ctx.sampleRate,A.hm2?(A.hm2.__id||(A.hm2.__id=++HID)):0].join('|')};let HID=0;
+ const lfoOnHat=()=>LFOS.some(L=>L.d>0&&/^Hat (tone|decay)/.test(L.tg));
  function render(key,P){if(busy||!window.OfflineAudioContext)return;busy=1;const jobs=[];
   for(const op of[0,1])for(let v=0;v<HV;v++)jobs.push([op,v]);const out={c:[],o:[]};
   const one=([op])=>{const d=op?.32:P.dec,sr=ctx.sampleRate,oc=new OfflineAudioContext(2,Math.ceil(sr*(d+.08)),sr),T=TR[1],sv={ctx,m:A.m,dI:A.dI,rI:A.rI,hg:HH.g,lv:T.lv,open:T.p.open,acc:T.p.acc};
-   try{ctx=oc;A.m=oc.destination;A.dI=oc.createGain();A.rI=oc.createGain();HH.g=null;T.lv=1;T.p.open=op;T.p.acc=0;_fv73(1,0)}catch(e){console.warn(e)}
-   finally{ctx=sv.ctx;A.m=sv.m;A.dI=sv.dI;A.rI=sv.rI;HH.g=sv.hg;T.lv=sv.lv;T.p.open=sv.open;T.p.acc=sv.acc}return oc.startRendering()};
+   const q=qv(P),kp={tone:T.p.tone,dec:T.p.dec,metal:T.p.metal};
+   try{ctx=oc;A.m=oc.destination;A.dI=oc.createGain();A.rI=oc.createGain();HH.g=null;T.lv=1;T.p.open=op;T.p.acc=0;Object.assign(T.p,q);_fv73(1,0)}catch(e){console.warn(e)}
+   finally{ctx=sv.ctx;A.m=sv.m;A.dI=sv.dI;A.rI=sv.rI;HH.g=sv.hg;T.lv=sv.lv;T.p.open=sv.open;T.p.acc=sv.acc;Object.assign(T.p,kp)}return oc.startRendering()};
   (async()=>{try{for(const j of jobs){const b=await one(j);(j[0]?out.o:out.c).push(b)}HC[key]=out;const ks=Object.keys(HC);if(ks.length>6)delete HC[ks[0]]}catch(e){}busy=0})()}
  let pan=null;const hatBus=()=>{if(pan&&pan.context===ctx)return pan;pan=ctx.createGain();send(pan,A.m,0,.05);return pan};
  const _fv73=fireVoice;fireVoice=function(k,w){if(k!==1||!ctx||ctx instanceof OfflineAudioContext||lfoOnHat()||(TR[1].pan||0)!==0)return _fv73(k,w);
@@ -2774,6 +2794,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const NAMES=Object.keys(STY);
  function fit(T,pt){const n=pt.length,h=pt.reduce((a,c)=>a+c,0);let best={h,r:0,ten:0,sc:-1};
   for(let ti=0;ti<=20&&best.sc<n;ti++)for(let r=0;r<n;r++){const ten=ti/20,q=pat(Object.assign({},T,{st:n,h,r,ten}));let sc=0;for(let i=0;i<n;i++)if(q[i]===pt[i])sc++;if(sc>best.sc){best={h,r,ten,sc};if(sc===n)break}}return best}
+ /* perf 6: ring fitting is a brute-force search; remember results */{const C=new Map(),f0=fit;fit=function(T,pt){const k=pt.join('')+'|'+(T.tsd||T.n||'');let r=C.get(k);if(!r){r=f0(T,pt);if(C.size>500)C.clear();C.set(k,r)}return Object.assign({},r)}}
  function style(name,rot){const S=STY[name];if(!S)return;const T=TR[6],P=T.p;let pt=[...S[0]].map(c=>c==='x'?1:0);if(rot)pt=pt.slice(-rot).concat(pt.slice(0,-rot));
   T.st=16;const ft=fit(T,pt);T.h=ft.h;T.r=ft.r;T.ten=ft.ten;T.pt=pat(T);Object.assign(P,{bns:S[1],bgt:S[2],bsl:S[3],bgh:S[4],fifth:0,jump:0,bsty:name,blk:'Free'});P.oct=Math.max(0,Math.min(2,Math.round(P.oct)||1))}
  window.bassStyle=style;window.bassFit=fit;setTimeout(()=>{window.bassRoll=roll},0);
@@ -3461,8 +3482,8 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   set(s,i>=0?lib[i]:'(custom)')}
  window.syncMenus=sync;
  const _sf=window.syncFaders;if(_sf)window.syncFaders=function(){_sf.apply(this,arguments);sync()};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);setTimeout(sync,0);setTimeout(sync,150);return r};
- setInterval(()=>{if(!document.hidden)sync()},700)}
+ const cv=()=>['#t-drums','#t-synth'].some(q=>{const e=document.querySelector(q);return e&&!e.hidden});const _g=generate;generate=function(){const r=_g.apply(this,arguments);if(cv()){setTimeout(sync,0);setTimeout(sync,150)}return r}; /* perf 6 */
+ setInterval(()=>{if(!document.hidden&&['#t-drums','#t-synth'].some(q=>{const e=document.querySelector(q);return e&&!e.hidden}))sync()},700)}  /* perf 3: only while the cards are on screen */
 </script>
 <script>
 /* v163: "Temporal" mood — Neapolitan loop techno after Gaetano Parisio / Conform: stripped-back, loop-driven, gritty but funky.
@@ -5538,5 +5559,50 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   btn=old.cloneNode(true);old.replaceWith(btn);btn.style.setProperty('--col','#ff9b5d');
   btn.addEventListener('click',e=>{e.preventDefault();try{ensure()}catch(x){}if(!playing){apply();return}pend=pend?0:1;paint()});paint();return true};
  if(!hook())setTimeout(hook,500);setInterval(paint,500);window.orbKickSwitch={isFour,apply}}
+</script>
+<script>
+/* ---- perf 3: card fader/menu sync (syncFaders) was run synchronously several times per Launch (~14 ms each on desktop, ~60 ms on a slow phone)
+   even when no card is on screen. Now: calls in the same moment are merged into one, and while Drums/Synths are hidden the sync waits until you open them. ---- */
+{const vis=()=>['#t-drums','#t-synth'].some(q=>{const e=document.querySelector(q);return e&&!e.hidden});let dirty=0,queued=0;const real=window.syncFaders;
+ const run=()=>{queued=0;if(!vis()){dirty=1;return}dirty=0;try{real()}catch(e){}};
+ window.syncFaders=function(){if(!queued){queued=1;setTimeout(run,0)}};
+ document.addEventListener('click',()=>setTimeout(()=>{if(dirty&&vis())run()},0),true);
+ /* the Mix page (all its faders) was rebuilt on every Launch too; now only when it is on screen, otherwise when you open it */
+ const mv=()=>{const e=document.querySelector('#t-mix');return e&&!e.hidden};let md=0,mq=0;const realMix=syncMix;
+ const mrun=()=>{mq=0;if(!mv()){md=1;return}md=0;try{realMix()}catch(e){}};
+ syncMix=function(){if(!mq){mq=1;setTimeout(mrun,0)}};
+ document.addEventListener('click',()=>setTimeout(()=>{if(md&&mv())mrun()},0),true)}
+</script>
+<script>
+/* ---- perf 6: the bass card's controls were re-synced on every Launch even with the Synths page hidden; now when it is on screen ---- */
+{const vis=()=>{const e=document.querySelector('#t-synth');return e&&!e.hidden};let dirty=0;const real=window.bassSync;if(real){
+ window.bassSync=function(){if(!vis()){dirty=1;return}dirty=0;return real.apply(this,arguments)};
+ document.addEventListener('click',()=>setTimeout(()=>{if(dirty&&vis()){dirty=0;try{real()}catch(e){}}},0),true)}}
+</script>
+<script>
+/* ---- perf 7: the shimmer reverb's 2.5 s impulse (≈100 ms of maths, ≈400 ms on a slow phone) was computed the first time a mood used shimmer —
+   in the middle of a Launch. It is now prepared in idle time a few seconds after the engine starts. ---- */
+{const _i=init;init=function(){const nw=!ctx;const r=_i.apply(this,arguments);if(nw&&ctx){const go=()=>{try{if(typeof SHM!=='undefined'&&!SHM.on&&!SHM.irb&&window.ir2)SHM.irb=ir2(2.5,.03)}catch(e){}};
+  setTimeout(()=>{window.requestIdleCallback?requestIdleCallback(go,{timeout:4000}):go()},3000)}return r}}
+</script>
+<script>
+/* ---- perf 9: the master low-pass (A.lp) idles at 20 kHz most of the time; it is only used by the breakdowns, risers and drop effects.
+   It now sits in the signal path only while one of those moves it, and steps out again a second after it is back at 20 kHz. ---- */
+{let on=true,ctxH=null,idle=0;const nextOf=()=>A.gap&&A.gap.context===ctx?A.gap:A.arh;
+ const engage=()=>{if(on)return;on=true;idle=0;try{A.hp.connect(A.lp);A.hp.disconnect(nextOf())}catch(e){}};
+ let bt=null;const release=()=>{if(!on)return;on=false;bt=nextOf();try{A.hp.connect(bt);A.hp.disconnect(A.lp)}catch(e){}};
+ const hook=()=>{if(!ctx||!A.lp||ctxH===ctx)return;ctxH=ctx;on=true;
+  [A.lp.frequency,A.lp.Q].forEach(pm=>['setValueAtTime','setTargetAtTime','linearRampToValueAtTime','exponentialRampToValueAtTime','setValueCurveAtTime','cancelScheduledValues','cancelAndHoldAtTime'].forEach(m=>{const o=pm[m];if(typeof o!=='function')return;pm[m]=function(){engage();return o.apply(this,arguments)}}));
+  const fv=Object.getOwnPropertyDescriptor(AudioParam.prototype,'value');['frequency','Q'].forEach(k=>{const pm=A.lp[k];Object.defineProperty(pm,'value',{get(){return fv.get.call(pm)},set(v){engage();fv.set.call(pm,v)},configurable:true})})};
+ setInterval(()=>{try{hook();if(!ctx||!A.lp)return;const f=A.lp.frequency.value,q=A.lp.Q.value,neutral=f>=19900&&Math.abs(q-.7)<.02;
+  if(!on&&bt&&bt!==nextOf()){try{A.hp.disconnect(bt)}catch(e){}bt=nextOf();A.hp.connect(bt)} /* the drop gap gate was added meanwhile */
+  if(on&&neutral){if(++idle>=10)release()}else idle=0}catch(e){}},100);window.orbLpState=()=>on}
+</script>
+<script>
+/* ---- perf 12: visuals step down by themselves when the engine is under load: normal frame rate when NOMINAL, ≤24 fps at LOAD (already),
+   12 fps at SAVING and 6 fps at OVERLOAD or right after audio underruns; full speed returns when the load is gone. ---- */
+{let lf=0,ur=0,lastU=0;const ps=()=>{try{return ctx&&ctx.playbackStats?ctx.playbackStats.underrunEvents||0:null}catch(e){return null}};
+ setInterval(()=>{const u=ps();if(u!=null){if(u>lastU)ur=performance.now()+3000;lastU=u}},500);
+ const _v=viz;viz=function(){const n=performance.now(),lv=Math.max(QOS.lvl||0,QOS.ml||0),cap=n<ur||lv>=3?6:lv>=2?12:0;if(cap&&n-lf<1000/cap){requestAnimationFrame(viz);return}lf=n;return _v()}}
 </script>
 </body></html>
