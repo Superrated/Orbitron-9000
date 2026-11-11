@@ -566,7 +566,7 @@ const _b5=build;build=function(){_b5();const g=TR[5].mb.closest('.card').querySe
  s.onchange=()=>{padStyle=s.value;G.padAuto=0;G.pedal=padStyle==='Pedal chords';const T=TR[5];if(padStyle==='Progression'||G.pedal||padStyle==='Chord memory'){T.st=4;T.p.size=4;newProg(4);if(padStyle==='Chord memory'&&window.cmPrep)cmPrep()}else{T.st=1;prog=[0];pshape=[pick(MOODS[curMood].sh)];T.p.size=padStyle==='One note'?1:4;if(padStyle==='Vamp')T.p.bars=1}pmean=null;T.pt=pat(T);build()};l.appendChild(s);g.insertBefore(l,g.children[1]);const l2=document.createElement('label');l2.className='sl';l2.innerHTML='Pad sound';const s2=document.createElement('select');[...PADN,'Rotate','Random'].forEach(x=>s2.add(new Option(x,x)));s2.value=TR[5].p.patch;s2.onchange=()=>TR[5].p.patch=s2.value;l2.appendChild(s2);g.insertBefore(l2,g.children[2]);tagCtl();applyMode()};
 /* v9: sub drone track, rhythmic gate, chord arp, denser lead, pedal option */
 G.pedal=false;
-TR.push({n:'Satellite',c:'#7af0ff',st:16,h:2,r:0,lv:.4,m:true,p:{role:'Counter',snd:'Warm saw',mot:'Long',reg:'Auto',amt:.5,tone:.5,space:.4},x:[['Amount','amt',0,1,.01],['Tone','tone',0,1,.01],['Space','space',0,1,.01]]});TR[9].pt=pat(TR[9]);
+TR.push({n:'Satellite',c:'#7af0ff',st:16,h:2,r:0,lv:.4,m:true,p:{role:'Counter',snd:'Warm saw',mot:'Long',reg:'Auto',amt:.5,tone:.5,space:.4,att:.2,rel:.32},x:[['Amount','amt',0,1,.01],['Tone','tone',0,1,.01],['Space','space',0,1,.01],['Attack','att',0,1,.01],['Release','rel',0,1,.01]]});TR[9].pt=pat(TR[9]);
 function subDrone(w){const T=TR[9],p=T.p,hold=p.hold*60/G.bpm/4,e=w+hold+.2,f0=d2f(R()<p.follow?cur.r:0,p.oct),f=f0<40?f0*2:f0,o=osc('sine',f,w,e),o2=osc('triangle',f,w,e),q=ctx.createBiquadFilter(),g=ctx.createGain(),hg=ctx.createGain(),pk=T.lv*.2;
  hg.gain.value=p.harm*.6;q.type='lowpass';q.frequency.value=p.cut;q.Q.value=.7;g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(pk,w+.012);g.gain.setValueAtTime(pk,w+hold);g.gain.linearRampToValueAtTime(.0001,w+hold+.1);o.connect(g);o2.connect(hg);hg.connect(q);q.connect(g);g.connect(A.dkb)}
 TR[9].c='#7af0ff';{const b=document.createElement('button');b.className='pad';b.textContent='Satellite';b.onclick=()=>TR[9].m=!TR[9].m;b.style.setProperty('--col','#7af0ff');$('#pads').appendChild(b);pads.push(b)}
@@ -5149,35 +5149,39 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 {const S=TR[9];S.pt=pat(S);
  const SND={Counter:['Warm saw','Strings','Reed'],Sparkle:['Glass bell','Pluck','Music box']};
  try{['Amount','Role','Motion','Register'].forEach(x=>{if(!PATL.includes(x))PATL.push(x)})}catch(e){}
- let cp=null,lPrev=0;
+ /* v0.26: Attack and Release knobs (each sound sets its own starting values), and an Arp motion: short chord-tone stabs running up and down, two notes together on the half bars */
+ const SDEF={'Warm saw':[.2,.32],Strings:[.6,.45],Reed:[.25,.28],'Glass bell':[.03,.85],Pluck:[.02,.4],'Music box':[.01,.65]};
+ const sdef=p=>{const d=SDEF[p.snd];if(d){p.att=d[0];p.rel=d[1]}};
+ let cp=null,lPrev=0,ai=0;
  const regOct=p=>{const L=TR[4],r=p.reg||'Auto';if(p.role==='Sparkle')return r==='Low'?4:r==='High'?6:5;
   if(r==='Low')return 2;if(r==='High')return 4;if(L.m)return 3;return (Math.round(L.p.range)||1)>=2||(L.p.loct||0)>0?2:4};
  const nextHit=()=>{const T=S;for(let i=1;i<=32;i++)if(T.pt[((tk+i)%T.st+T.st)%T.st])return i;return 16};
  subDrone=function(w){const T=S,p=T.p,L=TR[4],n=SC[G.scale].length,sd=60/G.bpm/4;if(!ctx)return;
   const lOn=!L.m&&L.p.mode!=='Acid 303',lp=lOn&&L.pt[((tk%L.st)+L.st)%L.st],lpp=lOn&&L.pt[(((tk-1)%L.st)+L.st)%L.st];
-  const sp=p.role==='Sparkle',ans=!sp&&p.mot==='Answer',amt=p.amt==null?.5:p.amt;
-  if(sp){if(lp||lpp||(QOS.ml||0)>=3||R()>.3+amt*.7)return}else if(ans){if(lp||R()>.45+amt*.55)return}else if(R()>.55+amt*.45)return;
-  const ct=[...new Set(cur.n.map(x=>((x%n)+n)%n))];let d;
-  if(sp){d=R()<.35&&lOn?((lastDeg%n)+n)%n:pick(ct);if(R()<.3)d+=n}
+  const sp=p.role==='Sparkle',ans=!sp&&p.mot==='Answer',arp=!sp&&p.mot==='Arp',amt=p.amt==null?.5:p.amt;
+  if(sp){if(lp||lpp||(QOS.ml||0)>=3||R()>.3+amt*.7)return}else if(ans){if(lp||R()>.45+amt*.55)return}else if(arp){if(R()>.7+amt*.3)return}else if(R()>.55+amt*.45)return;
+  const ct=[...new Set(cur.n.map(x=>((x%n)+n)%n))];let d,d2=null;
+  if(arp){const arr=ct.slice().sort((a,b)=>a-b);arr.push(...arr.map(x=>x+n));const Ln=arr.length,m=ai++%Math.max(1,2*(Ln-1)),i=m<Ln?m:2*(Ln-1)-m;d=arr[i];if(((tk%8)+8)%8===0&&Ln>2)d2=arr[Math.min(Ln-1,i+2)]}
+  else if(sp){d=R()<.35&&lOn?((lastDeg%n)+n)%n:pick(ct);if(R()<.3)d+=n}
   else{const ld=Math.sign(lastDeg-lPrev);lPrev=lastDeg;const lpc=((lastDeg%n)+n)%n;if(cp==null)cp=ct[0];
    if(ans&&R()<.6){cp+=pick([-1,1,-2,2,-1,1])}
    else{let best=cp,bs=1e9;for(const o of[-n,0,n])for(const c of ct){const q=c+o;if(q<-2||q>n+4)continue;const mv=q-cp;let sc=Math.abs(mv);if(ld&&Math.sign(mv)===ld)sc+=2.5;if(mv===0)sc+=1.5;if(((q%n)+n)%n===lpc&&lOn)sc+=3;sc+=R()*1.2;if(sc<bs){bs=sc;best=q}}cp=best}
    cp=Math.max(-3,Math.min(n+5,cp));d=cp}
-  let f=d2f(d,regOct(p)+(G.ldUp||0));while(f>(sp?2000:1000))f/=2;   /* v0.26: Sparkle stays under ~2 kHz, Counter under ~1 kHz */
+  let f=d2f(d,regOct(p)+(G.ldUp||0));let f2=d2!=null?d2f(d2,regOct(p)+(G.ldUp||0)):0;while(f>(sp?2000:1000)){f/=2;f2/=2}const FQ=f2?[f,f2]:[f];   /* v0.26: Sparkle stays under ~2 kHz, Counter under ~1 kHz */
   const tone=p.tone==null?.5:p.tone,space=p.space==null?.4:p.space,trim=(typeof dbg==='function'&&typeof TRIM!=='undefined')?dbg(TRIM[9]||0):1,
-   g=ctx.createGain(),out=A.ld||A.dk;g.__k=9;let e;const lv=T.lv*trim*(sp?.22:.3);
+   g=ctx.createGain(),out=A.ld||A.dk;g.__k=9;let e;const lv=T.lv*trim*(sp?.22:arp?(f2?.2:.26):.3),AT=.003+Math.pow(p.att==null?.2:p.att,2)*.6,RL=.08+Math.pow(p.rel==null?.32:p.rel,2)*2.4;
   const env=(a,hold,rl)=>{g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(lv,w+a);g.gain.setValueAtTime(lv,w+Math.max(a,hold));g.gain.setTargetAtTime(.0001,w+Math.max(a,hold),rl/3);e=w+Math.max(a,hold)+rl+.1};
   /* v0.26: one low-pass on the whole Satellite voice, set by Tone (≈600 Hz dark … 1.7 kHz middle … 4.8 kHz bright); every sound's own filter stays under it */
   const cap=600*Math.pow(2,tone*3);
   const lpF=(c,q)=>{const x=ctx.createBiquadFilter();x.type='lowpass';x.frequency.value=Math.min(cap*1.4,c);x.Q.value=q;x.connect(g);return x};
   const s=p.snd||SND[p.role][0];
-  if(!sp){const hold=ans?sd*1.6:Math.min(3,nextHit()*sd*.97);
-   if(s==='Strings'){env(.22,hold,.5);const fl=lpF(f*(1.5+tone*4),.6);[-10,0,10].forEach(dt=>{const o=osc('sawtooth',f,w,e);o.detune.value=dt;o.connect(fl)})}
-   else if(s==='Reed'){env(.04,hold,.2);const fl=lpF(f*(2+tone*3),2.5);const o=osc('square',f,w,e),o2=osc('sawtooth',f*2,w,e),g2=ctx.createGain();g2.gain.value=.25;o.connect(fl);o2.connect(g2);g2.connect(fl)}
-   else{env(.03,hold,.25);const fl=lpF(f*(1.2+tone*5),.8);fl.frequency.setValueAtTime(Math.min(cap*1.4,f*(2+tone*7)),w);fl.frequency.setTargetAtTime(Math.min(cap*1.4,f*(1.2+tone*5)),w+.01,.12);[0,7].forEach(dt=>{const o=osc('sawtooth',f,w,e);o.detune.value=dt;o.connect(fl)})}}
-  else if(s==='Pluck'){env(.003,.01,.45);const fl=lpF(f*1.2,1);fl.frequency.setValueAtTime(Math.min(cap*1.4,f*(4+tone*8)),w);fl.frequency.setTargetAtTime(Math.min(cap*1.4,f*1.2),w+.005,.07);osc('sawtooth',f,w,e).connect(fl);const t=osc('triangle',f*2,w,e),tg=ctx.createGain();tg.gain.value=.3;t.connect(tg);tg.connect(fl)}
-  else if(s==='Music box'){env(.002,.005,1.1);const fl=lpF(cap,.5);osc('sine',f,w,e).connect(fl);const o=osc('sine',f*4,w,e),og=ctx.createGain();og.gain.setValueAtTime(.05+tone*.15,w);og.gain.setTargetAtTime(0,w,.12);o.connect(og);og.connect(fl)}
-  else{env(.004,.01,1.8);const fl=lpF(cap,.5),c=osc('sine',f,w,e),m=osc('sine',f*3.5,w,e),mg=ctx.createGain();mg.gain.setValueAtTime(f*(.35+tone*1.1),w);mg.gain.setTargetAtTime(0,w,.25);m.connect(mg);mg.connect(c.frequency);c.connect(fl)}
+  if(!sp){const hold=arp?sd*.7:ans?sd*1.6:Math.min(3,nextHit()*sd*.97),at=arp?Math.min(AT,.03):AT,rl=arp?Math.min(RL,.35):RL;
+   if(s==='Strings'){env(at,hold,rl);const fl=lpF(f*(1.5+tone*4),.6);FQ.forEach(fq=>(f2?[-8,8]:[-10,0,10]).forEach(dt=>{const o=osc('sawtooth',fq,w,e);o.detune.value=dt;o.connect(fl)}))}
+   else if(s==='Reed'){env(at,hold,rl);const fl=lpF(f*(2+tone*3),2.5);FQ.forEach(fq=>{const o=osc('square',fq,w,e),o2=osc('sawtooth',fq*2,w,e),g2=ctx.createGain();g2.gain.value=.25;o.connect(fl);o2.connect(g2);g2.connect(fl)})}
+   else{env(at,hold,rl);const fl=lpF(f*(1.2+tone*5),.8);fl.frequency.setValueAtTime(Math.min(cap*1.4,f*(2+tone*7)),w);fl.frequency.setTargetAtTime(Math.min(cap*1.4,f*(1.2+tone*5)),w+.01,.12);FQ.forEach(fq=>[0,7].forEach(dt=>{const o=osc('sawtooth',fq,w,e);o.detune.value=dt;o.connect(fl)}))}}
+  else if(s==='Pluck'){env(AT,AT+.007,RL);const fl=lpF(f*1.2,1);fl.frequency.setValueAtTime(Math.min(cap*1.4,f*(4+tone*8)),w);fl.frequency.setTargetAtTime(Math.min(cap*1.4,f*1.2),w+.005,.07);osc('sawtooth',f,w,e).connect(fl);const t=osc('triangle',f*2,w,e),tg=ctx.createGain();tg.gain.value=.3;t.connect(tg);tg.connect(fl)}
+  else if(s==='Music box'){env(AT,AT+.004,RL);const fl=lpF(cap,.5);osc('sine',f,w,e).connect(fl);const o=osc('sine',f*4,w,e),og=ctx.createGain();og.gain.setValueAtTime(.05+tone*.15,w);og.gain.setTargetAtTime(0,w,.12);o.connect(og);og.connect(fl)}
+  else{env(AT,AT+.007,RL);const fl=lpF(cap,.5),c=osc('sine',f,w,e),m=osc('sine',f*3.5,w,e),mg=ctx.createGain();mg.gain.setValueAtTime(f*(.35+tone*1.1),w);mg.gain.setTargetAtTime(0,w,.25);m.connect(mg);mg.connect(c.frequency);c.connect(fl)}
   const ml=ctx.createBiquadFilter(),ml2=ctx.createBiquadFilter();ml.type=ml2.type='lowpass';ml.frequency.value=ml2.frequency.value=cap;ml.Q.value=.6;ml2.Q.value=.5;g.connect(ml);ml.connect(ml2);ml2.__k=9;   /* 24 dB/oct */
   send(ml2,out,(sp?.15:.08)+space*(sp?.5:.35),.08+space*(sp?.5:.4))};
  // card controls (Role, Sound, Motion, Register)
@@ -5185,9 +5189,9 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    const sep=document.createElement('div');sep.className='bksep satc';sep.textContent='Satellite';g.prepend(sep);const els=[];
    const add=(el,grp)=>{el.classList.add('satc');el.dataset.g=grp;els.push([el,grp]);sep.after(...[el]);return el};
    const reg=mkSel('Register',['Auto','Low','High'],p.reg||'Auto',v=>{p.reg=v});
-   const mo=mkSel('Motion',['Long','Answer'],p.mot||'Long',v=>{p.mot=v;cp=null});
-   const sn=mkSel('Sound',SND[p.role]||SND.Counter,p.snd,v=>{p.snd=v});
-   const ro=mkSel('Role',['Counter','Sparkle'],p.role,v=>{p.role=v;p.snd=SND[v][0];cp=null;g.querySelectorAll('.satc').forEach(x=>x.remove());ctl()});
+   const mo=mkSel('Motion',['Long','Answer','Arp'],p.mot||'Long',v=>{p.mot=v;cp=null;ai=0});
+   const sn=mkSel('Sound',SND[p.role]||SND.Counter,p.snd,v=>{p.snd=v;sdef(p);try{window.syncFaders&&syncFaders()}catch(e){}});
+   const ro=mkSel('Role',['Counter','Sparkle'],p.role,v=>{p.role=v;p.snd=SND[v][0];sdef(p);cp=null;g.querySelectorAll('.satc').forEach(x=>x.remove());ctl()});
    add(reg,'pat');if(p.role!=='Sparkle')add(mo,'pat');add(sn,'snd');add(ro,'pat');
    const fix=()=>els.forEach(([el,grp])=>el.dataset.g=grp);queueMicrotask(fix);setTimeout(fix,0);setTimeout(fix,200)}catch(e){}};
  const reCtl=()=>{try{const card=S.mb&&S.mb.closest('.card');if(card)card.querySelectorAll('.satc').forEach(x=>x.remove())}catch(e){}ctl()};
@@ -5198,14 +5202,18 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const SAT={'Melodic House':[.35,.7,'mix'],Melancholic:[.35,.75,'long'],Hopeful:[.3,.6,'answer'],Dreamy:[.35,.4,'long'],
   Ethereal:[.4,.25,'long'],'Deep Space':[.35,.2,'long'],Ambient:[.4,.35,'long'],Drone:[.3,.3,'long'],
   Italo:[.3,.8,'answer'],'Groove Techno':[.25,.7,'answer'],Temporal:[.3,.6,'mix'],Vector:[.25,.3,'answer']};
- const DEFP={role:'Counter',snd:'Warm saw',mot:'Long',reg:'Auto',amt:.5,tone:.5,space:.4};
+ const DEFP={role:'Counter',snd:'Warm saw',mot:'Long',reg:'Auto',amt:.5,tone:.5,space:.4,att:.2,rel:.32};
  const norm=()=>{const P=S.p;['oct','hold','harm','cut','follow'].forEach(k=>delete P[k]);for(const k in DEFP)if(P[k]==null)P[k]=DEFP[k];if(!SND[P.role])P.role='Counter';if(!SND[P.role].includes(P.snd))P.snd=SND[P.role][0];if(S.n!=='Satellite')S.n='Satellite'};
  setInterval(norm,2000);
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{norm();const L=TR[4],c=SAT[curMood];S.m=true;cp=null;
+ const ARPS={Italo:.45,Vector:.45,Hopeful:.35,Temporal:.35,'Groove Techno':.35,'Melodic House':.3,Dreamy:.2};   // share of Satellite Launches that arp
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{norm();const L=TR[4],c=SAT[curMood];S.m=true;cp=null;ai=0;
    const take=L.m&&(MEL.has(curMood)||SPC.has(curMood));
-   if(c&&R()<(take?.4:c[0])){const p=S.p,role=take||R()<c[1]?'Counter':'Sparkle';p.role=role;p.snd=pick(SND[role]);p.reg='Auto';
+   if(c&&R()<(take?.4:c[0])){const p=S.p,wantArp=!take&&R()<(ARPS[curMood]||0),role=take||wantArp||R()<c[1]?'Counter':'Sparkle';p.role=role;p.snd=pick(SND[role]);p.reg='Auto';
     p.mot=take?'Long':c[2]==='mix'?pick(['Long','Answer']):c[2]==='long'?'Long':'Answer';
-    if(role==='Counter'&&p.mot==='Long')Object.assign(S,{st:16,h:pick([2,2,3]),r:0,ten:0});
+    if(wantArp){p.mot='Arp';p.snd=pick(['Warm saw','Reed','Warm saw'])}
+    sdef(p);if(p.mot==='Arp'){p.att=.05;p.rel=.2}
+    if(role==='Counter'&&p.mot==='Arp')Object.assign(S,{st:16,h:pick([8,8,6,12]),r:pick([0,2]),ten:0});
+    else if(role==='Counter'&&p.mot==='Long')Object.assign(S,{st:16,h:pick([2,2,3]),r:0,ten:0});
     else if(role==='Counter')Object.assign(S,{st:16,h:pick([4,5,6]),r:Math.floor(R()*16),ten:0});
     else Object.assign(S,{st:pick([16,16,12]),h:pick([3,4,5]),r:Math.floor(R()*12),ten:0});
     S.pt=pat(S);p.amt=+(.4+R()*.25).toFixed(2);p.tone=+((SPC.has(curMood)?.2:.3)+R()*.2).toFixed(2);p.space=+((role==='Sparkle'?.5:.25)+R()*.2).toFixed(2);S.lv=.4;S.m=false;
@@ -5213,7 +5221,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
     // Counter thins the pad a little and takes the lead down a notch when it answers; the dub stab steps back; too many layers → less Satellite
     const PD=TR[5],ST=TR[8],ld=!L.m?L.h/Math.max(1,L.st):0;
     if(role==='Sparkle'&&!L.m&&(G.arpOn||ld>=.6))S.m=true;
-    else{if(role==='Counter'&&p.mot==='Answer'&&ld>.5){p.mot='Long';Object.assign(S,{st:16,h:2,r:0});S.pt=pat(S)}
+    else{if(role==='Counter'&&((p.mot==='Answer'&&ld>.5)||(p.mot==='Arp'&&(G.arpOn||ld>.5)))){p.mot='Long';sdef(p);Object.assign(S,{st:16,h:2,r:0});S.pt=pat(S)}
      if(role==='Counter'){if(!PD.m){PD.p.size=Math.min(Math.round(PD.p.size||4),3);PD.lv=(PD.lv||.5)*.88}
       if(p.mot==='Answer'&&!L.m&&L.h>7){L.h=Math.max(5,Math.round(L.st*.4));L.pt=pat(L)}}
      if(!ST.m&&R()<.6)ST.m=true;
