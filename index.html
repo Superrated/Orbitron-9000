@@ -4353,7 +4353,7 @@ window.MOODX={
 <script>
 /* ---- v0.22 performance: "Audio buffer" (bigger buffer = fewer underruns, more delay; restarts the engine for a moment, groove kept)
    and "Visuals" (Full / Low / Off — frees the main thread that schedules the notes). Both in Mix → Bus & FX under Engine quality. ---- */
-{const BUF={'Standard':'playback','Large · 52 ms':.05,'Extra large · 102 ms':.1,'Max · 186 ms':.2},VIS=['Full','Low','Off'];
+{const BUF={'Small · 26 ms':.025,'Standard':'playback','Large · 52 ms':.05, /* v0.27: Small = lowest latency for fast pads and faders; may crackle on busy phones */'Extra large · 102 ms':.1,'Max · 186 ms':.2},VIS=['Full','Low','Off'];
  const get=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},put=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
  let buf=get('orb-buf2','Extra large · 102 ms');if(!(buf in BUF))buf='Extra large · 102 ms'; /* v0.22 stability: 0.1 s is the default (new key, so an old 'Standard' choice does not stick) */let vis=get('orb-vis','Full');if(!VIS.includes(vis))vis='Full';
  window.orbBufHint=()=>BUF[buf];
