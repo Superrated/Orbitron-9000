@@ -52,3 +52,12 @@ landing at roughly the old cost. On the phone, the Perf Test copy should give th
 9. Old master limiter removed (the master's own limiter catches peaks; worst peak in the all-mood run 0.908, no clipping); the static 20 kHz safety low-pass removed;
    the master low-pass that breakdowns/risers use now joins the path only while it moves. CPU gain ~1–2% (within noise); sound path is shorter.
 10. "Small · 26 ms" audio buffer option added (also on main).
+
+## Update: round 3 (pre-rendered drums, one heartbeat, load-aware visuals)
+11. Pre-rendered drums: kick, snare, clap, fixed perc and hats were already cached. The hat cache key used the exact tone, which the analog drift
+    keeps moving, so it missed and re-rendered; keys now use 1 % tone / 2 ms decay / 5 % metal steps (rendered at those values), and a Hat hits LFO
+    no longer forces live hats (only tone/decay LFOs do, ~16 % of Launches). A cached hat costs 2 nodes instead of ~8.
+12. One heartbeat: all setInterval timers of 200 ms or more (72 of them) run from one shared 100 ms clock; fast timers keep their own.
+    Timer wake-ups 388/s → 294/s (−24 %).
+13. Visuals step down with load: ≤24 fps at LOAD (existing), 12 fps at SAVING, 6 fps at OVERLOAD or for 3 s after an audio underrun.
+Regression: all moods, no errors, no late steps, worst peak 0.896; every control on every tab pressed twice during playback: no errors.

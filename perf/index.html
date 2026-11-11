@@ -128,6 +128,15 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
 <section class="tp" id="t-viz" hidden><div class="panel"><canvas id="viz" width="720" height="720" style="width:100%;height:auto;max-width:560px;display:block;margin:auto"></canvas><div class="lg" id="lg"></div></div></section>
 <section class="tp" id="t-perf" hidden></section>
 <script>
+/* ---- perf 11: one heartbeat for the slow screen timers. Every setInterval of 200 ms or more (UI refreshes, menus, meters, autosave…) runs
+   from a single shared 100 ms clock instead of its own timer, so the phone wakes up once instead of dozens of times. Fast timers (LFOs, delay sync,
+   playheads, the scheduler) keep their own exact timers. ---- */
+(function(){const si=window.setInterval.bind(window),ci=window.clearInterval.bind(window);const J=new Map();let id=1e6,beat=null;
+ const run=()=>{const n=performance.now();for(const [k,j] of J){if(n>=j.due){j.due=n+j.ms-(n-j.due>j.ms?0:Math.min(j.ms*.5,n-j.due));try{j.fn.apply(window,j.a)}catch(e){setTimeout(()=>{throw e})}}}};
+ window.setInterval=function(fn,ms,...a){if(typeof fn!=='function'||!(ms>=200))return si(fn,ms,...a);const k=++id;J.set(k,{fn,ms,a,due:performance.now()+ms});if(!beat)beat=si(run,100);return k};
+ window.clearInterval=function(k){if(J.has(k)){J.delete(k);return}return ci(k)};window.orbBeat={count:()=>J.size}})();
+</script>
+<script>
 /* ---- perf 1: a finished sound source is disconnected right away, so the filters and gains behind it fall silent and drop out of the audio graph
    instead of being processed until garbage collection ---- */
 {const P=AudioScheduledSourceNode.prototype,st=P.start;P.start=function(){const r=st.apply(this,arguments);try{if(!(this.context instanceof OfflineAudioContext))this.addEventListener('ended',()=>{try{this.disconnect()}catch(e){}},{once:true})}catch(e){}return r}}
@@ -1961,13 +1970,18 @@ const _gen72=generate;generate=function(){_gen72();if(curMood!=='Power')return;c
  G.ldMul=.75;G.pedal=true;buf=[];mot=[];mp=-1;if(typeof lfoUI==='function')lfoUI();build()};
 /* ---- v73: CPU easy wins — pre-rendered hi-hats (2 nodes per hit instead of 8, one shared panner), ladder filter swapped for the cheap version under load, lower visual frame caps ---- */
 {const HC={},HV=3;let busy=0;
- const hkey=p=>[Math.round(p.tone),Math.round((p.dec||0)*1000),Math.round((p.metal==null?.6:p.metal)*100),ctx.sampleRate].join('|');
- const lfoOnHat=()=>LFOS.some(L=>L.d>0&&/^Hat/.test(L.tg));
+ /* perf 10: the hat cache key used the exact tone, which the analog drift moves all the time, so the cache kept missing and re-rendering.
+    Keys now use 1 % tone steps, 2 ms decay steps and 5 % metal steps (far below hearing), and the hits are rendered at exactly those values.
+    Only LFOs that move the hat SOUND (tone, decay) bypass the cache; a Hat hits LFO no longer does. */
+ const qv=p=>({tone:Math.pow(1.01,Math.round(Math.log(Math.max(500,+p.tone||7500))/Math.log(1.01))),dec:Math.round((+p.dec||.05)*500)/500,metal:Math.round((p.metal==null?.6:p.metal)*20)/20});
+ const hkey=p=>{const q=qv(p);return [Math.round(q.tone),Math.round(q.dec*1000),Math.round(q.metal*100),ctx.sampleRate,A.hm2?(A.hm2.__id||(A.hm2.__id=++HID)):0].join('|')};let HID=0;
+ const lfoOnHat=()=>LFOS.some(L=>L.d>0&&/^Hat (tone|decay)/.test(L.tg));
  function render(key,P){if(busy||!window.OfflineAudioContext)return;busy=1;const jobs=[];
   for(const op of[0,1])for(let v=0;v<HV;v++)jobs.push([op,v]);const out={c:[],o:[]};
   const one=([op])=>{const d=op?.32:P.dec,sr=ctx.sampleRate,oc=new OfflineAudioContext(2,Math.ceil(sr*(d+.08)),sr),T=TR[1],sv={ctx,m:A.m,dI:A.dI,rI:A.rI,hg:HH.g,lv:T.lv,open:T.p.open,acc:T.p.acc};
-   try{ctx=oc;A.m=oc.destination;A.dI=oc.createGain();A.rI=oc.createGain();HH.g=null;T.lv=1;T.p.open=op;T.p.acc=0;_fv73(1,0)}catch(e){console.warn(e)}
-   finally{ctx=sv.ctx;A.m=sv.m;A.dI=sv.dI;A.rI=sv.rI;HH.g=sv.hg;T.lv=sv.lv;T.p.open=sv.open;T.p.acc=sv.acc}return oc.startRendering()};
+   const q=qv(P),kp={tone:T.p.tone,dec:T.p.dec,metal:T.p.metal};
+   try{ctx=oc;A.m=oc.destination;A.dI=oc.createGain();A.rI=oc.createGain();HH.g=null;T.lv=1;T.p.open=op;T.p.acc=0;Object.assign(T.p,q);_fv73(1,0)}catch(e){console.warn(e)}
+   finally{ctx=sv.ctx;A.m=sv.m;A.dI=sv.dI;A.rI=sv.rI;HH.g=sv.hg;T.lv=sv.lv;T.p.open=sv.open;T.p.acc=sv.acc;Object.assign(T.p,kp)}return oc.startRendering()};
   (async()=>{try{for(const j of jobs){const b=await one(j);(j[0]?out.o:out.c).push(b)}HC[key]=out;const ks=Object.keys(HC);if(ks.length>6)delete HC[ks[0]]}catch(e){}busy=0})()}
  let pan=null;const hatBus=()=>{if(pan&&pan.context===ctx)return pan;pan=ctx.createGain();send(pan,A.m,0,.05);return pan};
  const _fv73=fireVoice;fireVoice=function(k,w){if(k!==1||!ctx||ctx instanceof OfflineAudioContext||lfoOnHat()||(TR[1].pan||0)!==0)return _fv73(k,w);
@@ -5583,5 +5597,12 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  setInterval(()=>{try{hook();if(!ctx||!A.lp)return;const f=A.lp.frequency.value,q=A.lp.Q.value,neutral=f>=19900&&Math.abs(q-.7)<.02;
   if(!on&&bt&&bt!==nextOf()){try{A.hp.disconnect(bt)}catch(e){}bt=nextOf();A.hp.connect(bt)} /* the drop gap gate was added meanwhile */
   if(on&&neutral){if(++idle>=10)release()}else idle=0}catch(e){}},100);window.orbLpState=()=>on}
+</script>
+<script>
+/* ---- perf 12: visuals step down by themselves when the engine is under load: normal frame rate when NOMINAL, ≤24 fps at LOAD (already),
+   12 fps at SAVING and 6 fps at OVERLOAD or right after audio underruns; full speed returns when the load is gone. ---- */
+{let lf=0,ur=0,lastU=0;const ps=()=>{try{return ctx&&ctx.playbackStats?ctx.playbackStats.underrunEvents||0:null}catch(e){return null}};
+ setInterval(()=>{const u=ps();if(u!=null){if(u>lastU)ur=performance.now()+3000;lastU=u}},500);
+ const _v=viz;viz=function(){const n=performance.now(),lv=Math.max(QOS.lvl||0,QOS.ml||0),cap=n<ur||lv>=3?6:lv>=2?12:0;if(cap&&n-lf<1000/cap){requestAnimationFrame(viz);return}lf=n;return _v()}}
 </script>
 </body></html>
