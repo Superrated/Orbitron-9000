@@ -5679,7 +5679,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   return b};
  const airF=()=>{const m=12*6+G.root;return [440*Math.pow(2,(m-69)/12),440*Math.pow(2,(m+7-69)/12)]};
  const bedStop=(w)=>{if(!BED.src)return;const t=w||ctx.currentTime,s=BED.src,g=BED.g;try{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(0,t,.25);s.stop(t+1.5)}catch(e){}BED.src=null;BED.g=null;BED.f=[];BED.type=''};
- const bedLvl=()=>{const l=Math.max(0,Math.min(1,G.bedLv||0));return l*l*.6*(G.bed==='Air'?2:1)};
+ const bedLvl=()=>{const l=Math.max(0,Math.min(1,G.bedLv||0));return l*l*.42*(G.bed==='Air'?2:1)};
  const bedStart=type=>{if(!BB[type])BB[type]=mkBuf(type);const t=ctx.currentTime,s=ctx.createBufferSource(),g=ctx.createGain();s.buffer=BB[type];s.loop=true;let head=s;
   if(type==='Air'){const [f1,f2]=airF(),m=ctx.createGain();m.gain.value=7;BED.f=[f1,f2].map(f=>{const b=ctx.createBiquadFilter();b.type='bandpass';b.frequency.value=f;b.Q.value=16;s.connect(b);b.connect(m);return b});head=m;BED.root=G.root}
   else if(type==='Tape'){const h=ctx.createBiquadFilter();h.type='highpass';h.frequency.value=180;s.connect(h);head=h}
