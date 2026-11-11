@@ -424,7 +424,7 @@ function chips(){[['#t-drums',[0,1,2,3,7]],['#t-synth',[4,5,6,8,9]]].forEach(([i
  c.prepend(cap);c.prepend(seg);c.prepend(bar);show()});tagCtl();applyMode()}
 const _b4=build;build=function(){_b4();chips()};
 setInterval(()=>{const t=NN[G.root]+' '+G.scale+' \u00b7 '+MN(curMood),k=$('#kinfo'),s=$('#gsum');if(k)k.textContent=t+' \u00b7 '+G.bpm;if(s)s.textContent='Now: '+t+(typeof MP!=='undefined'&&MP[curMood]?' ('+MP[curMood].sty+')':'')+' \u00b7 '+G.bpm+' BPM \u00b7 lead: '+(TR[4].p.patch||'custom')+' \u00b7 pad: '+TR[5].p.patch+(G.dfeel?' \u00b7 drums: '+G.dfeel:'')+(G.hfam?' \u00b7 harmony: '+G.hfam:'')},400);
-setInterval(()=>document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('m',!!TR[+b.dataset.k].m)),300);
+/* perf 4: chip mute state is kept in sync on change by the v0.25 mute sync; this 300 ms poll is no longer needed */
 [rp,Q3].forEach(p=>p.classList.add('rz'));
 const QD=document.createElement('div');QD.className='panel';QD.innerHTML='<h2>Dub stabs</h2><div class="pads"></div>';
 {const g=QD.children[1],sb={on:0,t:0,iv:0},mk=(l,dn,up)=>{const b=document.createElement('button');b.className='pad';b.innerHTML=l;g.appendChild(b);if(!up){b.onclick=dn;return}let on=0;const U=()=>{if(!on)return;on=0;b.classList.remove('on');up()};b.addEventListener('pointerdown',e=>{e.preventDefault();if(on)return;on=1;b.classList.add('on');dn()});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,U))};
@@ -1323,7 +1323,7 @@ const _gen39=generate;generate=function(){_gen39();const P=TR[4].p,ac=P.mode==='
  // reverb impulse lengths per tier (set once the audio engine exists)
  const _init40=init;init=function(){const nw=!ctx;_init40();if(!nw)return;if(lean()){try{A.rcv.buffer=ir2(qual()==='Eco eco'?1.1:qual()==='Eco'?1.4:1.8,.02);A.rmc.buffer=irM(ir(.8,1.6,.06))}catch(e){}}};
  // batched step-dial redraws (one timer instead of ~90 per second)
- setInterval(()=>{if(!ctx||!DQ.length)return;const now=ctx.currentTime+.01;let i=0;while(i<DQ.length&&DQ[i][2]<=now){const [T,s]=DQ[i];if(playing)draw(T,s);i++}if(i)DQ.splice(0,i);if(!playing)DQ.length=0},33);
+ setInterval(()=>{if(!ctx||!DQ.length)return;const now=ctx.currentTime+.01;let i=0;const sh=!$('#t-drums').hidden||!$('#t-synth').hidden; /* perf 4: ring playheads are only drawn while a card page is on screen */while(i<DQ.length&&DQ[i][2]<=now){const [T,s]=DQ[i];if(playing&&sh)draw(T,s);i++}if(i)DQ.splice(0,i);if(!playing)DQ.length=0},33);
  // one rebuild per task, however many wrappers ask for it
  let BQ=0;const _b40=build;build=function(){if(BQ)return;BQ=1;queueMicrotask(()=>{BQ=0;_b40()})};
  // count late scheduler steps for diagnostics
