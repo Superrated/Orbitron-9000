@@ -5934,7 +5934,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   const F={m:'Mood',a:1};try{const s=JSON.parse(localStorage.getItem('orb-feel')||'null');if(s&&s.m)Object.assign(F,s)}catch(e){}
  const save=()=>{try{localStorage.setItem('orb-feel',JSON.stringify(F))}catch(e){}};
  window.orbFeel={get:()=>Object.assign({},F),set:(m,a)=>{if(m)F.m=m;if(a!=null)F.a=Math.max(0,Math.min(2,+a));save()}};
- const _f=fire;fire=function(k,w){window.__feelOff=F.m!=='Mood';window.__feelA=F.a;try{if(F.m!=='Off'&&F.m!=='Mood'&&F.a>0&&ctx&&!(window.DR&&DR.rendering)){const P=POCK[F.m];if(P){let ms=P[k]||0;
+ const _f=fire;fire=function(k,w){window.__feelOff=F.m!=='Mood';window.__feelA=F.a*(F.m==='Mood'?.7:1); /* the mood pockets from Launch sit 30% closer to the grid */try{if(F.m!=='Off'&&F.m!=='Mood'&&F.a>0&&ctx&&!(window.DR&&DR.rendering)){const P=POCK[F.m];if(P){let ms=P[k]||0;
      if(k===6&&tk%4!==2)ms=0;                                   // bass: only the off-beat 8ths lean
      if((k===1||k===3)&&ms)ms+=(R()-.5)*2*Math.min(1.5,Math.abs(ms)*.25); // a little life on hats and perc
      ms*=F.a;if(ms){const t=w+ms/1000;if(t>ctx.currentTime+.004)w=t}}}}catch(e){}return _f(k,w)};
