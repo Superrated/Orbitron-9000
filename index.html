@@ -4034,7 +4034,7 @@ window.MOODX={
 <script>
 /* ---- v0.22: Flight uses the full screen width on large screens (not phones). Only while Flight is open: the page widens and the deck becomes
    risers | breakdowns side by side, thrusters | planet mutes side by side, low-pass | LEAD + BASS side by side. Phones and tablets in portrait are unchanged. ---- */
-{const st=document.createElement('style');st.textContent=`@media (min-width:1100px){
+{const st=document.createElement('style');st.textContent=`@media (min-width:900px){
  body.flw{max-width:none!important;padding-left:20px!important;padding-right:20px!important}
  body.flw #t-perf{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px!important;align-items:stretch}
  body.flw #t-perf>.flw-s1{grid-column:1/4;grid-row:1}
@@ -6274,12 +6274,30 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-12b';
+window.ORB_BUILD='2026-11-12c';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
   x.style.cssText='min-width:44px;min-height:40px;border:2px solid #04100a;background:transparent;color:#04100a;font:700 13px ui-monospace,monospace';x.onclick=()=>d.remove();d.appendChild(x);document.body.appendChild(d)};
  const check=()=>{try{if(!window.caches||shown)return;caches.match('./index.html',{ignoreSearch:true}).then(r=>r&&r.text()).then(t=>{if(!t)return;const m=t.match(/ORB_BUILD='([^']+)'/);if(m&&m[1]!==window.ORB_BUILD)note()}).catch(()=>{})}catch(e){}};
  if(/^https?:$/.test(location.protocol)){setTimeout(check,15000);setInterval(check,600000)}}
+/* ---- screens: phones always upright; desktop and tablet use the width ---- */
+{const st=document.createElement('style');st.textContent=`
+@media (orientation:landscape) and (max-height:520px) and (pointer:coarse){
+ #upr{display:flex!important}}
+#upr{display:none;position:fixed;inset:0;z-index:2147483647;align-items:center;justify-content:center;background:#04100a;color:#ffe44d;font:700 16px ui-monospace,Menlo,monospace;letter-spacing:.14em}
+@media (min-width:900px) and (max-width:1200px){body.flw #t-perf>.flw-mut>:last-child>button{font-size:12px!important;letter-spacing:.04em}}
+@media (min-width:1000px){
+ #t-drums [data-mode] .grid>[data-g=snd],#t-synth [data-mode] .grid>[data-g=snd],#t-drums[data-mode] .grid>[data-g=snd],#t-synth[data-mode] .grid>[data-g=snd],
+ #t-drums[data-mode] .grid>[data-g=pat],#t-synth[data-mode] .grid>[data-g=pat]{display:revert!important}
+ #t-drums[data-mode] .body>canvas,#t-synth[data-mode] .body>canvas{display:block!important}
+ #t-drums>.seg,#t-synth>.seg,#t-drums>.mcap,#t-synth>.mcap{display:none!important}
+ #t-drums .grid>[data-g=pat],#t-synth .grid>[data-g=pat]{order:0;border-left:2px solid var(--edge);padding-left:8px}
+ #t-drums .grid>[data-g=snd],#t-synth .grid>[data-g=snd]{order:1;border-left:2px solid var(--acc);padding-left:8px}
+ #t-drums .card,#t-synth .card{border-left-color:var(--edge)}}`;document.head.appendChild(st);
+ const up=document.createElement('div');up.id='upr';up.setAttribute('role','alert');up.textContent='\u21BB  TURN YOUR PHONE UPRIGHT';document.documentElement.appendChild(up);
+ // installed app or full screen on a phone: ask the system to hold portrait too
+ const lock=()=>{try{if(matchMedia('(pointer:coarse)').matches&&screen.orientation&&screen.orientation.lock&&(document.fullscreenElement||matchMedia('(display-mode: standalone),(display-mode: fullscreen)').matches))screen.orientation.lock('portrait').catch(()=>{})}catch(e){}};
+ document.addEventListener('fullscreenchange',lock);addEventListener('pointerdown',lock,{once:true})}
 </script>
 </body></html>
