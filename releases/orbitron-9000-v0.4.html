@@ -144,7 +144,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
    from a single shared 100 ms clock instead of its own timer, so the phone wakes up once instead of dozens of times. Fast timers (LFOs, delay sync,
    playheads, the scheduler) keep their own exact timers. ---- */
 (function(){const si=window.setInterval.bind(window),ci=window.clearInterval.bind(window);const J=new Map();let id=1e6,beat=null;
- let hb=0;const run=()=>{if(document.hidden&&(++hb%20))return; /* quick win 8: screen off → slow UI jobs at most every 2 s */const n=performance.now();for(const [k,j] of J){if(n>=j.due){j.due=n+j.ms-(n-j.due>j.ms?0:Math.min(j.ms*.5,n-j.due));try{j.fn.apply(window,j.a)}catch(e){setTimeout(()=>{throw e})}}}};
+ const run=()=>{const n=performance.now();for(const [k,j] of J){if(n>=j.due){j.due=n+j.ms-(n-j.due>j.ms?0:Math.min(j.ms*.5,n-j.due));try{j.fn.apply(window,j.a)}catch(e){setTimeout(()=>{throw e})}}}};
  window.setInterval=function(fn,ms,...a){if(typeof fn!=='function'||!(ms>=200))return si(fn,ms,...a);const k=++id;J.set(k,{fn,ms,a,due:performance.now()+ms});if(!beat)beat=si(run,100);return k};
  window.clearInterval=function(k){if(J.has(k)){J.delete(k);return}return ci(k)};window.orbBeat={count:()=>J.size}})();
 </script>
@@ -289,7 +289,7 @@ window.orbSave=async function(name,blob){
 const add=(k,d,x)=>{Object.assign(TR[k].p,d);TR[k].x.push(...x)};
 add(1,{tone:7500,open:.15,acc:.4},[["Tone","tone",3000,12000,50],["Open hat","open",0,1,.01],["Humanize","acc",0,1,.01]]);
 add(2,{spread:11,tail:.2,rv:.15,body:0},[["Spread ms","spread",4,30,1],["Tail","tail",.05,.6,.01],["Reverb","rv",0,.6,.01],["Body","body",0,1,.01]]);
-add(3,{oct:4,ratio:2,mdec:.1,bend:.2,pdt:.04,pdrv:0,noise:.2,filt:8000,fres:4,fenvp:.5,pmode:0,ds:.3,rs:.2},[["Pitch oct","oct",2,6,1],["Mod ratio","ratio",.5,7,.01],["Mod decay","mdec",.02,.5,.01],["Pitch bend","bend",0,3,.01],["Drop time","pdt",.01,.3,.005],["Drive","pdrv",0,1,.01],["Noise click","noise",0,1,.01],["Filter","filt",60,12000,10],["Filter res","fres",.5,15,.1],["Filter env","fenvp",0,1,.01],["Filter mode (LP·BP·HP)","pmode",0,2,1],["Delay send","ds",0,1,.01],["Reverb send","rs",0,1,.01]]);
+add(3,{oct:4,ratio:2,mdec:.1,bend:.2,noise:.2,filt:8000,fres:4,fenvp:.5,pmode:0,ds:.3,rs:.2},[["Pitch oct","oct",2,6,1],["Mod ratio","ratio",.5,7,.01],["Mod decay","mdec",.02,.5,.01],["Pitch bend","bend",0,1,.01],["Noise click","noise",0,1,.01],["Filter","filt",60,12000,10],["Filter res","fres",.5,15,.1],["Filter env","fenvp",0,1,.01],["Filter mode (LP·BP·HP)","pmode",0,2,1],["Delay send","ds",0,1,.01],["Reverb send","rs",0,1,.01]]);
 add(4,{wave:.4,det:5,cut:400,res:6,envA:3000,dec:.28,ds:.4,rs:.25},[["Saw↔Square","wave",0,1,.01],["Detune ¢","det",0,30,1],["Cutoff","cut",150,4000,10],["Resonance","res",.5,15,.1],["Env amount","envA",0,6000,50],["Decay","dec",.08,1.2,.01],["Delay send","ds",0,1,.01],["Reverb send","rs",0,1,.01]]);
 add(5,{att:.35,rel:.8,cut:500,sweep:1300,det:7,oct:2,size:4,rs:.55},[["Attack","att",.05,.8,.01],["Release s","rel",.2,3,.05],["Cutoff","cut",200,3000,10],["Filter sweep","sweep",0,3000,50],["Detune ¢","det",0,30,1],["Octave","oct",1,3,1],["Chord notes","size",2,4,1],["Reverb send","rs",0,1,.01]]);
 add(6,{sub:.5,shold:0,res:2,envA:2,dec:.26,bsus:0,oct:1,fifth:.3,jump:.25,det:0},[["Sub","sub",0,1,.01],["Resonance","res",.5,12,.1],["Env amount","envA",0,6,.1],["Decay","dec",.08,.8,.01],["Sustain","bsus",0,1,.01],["Octave","oct",0,2,1],["Fifth prob","fifth",0,1,.01],["Octave jump","jump",0,1,.01],["Detune ¢","det",0,30,1],["Sub hold","shold",0,1,.01]]);
@@ -305,30 +305,30 @@ function acidVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,s=tk%16,d=acidNot
  const f=d2f(d,2+(G.ldUp||0)),acc=AC.a[s]?1:0,sl=AC.s[s]&&LF>0&&w-LW<=2.2*sd,nx=AC.s[(s+1)%16],dur=sd*(nx?1.15:.55),e=w+dur+.06,
   o=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e),q1=ctx.createBiquadFilter(),q2=ctx.createBiquadFilter(),pre=ctx.createGain(),g=ctx.createGain();
  if(sl)o.frequency.setTargetAtTime(f,w,.02);
- /* v0.4: ONE oscillator like the 303 (the detuned second one smeared the squelch) */
- let src=o;if(p.wave>.5){const sg=ctx.createGain();sg.gain.value=.8;o.connect(sg);src=sg}
- q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(14,p.res)*.38;q2.Q.value=.5; /* v0.4: second stage sits 1.7x higher → a softer, about 18 dB-like slope */
+ /* v0.27: a second, slightly detuned oscillator for a fatter tone */const o2=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e);o2.detune.value=9;if(sl)o2.frequency.setTargetAtTime(f,w,.02);const o2g=ctx.createGain();o2g.gain.value=.55;o2.connect(o2g);
+ q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(14,p.res)*.38;q2.Q.value=.55; /* v0.27: rounder resonance peak */
  AC.chg=(AC.chg||0)*Math.exp(-Math.max(0,w-(AC.tw||w))/.35);AC.tw=w;if(acc)AC.chg=Math.min(2.5,AC.chg+1);
  const cm=Math.pow(2,2.5*mv("Lead cutoff",w)),base=Math.max(40,p.cut*cm),ea=p.envA*(acc?1.5+p.acc3*.8+.35*AC.chg:1),
   cd=acc?Math.min(.2,Math.max(.06,p.dec*.6)):Math.max(.06,p.dec*Math.pow(2,1.2*mv("Lead decay",w)));
- [q1,q2].forEach((q,qi)=>{const m=qi?1.7:1;if(sl&&AC.fq){const el=w-AC.ft,cur=Math.max(base,AC.fb+(AC.fp-AC.fb)*Math.exp(-el*3/AC.fd));q.frequency.setValueAtTime(Math.min(16000,cur*m),w);q.frequency.setTargetAtTime(base*m,w,AC.fd/3)}
-  else{q.frequency.setValueAtTime(Math.min(16000,(base+ea)*m),w);q.frequency.setTargetAtTime(base*m,w+.002,cd/3)}});
+ [q1,q2].forEach(q=>{if(sl&&AC.fq){const el=w-AC.ft,cur=Math.max(base,AC.fb+(AC.fp-AC.fb)*Math.exp(-el*3/AC.fd));q.frequency.setValueAtTime(Math.min(12000,cur),w);q.frequency.setTargetAtTime(base,w,AC.fd/3)}
+  else{q.frequency.setValueAtTime(Math.min(12000,base+ea),w);q.frequency.setTargetAtTime(base,w+.002,cd/3)}});
  if(!sl){AC.fq=1;AC.ft=w;AC.fp=Math.min(12000,base+ea);AC.fb=base;AC.fd=cd}
  const pk=v*.3*(acc?1.35+p.acc3*.4:1)*(1+(p.drv||0)*.2);
  if(sl)g.gain.setValueAtTime(pk,w);else{g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(pk,w+.003)}
  g.gain.setValueAtTime(pk,w+dur);g.gain.linearRampToValueAtTime(.0001,w+dur+.02);
- pre.gain.value=(1+(acc?.3:0))*1.45;src.connect(pre);pre.connect(q1);q1.connect(q2); /* 1.45: makes up for the removed second oscillator */
- /* v0.4: no sub oscillator and no noise click (the 303 has neither); resonance thins the bass instead */
- let tl=q2;if(p.res>2){const ls=ctx.createBiquadFilter();ls.type='lowshelf';ls.frequency.value=180;ls.gain.value=-Math.min(4,(p.res-2)*.35);q2.connect(ls);tl=ls}
- {const dv=Math.max(.2,p.drv||0),dg=ctx.createGain(),dw=ctx.createWaveShaper();dg.gain.value=.7+dv*2.2;dw.curve=acidWarm(dv);tl.connect(dg);dg.connect(dw);tl=dw} /* v0.4: warm pedal-style drive, always a little on */
- if(p.drv>.3){const tm=ctx.createBiquadFilter();tm.type='lowpass';tm.frequency.value=9000;tm.Q.value=.5;tl.connect(tm);tl=tm} /* v0.4: no more 4.2 kHz cut; only a gentle 9 kHz one when the drive pedal is pushed */
- tl.connect(g);send(g,acidBus()||A.ld||A.dk,p.ds,p.rs);leadVoice(g,w);LF=f;LW=w}
+ pre.gain.value=1+(acc?.3:0);o.connect(pre);o2g.connect(pre);pre.connect(q1);q1.connect(q2);
+ if(p.subosc>.01){const so=osc('sine',f*.5,w,e),sg=ctx.createGain();sg.gain.value=p.subosc*.9;so.connect(sg);sg.connect(g)}
+ if(p.grit>.01){const ns=ctx.createBufferSource(),ng=ctx.createGain(),nf=ctx.createBiquadFilter();ns.buffer=A.nb;nf.type='highpass';nf.frequency.value=1500;ng.gain.setValueAtTime(p.grit*.4,w);ng.gain.exponentialRampToValueAtTime(.001,w+.06);ns.connect(nf);nf.connect(ng);ng.connect(g);ns.start(w,R()*.5);ns.stop(w+.08)}
+ let tl=q2;if(p.drv>.01){const dg=ctx.createGain(),dw=ctx.createWaveShaper();dg.gain.value=.6+p.drv*2.4;dw.curve=curve(p.drv*10);q2.connect(dg);dg.connect(dw);tl=dw}
+ if(p.crush>.01){const cr=ctx.createWaveShaper();cr.curve=crushCurve(p.crush);tl.connect(cr);tl=cr}
+ {const tm=ctx.createBiquadFilter();tm.type='lowpass';tm.frequency.value=4200;tm.Q.value=.5;tl.connect(tm);tl=tm} /* v0.27: tame the fizz */
+ tl.connect(g);send(g,A.ld||A.dk,p.ds,p.rs);leadVoice(g,w);LF=f;LW=w}
 function foldCurve(){if(!FC){FC=new Float32Array(4097);for(let i=0;i<4097;i++){const u=(i/2048-1)*8;FC[i]=2/Math.PI*Math.asin(Math.sin(Math.PI/2*u))}}return FC}
 function fireVoice(k,w){const T=TR[k],p=T.p,v=T.lv;if(window.DR&&DR.on(k,w,v,p))return;
  if(k===0){if(A.ksd!==p.drive){A.ks.curve=curve(p.drive);A.ksd=p.drive}const o=ctx.createOscillator(),g=ctx.createGain(),f=p.pitch,d=p.dec,pu=p.punch,vk=v*.9;o.frequency.setValueAtTime(f*(1+pu),w);o.frequency.exponentialRampToValueAtTime(f*(1+pu*.12),w+.011);o.frequency.exponentialRampToValueAtTime(f,w+.06);o.frequency.exponentialRampToValueAtTime(f*.93,w+d);g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(vk,w+.0015);g.gain.setValueAtTime(vk,w+d*.2);g.gain.exponentialRampToValueAtTime(.0001,w+d);o.connect(g);g.connect(A.ks);const r=ctx.createGain();r.gain.value=.55*(G.rfeed||1);g.connect(r);r.connect(A.ru);o.start(w);o.stop(w+d+.05);{const ck=p.click==null?1:p.click;if(ck>.01){const c=ctx.createOscillator(),cg=ctx.createGain(),cq=ctx.createBiquadFilter();c.type='triangle';c.frequency.setValueAtTime(2200,w);c.frequency.exponentialRampToValueAtTime(320,w+.008);cq.type='highpass';cq.frequency.value=700;cg.gain.setValueAtTime(v*.3*ck,w);cg.gain.exponentialRampToValueAtTime(.0001,w+.012);c.connect(cq);cq.connect(cg);cg.connect(A.ks);c.start(w);c.stop(w+.02)}}nz(w,"highpass",4500,.007,v*.22,A.m);duck(w)}
  else if(k===1){const op=R()<p.open,tn=p.tone*Math.pow(2,1.2*mv("Hat tone",w)),d=op?.32:p.dec,pk=v*.5*(1-p.acc*R()*.8)*Math.pow(7500/tn,.25)*(op?.75:1),mt=p.metal==null?.6:p.metal;if(HH.g){const cg=HH.g;HH.g=null;try{cg.gain.cancelScheduledValues(w);cg.gain.setTargetAtTime(.0001,w,.005)}catch(e){}}const g=ctx.createGain(),bp=ctx.createBiquadFilter(),hp=ctx.createBiquadFilter(),pn=ctx.createStereoPanner(),m=ctx.createGain(),e=w+d+.05;bp.type='bandpass';bp.frequency.value=Math.min(15000,Math.max(6000,tn*1.15));bp.Q.value=.7;hp.type='highpass';hp.frequency.value=tn*.62;hp.Q.value=.5;pn.pan.value=Math.max(-1,Math.min(1,.18+.8*mv('Hat pan',w)));m.gain.value=.5*mt;if(A.hm2){const ms=ctx.createBufferSource();ms.buffer=A.hm2;ms.playbackRate.value=Math.pow(tn/8000,.6);ms.connect(m);m.connect(g);ms.start(w,R()*.3);ms.stop(e)}else{const sc=1.6*Math.pow(tn/8000,.3);[205.3,304.4,369.6,522.7,540,800].forEach(fr=>osc('square',fr*sc,w,e).connect(m));m.connect(bp);bp.connect(hp)}const ns=ctx.createBufferSource(),ng=ctx.createGain();ns.buffer=A.nb;ng.gain.value=1-.55*mt;ns.connect(ng);ng.connect(hp);ns.start(w,R()*.5);ns.stop(e);hp.connect(g);g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(pk,w+.001);g.gain.exponentialRampToValueAtTime(.0001,w+d);g.connect(pn);send(pn,A.m,0,.05);if(op)HH.g=g}
  else if(k===2){const s=p.spread/1e3;[0,1,2].forEach(i=>nz(w+i*s,"bandpass",p.tone,.05,v,A.m));nz(w+3*s,"bandpass",p.tone,p.tail,v,A.m,p.rv);const bd=p.body||0;if(bd>.01){const t0=w+3*s,f0=180+80*Math.min(1,p.tone/2400),o=ctx.createOscillator(),g=ctx.createGain(),lp=ctx.createBiquadFilter();o.type="triangle";o.frequency.setValueAtTime(f0*1.5,t0);o.frequency.exponentialRampToValueAtTime(f0,t0+.03);lp.type="lowpass";lp.frequency.value=900;g.gain.setValueAtTime(.0001,t0);g.gain.exponentialRampToValueAtTime(v*bd*1.1,t0+.004);g.gain.exponentialRampToValueAtTime(.0001,t0+.07+.06*bd);o.connect(lp);lp.connect(g);g.connect(A.m);o.start(t0);o.stop(t0+.16)}}
- else if(k===3){const f=d2f((window.pcDeg?pcDeg():Math.floor(R()*SC[G.scale].length*2))+Math.round(4*mv('Perc pitch',w)),p.oct),e=w+p.dec+.05,o=osc("sine",f,w,e),m=osc("sine",f*p.ratio,w,e),mg=ctx.createGain(),g=ctx.createGain(),q=ctx.createBiquadFilter();q.type=["lowpass","bandpass","highpass"][Math.round(p.pmode||0)]||"lowpass";q.Q.value=p.fres==null?4:p.fres;{const fe=p.fenvp==null?.5:p.fenvp,ft=Math.max(60,p.filt);q.frequency.setValueAtTime(Math.min(16000,ft*(1+fe*8*(window.pcVel?pcVel():1))),w);q.frequency.exponentialRampToValueAtTime(ft,w+Math.max(.03,p.dec*.7))}o.frequency.setValueAtTime(f*(1+p.bend),w);o.frequency.exponentialRampToValueAtTime(f,w+(p.pdt||.04));mg.gain.setValueAtTime(Math.max(0,f*p.fm*(1+1.5*mv("Perc FM",w))),w);mg.gain.exponentialRampToValueAtTime(1,w+p.mdec);m.connect(mg);mg.connect(o.frequency);env(g,w,v*.6*(window.pcVel?pcVel():1),p.dec);o.connect(g);g.connect(q);{const mkg=ctx.createGain();mkg.gain.value=[1,4,4][Math.round(p.pmode||0)]||1;const dv=p.pdrv||0;if(dv>.02){const ws=ctx.createWaveShaper(),kq=Math.round((1+dv*8)*10)/10;ws.curve=PDC[kq]||(PDC[kq]=satCurve(kq));mkg.gain.value*=1+dv*3.2;q.connect(ws);ws.connect(mkg)}else q.connect(mkg);send(mkg,A.m,p.ds,p.rs)}if(p.noise)nz(w,"highpass",5000,.02,v*p.noise*.4,q)}
+ else if(k===3){const f=d2f(Math.floor(R()*SC[G.scale].length*2)+Math.round(4*mv('Perc pitch',w)),p.oct),e=w+p.dec+.05,o=osc("sine",f,w,e),m=osc("sine",f*p.ratio,w,e),mg=ctx.createGain(),g=ctx.createGain(),q=ctx.createBiquadFilter();q.type=["lowpass","bandpass","highpass"][Math.round(p.pmode||0)]||"lowpass";q.Q.value=p.fres==null?4:p.fres;{const fe=p.fenvp==null?.5:p.fenvp,ft=Math.max(60,p.filt);q.frequency.setValueAtTime(Math.min(16000,ft*(1+fe*8)),w);q.frequency.exponentialRampToValueAtTime(ft,w+Math.max(.03,p.dec*.7))}o.frequency.setValueAtTime(f*(1+p.bend),w);o.frequency.exponentialRampToValueAtTime(f,w+.04);mg.gain.setValueAtTime(Math.max(0,f*p.fm*(1+1.5*mv("Perc FM",w))),w);mg.gain.exponentialRampToValueAtTime(1,w+p.mdec);m.connect(mg);mg.connect(o.frequency);env(g,w,v*.6,p.dec);o.connect(g);g.connect(q);{const mkg=ctx.createGain();mkg.gain.value=[1,4,4][Math.round(p.pmode||0)]||1;q.connect(mkg);send(mkg,A.m,p.ds,p.rs)}if(p.noise)nz(w,"highpass",5000,.02,v*p.noise*.4,q)}
  else if(k===4&&p.mode==='Acid 303')acidVoice(w);
  else if(k===4&&p.eng==='Mini')miniVoice(w);
  else if(k===4)leadPoly(w);
@@ -779,7 +779,7 @@ function mkSel(lab,opts,val,fn){const l=document.createElement('label');l.classN
 function leadPresetUI(g){const P=TR[4].p,card=g.closest('.card');
  const row=document.createElement('div');row.style.cssText='grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center';
  const ps=document.createElement('select');ps.setAttribute('aria-label','Lead patch');['Custom',...Object.keys(LPRE)].forEach(k=>ps.add(new Option(k==='Custom'?'Patch: custom':'Patch: '+k,k)));ps.value=LPRE[P.patch]?P.patch:'Custom';ps.onchange=()=>{if(ps.value!=='Custom'){applyLP(ps.value,0);build()}};
- const rb=document.createElement('button');rb.className='dice';rb.textContent='Random patch';rb.onclick=()=>{const ks=Object.keys(LPRE).filter(k=>k!=='Acid 303'||P.mode==='Acid 303');applyLP(pick(ks),1);build()};
+ const rb=document.createElement('button');rb.textContent='🎲 Random patch';rb.onclick=()=>{const ks=Object.keys(LPRE).filter(k=>k!=='Acid 303'||P.mode==='Acid 303');applyLP(pick(ks),1);build()};
  row.append(ps,rb);g.prepend(row);
  g.insertBefore(mkSel('Engine',LENG,(!P.eng||P.eng==='Saw')?'Stack':P.eng,v=>{P.eng=v;P.patch='';leadPages()}),row.nextSibling);
  g.insertBefore(mkSel('Filter type',LFT,P.ft||'LP12',v=>{P.ft=v;P.patch=''}),row.nextSibling.nextSibling);
@@ -1407,7 +1407,7 @@ window.DR={cache:new Map(),pend:new Set(),rendering:false,vr:1,hits:0,live:0,
   if(k===0)return 'k|'+[p.pitch,p.dec,p.punch,p.click==null?1:p.click].map(r).join(',');
   if(k===7)return 's|'+[p.tone,p.snap,p.dec].map(r).join(',');
   if(k===2)return 'c|'+[p.tone,p.spread,p.tail,p.body||0].map(r).join(',');
-  if(k===3){if(!FIX||G.stom||LFOS.some(L=>L.d>0&&L.tg==='Perc FM'))return null;return 'p|'+[FIX,p.ratio,p.bend,p.fm,p.mdec,p.dec,p.filt,p.noise,p.fres==null?4:p.fres,p.fenvp==null?.5:p.fenvp,p.pmode||0,p.pdt||.04,p.pdrv||0].map(r).join(',')}
+  if(k===3){if(!FIX||G.stom||LFOS.some(L=>L.d>0&&L.tg==='Perc FM'))return null;return 'p|'+[FIX,p.ratio,p.bend,p.fm,p.mdec,p.dec,p.filt,p.noise,p.fres==null?4:p.fres,p.fenvp==null?.5:p.fenvp,p.pmode||0].map(r).join(',')}
   return null},
  on(k,w,v,p){if(this.rendering){this.vr=v;return false}if(!ctx||(k!==0&&k!==2&&k!==3&&k!==7))return false;const key=this.key(k,p);if(!key)return false;
   const c=this.cache.get(key);if(!c){this.request(k,key,v,Object.assign({},p));this.live++;return false}
@@ -1857,7 +1857,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.5 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.5';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.4 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.4';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -2818,7 +2818,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   let t=W.reduce((a,b)=>a+b[1],0)*R();const nm=(W.find(x=>(t-=x[1])<0)||W[0])[0];style(nm,pick([0,0,0,2]));const P=TR[6].p;
   if(R()<.3)P.bns=pick(BNS.slice(1));P.btn=R()<.4;G.bavoid=R()<.25;G.bavStrict=G.bavoid;P.bph=pick([1,1,2]);try{build()}catch(e){}setTimeout(()=>window.bassSync&&bassSync(),0);setTimeout(()=>window.bassSync&&bassSync(),120);try{if(typeof say==='function')say('🎲 NEW BASSLINE · '+nm.toUpperCase()+' · '+P.bns.toUpperCase())}catch(e){}}
  window.bassUI=(g,t)=>{const P=t.p;const sep=document.createElement('div');sep.className='bksep';sep.textContent='Bass toolkit';g.appendChild(sep);
-  const b=document.createElement('button');b.className='bassroll';b.textContent='New bassline';b.title='Re-roll only the bass: rhythm, notes and feel';b.onclick=e=>{e.preventDefault();roll()};g.appendChild(b);const mine=[sep,b];const add=el=>{mine.push(el);g.appendChild(el)};
+  const b=document.createElement('button');b.className='bassroll';b.textContent='🎲 New bassline';b.title='Re-roll only the bass: rhythm, notes and feel';b.onclick=e=>{e.preventDefault();roll()};g.appendChild(b);const mine=[sep,b];const add=el=>{mine.push(el);g.appendChild(el)};
   add(mkSel('Style',['Custom',...NAMES],P.bsty&&STY[P.bsty]?P.bsty:'Custom',v=>{if(v!=='Custom'){style(v);try{build()}catch(e){}setTimeout(()=>window.bassSync&&bassSync(),0);setTimeout(()=>window.bassSync&&bassSync(),120)}}));
   add(mkSel('Notes',BNS,P.bns||'Auto',v=>{P.bns=v}));
   add(mkSel('Kick',['Play with kick','Avoid kick'],G.bavoid?'Avoid kick':'Play with kick',v=>{G.bavoid=v==='Avoid kick';G.bavStrict=G.bavoid}));
@@ -2893,7 +2893,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   'Loop len':'only the loop modes (Marbles, Interval, Motif, Turing loop) use it; the others use Cycle','Cycle (0 = off)':'loop modes use Loop len instead','Note repeat':'Acid 303 has its own line','Reset on bar':'this mode has no position to reset','Chord lock':'this mode already follows the chord or has its own notes','Reseed':'this mode has no random seed','Accent chance':'only Acid 303'};
  const POLY=['att','crush','cut','dec','det','drv','ds','envA','fenv','fmi','fmr','fold','fsym','ft','glide','grit','gt','hold','kt','oct2','pdec','penv','pg','pw','rel','res','rs','subosc','sus','uni','usp','vib','vibr','vow','wave','wid','eng'];
  const MINI=['att','cut','dec','ds','dsw','envA','fatt','fdec','fsus','glk','hold','kt','mnz','o1l','o1r','o1w','o2d','o2l','o2r','o2w','o3d','o3l','o3r','o3w','pg','rel','res','rs','sus','vib','vibr','eng'];
- const ACID=['acc3','cut','dec','drv','ds','envA','gt','res','rs','wave','glide'];
+ const ACID=['acc3','crush','cut','dec','drv','ds','envA','grit','gt','res','rs','subosc','wave','glide'];
  const SELK={'Engine':'eng','Filter type':'ft','Osc 1 wave':'o1w','Osc 1 range':'o1r','Osc 2 wave':'o2w','Osc 2 range':'o2r','Osc 3 wave':'o3w','Osc 3 range':'o3r'};
  const lab=el=>{const f=el.firstChild;if(!f)return'';return(f.nodeType===3?f.textContent:(f.firstChild&&f.firstChild.textContent)||el.textContent).trim()};
  function keyOf(l){if(SELK[l])return SELK[l];const x=TR[4].x.find(x=>x[0]===l);return x?x[1]:null}
@@ -3206,7 +3206,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
 
 /* ---- v150: "Vector" mood — modular house. Each Launch picks a flavour: Rubber (rubbery modular plucks on odd rings,
    melodic bass, a long slow filter build), Cascade (driving acid-tinged modular riff, brighter stabs) or Night (jazzy 7th/9th chords on
-   electric-piano keys, walking bass) — and, separately, broken / shuffled drums or four-on-the-floor ---- */
+   Rhodes-like keys, walking bass) — and, separately, broken / shuffled drums or four-on-the-floor ---- */
 {const NM='Vector';
  MOODS[NM]={sc:['Dorian','Minor','Mixolydian','Dorian','Major'],pr:[[0,3,6,2],[1,4,0,5],[0,5,1,4],[0,2,5,4],[1,4,2,5],[0,3,1,4]],sh:['9','7','add9'],b:[120,130],cut:800,sw:1500,att:.3,lh:[6,7,9],sp:.35,bias:.5,dv:.92,md:['Turing loop','Marbles','Converge','Motif'],wave:.3,dec:.2,res:4,pt:['Bell pad','Poly','Strings','Tape','Glass'],hat:[[16,6,2],[16,12,0]],kick:{pitch:50,dec:.38,punch:4,drive:2},duck:.6,grit:.05,padlv:.35,mute:[8],hr:.12};
  MP[NM]={sty:'Modular house',b:[120,130],sw:[.04,.1],gr:.65,kick:{pitch:50,dec:.38,punch:4,drive:2,click:.7},hat:{tone:9500,dec:.04,open:.25,acc:.55,metal:.4},hp:[[16,6,2],[16,12,0]],clap:{tone:1600,spread:11,tail:.3,rv:.35},cl:.5,sn:0,
@@ -3238,7 +3238,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
    target of −12 LUFS (adapts gently, ignores intentionally quiet passages like breakdowns), a −1 dB safety limiter, and a short-term LUFS +
    peak meter on Mix. One switch to compare with the previous master. Survives engine rebuilds ---- */
 {let on=true;try{const v=localStorage.getItem('orb-mst');if(v!=null)on=v==='1'}catch(e){}
- const DRV=Math.pow(10,-1.5/20),TARGET=-7.5, /* v0.4 master: was -9; the final clipper (end of file) catches the extra peaks */AMT={Ambient:.35,'Deep Space':.4,Ethereal:.5,Dreamy:.6,Drone:.7,Noir:.65,Melancholic:.65,Hopeful:.7,'Melodic House':.65,Vector:.65,Bleep:.6,Italo:.7};
+ const DRV=Math.pow(10,-1.5/20),TARGET=-9,AMT={Ambient:.35,'Deep Space':.4,Ethereal:.5,Dreamy:.6,Drone:.7,Noir:.65,Melancholic:.65,Hopeful:.7,'Melodic House':.65,Vector:.65,Bleep:.6,Italo:.7};
  let M=null,agDb=0,hist=[],stv=-70,pk=-70,pkT=0;const MEM={};try{Object.assign(MEM,JSON.parse(localStorage.getItem('orb-mstmem')||'{}'))}catch(e){}setInterval(()=>{try{localStorage.setItem('orb-mstmem',JSON.stringify(MEM))}catch(e){}},10000);
  function mstBuild(){if(!ctx||!A.lim||!A.out)return;if(M&&M.ctx===ctx)return;
   const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},bq=(t,f)=>{const b=ctx.createBiquadFilter();b.type=t;b.frequency.value=f;b.Q.value=.7071;return b},
@@ -3268,7 +3268,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   hist.push(s/2048);if(hist.length>6)hist.shift();const ms=hist.reduce((a,b)=>a+b,0)/hist.length;stv=ms>0?10*Math.log10(2*ms)-.691:-70;
   const pdb=p>0?20*Math.log10(p):-70,now=performance.now();if(pdb>pk||now-pkT>1200){pk=pdb;pkT=now}
   if(on&&playing&&stv>-45&&hist.length>=6&&performance.now()<(window._mstLearn||0)){const err=TARGET-stv,lp=window.LOWPASS?LOWPASS.get():1;
-   if(!(err>0&&(stv<TARGET-8||lp<.999))){agDb=Math.max(-8,Math.min(4,agDb+Math.max(-.25,Math.min(.25,err*.2))));MEM[curMood]=agDb;M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.5)}}
+   if(!(err>0&&(stv<TARGET-8||lp<.999))){agDb=Math.max(-8,Math.min(1,agDb+Math.max(-.25,Math.min(.25,err*.2))));MEM[curMood]=agDb;M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.5)}}
   show()},500);   /* v0.33: loudness read twice a second */
  const _in=init;init=function(){const r=_in.apply(this,arguments);try{setTimeout(()=>{try{mstBuild();if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1}catch(e){console.warn('master+',e)}},0)}catch(e){}return r};
  const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();window._mstLearn=performance.now()+9000;if(on&&M&&M.ctx===ctx){agDb=MEM[curMood]!=null?MEM[curMood]:-2.5;hist=[];M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.15)}}catch(e){}return r};
@@ -4034,7 +4034,7 @@ window.MOODX={
 <script>
 /* ---- v0.22: Flight uses the full screen width on large screens (not phones). Only while Flight is open: the page widens and the deck becomes
    risers | breakdowns side by side, thrusters | planet mutes side by side, low-pass | LEAD + BASS side by side. Phones and tablets in portrait are unchanged. ---- */
-{const st=document.createElement('style');st.textContent=`@media (min-width:900px){
+{const st=document.createElement('style');st.textContent=`@media (min-width:1100px){
  body.flw{max-width:none!important;padding-left:20px!important;padding-right:20px!important}
  body.flw #t-perf{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px!important;align-items:stretch}
  body.flw #t-perf>.flw-s1{grid-column:1/4;grid-row:1}
@@ -4063,7 +4063,7 @@ window.MOODX={
    then Tuning/Tune (Blip and Marimba), then Level and the sends. The Filter fader also works on the Marimba now.
    Filter res / env / mode get their real defaults (they showed NaN). ---- */
 {const P3=()=>TR[3].p;const fixDef=()=>{const p=P3();if(p.fres==null)p.fres=4;if(p.fenvp==null)p.fenvp=.5;if(p.pmode==null)p.pmode=0};
- const OWN={Blip:['FM','Decay','Pitch oct','Mod ratio','Mod decay','Pitch bend','Drop time','Drive','Noise click','Filter','Filter res','Filter env','Filter mode (LP·BP·HP)'],
+ const OWN={Blip:['FM','Decay','Pitch oct','Mod ratio','Mod decay','Pitch bend','Noise click','Filter','Filter res','Filter env','Filter mode (LP·BP·HP)'],
   Marimba:['Marimba octave','Marimba decay','Filter'],Ride:['Ride tone','Ride decay','Ride bell'],Conga:['Decay','Pitch oct','Pitch bend','Noise click','Filter'],Cowbell:['Decay','Pitch oct','Filter']};
  const ALL=new Set([].concat(...Object.values(OWN))),TUNE=['Tuning','Tune'],SH=['Level','Delay send','Reverb send'];
  const lab=d=>{const sp=d.firstChild;if(!sp)return'';if(sp.nodeType===3)return sp.textContent.trim();return sp.firstChild?sp.firstChild.textContent.trim():''};
@@ -4171,11 +4171,11 @@ window.MOODX={
   let a,sh;for(let i=0;i<8;i++){[a,sh]=pickProg();if(a&&a.join(',')!==old)break}const L=a.length===4&&R()<.35?pick([2,3,6,8]):a.length;window.padProgApply&&padProgApply(a,L,sh);const T=TR[5];if(T.h!==T.st){T.h=T.st;T.r=0;T.pt=pat(T)}};
  const go=(fn)=>{if(PEND)return;fn=fn||roll;window.__pdw=fn===rollC?'c':'a';const now=()=>{PEND=0;try{fn()}catch(e){}lab()};
   if(playing&&ctx){const left=(16-((tk%16)+16)%16)%16||16,ms=Math.max(0,left*sdur()*1000-120);PEND=1;lab();setTimeout(now,ms)}else now()}
- let ui=null;const lab=()=>{if(!ui)return;ui.querySelector('.pda').textContent=PEND&&window.__pdw==='a'?'… next bar':'Whole part';ui.querySelector('.pdc').textContent=PEND&&window.__pdw==='c'?'… next bar':'Chords';ui.querySelector('.pdu').disabled=!UNDO};
+ let ui=null;const lab=()=>{if(!ui)return;ui.querySelector('.pda').textContent=PEND&&window.__pdw==='a'?'… next bar':'🎲 Whole part';ui.querySelector('.pdc').textContent=PEND&&window.__pdw==='c'?'… next bar':'🎲 Chords';ui.querySelector('.pdu').disabled=!UNDO};
  const pdAdd=()=>{const c=card();if(!c||c.querySelector('.pdice'))return;const g=c.querySelector('.grid');if(!g)return;
   const pp=[...g.children].find(e=>e.dataset&&e.dataset.pp)||[...g.children].find(e=>labOf(e).trim()==='Pad style');
   ui=document.createElement('div');ui.className='pdice';ui.dataset.g='pat';ui.dataset.keep='pat';
-  ui.innerHTML='<button type="button" class="pdr pdc" title="New chords only: a fresh progression that suits the mood (as Launch would pick). Rhythm, voicing and style stay. Lands on the next bar.">Chords</button><button type="button" class="pdr pda" title="Re-roll the whole pad pattern page: style, chords, length, colours, rhythm, gates, voicing, top line. Lands on the next bar.">Whole part</button><button type="button" class="pdu" title="Back to the pad part before the last roll">↶</button>';
+  ui.innerHTML='<button type="button" class="pdr pdc" title="New chords only: a fresh progression that suits the mood (as Launch would pick). Rhythm, voicing and style stay. Lands on the next bar.">🎲 Chords</button><button type="button" class="pdr pda" title="Re-roll the whole pad pattern page: style, chords, length, colours, rhythm, gates, voicing, top line. Lands on the next bar.">🎲 Whole part</button><button type="button" class="pdu" title="Back to the pad part before the last roll">↶</button>';
   ui.querySelector('.pdc').onclick=e=>{e.preventDefault();go(rollC)};
   ui.querySelector('.pda').onclick=e=>{e.preventDefault();go(roll)};ui.querySelector('.pdu').onclick=e=>{e.preventDefault();if(UNDO){const u=UNDO;UNDO=null;restore(u);lab()}};
   if(pp)g.insertBefore(ui,pp);else g.prepend(ui);lab()}
@@ -4206,12 +4206,12 @@ window.MOODX={
   P.range=any?pick([1,2,3]):pick([1,1,2]);P.lock=r2(.5+R()*.5);P.spread=r2(J(any?R():(M.sp!=null?M.sp:.3),.12,0,1));P.bias=r2(J(any?R():(M.bias!=null?M.bias:.4),.15,0,1));
   P.dv=r2(J(any?.5+R()*.45:(M.dv!=null?M.dv:.8),.1,.3,.98));P.len=pick([3,4,5,6,8]);P.cyc=R()<.2?pick([3,5,6,7]):0;P.nrep=R()<.15?pick([2,3]):1;P.rst=R()<.2?pick([1,2,4]):0;
   P.glide=r2(R()*.25);P.accp=r2(.1+R()*.3);buf=[];mot=[];mp=-1;P.seed=Math.random()*1e3;T.pt=pat(T);build()};
- const lab=()=>{if(!ui)return;ui.querySelector('.pdr').textContent=PEND?'… next bar':'New lead line';ui.querySelector('.pdu').disabled=!UNDO};
+ const lab=()=>{if(!ui)return;ui.querySelector('.pdr').textContent=PEND?'🎲 … next bar':'🎲 New lead line';ui.querySelector('.pdu').disabled=!UNDO};
  const go=()=>{if(PEND)return;const now=()=>{PEND=0;try{roll()}catch(e){}lab()};
   if(playing&&ctx){const left=(16-((tk%16)+16)%16)%16||16,ms=Math.max(0,left*sdur()*1000-120);PEND=1;lab();setTimeout(now,ms)}else now()};
  const ldAdd=()=>{const c=card();if(!c)return;const g=c.querySelector('.grid');if(!g)return;const old=g.querySelector('.ldice');if(old){ui=old;return}
   ui=document.createElement('div');ui.className='pdice ldice';ui.dataset.g='pat';ui.dataset.keep='pat';
-  ui.innerHTML='<button type="button" class="pdr" title="Re-roll the whole lead pattern page: rhythm, notes, loop and feel, in the style of the mood in from. Lands on the next bar.">New lead line</button><button type="button" class="pdu" title="Back to the lead line before the last roll">↶</button><label class="pds">from<select></select></label>';
+  ui.innerHTML='<button type="button" class="pdr" title="Re-roll the whole lead pattern page: rhythm, notes, loop and feel, in the style of the mood in from. Lands on the next bar.">🎲 New lead line</button><button type="button" class="pdu" title="Back to the lead line before the last roll">↶</button><label class="pds">from<select></select></label>';
   const s=ui.querySelector('select');srcList().forEach(o=>s.add(new Option(o,o)));s.value=SRC;s.onchange=()=>{SRC=s.value};
   ui.querySelector('.pdr').onclick=e=>{e.preventDefault();go()};ui.querySelector('.pdu').onclick=e=>{e.preventDefault();if(UNDO){const u=UNDO;UNDO=null;restore(u);lab()}};
   const first=[...g.children].find(e=>e.dataset&&e.dataset.g==='pat');if(first)g.insertBefore(ui,first);else g.prepend(ui);lab()};
@@ -4479,12 +4479,12 @@ window.MOODX={
    try{if(typeof say==='function')say('🎲 NEW BASSLINE · HELD · '+P.bns.toUpperCase())}catch(e){}}
   else P.bsus=0};
  let ui=null;
- const lab=()=>{if(!ui||!ui.isConnected)return;ui.querySelector('.pdr').textContent=PEND?'… next bar':'New bassline';ui.querySelector('.pdu').disabled=!UNDO};
+ const lab=()=>{if(!ui||!ui.isConnected)return;ui.querySelector('.pdr').textContent=PEND?'🎲 … next bar':'🎲 New bassline';ui.querySelector('.pdu').disabled=!UNDO};
  const go=()=>{if(PEND)return;const now=()=>{PEND=0;try{roll()}catch(e){}lab()};
   if(playing&&ctx){const left=(16-((tk%16)+16)%16)%16||16,ms=Math.max(0,left*sdur()*1000-120);PEND=1;lab();setTimeout(now,ms)}else now()};
  const swap=()=>{const c=TR[6].mb&&TR[6].mb.closest('.card');if(!c)return;const old=c.querySelector('button.bassroll');if(!old)return;
   ui=document.createElement('div');ui.className='pdice bdice bassroll';ui.dataset.g='pat';ui.dataset.keep='pat';
-  ui.innerHTML='<button type="button" class="pdr" title="Re-roll only the bass rhythm and notes, in the style of the mood in from. Sometimes a held bass. Lands on the next bar.">New bassline</button><button type="button" class="pdu" title="Back to the bassline before the last roll">↶</button><label class="pds">from<select></select></label>';
+  ui.innerHTML='<button type="button" class="pdr" title="Re-roll only the bass rhythm and notes, in the style of the mood in from. Sometimes a held bass. Lands on the next bar.">🎲 New bassline</button><button type="button" class="pdu" title="Back to the bassline before the last roll">↶</button><label class="pds">from<select></select></label>';
   const s=ui.querySelector('select');srcList().forEach(o=>s.add(new Option(o,o)));s.value=SRC;s.onchange=()=>{SRC=s.value};
   ui.querySelector('.pdr').onclick=e=>{e.preventDefault();go()};ui.querySelector('.pdu').onclick=e=>{e.preventDefault();if(UNDO){const u=UNDO;UNDO=null;restore(u);lab()}};
   old.replaceWith(ui);lab();try{window.bassLayout&&bassLayout()}catch(e){}};
@@ -5601,7 +5601,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 </script>
 <script>
 /* ---- v0.29: NEW SOUNDS + SMARTER LEAD AND BASS PATTERNS
-   Leads: House piano and EP stab (chords that follow the pad), Rave stab and Organ stab (one chord shape moved in parallel).
+   Leads: House piano and Rhodes stab (chords that follow the pad), Rave stab and Organ stab (one chord shape moved in parallel).
    Lead card → Osc page → Chord: Off / Follow pad / Rave / Organ works on any patch.
    Bass: 808 glide (sine with a pitch drop and long decay; overlapping notes glide), Rolling pluck. Bass card → Sound picks any bass sound.
    Texture bed (Mix page): Vinyl, Tape, Rain, Air (soft noise tuned to the key). Every Launch picks one.
@@ -5612,7 +5612,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  Object.assign(LDEF,{chd:''});
  Object.assign(LPRE,{
   'House piano':{pg:1.1,eng:'FM',fmr:1,fmi:2.6,fenv:1.2,uni:1,usp:0,wid:.3,ft:'LP12',cut:2600,res:.8,envA:4200,dec:.55,sus:0,att:1,kt:.4,subosc:0,oct2:0,drv:.08,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.3,rs:.3,chd:'Follow pad'},
-  'EP stab':{pg:1.05,eng:'FM',fmr:1,fmi:1.1,fenv:2.2,uni:1,usp:0,wid:.45,ft:'LP12',cut:1800,res:.7,envA:2200,dec:.7,sus:.2,hold:.9,rel:.35,att:2,kt:.3,subosc:0,oct2:0,drv:.12,crush:0,fold:0,penv:0,glide:0,vib:4,vibr:4.2,ds:.35,rs:.35,chd:'Follow pad'},
+  'Rhodes stab':{pg:1.05,eng:'FM',fmr:1,fmi:1.1,fenv:2.2,uni:1,usp:0,wid:.45,ft:'LP12',cut:1800,res:.7,envA:2200,dec:.7,sus:.2,hold:.9,rel:.35,att:2,kt:.3,subosc:0,oct2:0,drv:.12,crush:0,fold:0,penv:0,glide:0,vib:4,vibr:4.2,ds:.35,rs:.35,chd:'Follow pad'},
   'Rave stab':{pg:3,eng:'Stack',uni:1,usp:0,wid:.4,wave:.1,det:11,ft:'LP24',cut:1100,res:2.5,envA:4200,dec:.24,sus:0,att:1,kt:.3,subosc:.1,oct2:0,drv:.25,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.45,rs:.35,chd:'Rave'},
   'Organ stab':{pg:2.6,eng:'Organ',uni:1,usp:0,wid:.3,ft:'LP12',cut:4200,res:.7,envA:800,dec:.26,sus:0,att:2,rel:.05,kt:0,subosc:0,oct2:0,drv:.3,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.35,rs:.3,chd:'Organ'}});
  const CHD={Rave:[0,3,7,12],Organ:[0,3,7,10]},CHOPT=['Off','Follow pad','Rave','Organ'];
@@ -5687,14 +5687,14 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  // ---------- Launch: new sounds, lead rhythms, bass roles, bed ----------
  const AMB=new Set(['Ambient','Ethereal','Drone','Deep Space']);
  const rp=a=>a[Math.floor(R()*a.length)],wp=o=>{let t=Object.values(o).reduce((a,b)=>a+b,0)*R();for(const k in o)if((t-=o[k])<0)return k;return Object.keys(o)[0]};
- const NEWL={bounce:[.48,{'Rave stab':1,'House piano':1,'EP stab':1}],peak:[.42,{'Organ stab':1,'Rave stab':1}],minimal:[.42,{'Organ stab':1,'EP stab':.7}],rolling:[.14,{'EP stab':1}]};
- const MOODL={Italo:[.35,{'House piano':1}],Hopeful:[.42,{'House piano':1,'EP stab':1}],'Melodic House':[.48,{'EP stab':2,'House piano':1}],Breaks:[.42,{'Rave stab':1,'House piano':.5}],'Groove Techno':[.35,{'Organ stab':1}],Dreamy:[.3,{'EP stab':1}]}; /* v0.4: new leads ~40 % more often */
+ const NEWL={bounce:[.35,{'Rave stab':1,'House piano':1,'Rhodes stab':1}],peak:[.3,{'Organ stab':1,'Rave stab':1}],minimal:[.3,{'Organ stab':1,'Rhodes stab':.7}],rolling:[.08,{'Rhodes stab':1}]};
+ const MOODL={Italo:[.25,{'House piano':1}],Hopeful:[.3,{'House piano':1,'Rhodes stab':1}],'Melodic House':[.35,{'Rhodes stab':2,'House piano':1}],Breaks:[.3,{'Rave stab':1,'House piano':.5}],'Groove Techno':[.25,{'Organ stab':1}],Dreamy:[.2,{'Rhodes stab':1}]};
  const RHY={rolling:['x.xx.xx.x.xx.xx.','x..x..x..x..x.x.'],bounce:['x..x..x.x..x..x.','..x..x....x..x..','x.x...x...x.x...'],peak:['x..x..x.........','..x...x...x.....','x.....x...x.....'],minimal:['...x..x....x....','.x....x..x......','..x..x..x.......']};
  const SPARSE=['x..x..x.........','..x...x...x.....','...x..x....x....','x.....x...x.....','..x..x....x..x..'];
  const pt16=s=>[...s].map(c=>c==='x'?1:0);
  const setRing=(T,pt)=>{T.st=16;try{const ft=bassFit(T,pt);Object.assign(T,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(T,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}T.pt=pt.slice()};
- const ROLE={rolling:{Rolling:.65,Anchor:.35},bounce:{Answer:.4,'808':.42,Rolling:.18},peak:{Anchor:.5,Rolling:.5},minimal:{Rolling:.45,Answer:.4,'808':.15}};
- const RSND={Rolling:['Rolling pluck','Rolling sub','Rolling pluck'],Anchor:['Reese mid','Rolling sub'],Answer:['FM round','Rubber','Rolling pluck','Rolling pluck'],'808':['808 glide']};
+ const ROLE={rolling:{Rolling:.65,Anchor:.35},bounce:{Answer:.45,'808':.35,Rolling:.2},peak:{Anchor:.5,Rolling:.5},minimal:{Rolling:.5,Answer:.5}};
+ const RSND={Rolling:['Rolling pluck','Rolling sub','Rolling pluck'],Anchor:['Reese mid','Rolling sub'],Answer:['FM round','Rubber','Rolling pluck'],'808':['808 glide']};
  const RT={Rolling:[[_,0,0,0,_,0,0,0,_,0,0,0,_,0,0,0],[_,0,0,_,_,0,0,10,_,0,0,_,_,0,0,4],[_,0,10,0,_,0,10,0,_,0,10,0,_,0,4,0],[_,_,0,0,_,_,0,0,_,_,0,0,_,_,0,10]],
   Anchor:[[0,_,_,_,_,_,_,_,0,_,_,_,_,_,10,_],[0,_,_,_,_,_,0,_,_,_,_,_,_,_,10,_],[0,_,_,10,_,_,0,_,_,_,_,_,_,_,4,10]],
   '808':[[0,_,_,_,_,_,_,_,_,_,0,_,_,_,_,_],[0,_,_,_,_,_,_,0,_,_,_,_,4,_,_,_],[0,_,_,_,_,_,10,_,_,_,0,_,_,_,_,_],[0,_,_,_,_,_,_,_,_,_,_,_,4,_,2,_]]};
@@ -5718,7 +5718,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
     // modern lead rhythm for the family (the Riff mode keeps its own rhythm)
     if(P.mode!=='Riff'){const ch=P.chd&&P.chd!=='Off';if(ch&&(L.h>7||['Chord arp','Up/Down','Up','Random'].includes(P.mode))){P.mode='Motif';try{mot=[];mp=-1;buf=[]}catch(e){}setRing(L,pt16(rp(SPARSE)))}
      else if(fam&&RHY[fam]&&R()<(fam==='rolling'?(P.mode==='Motif'?.35:0):.6))setRing(L,pt16(rp(RHY[fam])))}}
-   if(fam&&!B.m&&!acid&&R()<.9)bassRole(fam);
+   if(fam&&!B.m&&!acid&&R()<.8)bassRole(fam);
    G.bed=fam&&R()<.6?rp(FAMB[fam]):rp(BEDM[curMood]||['Tape','Vinyl','Air']);G.bedLv=AMB.has(curMood)?rr(.5,.7):fam==='peak'?rr(.25,.35):rr(.3,.5);prep(G.bed);
    setTimeout(()=>{try{bedUI();bedTick();const s=document.querySelector('.bsnd select');if(s)s.value=BP[G.bchar]?G.bchar:'Classic';window.bassSync&&bassSync()}catch(e){}},80)
   }catch(e){console.warn('[orbitron] v0.29',e)}return r}}
@@ -5790,7 +5790,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const _gr=generate;generate=function(){const r=_gr.apply(this,arguments);try{const L=TR[4],P=L.p,f=FIT[curMood];
    if(f&&!L.m&&P.mode!=='Riff'&&P.mode!=='Acid 303'&&!(MOODS[curMood]||{}).acid){let tot=0;for(const k in f)tot+=f[k];if(R()<tot){let x=R()*tot,st=null;for(const k in f){if((x-=f[k])<0){st=k;break}}st=st||Object.keys(f)[0];
      const want=BRIGHT.has(curMood)?1:0,pool0=XR[st].filter(q=>q.b===want),pool=pool0.length?pool0:XR[st],q=pool[Math.floor(R()*pool.length)],lab=XN[st]+' '+(XR[st].indexOf(q)+1);
-     if(st==='dub'&&!(P.chd&&P.chd!=='Off'))try{applyLP(pick(['Organ stab','EP stab','Organ stab']),1)}catch(e){}
+     if(st==='dub'&&!(P.chd&&P.chd!=='Off'))try{applyLP(pick(['Organ stab','Rhodes stab','Organ stab']),1)}catch(e){}
      apply(lab)}}}catch(e){console.warn('[orbitron] riffs',e)}return r};
  const _as=arrStep;arrStep=function(w){if(pend&&((tk%16)+16)%16===0){const l=pend;pend=null;apply(l)}return _as.apply(this,arguments)};
  const add=()=>{try{const card=TR[4].mb&&TR[4].mb.closest('.card');if(!card)return;const old=card.querySelector('.lriff');
@@ -5812,7 +5812,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    engine is calm, one band while the load meter shows LOAD or more (after 2 s; back to three after 10 s calm); then the limiter.
    Loudness auto-gain and meter kept (read twice a second). Clean-up EQ per track, tape glue and analog drift follow the same switch.
    Off = the raw mix (flat EQ, no width, no multiband, still limited and mono-safe in the lows). ---- */
-{const BASE={l:-2,m:2};   /* v0.4 master: 1 dB less sub shelf (was -1) */
+{const BASE={l:-1,m:2};
  if(G.master==null){let v=1;try{const x=localStorage.getItem('orb-master');if(x!=null)v=+x;else if(localStorage.getItem('orb-fin')==='0'&&localStorage.getItem('orb-mst')==='0')v=0}catch(e){}G.master=v}
  let W=null;
  const ensure=()=>{const P=window.paStage&&paStage();if(!ctx||!P||P.ctx!==ctx||!P.s2)return false;
@@ -5825,9 +5825,9 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  window.orbEQ=()=>{try{if(!ctx||!A.tmid||!A.tls)return;ensure();const on=!!G.master,c=on?((window.MOODFIN||{})[curMood]||{hp:28,sub:0,mud:0,mf:300,pres:.5,air:1.5,w:.25}):{},t=on?((window.orbTone||{})[curMood]||{}):{},n=ctx.currentTime,
    z=(p,v)=>{try{p.cancelScheduledValues(n);p.setTargetAtTime(v,n,.15)}catch(e){}};
    z(A.tls.gain,on?BASE.l+(t.l||0)+(c.sub||0):1.5);z(A.tmid.gain,on?Math.min(4,BASE.m+(t.m||0)-(one()?1.5:0)):0);   /* the single band no longer tames the mids: 1.5 dB less mid lift there */
-   z(A.tpre.gain,on?(c.pres||0)+(t.h||0)*.6:0);z(A.ths.gain,on?3+(c.air||0)+(t.h||0)*.6:3);   /* v0.4 master: +1 dB air */
-   const P=window.paStage&&paStage();if(P&&P.ctx===ctx){if(P.t1){z(P.t1.gain,on?-.5+(c.mud||0):-.5);   /* v0.4 master: low-mid cut 1.5 dB lighter for more body */z(P.t1.frequency,on?(c.mf||300):300)}if(P.h1&&P.h2){const hp=on?(c.hp||30):30;z(P.h1.frequency,hp);z(P.h2.frequency,hp)}}
-   if(W&&W.ctx===ctx)z(W.g.gain,on?1.15+(c.w||0)+(G.space||0)*.35:1)}   /* v0.4 master: a touch wider (side only, the bass stays mono) */catch(e){console.warn('[orbitron] mastering eq',e)}};
+   z(A.tpre.gain,on?(c.pres||0)+(t.h||0)*.6:0);z(A.ths.gain,on?2+(c.air||0)+(t.h||0)*.6:2);
+   const P=window.paStage&&paStage();if(P&&P.ctx===ctx){if(P.t1){z(P.t1.gain,on?-2+(c.mud||0):-2);z(P.t1.frequency,on?(c.mf||300):300)}if(P.h1&&P.h2){const hp=on?(c.hp||30):30;z(P.h1.frequency,hp);z(P.h2.frequency,hp)}}
+   if(W&&W.ctx===ctx)z(W.g.gain,on?1+(c.w||0)+(G.space||0)*.35:1)}catch(e){console.warn('[orbitron] mastering eq',e)}};
  const mb=()=>{try{const MP=window.orbMPlus&&orbMPlus.M();if(!MP||MP.ctx!==ctx||!MP.inp)return;const mode=(!G.master||one())?'one':'three';if(MP.__mode===mode)return;
    if(mode==='one'){try{MP.inp.disconnect(MP.l1)}catch(e){}try{MP.inp.disconnect(MP.h1)}catch(e){}[MP.gL,MP.gM,MP.gH].forEach(g=>{try{g.disconnect(MP.sum)}catch(e){}});MP.inp.connect(MP.sum)}
    else{try{MP.inp.disconnect(MP.sum)}catch(e){}MP.inp.connect(MP.l1);MP.inp.connect(MP.h1);[MP.gL,MP.gM,MP.gH].forEach(g=>g.connect(MP.sum))}
@@ -6240,201 +6240,5 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){addEventLi
 /* ---- v0.4: the pre-rendered drum hits (kick, snare, clap, fixed perc) are capped at 60 variants, oldest dropped first, like the other
    sound caches — before, every new drum variant from a Launch stayed in memory for the whole set. ---- */
 {try{const C=window.DR&&DR.cache;if(C&&!C.__cap){const set=C.set.bind(C);C.set=function(k,v){const r=set(k,v);while(C.size>60)C.delete(C.keys().next().value);return r};C.__cap=1}}catch(e){}}
-/* ---- v0.4: analog drum-synth character on the Perc synth (CPU-lean: no extra nodes except 2 when Drive is up).
-   · Pitch: in Follow scale mode the perc no longer picks a random note per hit; hit 1, 2, 3 … of its own ring walk through the chord tones
-     (every 4th hit an octave up), so the perc plays a knocking melody that loops with its pattern and follows the chords.
-   · Pitch drop: Pitch bend now goes up to 3 (two octaves of drop) and has its own Drop time.
-   · Velocity: the first hit of the ring is full, hits on a beat strong, the rest softer and darker (only when the track has no accent pattern).
-   · Drive: mixer-style grit, a saturator after the filter. ---- */
-var PDC={};
-{const st=()=>{const T=TR[3];return T&&T.st?((typeof tk==='number'?tk:0)%T.st+T.st)%T.st:0};
- const hitNo=s=>{const pt=TR[3].pt||[];let i=0;for(let j=0;j<s;j++)if(pt[j])i++;return i};
- window.pcDeg=function(){if(window.DR&&DR.rendering)return 0;const n=SC[G.scale].length,ct=(cur&&cur.n&&cur.n.length)?cur.n:null;
-  if(!ct)return Math.floor(R()*n*2);const i=hitNo(st()),r=TR[3].r||0;return ct[(i+r)%ct.length]+(i%4===3?n:0)};
- window.pcVel=function(){const T=TR[3];if(!T||(window.DR&&DR.rendering)||T.vel)return 1;const s=st();if(T.pt&&hitNo(s)===0)return 1;return s%4===0?.85:.62};
- const fill=()=>{const P=TR[3].p;if(P.pdt==null)P.pdt=.04;if(P.pdrv==null)P.pdrv=0};fill();
- // a sector or file saved before these controls existed loads with them at their defaults
- const _bd=build;build=function(){try{fill()}catch(e){}return _bd.apply(this,arguments)};
- // Launch: each mood brings the perc drive and drop in its own way. [chance, drive range, pitch bend range, drop time range]; null = leave as is
- const DF={Power:[.6,[.4,.6],[1.2,2],[.08,.14]],'Distorted Electro':[.6,[.4,.6],[.4,.9],[.02,.05]],
-  'Groove Techno':[.5,[.15,.3],[.4,.9],[.02,.05]],Temporal:[.5,[.15,.3],[.4,.9],[.02,.05]],
-  Dark:[.4,[.25,.45],[.6,1.2],[.04,.08]],Tense:[.4,[.25,.45],[.6,1.2],[.04,.08]],Acid:[.4,[.25,.45],[.6,1.2],[.04,.08]],
-  Bleep:[.3,null,[1.5,2.5],[.01,.025]],
-  Breaks:[.2,[.1,.2],null,null],Italo:[.2,[.1,.2],null,null],Hopeful:[.2,[.1,.2],null,null],Noir:[.2,[.1,.2],null,null],Drone:[.2,[.1,.2],null,null],Vector:[.2,[.1,.2],null,null],
-  'Melodic House':[.3,null,[.4,.8],[.08,.15]],Ambient:[.3,null,[.4,.8],[.08,.15]],Ethereal:[.3,null,[.4,.8],[.08,.15]],Dreamy:[.3,null,[.4,.8],[.08,.15]],Melancholic:[.3,null,[.4,.8],[.08,.15]],'Deep Space':[.3,null,[.4,.8],[.08,.15]]};
- const rr=(r,dp)=>+(r[0]+R()*(r[1]-r[0])).toFixed(dp);
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const p=TR[3].p,c=DF[curMood];p.pdt=.04;p.pdrv=0;
-  if(c&&R()<c[0]){if(c[1])p.pdrv=rr(c[1],2);if(c[2])p.bend=rr(c[2],2);if(c[3])p.pdt=rr(c[3],3)}}catch(e){console.warn('[orbitron] perc launch',e)}return r}}
-/* ---- quick win 1: one screen rebuild per Launch. The Launch layers called build() ~24 times, syncMix() ~6 and lfoUI() ~3 times; each call also queued
-   a dozen follow-up UI jobs. While a Launch runs, those calls are now collected and done once at its end. Sound is unchanged. ---- */
-{let inGen=0;const want={};const hold=n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(){if(inGen){want[n]=1;return}return f.apply(this,arguments)}};
- hold('build');hold('lfoUI');hold('syncMix');
- const _g=generate;generate=function(){inGen++;try{return _g.apply(this,arguments)}finally{inGen--;if(!inGen){for(const n of ['syncMix','build','lfoUI'])if(want[n]){want[n]=0;try{window[n]()}catch(e){console.warn('[orbitron] launch '+n,e)}}}}}}
-/* ---- quick win 3: pads sat ~0.5 after Launch in eight moods (vs ~0.2 elsewhere); trimmed by 18 %. The fader stays fully yours. ---- */
-{const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
-/* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
-   a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-12d';
-{let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
-  d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
-  d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
-  x.style.cssText='min-width:44px;min-height:40px;border:2px solid #04100a;background:transparent;color:#04100a;font:700 13px ui-monospace,monospace';x.onclick=()=>d.remove();d.appendChild(x);document.body.appendChild(d)};
- const check=()=>{try{if(!window.caches||shown)return;caches.match('./index.html',{ignoreSearch:true}).then(r=>r&&r.text()).then(t=>{if(!t)return;const m=t.match(/ORB_BUILD='([^']+)'/);if(m&&m[1]!==window.ORB_BUILD)note()}).catch(()=>{})}catch(e){}};
- if(/^https?:$/.test(location.protocol)){setTimeout(check,15000);setInterval(check,600000);try{navigator.serviceWorker&&navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.t==='orb-update')note()})}catch(e){}}}
-/* ---- screens: phones always upright; desktop and tablet use the width ---- */
-{const st=document.createElement('style');st.textContent=`
-@media (orientation:landscape) and (max-height:520px) and (pointer:coarse){
- #upr{display:flex!important}}
-#upr{display:none;position:fixed;inset:0;z-index:2147483647;align-items:center;justify-content:center;background:#04100a;color:#ffe44d;font:700 16px ui-monospace,Menlo,monospace;letter-spacing:.14em}
-@media (min-width:900px) and (max-width:1200px){body.flw #t-perf>.flw-mut>:last-child>button{font-size:12px!important;letter-spacing:.04em}}
-@media (min-width:1000px){
- #t-drums [data-mode] .grid>[data-g=snd],#t-synth [data-mode] .grid>[data-g=snd],#t-drums[data-mode] .grid>[data-g=snd],#t-synth[data-mode] .grid>[data-g=snd],
- #t-drums[data-mode] .grid>[data-g=pat],#t-synth[data-mode] .grid>[data-g=pat]{display:revert!important}
- #t-drums[data-mode] .body>canvas,#t-synth[data-mode] .body>canvas{display:block!important}
- #t-drums>.seg,#t-synth>.seg,#t-drums>.mcap,#t-synth>.mcap{display:none!important}
- #t-drums .grid>[data-g=pat],#t-synth .grid>[data-g=pat]{order:0;border-left:2px solid var(--edge);padding-left:8px}
- #t-drums .grid>[data-g=snd],#t-synth .grid>[data-g=snd]{order:1;border-left:2px solid var(--acc);padding-left:8px}
- #t-drums .card,#t-synth .card{border-left-color:var(--edge)}}`;document.head.appendChild(st);
- const up=document.createElement('div');up.id='upr';up.setAttribute('role','alert');up.textContent='\u21BB  TURN YOUR PHONE UPRIGHT';document.documentElement.appendChild(up);
- // installed app or full screen on a phone: ask the system to hold portrait too
- const lock=()=>{try{if(matchMedia('(pointer:coarse)').matches&&screen.orientation&&screen.orientation.lock&&(document.fullscreenElement||matchMedia('(display-mode: standalone),(display-mode: fullscreen)').matches))screen.orientation.lock('portrait').catch(()=>{})}catch(e){}};
- document.addEventListener('fullscreenchange',lock);addEventListener('pointerdown',lock,{once:true});
- // rotating the phone re-lays out the whole page, which can make the audio glitch. In a browser tab the only way to hold portrait is
- // full screen, so on a phone the first Ignite goes full screen and locks portrait (swipe or Back leaves full screen as usual).
- const phone=()=>matchMedia('(pointer:coarse)').matches&&Math.min(screen.width,screen.height)<600;
- const standalone=()=>matchMedia('(display-mode: standalone),(display-mode: fullscreen)').matches;
- let asked=false;document.addEventListener('pointerdown',e=>{try{if(asked||!phone()||standalone()||document.fullscreenElement)return;if(!e.target.closest||!e.target.closest('#play'))return;asked=true;
-  const el=document.documentElement,rq=el.requestFullscreen||el.webkitRequestFullscreen;if(!rq)return;const pr=rq.call(el,{navigationUI:'hide'});if(pr&&pr.then)pr.then(lock).catch(()=>{})}catch(e){}},true)}
-/* ---- v0.4 mood range: moods that came out too alike from Launch to Launch get more room. All picks land on normal controls. ----
-   · harmony: the moods without a harmony style now pick one 60% of the time (scale + chord progression only, the lead is left alone)
-   · kick: the 4/4 moods sometimes get a few skipped or extra kicks through the kick's own Variation and Ghosts
-   · drum feel: Ion Storm and Low Orbit get one now and then
-   · tempo: Meteor Shower 164–176, Telemetry 120–133
-   · Cowbell / rim sits 25% lower on Launch, Conga 13% lower; Marimba comes up in the melodic moods */
-{const H=window.HARMFAM||{};
- Object.assign(H,{
-  lifted:{sc:[['Major',.5],['Lydian',.3],['Mixolydian',.2]],pr:[[0,4,5,3],[0,3,4,4],[0,5,3,4],[0,4,1,5]],sh:['add9','9','sus2','tri']},
-  dorian:{sc:[['Dorian',1]],pr:[[0,3,0,3],[0,1,3,4],[0,4,3,1],[0,0,3,3]],sh:['7','9','quart']},
-  dreamy:{sc:[['Major',.5],['Lydian',.5]],pr:[[0,3],[0,1,3,4],[0,5,3,4],[0,2,3,0]],sh:['add9','sus2','9']},
-  'minor glow':{sc:[['Minor',.6],['Dorian',.4]],pr:[[0,5,2,6],[0,3,4,0],[0,6,3,4],[0,5,6,4]],sh:['9','add9','7']}});
- const HM={Melancholic:{'minor glow':.6,dorian:.4},Dreamy:{dreamy:.6,lifted:.4},Ethereal:{dreamy:.5,'minor glow':.5},Hopeful:{lifted:.7,dreamy:.3},
-  Drone:{hypnotic:.4,suspended:.3,dorian:.3},Italo:{'minor glow':.5,dorian:.5},Breaks:{dorian:.6,hypnotic:.4},'Deep Space':{suspended:.5,'minor glow':.5},
-  Bleep:{dorian:.5,hypnotic:.5},'Melodic House':{'minor glow':.5,suspended:.3,lifted:.2},'Distorted Electro':{phrygian:.5,dorian:.5},
-  Ambient:{dreamy:.5,suspended:.5},Vector:{'minor glow':.5,dorian:.5}};
- const wpk=o=>{const e=Array.isArray(o)?o:Object.entries(o);let u=R(),t=0;for(const[k,w]of e){t+=w;if(u<t)return k}return e[e.length-1][0]};
- const harm=fam=>{const F=H[fam];if(!F)return;if(!G.keyLock){G.scale=wpk(F.sc);const sc=document.getElementById('scale');if(sc)sc.value=G.scale}
-  if((padStyle==='Progression'||padStyle==='Pedal chords')&&prog.length>1){const T=TR[5],sp=pick(F.pr).map(chordSpec);prog=sp.map(c=>c.d);PX=sp.map(c=>c.x);
-   pshape=prog.map(()=>pick(F.sh));T.st=prog.length;T.h=T.st;T.pt=pat(T);pmean=null;PTOP=null;PD=null}else if(prog.length===1)pshape=[pick(F.sh)];G.hfam=fam};
- const KV={Dark:1,Drone:1,Power:1,'Groove Techno':1,Temporal:1};
- try{const X=window.MOODX||{};if(X['Distorted Electro'])X['Distorted Electro'].grv=[.45,'electro','broken techno'];else X['Distorted Electro']={grv:[.45,'electro','broken techno']};
-  if(X.Ambient)X.Ambient.grv=[.3,'halftime','clave perc'];else X.Ambient={grv:[.3,'halftime','clave perc']};
-  if(MP.Breaks)MP.Breaks.b=[164,176];if(MP.Bleep)MP.Bleep.b=[120,133];if(MOODS.Breaks)MOODS.Breaks.b=[164,176];if(MOODS.Bleep)MOODS.Bleep.b=[120,133]}catch(e){console.warn('[orbitron] mood range',e)}
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const m=curMood;
-  if(HM[m]&&!G.hfam&&R()<.6)harm(wpk(HM[m]));
-  if(KV[m]&&!TR[0].m&&R()<.4){const K=TR[0];K.vari=+(.12+R()*.18).toFixed(2);if(R()<.5)K.gho=+(.08+R()*.12).toFixed(2)}
-  const MAR={'Melodic House':.25,Hopeful:.25,Dreamy:.25,Ethereal:.2,Melancholic:.2,Ambient:.25,'Deep Space':.2};
-  if(MAR[m]&&!TR[3].m&&(TR[3].p.pv==='Blip'||TR[3].p.pv==='Conga')&&R()<MAR[m]&&window.setPercSound){setPercSound('Marimba');const P=TR[3].p;if(!(P.filt>0)||P.filt>3600)P.filt=3600}
-  if(TR[3].p.pv==='Cowbell')TR[3].lv=+(TR[3].lv*.75).toFixed(2);
-  if(TR[3].p.pv==='Conga')TR[3].lv=+(TR[3].lv*.87).toFixed(2)}catch(e){console.warn('[orbitron] mood range',e)}return r}}
-window.ORB_BUILD='2026-11-12g';
-/* ---- v0.4 interplay: parts make room for each other, and Launch keeps a little space in busy grooves. Everything lands on Rotate and
-   the planet mutes, so it stays yours to change.
-   · perc: when most of its hits land on the kick, it is rotated to the spot that clashes least with the kick and the lead
-   · hats: a sparse hat that sits on the kick is moved to the off-beat
-   · space: when more than 7 parts play (6 in the spacey moods), half the time one extra part (stab, satellite or snare) sits out ---- */
-{const at=(T,s)=>{const p=T.pt||[];return p.length?!!p[s%p.length]:false};
- const hitsOn=(T,U,n)=>{let c=0,h=0;for(let s=0;s<n;s++)if(at(T,s)){h++;if(at(U,s))c++}return [c,h]};
- const SP={Ambient:1,'Deep Space':1,Ethereal:1,Dreamy:1,Drone:1};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const K=TR[0],P=TR[3],H=TR[1],L=TR[4],N=32;
-  if(!K.m&&!P.m&&P.st&&P.h){const [c,h]=hitsOn(P,K,N);if(h&&c/h>.5){const r0=P.r||0;let best=r0,bs=1e9;
-    for(let q=0;q<P.st;q++){P.r=q;P.pt=pat(P);const kc=hitsOn(P,K,N)[0],lc=(!L.m&&L.pt)?hitsOn(P,L,N)[0]:0,d=Math.min(Math.abs(q-r0),P.st-Math.abs(q-r0));const sc=kc*3+lc+d*.1+R()*.05;if(sc<bs){bs=sc;best=q}}
-    P.r=best;P.pt=pat(P)}}
-  if(!K.m&&!H.m&&H.st===16&&H.h&&H.h<=4){const [c,h]=hitsOn(H,K,16);if(h&&c/h>=.75){H.r=((H.r||0)+2)%16;H.pt=pat(H)}}
-  const on=TR.filter(T=>!T.m).length,cap=SP[curMood]?6:7;
-  if(on>cap&&R()<.5){for(const k of [8,9,7])if(TR[k]&&!TR[k].m){TR[k].m=true;break}}}catch(e){console.warn('[orbitron] interplay',e)}return r}}
-/* ---- v0.4 master: final stage, between the master limiter and the output. A gentle 4x-oversampled clipper takes the kick tips (+4.5 dB drive),
-   then a plain stage holds every sample at or below -1 dBFS (output gain 0.9). Measured: about 2 dB louder than before (around -9 LUFS),
-   with true peaks close to 0 dBTP like released dance tracks. The automatic loudness may now lift up to 4 dB (target -7.5). Survives engine rebuilds. ---- */
-{const curve=(()=>{const n=4096,c=new Float32Array(n),T=.72,M=.977;for(let i=0;i<n;i++){const x=(i/(n-1))*2-1,a=Math.abs(x)*2.2;   // input range ±2.2
-   const y=a<=T?a:T+(M-T)*Math.tanh((a-T)/(M-T));c[i]=Math.sign(x)*y}return c})();
- const CAP=(()=>{const n=2049,c=new Float32Array(n);for(let i=0;i<n;i++){const x=(i/(n-1))*2-1;c[i]=Math.max(-.985,Math.min(.985,x))}return c})();
- let F=null;const fit=()=>{try{const M=window.orbMPlus&&orbMPlus.M();if(!ctx||!A.out||!M||M.ctx!==ctx||!M.lim2||(F&&F.ctx===ctx&&F.lim2===M.lim2))return;
-  const pre=ctx.createGain(),ws=ctx.createWaveShaper();pre.gain.value=Math.pow(10,4.5/20)/2.2;ws.curve=curve;ws.oversample='4x';
-  // sits between the master limiter and the output, so the meters and the in-app recorder hear the finished sound
-  try{M.lim2.disconnect(A.out)}catch(e){}M.lim2.connect(pre);pre.connect(ws);const cap=ctx.createWaveShaper();cap.curve=CAP;cap.oversample='none';   // the 4x clipper can ring slightly past its ceiling; this plain stage holds the line
-  ws.connect(cap);cap.connect(A.out);A.out.gain.value=.9;F={ctx,lim2:M.lim2,pre,ws,cap}}catch(e){console.warn('[orbitron] final stage',e)}};
- setInterval(fit,1000);window.orbFinal=()=>F;}
-window.ORB_BUILD='2026-11-12-v0.5';
-/* ---- v0.4: the re-roll buttons (New lead line, New bassline, Chords, Whole part, Random patch) match the rest of the UI: cut corner,
-   dark panel, green edge, and a small line-drawn die in the accent colour instead of the colour emoji. ---- */
-{const st=document.createElement('style');st.textContent=`
-.pdr,.bassroll:not(:empty),button.dice{border-radius:0!important;background:#0f2418!important;border:1px solid rgba(0,255,156,.32)!important;color:var(--acc,#ffe44d)!important;
- clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));font-family:inherit;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
- display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px}
-.pdu{border-radius:0!important;background:#0f2418!important;min-height:44px;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px))}
-.pdr:active,.bassroll:active,button.dice:active{background:rgba(255,228,77,.16)!important}
-.pdr::before,.bassroll:not(:empty)::before,button.dice::before{content:'';width:16px;height:16px;flex:none;background:currentColor;
- -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1.5' y='1.5' width='13' height='13' rx='2.5' fill='none' stroke='black' stroke-width='1.6'/%3E%3Ccircle cx='5' cy='5' r='1.3'/%3E%3Ccircle cx='11' cy='11' r='1.3'/%3E%3Ccircle cx='8' cy='8' r='1.3'/%3E%3Ccircle cx='11' cy='5' r='1.3'/%3E%3Ccircle cx='5' cy='11' r='1.3'/%3E%3C/svg%3E") center/contain no-repeat;
- mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1.5' y='1.5' width='13' height='13' rx='2.5' fill='none' stroke='black' stroke-width='1.6'/%3E%3Ccircle cx='5' cy='5' r='1.3'/%3E%3Ccircle cx='11' cy='11' r='1.3'/%3E%3Ccircle cx='8' cy='8' r='1.3'/%3E%3Ccircle cx='11' cy='5' r='1.3'/%3E%3Ccircle cx='5' cy='11' r='1.3'/%3E%3C/svg%3E") center/contain no-repeat}`;document.head.appendChild(st)}
-</script>
-<script>
-/* ---- v0.4: the electric-piano stab lead is now called "EP stab"; saved patterns that still carry its old name are renamed on load ---- */
-{const fix=()=>{try{const P=TR[4]&&TR[4].p;if(P&&P.patch==='Rhodes'+' stab')P.patch='EP stab'}catch(e){}};fix();setInterval(fix,1000)}
-</script>
-<script>
-/* ---- v0.4: ACID LINE GENERATOR — written like a 303 part instead of a random note per step.
-   · Motif: a 4- or 8-step cell (mostly root and octave, plus two "colour" notes chosen for the whole line), repeated across the bar,
-     with a small turnaround in the last steps.
-   · Rests are part of the cell (so they repeat), never on step 1, preferring the steps where the kick hits.
-   · Slides only between two different notes (more often on octave jumps); accents on the cell start and on octave notes.
-   · Like Motif mode it makes several candidates and keeps the best (root share, few big leaps, a sensible number of slides/accents).
-   The line's rhythm is written into the lead ring (16 steps). Déjà vu below 1 still changes a single note now and then. ---- */
-{const pk=a=>a[Math.floor(R()*a.length)],wpick=o=>{let t=0;for(const k in o)t+=o[k];let u=R()*t;for(const k in o){if((u-=o[k])<0)return +k}return +Object.keys(o)[0]};
- const cand=p=>{const n=SC[G.scale].length,colors=[2,4,n-1,1,n+2].filter((v,i,a)=>a.indexOf(v)===i),pal=[];while(pal.length<2){const c=pk(colors);if(!pal.includes(c))pal.push(c)}
-  const L=R()<.65?8:4,cell=[],rest=[],kick=TR[0]&&TR[0].pt?TR[0].pt:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0];
-  for(let i=0;i<L;i++){cell.push(i===0?(R()<.85?0:n):wpick({0:45,[n]:20,[pal[0]]:20,[pal[1]]:15}));
-   rest.push(i>0&&!(rest[i-1]&&rest[i-2])&&R()<(kick[i%kick.length]?.32:.16))}   // never more than two rests in a row
-  const N=[],P=[],A=[],S=[];
-  for(let i=0;i<16;i++){N.push(cell[i%L]);P.push(rest[i%L]?0:1)}
-  // turnaround: change 1–2 notes in the last 4 steps (a colour note or the octave), and make sure the last step isn't a lone rest run
-  const tn=1+(R()<.5?1:0);for(let k=0;k<tn;k++){const i=12+Math.floor(R()*4);N[i]=pk([n,pal[0],pal[1],n+2]);P[i]=1}
-  P[0]=1;
-  for(let i=0;i<16;i++){const nx=(i+1)%16,oct=N[i]>=n;
-   A.push(P[i]&&((i%L===0&&R()<.6)||(oct&&R()<.5)||R()<(p.accp||.3)*.35)?1:0);
-   // slide INTO step i from the previous played note (this voice reads s[i] as "glide into this note")
-   const pv=(i+15)%16;S.push(i>0&&P[i]&&P[pv]&&N[pv]!==N[i]&&R()<Math.min(.85,(p.glide||.3)*1.4+(Math.abs(N[pv]-N[i])>=n?.2:0))?1:0)}
-  return {N,P,A,S,L}};
- const score=(c,n)=>{const on=c.P.reduce((a,b)=>a+b,0),roots=c.N.filter((v,i)=>c.P[i]&&v%n===0).length/Math.max(1,on),
-   leaps=c.N.filter((v,i)=>i&&c.P[i]&&c.P[i-1]&&Math.abs(v-c.N[i-1])>n+2).length,sl=c.S.reduce((a,b)=>a+b,0),ac=c.A.reduce((a,b)=>a+b,0);
-  return -Math.abs(roots-.5)*4-leaps*1.5-Math.abs(sl-3.5)*.6-Math.abs(ac-4.5)*.5-Math.abs(on-12)*.4};
- acidGen=function(p){const n=SC[G.scale].length;let best=null,bs=-1e9;for(let t=0;t<8;t++){const c=cand(p),sc=score(c,n);if(sc>bs){bs=sc;best=c}}
-  AC.n=best.N;AC.a=best.A;AC.s=best.S;AC.cell=best.L;AC.key=G.scale+'|'+p.seed+'|'+p.glide.toFixed(2)+'|'+p.accp.toFixed(2);
-  try{const T=TR[4];T.st=16;T.pt=best.P.slice();T.h=best.P.reduce((a,b)=>a+b,0);T.r=0;setTimeout(()=>{try{draw(T,-1);window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){}};
- window.orbAcid={gen:()=>acidGen(TR[4].p),line:()=>({n:AC.n,a:AC.a,s:AC.s,pt:TR[4].pt,cell:AC.cell})}}
-</script>
-<script>
-/* ---- v0.4: Déjà vu changes on the acid line keep to the line's own notes; a changed note never keeps a slide from the same pitch,
-   and accents only flip on the cell start or an octave note ---- */
-{const _an=acidNote;acidNote=function(p){const s=tk%16,before=AC.last;const bn=AC.n?AC.n.slice():null,ba=AC.a?AC.a.slice():null;const r=_an(p);
-  try{if(bn&&s<before&&AC.n&&AC.n.join()!==bn.join()||ba&&AC.a&&AC.a.join()!==ba.join()){const n=SC[G.scale].length,pal=[...new Set(bn.filter(v=>v%n!==0))],ok=[0,n].concat(pal);
-   for(let i=0;i<16;i++){if(AC.n[i]!==bn[i]&&!ok.includes(AC.n[i]))AC.n[i]=pal.length?pal[i%pal.length]:0;
-    if(AC.a[i]!==ba[i]&&AC.a[i]&&!(i%(AC.cell||8)===0||AC.n[i]>=n))AC.a[i]=0;
-    const pv=(i+15)%16;if(AC.s[i]&&AC.n[pv]===AC.n[i])AC.s[i]=0}}}catch(e){}return r}}
-</script>
-<script>
-/* ---- v0.4: ACID PRODUCTION — so the line sounds like a finished record, not a dry 303.
-   · Per note: a warm, slightly asymmetric drive (soft clipping with a touch of even harmonics, like a pedal or a tube stage).
-   · One shared acid bus after it: gentle saturation glue → +2.5 dB body at 220 Hz → slightly softer top (−3 dB above 6 kHz) →
-     a soft compressor (3:1, fast attack) so it sits in the mix like a produced part. The bus is built once, so it costs almost nothing. ---- */
-var __AWC={};function acidWarm(d){const k=Math.round(d*20);if(__AWC[k])return __AWC[k];const N=2048,c=new Float32Array(N),a=1+d*6;
- for(let i=0;i<N;i++){const x=i/(N-1)*2-1,y=Math.tanh(a*x+.12*d*x*x)/Math.tanh(a);c[i]=y}return __AWC[k]=c}
-var __AB=null;function acidBus(){try{if(!ctx||ctx instanceof OfflineAudioContext||!(A.ld||A.dk))return null;const out=A.ld||A.dk;
- if(__AB&&__AB.ctx===ctx&&__AB.out===out)return __AB.inp;
- const inp=ctx.createGain(),sat=ctx.createWaveShaper(),body=ctx.createBiquadFilter(),top=ctx.createBiquadFilter(),cmp=ctx.createDynamicsCompressor(),mk=ctx.createGain();
- sat.curve=acidWarm(.25);sat.oversample='2x';body.type='peaking';body.frequency.value=220;body.Q.value=.8;body.gain.value=2.5;
- top.type='highshelf';top.frequency.value=6000;top.gain.value=-3;
- cmp.threshold.value=-18;cmp.ratio.value=3;cmp.knee.value=8;cmp.attack.value=.005;cmp.release.value=.12;mk.gain.value=.56; /* level-matched to the old acid voice */
- inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(out);inp.__k=4;
- __AB={ctx,out,inp};return inp}catch(e){return null}}
 </script>
 </body></html>

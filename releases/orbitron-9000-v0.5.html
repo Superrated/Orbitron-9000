@@ -305,24 +305,24 @@ function acidVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,s=tk%16,d=acidNot
  const f=d2f(d,2+(G.ldUp||0)),acc=AC.a[s]?1:0,sl=AC.s[s]&&LF>0&&w-LW<=2.2*sd,nx=AC.s[(s+1)%16],dur=sd*(nx?1.15:.55),e=w+dur+.06,
   o=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e),q1=ctx.createBiquadFilter(),q2=ctx.createBiquadFilter(),pre=ctx.createGain(),g=ctx.createGain();
  if(sl)o.frequency.setTargetAtTime(f,w,.02);
- /* v0.27: a second, slightly detuned oscillator for a fatter tone */const o2=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e);o2.detune.value=9;if(sl)o2.frequency.setTargetAtTime(f,w,.02);const o2g=ctx.createGain();o2g.gain.value=.55;o2.connect(o2g);
- q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(14,p.res)*.38;q2.Q.value=.55; /* v0.27: rounder resonance peak */
+ /* v0.4: ONE oscillator like the 303 (the detuned second one smeared the squelch) */
+ let src=o;if(p.wave>.5){const sg=ctx.createGain();sg.gain.value=.8;o.connect(sg);src=sg}
+ q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(14,p.res)*.38;q2.Q.value=.5; /* v0.4: second stage sits 1.7x higher → a softer, about 18 dB-like slope */
  AC.chg=(AC.chg||0)*Math.exp(-Math.max(0,w-(AC.tw||w))/.35);AC.tw=w;if(acc)AC.chg=Math.min(2.5,AC.chg+1);
  const cm=Math.pow(2,2.5*mv("Lead cutoff",w)),base=Math.max(40,p.cut*cm),ea=p.envA*(acc?1.5+p.acc3*.8+.35*AC.chg:1),
   cd=acc?Math.min(.2,Math.max(.06,p.dec*.6)):Math.max(.06,p.dec*Math.pow(2,1.2*mv("Lead decay",w)));
- [q1,q2].forEach(q=>{if(sl&&AC.fq){const el=w-AC.ft,cur=Math.max(base,AC.fb+(AC.fp-AC.fb)*Math.exp(-el*3/AC.fd));q.frequency.setValueAtTime(Math.min(12000,cur),w);q.frequency.setTargetAtTime(base,w,AC.fd/3)}
-  else{q.frequency.setValueAtTime(Math.min(12000,base+ea),w);q.frequency.setTargetAtTime(base,w+.002,cd/3)}});
+ [q1,q2].forEach((q,qi)=>{const m=qi?1.7:1;if(sl&&AC.fq){const el=w-AC.ft,cur=Math.max(base,AC.fb+(AC.fp-AC.fb)*Math.exp(-el*3/AC.fd));q.frequency.setValueAtTime(Math.min(16000,cur*m),w);q.frequency.setTargetAtTime(base*m,w,AC.fd/3)}
+  else{q.frequency.setValueAtTime(Math.min(16000,(base+ea)*m),w);q.frequency.setTargetAtTime(base*m,w+.002,cd/3)}});
  if(!sl){AC.fq=1;AC.ft=w;AC.fp=Math.min(12000,base+ea);AC.fb=base;AC.fd=cd}
  const pk=v*.3*(acc?1.35+p.acc3*.4:1)*(1+(p.drv||0)*.2);
  if(sl)g.gain.setValueAtTime(pk,w);else{g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(pk,w+.003)}
  g.gain.setValueAtTime(pk,w+dur);g.gain.linearRampToValueAtTime(.0001,w+dur+.02);
- pre.gain.value=1+(acc?.3:0);o.connect(pre);o2g.connect(pre);pre.connect(q1);q1.connect(q2);
- if(p.subosc>.01){const so=osc('sine',f*.5,w,e),sg=ctx.createGain();sg.gain.value=p.subosc*.9;so.connect(sg);sg.connect(g)}
- if(p.grit>.01){const ns=ctx.createBufferSource(),ng=ctx.createGain(),nf=ctx.createBiquadFilter();ns.buffer=A.nb;nf.type='highpass';nf.frequency.value=1500;ng.gain.setValueAtTime(p.grit*.4,w);ng.gain.exponentialRampToValueAtTime(.001,w+.06);ns.connect(nf);nf.connect(ng);ng.connect(g);ns.start(w,R()*.5);ns.stop(w+.08)}
- let tl=q2;if(p.drv>.01){const dg=ctx.createGain(),dw=ctx.createWaveShaper();dg.gain.value=.6+p.drv*2.4;dw.curve=curve(p.drv*10);q2.connect(dg);dg.connect(dw);tl=dw}
- if(p.crush>.01){const cr=ctx.createWaveShaper();cr.curve=crushCurve(p.crush);tl.connect(cr);tl=cr}
- {const tm=ctx.createBiquadFilter();tm.type='lowpass';tm.frequency.value=4200;tm.Q.value=.5;tl.connect(tm);tl=tm} /* v0.27: tame the fizz */
- tl.connect(g);send(g,A.ld||A.dk,p.ds,p.rs);leadVoice(g,w);LF=f;LW=w}
+ pre.gain.value=(1+(acc?.3:0))*1.45;src.connect(pre);pre.connect(q1);q1.connect(q2); /* 1.45: makes up for the removed second oscillator */
+ /* v0.4: no sub oscillator and no noise click (the 303 has neither); resonance thins the bass instead */
+ let tl=q2;if(p.res>2){const ls=ctx.createBiquadFilter();ls.type='lowshelf';ls.frequency.value=180;ls.gain.value=-Math.min(4,(p.res-2)*.35);q2.connect(ls);tl=ls}
+ {const dv=Math.max(.2,p.drv||0),dg=ctx.createGain(),dw=ctx.createWaveShaper();dg.gain.value=.7+dv*2.2;dw.curve=acidWarm(dv);tl.connect(dg);dg.connect(dw);tl=dw} /* v0.4: warm pedal-style drive, always a little on */
+ if(p.drv>.3){const tm=ctx.createBiquadFilter();tm.type='lowpass';tm.frequency.value=9000;tm.Q.value=.5;tl.connect(tm);tl=tm} /* v0.4: no more 4.2 kHz cut; only a gentle 9 kHz one when the drive pedal is pushed */
+ tl.connect(g);send(g,acidBus()||A.ld||A.dk,p.ds,p.rs);leadVoice(g,w);LF=f;LW=w}
 function foldCurve(){if(!FC){FC=new Float32Array(4097);for(let i=0;i<4097;i++){const u=(i/2048-1)*8;FC[i]=2/Math.PI*Math.asin(Math.sin(Math.PI/2*u))}}return FC}
 function fireVoice(k,w){const T=TR[k],p=T.p,v=T.lv;if(window.DR&&DR.on(k,w,v,p))return;
  if(k===0){if(A.ksd!==p.drive){A.ks.curve=curve(p.drive);A.ksd=p.drive}const o=ctx.createOscillator(),g=ctx.createGain(),f=p.pitch,d=p.dec,pu=p.punch,vk=v*.9;o.frequency.setValueAtTime(f*(1+pu),w);o.frequency.exponentialRampToValueAtTime(f*(1+pu*.12),w+.011);o.frequency.exponentialRampToValueAtTime(f,w+.06);o.frequency.exponentialRampToValueAtTime(f*.93,w+d);g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(vk,w+.0015);g.gain.setValueAtTime(vk,w+d*.2);g.gain.exponentialRampToValueAtTime(.0001,w+d);o.connect(g);g.connect(A.ks);const r=ctx.createGain();r.gain.value=.55*(G.rfeed||1);g.connect(r);r.connect(A.ru);o.start(w);o.stop(w+d+.05);{const ck=p.click==null?1:p.click;if(ck>.01){const c=ctx.createOscillator(),cg=ctx.createGain(),cq=ctx.createBiquadFilter();c.type='triangle';c.frequency.setValueAtTime(2200,w);c.frequency.exponentialRampToValueAtTime(320,w+.008);cq.type='highpass';cq.frequency.value=700;cg.gain.setValueAtTime(v*.3*ck,w);cg.gain.exponentialRampToValueAtTime(.0001,w+.012);c.connect(cq);cq.connect(cg);cg.connect(A.ks);c.start(w);c.stop(w+.02)}}nz(w,"highpass",4500,.007,v*.22,A.m);duck(w)}
@@ -2893,7 +2893,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   'Loop len':'only the loop modes (Marbles, Interval, Motif, Turing loop) use it; the others use Cycle','Cycle (0 = off)':'loop modes use Loop len instead','Note repeat':'Acid 303 has its own line','Reset on bar':'this mode has no position to reset','Chord lock':'this mode already follows the chord or has its own notes','Reseed':'this mode has no random seed','Accent chance':'only Acid 303'};
  const POLY=['att','crush','cut','dec','det','drv','ds','envA','fenv','fmi','fmr','fold','fsym','ft','glide','grit','gt','hold','kt','oct2','pdec','penv','pg','pw','rel','res','rs','subosc','sus','uni','usp','vib','vibr','vow','wave','wid','eng'];
  const MINI=['att','cut','dec','ds','dsw','envA','fatt','fdec','fsus','glk','hold','kt','mnz','o1l','o1r','o1w','o2d','o2l','o2r','o2w','o3d','o3l','o3r','o3w','pg','rel','res','rs','sus','vib','vibr','eng'];
- const ACID=['acc3','crush','cut','dec','drv','ds','envA','grit','gt','res','rs','subosc','wave','glide'];
+ const ACID=['acc3','cut','dec','drv','ds','envA','gt','res','rs','wave','glide'];
  const SELK={'Engine':'eng','Filter type':'ft','Osc 1 wave':'o1w','Osc 1 range':'o1r','Osc 2 wave':'o2w','Osc 2 range':'o2r','Osc 3 wave':'o3w','Osc 3 range':'o3r'};
  const lab=el=>{const f=el.firstChild;if(!f)return'';return(f.nodeType===3?f.textContent:(f.firstChild&&f.firstChild.textContent)||el.textContent).trim()};
  function keyOf(l){if(SELK[l])return SELK[l];const x=TR[4].x.find(x=>x[0]===l);return x?x[1]:null}
@@ -3206,7 +3206,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
 
 /* ---- v150: "Vector" mood — modular house. Each Launch picks a flavour: Rubber (rubbery modular plucks on odd rings,
    melodic bass, a long slow filter build), Cascade (driving acid-tinged modular riff, brighter stabs) or Night (jazzy 7th/9th chords on
-   Rhodes-like keys, walking bass) — and, separately, broken / shuffled drums or four-on-the-floor ---- */
+   electric-piano keys, walking bass) — and, separately, broken / shuffled drums or four-on-the-floor ---- */
 {const NM='Vector';
  MOODS[NM]={sc:['Dorian','Minor','Mixolydian','Dorian','Major'],pr:[[0,3,6,2],[1,4,0,5],[0,5,1,4],[0,2,5,4],[1,4,2,5],[0,3,1,4]],sh:['9','7','add9'],b:[120,130],cut:800,sw:1500,att:.3,lh:[6,7,9],sp:.35,bias:.5,dv:.92,md:['Turing loop','Marbles','Converge','Motif'],wave:.3,dec:.2,res:4,pt:['Bell pad','Poly','Strings','Tape','Glass'],hat:[[16,6,2],[16,12,0]],kick:{pitch:50,dec:.38,punch:4,drive:2},duck:.6,grit:.05,padlv:.35,mute:[8],hr:.12};
  MP[NM]={sty:'Modular house',b:[120,130],sw:[.04,.1],gr:.65,kick:{pitch:50,dec:.38,punch:4,drive:2,click:.7},hat:{tone:9500,dec:.04,open:.25,acc:.55,metal:.4},hp:[[16,6,2],[16,12,0]],clap:{tone:1600,spread:11,tail:.3,rv:.35},cl:.5,sn:0,
@@ -5601,7 +5601,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 </script>
 <script>
 /* ---- v0.29: NEW SOUNDS + SMARTER LEAD AND BASS PATTERNS
-   Leads: House piano and Rhodes stab (chords that follow the pad), Rave stab and Organ stab (one chord shape moved in parallel).
+   Leads: House piano and EP stab (chords that follow the pad), Rave stab and Organ stab (one chord shape moved in parallel).
    Lead card → Osc page → Chord: Off / Follow pad / Rave / Organ works on any patch.
    Bass: 808 glide (sine with a pitch drop and long decay; overlapping notes glide), Rolling pluck. Bass card → Sound picks any bass sound.
    Texture bed (Mix page): Vinyl, Tape, Rain, Air (soft noise tuned to the key). Every Launch picks one.
@@ -5612,7 +5612,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  Object.assign(LDEF,{chd:''});
  Object.assign(LPRE,{
   'House piano':{pg:1.1,eng:'FM',fmr:1,fmi:2.6,fenv:1.2,uni:1,usp:0,wid:.3,ft:'LP12',cut:2600,res:.8,envA:4200,dec:.55,sus:0,att:1,kt:.4,subosc:0,oct2:0,drv:.08,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.3,rs:.3,chd:'Follow pad'},
-  'Rhodes stab':{pg:1.05,eng:'FM',fmr:1,fmi:1.1,fenv:2.2,uni:1,usp:0,wid:.45,ft:'LP12',cut:1800,res:.7,envA:2200,dec:.7,sus:.2,hold:.9,rel:.35,att:2,kt:.3,subosc:0,oct2:0,drv:.12,crush:0,fold:0,penv:0,glide:0,vib:4,vibr:4.2,ds:.35,rs:.35,chd:'Follow pad'},
+  'EP stab':{pg:1.05,eng:'FM',fmr:1,fmi:1.1,fenv:2.2,uni:1,usp:0,wid:.45,ft:'LP12',cut:1800,res:.7,envA:2200,dec:.7,sus:.2,hold:.9,rel:.35,att:2,kt:.3,subosc:0,oct2:0,drv:.12,crush:0,fold:0,penv:0,glide:0,vib:4,vibr:4.2,ds:.35,rs:.35,chd:'Follow pad'},
   'Rave stab':{pg:3,eng:'Stack',uni:1,usp:0,wid:.4,wave:.1,det:11,ft:'LP24',cut:1100,res:2.5,envA:4200,dec:.24,sus:0,att:1,kt:.3,subosc:.1,oct2:0,drv:.25,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.45,rs:.35,chd:'Rave'},
   'Organ stab':{pg:2.6,eng:'Organ',uni:1,usp:0,wid:.3,ft:'LP12',cut:4200,res:.7,envA:800,dec:.26,sus:0,att:2,rel:.05,kt:0,subosc:0,oct2:0,drv:.3,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.35,rs:.3,chd:'Organ'}});
  const CHD={Rave:[0,3,7,12],Organ:[0,3,7,10]},CHOPT=['Off','Follow pad','Rave','Organ'];
@@ -5687,14 +5687,14 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  // ---------- Launch: new sounds, lead rhythms, bass roles, bed ----------
  const AMB=new Set(['Ambient','Ethereal','Drone','Deep Space']);
  const rp=a=>a[Math.floor(R()*a.length)],wp=o=>{let t=Object.values(o).reduce((a,b)=>a+b,0)*R();for(const k in o)if((t-=o[k])<0)return k;return Object.keys(o)[0]};
- const NEWL={bounce:[.35,{'Rave stab':1,'House piano':1,'Rhodes stab':1}],peak:[.3,{'Organ stab':1,'Rave stab':1}],minimal:[.3,{'Organ stab':1,'Rhodes stab':.7}],rolling:[.08,{'Rhodes stab':1}]};
- const MOODL={Italo:[.25,{'House piano':1}],Hopeful:[.3,{'House piano':1,'Rhodes stab':1}],'Melodic House':[.35,{'Rhodes stab':2,'House piano':1}],Breaks:[.3,{'Rave stab':1,'House piano':.5}],'Groove Techno':[.25,{'Organ stab':1}],Dreamy:[.2,{'Rhodes stab':1}]};
+ const NEWL={bounce:[.48,{'Rave stab':1,'House piano':1,'EP stab':1}],peak:[.42,{'Organ stab':1,'Rave stab':1}],minimal:[.42,{'Organ stab':1,'EP stab':.7}],rolling:[.14,{'EP stab':1}]};
+ const MOODL={Italo:[.35,{'House piano':1}],Hopeful:[.42,{'House piano':1,'EP stab':1}],'Melodic House':[.48,{'EP stab':2,'House piano':1}],Breaks:[.42,{'Rave stab':1,'House piano':.5}],'Groove Techno':[.35,{'Organ stab':1}],Dreamy:[.3,{'EP stab':1}]}; /* v0.4: new leads ~40 % more often */
  const RHY={rolling:['x.xx.xx.x.xx.xx.','x..x..x..x..x.x.'],bounce:['x..x..x.x..x..x.','..x..x....x..x..','x.x...x...x.x...'],peak:['x..x..x.........','..x...x...x.....','x.....x...x.....'],minimal:['...x..x....x....','.x....x..x......','..x..x..x.......']};
  const SPARSE=['x..x..x.........','..x...x...x.....','...x..x....x....','x.....x...x.....','..x..x....x..x..'];
  const pt16=s=>[...s].map(c=>c==='x'?1:0);
  const setRing=(T,pt)=>{T.st=16;try{const ft=bassFit(T,pt);Object.assign(T,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(T,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}T.pt=pt.slice()};
- const ROLE={rolling:{Rolling:.65,Anchor:.35},bounce:{Answer:.45,'808':.35,Rolling:.2},peak:{Anchor:.5,Rolling:.5},minimal:{Rolling:.5,Answer:.5}};
- const RSND={Rolling:['Rolling pluck','Rolling sub','Rolling pluck'],Anchor:['Reese mid','Rolling sub'],Answer:['FM round','Rubber','Rolling pluck'],'808':['808 glide']};
+ const ROLE={rolling:{Rolling:.65,Anchor:.35},bounce:{Answer:.4,'808':.42,Rolling:.18},peak:{Anchor:.5,Rolling:.5},minimal:{Rolling:.45,Answer:.4,'808':.15}};
+ const RSND={Rolling:['Rolling pluck','Rolling sub','Rolling pluck'],Anchor:['Reese mid','Rolling sub'],Answer:['FM round','Rubber','Rolling pluck','Rolling pluck'],'808':['808 glide']};
  const RT={Rolling:[[_,0,0,0,_,0,0,0,_,0,0,0,_,0,0,0],[_,0,0,_,_,0,0,10,_,0,0,_,_,0,0,4],[_,0,10,0,_,0,10,0,_,0,10,0,_,0,4,0],[_,_,0,0,_,_,0,0,_,_,0,0,_,_,0,10]],
   Anchor:[[0,_,_,_,_,_,_,_,0,_,_,_,_,_,10,_],[0,_,_,_,_,_,0,_,_,_,_,_,_,_,10,_],[0,_,_,10,_,_,0,_,_,_,_,_,_,_,4,10]],
   '808':[[0,_,_,_,_,_,_,_,_,_,0,_,_,_,_,_],[0,_,_,_,_,_,_,0,_,_,_,_,4,_,_,_],[0,_,_,_,_,_,10,_,_,_,0,_,_,_,_,_],[0,_,_,_,_,_,_,_,_,_,_,_,4,_,2,_]]};
@@ -5718,7 +5718,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
     // modern lead rhythm for the family (the Riff mode keeps its own rhythm)
     if(P.mode!=='Riff'){const ch=P.chd&&P.chd!=='Off';if(ch&&(L.h>7||['Chord arp','Up/Down','Up','Random'].includes(P.mode))){P.mode='Motif';try{mot=[];mp=-1;buf=[]}catch(e){}setRing(L,pt16(rp(SPARSE)))}
      else if(fam&&RHY[fam]&&R()<(fam==='rolling'?(P.mode==='Motif'?.35:0):.6))setRing(L,pt16(rp(RHY[fam])))}}
-   if(fam&&!B.m&&!acid&&R()<.8)bassRole(fam);
+   if(fam&&!B.m&&!acid&&R()<.9)bassRole(fam);
    G.bed=fam&&R()<.6?rp(FAMB[fam]):rp(BEDM[curMood]||['Tape','Vinyl','Air']);G.bedLv=AMB.has(curMood)?rr(.5,.7):fam==='peak'?rr(.25,.35):rr(.3,.5);prep(G.bed);
    setTimeout(()=>{try{bedUI();bedTick();const s=document.querySelector('.bsnd select');if(s)s.value=BP[G.bchar]?G.bchar:'Classic';window.bassSync&&bassSync()}catch(e){}},80)
   }catch(e){console.warn('[orbitron] v0.29',e)}return r}}
@@ -5790,7 +5790,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const _gr=generate;generate=function(){const r=_gr.apply(this,arguments);try{const L=TR[4],P=L.p,f=FIT[curMood];
    if(f&&!L.m&&P.mode!=='Riff'&&P.mode!=='Acid 303'&&!(MOODS[curMood]||{}).acid){let tot=0;for(const k in f)tot+=f[k];if(R()<tot){let x=R()*tot,st=null;for(const k in f){if((x-=f[k])<0){st=k;break}}st=st||Object.keys(f)[0];
      const want=BRIGHT.has(curMood)?1:0,pool0=XR[st].filter(q=>q.b===want),pool=pool0.length?pool0:XR[st],q=pool[Math.floor(R()*pool.length)],lab=XN[st]+' '+(XR[st].indexOf(q)+1);
-     if(st==='dub'&&!(P.chd&&P.chd!=='Off'))try{applyLP(pick(['Organ stab','Rhodes stab','Organ stab']),1)}catch(e){}
+     if(st==='dub'&&!(P.chd&&P.chd!=='Off'))try{applyLP(pick(['Organ stab','EP stab','Organ stab']),1)}catch(e){}
      apply(lab)}}}catch(e){console.warn('[orbitron] riffs',e)}return r};
  const _as=arrStep;arrStep=function(w){if(pend&&((tk%16)+16)%16===0){const l=pend;pend=null;apply(l)}return _as.apply(this,arguments)};
  const add=()=>{try{const card=TR[4].mb&&TR[4].mb.closest('.card');if(!card)return;const old=card.querySelector('.lriff');
@@ -6376,5 +6376,65 @@ window.ORB_BUILD='2026-11-12-v0.5';
 .pdr::before,.bassroll:not(:empty)::before,button.dice::before{content:'';width:16px;height:16px;flex:none;background:currentColor;
  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1.5' y='1.5' width='13' height='13' rx='2.5' fill='none' stroke='black' stroke-width='1.6'/%3E%3Ccircle cx='5' cy='5' r='1.3'/%3E%3Ccircle cx='11' cy='11' r='1.3'/%3E%3Ccircle cx='8' cy='8' r='1.3'/%3E%3Ccircle cx='11' cy='5' r='1.3'/%3E%3Ccircle cx='5' cy='11' r='1.3'/%3E%3C/svg%3E") center/contain no-repeat;
  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1.5' y='1.5' width='13' height='13' rx='2.5' fill='none' stroke='black' stroke-width='1.6'/%3E%3Ccircle cx='5' cy='5' r='1.3'/%3E%3Ccircle cx='11' cy='11' r='1.3'/%3E%3Ccircle cx='8' cy='8' r='1.3'/%3E%3Ccircle cx='11' cy='5' r='1.3'/%3E%3Ccircle cx='5' cy='11' r='1.3'/%3E%3C/svg%3E") center/contain no-repeat}`;document.head.appendChild(st)}
+</script>
+<script>
+/* ---- v0.4: the electric-piano stab lead is now called "EP stab"; saved patterns that still carry its old name are renamed on load ---- */
+{const fix=()=>{try{const P=TR[4]&&TR[4].p;if(P&&P.patch==='Rhodes'+' stab')P.patch='EP stab'}catch(e){}};fix();setInterval(fix,1000)}
+</script>
+<script>
+/* ---- v0.4: ACID LINE GENERATOR — written like a 303 part instead of a random note per step.
+   · Motif: a 4- or 8-step cell (mostly root and octave, plus two "colour" notes chosen for the whole line), repeated across the bar,
+     with a small turnaround in the last steps.
+   · Rests are part of the cell (so they repeat), never on step 1, preferring the steps where the kick hits.
+   · Slides only between two different notes (more often on octave jumps); accents on the cell start and on octave notes.
+   · Like Motif mode it makes several candidates and keeps the best (root share, few big leaps, a sensible number of slides/accents).
+   The line's rhythm is written into the lead ring (16 steps). Déjà vu below 1 still changes a single note now and then. ---- */
+{const pk=a=>a[Math.floor(R()*a.length)],wpick=o=>{let t=0;for(const k in o)t+=o[k];let u=R()*t;for(const k in o){if((u-=o[k])<0)return +k}return +Object.keys(o)[0]};
+ const cand=p=>{const n=SC[G.scale].length,colors=[2,4,n-1,1,n+2].filter((v,i,a)=>a.indexOf(v)===i),pal=[];while(pal.length<2){const c=pk(colors);if(!pal.includes(c))pal.push(c)}
+  const L=R()<.65?8:4,cell=[],rest=[],kick=TR[0]&&TR[0].pt?TR[0].pt:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0];
+  for(let i=0;i<L;i++){cell.push(i===0?(R()<.85?0:n):wpick({0:45,[n]:20,[pal[0]]:20,[pal[1]]:15}));
+   rest.push(i>0&&!(rest[i-1]&&rest[i-2])&&R()<(kick[i%kick.length]?.32:.16))}   // never more than two rests in a row
+  const N=[],P=[],A=[],S=[];
+  for(let i=0;i<16;i++){N.push(cell[i%L]);P.push(rest[i%L]?0:1)}
+  // turnaround: change 1–2 notes in the last 4 steps (a colour note or the octave), and make sure the last step isn't a lone rest run
+  const tn=1+(R()<.5?1:0);for(let k=0;k<tn;k++){const i=12+Math.floor(R()*4);N[i]=pk([n,pal[0],pal[1],n+2]);P[i]=1}
+  P[0]=1;
+  for(let i=0;i<16;i++){const nx=(i+1)%16,oct=N[i]>=n;
+   A.push(P[i]&&((i%L===0&&R()<.6)||(oct&&R()<.5)||R()<(p.accp||.3)*.35)?1:0);
+   // slide INTO step i from the previous played note (this voice reads s[i] as "glide into this note")
+   const pv=(i+15)%16;S.push(i>0&&P[i]&&P[pv]&&N[pv]!==N[i]&&R()<Math.min(.85,(p.glide||.3)*1.4+(Math.abs(N[pv]-N[i])>=n?.2:0))?1:0)}
+  return {N,P,A,S,L}};
+ const score=(c,n)=>{const on=c.P.reduce((a,b)=>a+b,0),roots=c.N.filter((v,i)=>c.P[i]&&v%n===0).length/Math.max(1,on),
+   leaps=c.N.filter((v,i)=>i&&c.P[i]&&c.P[i-1]&&Math.abs(v-c.N[i-1])>n+2).length,sl=c.S.reduce((a,b)=>a+b,0),ac=c.A.reduce((a,b)=>a+b,0);
+  return -Math.abs(roots-.5)*4-leaps*1.5-Math.abs(sl-3.5)*.6-Math.abs(ac-4.5)*.5-Math.abs(on-12)*.4};
+ acidGen=function(p){const n=SC[G.scale].length;let best=null,bs=-1e9;for(let t=0;t<8;t++){const c=cand(p),sc=score(c,n);if(sc>bs){bs=sc;best=c}}
+  AC.n=best.N;AC.a=best.A;AC.s=best.S;AC.cell=best.L;AC.key=G.scale+'|'+p.seed+'|'+p.glide.toFixed(2)+'|'+p.accp.toFixed(2);
+  try{const T=TR[4];T.st=16;T.pt=best.P.slice();T.h=best.P.reduce((a,b)=>a+b,0);T.r=0;setTimeout(()=>{try{draw(T,-1);window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){}};
+ window.orbAcid={gen:()=>acidGen(TR[4].p),line:()=>({n:AC.n,a:AC.a,s:AC.s,pt:TR[4].pt,cell:AC.cell})}}
+</script>
+<script>
+/* ---- v0.4: Déjà vu changes on the acid line keep to the line's own notes; a changed note never keeps a slide from the same pitch,
+   and accents only flip on the cell start or an octave note ---- */
+{const _an=acidNote;acidNote=function(p){const s=tk%16,before=AC.last;const bn=AC.n?AC.n.slice():null,ba=AC.a?AC.a.slice():null;const r=_an(p);
+  try{if(bn&&s<before&&AC.n&&AC.n.join()!==bn.join()||ba&&AC.a&&AC.a.join()!==ba.join()){const n=SC[G.scale].length,pal=[...new Set(bn.filter(v=>v%n!==0))],ok=[0,n].concat(pal);
+   for(let i=0;i<16;i++){if(AC.n[i]!==bn[i]&&!ok.includes(AC.n[i]))AC.n[i]=pal.length?pal[i%pal.length]:0;
+    if(AC.a[i]!==ba[i]&&AC.a[i]&&!(i%(AC.cell||8)===0||AC.n[i]>=n))AC.a[i]=0;
+    const pv=(i+15)%16;if(AC.s[i]&&AC.n[pv]===AC.n[i])AC.s[i]=0}}}catch(e){}return r}}
+</script>
+<script>
+/* ---- v0.4: ACID PRODUCTION — so the line sounds like a finished record, not a dry 303.
+   · Per note: a warm, slightly asymmetric drive (soft clipping with a touch of even harmonics, like a pedal or a tube stage).
+   · One shared acid bus after it: gentle saturation glue → +2.5 dB body at 220 Hz → slightly softer top (−3 dB above 6 kHz) →
+     a soft compressor (3:1, fast attack) so it sits in the mix like a produced part. The bus is built once, so it costs almost nothing. ---- */
+var __AWC={};function acidWarm(d){const k=Math.round(d*20);if(__AWC[k])return __AWC[k];const N=2048,c=new Float32Array(N),a=1+d*6;
+ for(let i=0;i<N;i++){const x=i/(N-1)*2-1,y=Math.tanh(a*x+.12*d*x*x)/Math.tanh(a);c[i]=y}return __AWC[k]=c}
+var __AB=null;function acidBus(){try{if(!ctx||ctx instanceof OfflineAudioContext||!(A.ld||A.dk))return null;const out=A.ld||A.dk;
+ if(__AB&&__AB.ctx===ctx&&__AB.out===out)return __AB.inp;
+ const inp=ctx.createGain(),sat=ctx.createWaveShaper(),body=ctx.createBiquadFilter(),top=ctx.createBiquadFilter(),cmp=ctx.createDynamicsCompressor(),mk=ctx.createGain();
+ sat.curve=acidWarm(.25);sat.oversample='2x';body.type='peaking';body.frequency.value=220;body.Q.value=.8;body.gain.value=2.5;
+ top.type='highshelf';top.frequency.value=6000;top.gain.value=-3;
+ cmp.threshold.value=-18;cmp.ratio.value=3;cmp.knee.value=8;cmp.attack.value=.005;cmp.release.value=.12;mk.gain.value=.56; /* level-matched to the old acid voice */
+ inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(out);inp.__k=4;
+ __AB={ctx,out,inp};return inp}catch(e){return null}}
 </script>
 </body></html>
