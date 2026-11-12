@@ -3086,7 +3086,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
    .wav comes inside a .zip (the app only saves standard types), in a normal browser as a plain .wav. Survives engine rebuilds. ---- */
 {const REC={on:false,ch:[],frames:0,sr:48000,node:null,ctx:null,t0:0,max:20*60};const DST=new Set();
  const oc=AudioNode.prototype.connect;
- AudioNode.prototype.connect=function(d,...r){const x=oc.call(this,d,...r);try{if(d instanceof AudioDestinationNode&&!this._recSkip){DST.add(this);if(REC.on&&REC.node&&REC.ctx===this.context)oc.call(this,REC.node)}}catch(e){}return x};
+ AudioNode.prototype.connect=function(d,...r){const x=oc.call(this,d,...r);try{if(d instanceof AudioDestinationNode&&!this._recSkip&&!(this.context instanceof OfflineAudioContext)){for(const x of DST)if(x.context!==this.context)DST.delete(x); /* v0.4: never keep offline-render graphs or an old engine's nodes (that kept every finished render in memory) */DST.add(this);if(REC.on&&REC.node&&REC.ctx===this.context)oc.call(this,REC.node)}}catch(e){}return x};
  const SRC=`class R extends AudioWorkletProcessor{constructor(){super();this.b=[[],[]];this.n=0;this.port.onmessage=e=>{if(e.data==='flush')this.flush()}}
   flush(){if(!this.n)return;const L=new Float32Array(this.n),Rr=new Float32Array(this.n);let o=0;for(let i=0;i<this.b[0].length;i++){L.set(this.b[0][i],o);Rr.set(this.b[1][i],o);o+=this.b[0][i].length}this.port.postMessage([L,Rr],[L.buffer,Rr.buffer]);this.b=[[],[]];this.n=0}
   process(ins){const i=ins[0];if(i&&i.length){const l=i[0],r=i[1]||i[0];this.b[0].push(l.slice());this.b[1].push(r.slice());this.n+=l.length;if(this.n>=8192)this.flush()}return true}}registerProcessor('orb-rec',R)`;
@@ -6212,5 +6212,33 @@ html body #t-perf .arm.g5{grid-template-columns:repeat(5,minmax(0,1fr))!importan
 {let ur=null,ut=[],last=0;setInterval(()=>{try{if(!ctx||!playing)return;const low=/^(Minimum|Small)/.test((window.orbPerf&&orbPerf.buf())||'');let ps=null;try{ps=ctx.playbackStats}catch(e){}if(!ps||ps.underrunEvents==null)return;
   const u=ps.underrunEvents;if(ur!=null&&u>ur){const n=performance.now();for(let i=0;i<u-ur;i++)ut.push(n);ut=ut.filter(t=>n-t<10000);
    if(low&&ut.length>=3&&n-last>60000){last=n;ut=[];try{say&&say('▲ CRACKLES · try a bigger Audio buffer (Mix → Engine)')}catch(e){}}}ur=u}catch(e){}},500)}
+</script>
+<script>/* PWA: offline + install. An Install button joins the Export · Import · Rec row on the Launch tab, only while Chrome
+   offers installation; it disappears once Orbitron is installed (and never shows inside the installed app). */
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){addEventListener('load',()=>{try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}})}
+{const st=document.createElement('style');st.textContent='.sio.inst4{grid-template-columns:repeat(4,1fr)!important}.sio button.sinst{border-color:rgba(255,230,0,.6)!important;color:var(--acc,#ffe600)!important;opacity:1!important;padding:0 4px!important;letter-spacing:.03em!important;white-space:nowrap}';document.head.appendChild(st);
+ const b=document.createElement('button');b.className='sinst';b.textContent='⤓ Install';b.title='Install Orbitron as an app on this device';let dp=null;
+ const inApp=()=>matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
+ const show=on=>{const row=document.querySelector('.sio');if(!row){if(on)setTimeout(()=>show(!!dp),500);return}
+  if(on&&!b.isConnected)row.appendChild(b);if(!on&&b.isConnected)b.remove();row.classList.toggle('inst4',on)};
+ addEventListener('beforeinstallprompt',e=>{e.preventDefault();if(inApp())return;dp=e;show(true)});
+ b.addEventListener('click',async()=>{if(!dp)return;const d=dp;try{d.prompt();const r=await d.userChoice;if(r&&r.outcome==='accepted'){dp=null;show(false)}}catch(e){dp=null;show(false)}});
+
+ /* iPhone / iPad: Apple has no install prompt, so the button opens a short how-to instead (hidden once added to the home screen). */
+ const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ if(isIOS&&!navigator.standalone&&!inApp()&&/^https?:$/.test(location.protocol)){
+  b.title='How to add Orbitron to your home screen';
+  b.addEventListener('click',()=>{if(dp)return;let o=document.getElementById('ioshow');if(o){o.remove();return}
+   o=document.createElement('div');o.id='ioshow';
+   o.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:9999;background:#04100a;border:1px solid var(--acc,#ffe600);border-radius:14px;padding:14px 16px;color:#d8fff0;font-size:14px;line-height:1.5;box-shadow:0 0 24px rgba(255,230,0,.25)';
+   o.innerHTML='<b style="color:var(--acc,#ffe600);letter-spacing:.06em">ADD TO HOME SCREEN</b><br>1. Tap the <b>Share</b> button (square with an arrow)<br>2. Scroll and tap <b>Add to Home Screen</b><br>3. Tap <b>Add</b><br><span style="opacity:.7;font-size:12px">Tip: switch the ring/silent switch to ring, or there may be no sound. Tap to close.</span>';
+   o.addEventListener('click',()=>o.remove());document.body.appendChild(o)});
+  show(true)}
+ addEventListener('appinstalled',()=>{dp=null;show(false)})}
+</script>
+<script>
+/* ---- v0.4: the pre-rendered drum hits (kick, snare, clap, fixed perc) are capped at 60 variants, oldest dropped first, like the other
+   sound caches — before, every new drum variant from a Launch stayed in memory for the whole set. ---- */
+{try{const C=window.DR&&DR.cache;if(C&&!C.__cap){const set=C.set.bind(C);C.set=function(k,v){const r=set(k,v);while(C.size>60)C.delete(C.keys().next().value);return r};C.__cap=1}}catch(e){}}
 </script>
 </body></html>
