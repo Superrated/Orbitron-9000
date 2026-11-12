@@ -3267,7 +3267,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
    target of −12 LUFS (adapts gently, ignores intentionally quiet passages like breakdowns), a −1 dB safety limiter, and a short-term LUFS +
    peak meter on Mix. One switch to compare with the previous master. Survives engine rebuilds ---- */
 {let on=true;try{const v=localStorage.getItem('orb-mst');if(v!=null)on=v==='1'}catch(e){}
- const DRV=Math.pow(10,-1.5/20),TARGET=-7.5, /* v0.4 master: was -9; the final clipper (end of file) catches the extra peaks */AMT={Ambient:.35,'Deep Space':.4,Ethereal:.5,Dreamy:.6,Drone:.7,Noir:.65,Melancholic:.65,Hopeful:.7,'Melodic House':.65,Vector:.65,Bleep:.6,Italo:.7};
+ const DRV=Math.pow(10,-1.5/20),TARGET=-9, /* v0.4 master: was -9; the final clipper (end of file) catches the extra peaks */AMT={Ambient:.35,'Deep Space':.4,Ethereal:.5,Dreamy:.6,Drone:.7,Noir:.65,Melancholic:.65,Hopeful:.7,'Melodic House':.65,Vector:.65,Bleep:.6,Italo:.7};
  let M=null,agDb=0,hist=[],stv=-70,pk=-70,pkT=0;const MEM={};try{Object.assign(MEM,JSON.parse(localStorage.getItem('orb-mstmem')||'{}'))}catch(e){}setInterval(()=>{try{localStorage.setItem('orb-mstmem',JSON.stringify(MEM))}catch(e){}},10000);
  function mstBuild(){if(!ctx||!A.lim||!A.out)return;if(M&&M.ctx===ctx)return;
   const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},bq=(t,f)=>{const b=ctx.createBiquadFilter();b.type=t;b.frequency.value=f;b.Q.value=.7071;return b},
@@ -3288,7 +3288,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   // Web Audio compressors add their own makeup gain (≈ 0.6 × the gain reduction at 0 dBFS); cancel it so the bands only shape, never boost
   [[M.cL,M.gL,-3-1.5*a,1.1+.25*a,0],[M.cM,M.gM,-2-1*a,1.05+.15*a,0],[M.cH,M.gH,-1.5-1*a,1.05+.15*a,0]].forEach(([c,g,th,ra,trim])=>{c.threshold.value=th;c.ratio.value=ra;
    const mk=.6*(-th)*(1-1/ra);g.gain.setTargetAtTime(Math.pow(10,(trim-mk)/20),t,.05)})}
- function setOn(v){on=v;if(v){window._mstLearn=performance.now()+9000;hist=[]}try{localStorage.setItem('orb-mst',on?'1':'0')}catch(e){}if(M&&M.ctx===ctx){const t=ctx.currentTime;M.wet.gain.setTargetAtTime(on?1:0,t,.05);M.dry.gain.setTargetAtTime(on?0:1,t,.05);M.lim2.ratio.value=on?20:1;M.lim2.threshold.value=on?-1:0;if(A.pre&&A.pre.context===ctx)A.pre.gain.setTargetAtTime(on?DRV:1,t,.1);if(on){agDb=MEM[curMood]!=null?MEM[curMood]:-2.5;M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),t,.15)}if(!on){agDb=0;M.ag.gain.setTargetAtTime(1,t,.1);if(A.pre&&A.pre.context===ctx)A.pre.gain.setTargetAtTime(1,t,.1)}}lab()}
+ function setOn(v){on=v;if(v){window._mstLearn=performance.now()+9000;hist=[]}try{localStorage.setItem('orb-mst',on?'1':'0')}catch(e){}if(M&&M.ctx===ctx){const t=ctx.currentTime;M.wet.gain.setTargetAtTime(on?1:0,t,.05);M.dry.gain.setTargetAtTime(on?0:1,t,.05);M.lim2.ratio.value=on?20:1;M.lim2.threshold.value=on?-1:0;if(A.pre&&A.pre.context===ctx)A.pre.gain.setTargetAtTime(on?DRV:1,t,.1);if(on){agDb=MEM[curMood]!=null?MEM[curMood]:-8;M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),t,.15)}if(!on){agDb=0;M.ag.gain.setTargetAtTime(1,t,.1);if(A.pre&&A.pre.context===ctx)A.pre.gain.setTargetAtTime(1,t,.1)}}lab()}
  window.orbMPlus={set:v=>setOn(!!v),on:()=>on,M:()=>M};
  // loudness loop: short-term (3 s) K-weighted level; the gain moves at most +0.5 dB/s up and 1 dB/s down, never more than −9…+6 dB,
  // and does not lift passages that are far below the target on purpose (breakdowns, risers, the Flight low-pass, stopping)
@@ -3300,7 +3300,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
    if(!(err>0&&(stv<TARGET-8||lp<.999))){agDb=Math.max(-8,Math.min(4,agDb+Math.max(-.25,Math.min(.25,err*.2))));MEM[curMood]=agDb;M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.5)}}
   show()},500);   /* v0.33: loudness read twice a second */
  const _in=init;init=function(){const r=_in.apply(this,arguments);try{setTimeout(()=>{try{mstBuild();if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1}catch(e){console.warn('master+',e)}},0)}catch(e){}return r};
- const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();window._mstLearn=performance.now()+9000;if(on&&M&&M.ctx===ctx){agDb=MEM[curMood]!=null?MEM[curMood]:-2.5;hist=[];M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.15)}}catch(e){}return r};
+ const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();window._mstLearn=performance.now()+9000;if(on&&M&&M.ctx===ctx){agDb=MEM[curMood]!=null?MEM[curMood]:-8;hist=[];M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.15)}}catch(e){}return r};
  // UI under Mood finish
  let box=null;const lab=()=>{if(!box)return;const b=box.querySelector('button');{const h=on?'▲ Master+ <b>ON</b> · peak control + −9 LUFS':'△ Master+ <b>OFF</b> · previous master';if(b.innerHTML!==h)b.innerHTML=h}b.classList.toggle('on',on)};
  function show(){if(!box||!box.offsetParent)return;const t=box.querySelector('.mtx'),f=box.querySelector('.mfl');const l=stv<-60?'—':stv.toFixed(1);
@@ -6523,7 +6523,7 @@ var __ADC={};function acidDrive(t,d){if(t!=='Crunch'&&t!=='Fuzz')return acidWarm
 <script>
 /* ---- v0.5: 303 LEVEL ON LAUNCH — for about 4 bars after an acid Launch the acid bus measures the line and sets one correction
    (at most ±6 dB) so every acid Launch sits at the same level in the mix; then it freezes, so your own fader moves are never undone. ---- */
-{const T0=.235;const LV={trim:1,cal:null};window.orbAcidLvl=LV;const buf=new Float32Array(1024);
+{const T0=.279;   /* v0.6: 303 about 1.5 dB more present */ const LV={trim:1,cal:null};window.orbAcidLvl=LV;const buf=new Float32Array(1024);
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(TR[4].p.mode==='Acid 303'&&!TR[4].m){LV.trim=1;LV.cal={t0:performance.now(),dur:Math.max(6000,4*4*60/G.bpm*1000),sum:0,n:0};
    if(window.__AB&&__AB.ctx===ctx)__AB.trim.gain.setTargetAtTime(1,ctx.currentTime,.05)}else LV.cal=null}catch(e){}return r};
  setInterval(()=>{try{const C=LV.cal,AB=window.__AB;if(!C||!playing||!AB||AB.ctx!==ctx||TR[4].m)return;AB.an.getFloatTimeDomainData(buf);let ss=0;for(let i=0;i<1024;i++)ss+=buf[i]*buf[i];const rms=Math.sqrt(ss/1024);
