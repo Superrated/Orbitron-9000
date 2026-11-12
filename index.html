@@ -289,7 +289,7 @@ window.orbSave=async function(name,blob){
 const add=(k,d,x)=>{Object.assign(TR[k].p,d);TR[k].x.push(...x)};
 add(1,{tone:7500,open:.15,acc:.4},[["Tone","tone",3000,12000,50],["Open hat","open",0,1,.01],["Humanize","acc",0,1,.01]]);
 add(2,{spread:11,tail:.2,rv:.15,body:0},[["Spread ms","spread",4,30,1],["Tail","tail",.05,.6,.01],["Reverb","rv",0,.6,.01],["Body","body",0,1,.01]]);
-add(3,{oct:4,ratio:2,mdec:.1,bend:.2,noise:.2,filt:8000,fres:4,fenvp:.5,pmode:0,ds:.3,rs:.2},[["Pitch oct","oct",2,6,1],["Mod ratio","ratio",.5,7,.01],["Mod decay","mdec",.02,.5,.01],["Pitch bend","bend",0,3,.01],["Drop time","pdt",.01,.3,.005],["Drive","pdrv",0,1,.01],["Noise click","noise",0,1,.01],["Filter","filt",60,12000,10],["Filter res","fres",.5,15,.1],["Filter env","fenvp",0,1,.01],["Filter mode (LP·BP·HP)","pmode",0,2,1],["Delay send","ds",0,1,.01],["Reverb send","rs",0,1,.01]]);
+add(3,{oct:4,ratio:2,mdec:.1,bend:.2,pdt:.04,pdrv:0,noise:.2,filt:8000,fres:4,fenvp:.5,pmode:0,ds:.3,rs:.2},[["Pitch oct","oct",2,6,1],["Mod ratio","ratio",.5,7,.01],["Mod decay","mdec",.02,.5,.01],["Pitch bend","bend",0,3,.01],["Drop time","pdt",.01,.3,.005],["Drive","pdrv",0,1,.01],["Noise click","noise",0,1,.01],["Filter","filt",60,12000,10],["Filter res","fres",.5,15,.1],["Filter env","fenvp",0,1,.01],["Filter mode (LP·BP·HP)","pmode",0,2,1],["Delay send","ds",0,1,.01],["Reverb send","rs",0,1,.01]]);
 add(4,{wave:.4,det:5,cut:400,res:6,envA:3000,dec:.28,ds:.4,rs:.25},[["Saw↔Square","wave",0,1,.01],["Detune ¢","det",0,30,1],["Cutoff","cut",150,4000,10],["Resonance","res",.5,15,.1],["Env amount","envA",0,6000,50],["Decay","dec",.08,1.2,.01],["Delay send","ds",0,1,.01],["Reverb send","rs",0,1,.01]]);
 add(5,{att:.35,rel:.8,cut:500,sweep:1300,det:7,oct:2,size:4,rs:.55},[["Attack","att",.05,.8,.01],["Release s","rel",.2,3,.05],["Cutoff","cut",200,3000,10],["Filter sweep","sweep",0,3000,50],["Detune ¢","det",0,30,1],["Octave","oct",1,3,1],["Chord notes","size",2,4,1],["Reverb send","rs",0,1,.01]]);
 add(6,{sub:.5,shold:0,res:2,envA:2,dec:.26,bsus:0,oct:1,fifth:.3,jump:.25,det:0},[["Sub","sub",0,1,.01],["Resonance","res",.5,12,.1],["Env amount","envA",0,6,.1],["Decay","dec",.08,.8,.01],["Sustain","bsus",0,1,.01],["Octave","oct",0,2,1],["Fifth prob","fifth",0,1,.01],["Octave jump","jump",0,1,.01],["Detune ¢","det",0,30,1],["Sub hold","shold",0,1,.01]]);
@@ -6252,7 +6252,9 @@ var PDC={};
  window.pcDeg=function(){if(window.DR&&DR.rendering)return 0;const n=SC[G.scale].length,ct=(cur&&cur.n&&cur.n.length)?cur.n:null;
   if(!ct)return Math.floor(R()*n*2);const i=hitNo(st()),r=TR[3].r||0;return ct[(i+r)%ct.length]+(i%4===3?n:0)};
  window.pcVel=function(){const T=TR[3];if(!T||(window.DR&&DR.rendering)||T.vel)return 1;const s=st();if(T.pt&&hitNo(s)===0)return 1;return s%4===0?.85:.62};
- const P=TR[3].p;if(P.pdt==null)P.pdt=.04;if(P.pdrv==null)P.pdrv=0;
+ const fill=()=>{const P=TR[3].p;if(P.pdt==null)P.pdt=.04;if(P.pdrv==null)P.pdrv=0};fill();
+ // a sector or file saved before these controls existed loads with them at their defaults
+ const _bd=build;build=function(){try{fill()}catch(e){}return _bd.apply(this,arguments)};
  // Launch: the drier, harder moods sometimes give the perc some DFAM grit and a longer drop
  const GR={Power:.6,'Groove Techno':.5,Temporal:.5,'Distorted Electro':.6,Tense:.4,Dark:.4,Acid:.4,Bleep:.3};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const p=TR[3].p,c=GR[curMood]||0;p.pdt=.04;p.pdrv=0;
