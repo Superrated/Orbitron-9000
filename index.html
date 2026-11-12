@@ -2212,7 +2212,7 @@ TR[5].p.mov=TR[5].p.mov||'Classic';
   build()}}
 /* ---- v89: pad variety, round three — chord colour locks per Launch, rhythmic chord patterns (offbeat stabs, house-organ syncopation), and a slow counter-line moving inside the chords ---- */
 {const COL={Dreamy:['9','add9'],Ethereal:['sus2','sus4'],Tense:['quart'],'Deep Space':['quart','sus2'],Noir:['7'],Melancholic:['7','add9'],Hopeful:['add9'],Dark:['tri','sus4'],Italo:['tri'],Breaks:['9','7'],Acid:['tri','sus4'],Drone:['quart','sus2'],Bleep:['sus2','quart'],Power:['tri'],'Melodic House':['7','add9','9'],'Distorted Electro':['tri','quart'],Ambient:['add9','sus2','quart'],'Groove Techno':['tri','quart'],Temporal:['7','quart'],Vector:['9','7','add9']};
- const RHY={'Offbeat stabs':'0010001000100010','House organ':'1001001000100100','Push stabs':'0010010000100101','Two-step':'1000001000100010'};
+ const RHY={'Offbeat stabs':'0010001000100010','House organ':'1001001000100100','Push stabs':'0010010000100101','Two-step':'1000001000100010','Dotted':'1001001001001000','Trance 16ths':'1111111111111111'};window.orbPadRhy=RHY;
  const RCH={Hopeful:.3,Italo:.2,Acid:.3,Breaks:.3,Dark:.2,Tense:.2,Bleep:.25,'Melodic House':.35,'Distorted Electro':.05};
  const TLC={Melancholic:.5,Dreamy:.45,Ethereal:.45,Hopeful:.4,Noir:.35,'Deep Space':.35,Italo:.3,Breaks:.25,Dark:.2,Tense:.15};
  G.ptl=0;let tlLast=null;
@@ -6619,5 +6619,16 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
    if(st==='Reese'){const M=window.orbModern;if(M&&M.BASSP&&M.BASSP['Reese mid']&&R()<.7){Object.assign(B.p,M.BASSP['Reese mid']);G.bchar='Reese mid'}
     const F=LFOS.find(x=>!(x.d>0));if(F)Object.assign(F,{tg:'Bass cutoff',sh:0,sync:1,div:pick([64,128]),d:+(.25+R()*.15).toFixed(2),ph:0})}
    try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync();if(typeof lfoUI==='function')lfoUI()}catch(e){}},0)}catch(e){console.warn('[orbitron] bass styles',e)}return r}}
+</script>
+<script>
+/* ---- v0.5: MORE PAD GATE RHYTHM — in groovy and driving moods Launch more often chops the pad into a rhythm (house stabs, disco,
+   trance 16ths, dotted, two-step); softer gates in the melancholic ones. Spacious moods keep their long pads. ---- */
+{const PG={'Melodic House':[.45,['Offbeat stabs','House organ','Push stabs','Two-step'],.8],Italo:[.4,['Disco','Eighths','Offbeat stabs'],.8],
+  'Groove Techno':[.35,['Offbeat stabs','Push stabs','Sparse'],.8],Bleep:[.35,['Stutter','Sparse','Dotted'],.75],Melancholic:[.25,['Two-step','Dotted','Sparse'],.55],
+  Tense:[.3,['Trance 16ths','Eighths'],.65],Dark:[.2,['Sparse','Offbeat stabs'],.7],Vector:[.3,['Dotted','Push stabs','Eighths'],.75],Dreamy:[.2,['Dotted','Two-step'],.5],Power:[.25,['Trance 16ths','Offbeat stabs'],.7]};
+ const GR={Disco:'1011011010110101',Eighths:'1010101010101010',Stutter:'1111011101110111',Sparse:'1001001010010010'};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const c=PG[curMood],T=TR[5],P=T.p;if(!c||T.m||(P.pgate||0)>.01||R()>=c[0])return r;
+   const k=pick(c[1]),pat=(window.orbPadRhy&&orbPadRhy[k])||GR[k];if(!pat)return r;P.pgpat=pat.split('').map(Number);P.pgate=c[2];P.att=Math.min(P.att||.05,.03);P.rel=Math.min(P.rel||.3,.2);G.prhy=orbPadRhy&&orbPadRhy[k]?k:null;
+   try{build()}catch(e){}setTimeout(()=>{try{const gs=[...document.querySelectorAll('select')].find(s=>[...s.options].some(x=>x.value==='Trance 16ths'));if(gs&&[...gs.options].some(x=>x.value===k))gs.value=k}catch(e){}},60)}catch(e){console.warn('[orbitron] pad gate',e)}return r}}
 </script>
 </body></html>
