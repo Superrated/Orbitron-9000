@@ -1709,7 +1709,10 @@ TR[4].x.forEach(x=>{if(x[1]==='o2d'||x[1]==='o3d'){x[2]=-700;x[3]=700}});
  function hit4(t){rollHit(t,1,210);const o=osc('sine',150,t,t+.12),og=ctx.createGain();o.frequency.exponentialRampToValueAtTime(90,t+.06);og.gain.setValueAtTime(.0001,t);og.gain.exponentialRampToValueAtTime(.9,t+.002);og.gain.exponentialRampToValueAtTime(.0001,t+.1);o.connect(og);og.connect(A.sg)}
  function gapGate(){if(A.gap)return A.gap;A.gap=ctx.createGain();try{A.lp.disconnect(A.arh)}catch(x){A.lp.disconnect()}A.lp.connect(A.gap);A.gap.connect(A.arh);return A.gap}
  // the roll's own big reverb (lives after the gate, so it rings through the cut and into the drop)
- function rollVerb(){if(A.rvb)return A.rvb;const n=Math.floor(ctx.sampleRate*2.6),ir=ctx.createBuffer(2,n,ctx.sampleRate);for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3.2)}
+ const RVI={};
+ function rollVerb(){if(A.rvb)return A.rvb;const sr=ctx.sampleRate,off=ctx instanceof OfflineAudioContext,n=Math.floor(sr*(off?1.6:2.6)),ir=ctx.createBuffer(2,n,sr);
+  /* v0.5 perf: the impulse is computed once per sample rate and copied (it was recomputed for every pre-rendered drop: ~150 ms on a slow phone) */
+  const key=sr+(off?'o':'');let D=RVI[key];if(!D){D=[0,1].map(()=>{const d=new Float32Array(n);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3.2);return d});RVI[key]=D}   /* pre-rendered drops use a 1.6 s tail: setting up the reverb costs time in proportion to its length */for(let c=0;c<2;c++)ir.copyToChannel(D[c],c)
   const cv=ctx.createConvolver(),hp=ctx.createBiquadFilter(),g=ctx.createGain();cv.buffer=ir;hp.type='highpass';hp.frequency.value=350;g.gain.value=.9;cv.connect(hp);hp.connect(g);g.connect(A.sg);A.rvbG=g;return A.rvb=cv}
  let RWC=null;
  function rollHit(t,v,f){const s=ctx.createBufferSource(),bp=ctx.createBiquadFilter(),gg=ctx.createGain(),o=ctx.createOscillator(),og=ctx.createGain(),ws=ctx.createWaveShaper(),post=ctx.createGain(),pre=ctx.createGain(),cr=ctx.createWaveShaper(),pk=ctx.createBiquadFilter();ws.curve=RWC||(RWC=satCurve(14));cr.curve=crushCurve(.55);pre.gain.value=3;pk.type='peaking';pk.frequency.value=2200;pk.gain.value=6;pk.Q.value=.9;post.gain.value=4.2;
