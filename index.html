@@ -294,12 +294,12 @@ add(4,{wave:.4,det:5,cut:400,res:6,envA:3000,dec:.28,ds:.4,rs:.25},[["Saw↔Squa
 add(5,{att:.35,rel:.8,cut:500,sweep:1300,det:7,oct:2,size:4,rs:.55},[["Attack","att",.05,.8,.01],["Release s","rel",.2,3,.05],["Cutoff","cut",200,3000,10],["Filter sweep","sweep",0,3000,50],["Detune ¢","det",0,30,1],["Octave","oct",1,3,1],["Chord notes","size",2,4,1],["Reverb send","rs",0,1,.01]]);
 add(6,{sub:.5,shold:0,res:2,envA:2,dec:.26,bsus:0,oct:1,fifth:.3,jump:.25,bfan:0,det:0},[["Sub","sub",0,1,.01],["Resonance","res",.5,12,.1],["Env amount","envA",0,6,.1],["Decay","dec",.08,.8,.01],["Sustain","bsus",0,1,.01],["Octave","oct",0,2,1],["Fifth prob","fifth",0,1,.01],["Octave jump","jump",0,1,.01],["Fancy notes","bfan",0,1,.01],["Detune ¢","det",0,30,1],["Sub hold","shold",0,1,.01]]);
 let CC={};function crushCurve(c){const L=Math.pow(2,Math.round(8-c*5.5));if(!CC[L]){const a=new Float32Array(1025);for(let i=0;i<1025;i++){const x=i/512-1;a[i]=Math.max(-1,Math.min(1,Math.round(x*L)/L))}CC[L]=a}return CC[L]}
-/* TB-303 style voice: mono saw/square, two cascaded resonant low-passes, per-step accent + slide, gate shortens unless the next step slides */
+/* 303 style voice: mono saw/square, two cascaded resonant low-passes, per-step accent + slide, gate shortens unless the next step slides */
 const AC={n:[],a:[],s:[],key:'',last:99};
 function acidGen(p){const n=SC[G.scale].length,pool=[0,0,0,0,0,0,0,n,n,n,2,4,4,n-1,n+2,n+4,1];AC.n=[];AC.a=[];AC.s=[];for(let i=0;i<16;i++){AC.n.push(i===0&&R()<.7?0:pick(pool));AC.a.push(R()<p.accp?1:0);AC.s.push(i>0&&R()<p.glide?1:0)}AC.key=G.scale+'|'+p.seed+'|'+p.glide.toFixed(2)+'|'+p.accp.toFixed(2)}
 function acidNote(p){const s=tk%16;if(AC.key!==G.scale+'|'+p.seed+'|'+p.glide.toFixed(2)+'|'+p.accp.toFixed(2))acidGen(p);if(s<AC.last&&R()>p.dv){for(let k=0;k<2;k++){const i=Math.floor(R()*16);AC.n[i]=pick([0,0,2,3,4,SC[G.scale].length]);if(R()<.4)AC.a[i]=AC.a[i]?0:1}}AC.last=s;return AC.n[s]}
 function acidVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,s=tk%16,d=acidNote(p);lastDeg=d;
- // TB-303 model: one resonant 24 dB low-pass (first stage carries the resonance, the second is gentle) → single squelchy peak.
+ // 303 model: one resonant 24 dB low-pass (first stage carries the resonance, the second is gentle) → single squelchy peak.
  // Slide = legato: the pitch glides (~60 ms) and the filter sweep CONTINUES instead of restarting. Accent = stronger, shorter sweep,
  // louder note, and consecutive accents charge up the cutoff (the 303 accent circuit).
  const f=d2f(d,2+(G.ldUp||0)),acc=AC.a[s]?1:0,sl=AC.s[s]&&LF>0&&w-LW<=2.2*sd,nx=AC.s[(s+1)%16],dur=nx?sd+.006:sd*.55,e=w+dur+.06, /* v0.5: before a slide the note ends right as the next one starts (6 ms crossfade): mono like a 303, no overlap */
@@ -1515,7 +1515,7 @@ const _gen50=generate;generate=function(){_gen50();G.pgate=null;if(curMood!=='Po
   if(!FUNKB.has(M)){TR[6].p.fifth=Math.min(TR[6].p.fifth||0,.12);TR[6].p.jump=Math.min(TR[6].p.jump||0,.08)}
   if(acid)TR[9].m=true;
   build()}}
-/* ---- v55: "Mini" lead engine — Minimoog Model D style: 3 VCOs (wave / range / detune / level) + noise, hot mixer, 4-pole ladder filter (AudioWorklet), separate filter contour, decay switch, glide ---- */
+/* ---- v55: "Mini" lead engine — classic three-oscillator monosynth style: 3 VCOs (wave / range / detune / level) + noise, hot mixer, 4-pole ladder filter (AudioWorklet), separate filter contour, decay switch, glide ---- */
 Object.assign(LDEF,{o1w:2,o1r:0,o1l:1,o2w:2,o2r:0,o2d:7,o2l:.8,o3w:2,o3r:-1,o3d:-5,o3l:.6,mnz:0,fatt:2,fdec:.3,fsus:.2,dsw:1,glk:0});
 Object.keys(LDEF).forEach(k=>{if(TR[4].p[k]==null)TR[4].p[k]=LDEF[k]});
 const MWN=['Triangle','Shark','Saw','Square','Wide pulse','Narrow pulse'],MRN=["32'","16'","8'","4'","2'"];
@@ -2146,11 +2146,11 @@ LPRE['Sunny keys']={pg:1.1,eng:'FM',fmr:1,fmi:1.2,fenv:.5,ft:'LP12',cut:2400,env
   buf=[];mot=[];mp=-1;build()}}
 /* ---- v85: The Touch mood removed from the mood list ---- */
 {const s=$('#mood'),o=[...s.options].find(x=>x.value==='The Touch');if(o){if(s.value==='The Touch')s.value='Dark';o.remove()}}
-/* ---- v86: four more pad sounds (Poly — Juno-style chorused saw+pulse, Wavetable — morphing timbre, Cloud — granular shimmer, Tron — wobbly tape-choir) and a pad Movement control (Classic, Ensemble chorus, Phaser) ---- */
+/* ---- v86: four more pad sounds (Poly — classic poly-style chorused saw+pulse, Wavetable — morphing timbre, Cloud — granular shimmer, Tron — wobbly tape-choir) and a pad Movement control (Classic, Ensemble chorus, Phaser) ---- */
 let PWT=null;function padWT(){if(PWT&&PWT.c===ctx)return PWT.w;const mk=fn=>{const N=40,re=new Float32Array(N),im=new Float32Array(N);for(let n=1;n<N;n++)im[n]=fn(n);return ctx.createPeriodicWave(re,im)};
  const w=[mk(n=>n===1?1:n===2?.3:n===3?.1:0),mk(n=>1/n*(n%3===0?.2:1)),mk(n=>n%2?1/(n*.7):0.0)];PWT={c:ctx,w};return w}
 function padMove(p,w,e,out){const mv=p.mov||'Classic';if(mv==='Ensemble'){const i=ctx.createGain(),d1=ctx.createDelay(.05),d2=ctx.createDelay(.05),l1=plfo(.5,w,e),l2=plfo(.7,w,e),g1=ctx.createGain(),g2=ctx.createGain(),pl=ctx.createStereoPanner(),pr=ctx.createStereoPanner(),dry=ctx.createGain();
-  d1.delayTime.value=.012;d2.delayTime.value=.017;g1.gain.value=.0012;g2.gain.value=.0012; /* v0.22: Juno-like depth (~6-8 cents), was ~30 cents */l1.connect(g1);g1.connect(d1.delayTime);l2.connect(g2);g2.connect(d2.delayTime);pl.pan.value=-.8;pr.pan.value=.8;dry.gain.value=.7;
+  d1.delayTime.value=.012;d2.delayTime.value=.017;g1.gain.value=.0012;g2.gain.value=.0012; /* v0.22: classic chorus depth (~6-8 cents), was ~30 cents */l1.connect(g1);g1.connect(d1.delayTime);l2.connect(g2);g2.connect(d2.delayTime);pl.pan.value=-.8;pr.pan.value=.8;dry.gain.value=.7;
   i.connect(dry);dry.connect(out);i.connect(d1);i.connect(d2);d1.connect(pl);d2.connect(pr);pl.connect(out);pr.connect(out);return i}
  if(mv==='Phaser'){const i=ctx.createGain(),l=plfo(.15+R()*.2,w,e),lg=ctx.createGain(),mix=ctx.createGain();lg.gain.value=700;l.connect(lg);let last=i;[300,700,1500,3000].forEach(f=>{const a=ctx.createBiquadFilter();a.type='allpass';a.frequency.value=f;a.Q.value=.7;lg.connect(a.frequency);last.connect(a);last=a});
   i.connect(out);last.connect(mix);mix.gain.value=.9;mix.connect(out);return i}
@@ -2773,7 +2773,7 @@ body .panel.top .stg{height:22px!important;min-height:22px!important}}
    // 80s pad on about half the Launches — one of six flavours (no off-beat gates)
    {const T=TR[5],P=T.p;if(R()<.5){T.m=true;G.pad80=''}else{const G16=x=>[...x].map(c=>+c);
     const FL=[{n:'Jump brass',patch:'Brass',mov:'Classic',att:.01,rel:.22,pgate:.95,pgpat:pick(['1000100010001000','1001001010010010','1000100010101000']),open:.75,cut:2800,det:8,size:4,apan:.15,lfo:.25,trem:0},
-     {n:'Juno strings',patch:'PWM',mov:'Ensemble',att:.35,rel:.9,pgate:0,open:.55,cut:2300,det:14,size:5,apan:.55,lfo:.5,trem:0},
+     {n:'Ensemble strings',patch:'PWM',mov:'Ensemble',att:.35,rel:.9,pgate:0,open:.55,cut:2300,det:14,size:5,apan:.55,lfo:.5,trem:0},
      {n:'Solina swell',patch:'Strings',mov:'Ensemble',att:.75,rel:1.4,pgate:0,open:.5,cut:1900,det:12,size:4,apan:.35,lfo:.45,trem:.18},
      {n:'Phaser sweep',patch:pick(['PWM','Strings','Poly']),mov:'Phaser',att:.4,rel:1.2,pgate:0,open:.6,cut:2500,det:11,size:4,apan:.4,lfo:.75,trem:0},
      {n:'DX bell pad',patch:'Bell pad',mov:'Ensemble',att:.04,rel:1.6,pgate:0,open:.65,cut:3300,det:7,size:4,apan:.45,lfo:.35,trem:0},
@@ -4691,7 +4691,7 @@ window.MOODX={
 </script>
 <script>
 /* ---- v0.24: more sound variety. All built from existing engine parameters; everything stays editable.
-   Leads: Hard sync (French electro), String pluck (folk electronica), West Coast fold (modular house), PPG wave (melodic techno), Juno pulse (90s rave).
+   Leads: Hard sync (French electro), String pluck (folk electronica), West Coast fold (modular house), Formant wave (melodic techno), Chorus pulse (90s rave).
    Pads: EP chords, Abyss, Sync sweep, Wind (see pad()). Perc: Conga/bongo and Cowbell/rim. Launch: drum kits (909 · 808 · Rumble · Raw),
    bass characters (deep · round · rubbery · gritty), and a subtle ±15 % "mutation" of the chosen sounds, so no two Launches sound identical. ---- */
 {// ---------- leads
@@ -4699,10 +4699,10 @@ window.MOODX={
   'Hard sync':{pg:.7,eng:'FM',fmr:1,fmi:2.2,fenv:.9,uni:2,usp:9,wid:.35,ft:'LP12',cut:2600,res:2.5,envA:3000,dec:.35,sus:0,att:2,kt:.3,subosc:.2,oct2:0,drv:.3,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.25,rs:.2},
   'String pluck':{pg:1.38,eng:'FM',fmr:1,fmi:1.6,fenv:.8,uni:1,usp:0,wid:0,ft:'LP12',cut:1500,res:1.5,envA:4200,dec:.38,sus:0,att:1,kt:.9,subosc:0,oct2:.12,drv:0,crush:0,fold:0,penv:.25,pdec:.02,grit:.12,glide:0,vib:0,ds:.28,rs:.32},
   'West Coast fold':{pg:.56,eng:'Sine',uni:1,usp:0,wid:0,ft:'LP12',cut:5200,res:1,envA:2500,dec:.42,sus:0,att:2,kt:.4,subosc:0,oct2:0,drv:0,crush:0,fold:.62,fenv:.9,fsym:.25,penv:0,glide:0,vib:0,ds:.3,rs:.35},
-  'PPG wave':{pg:.57,eng:'Vowel',vow:.35,uni:2,usp:7,wid:.45,ft:'LP24',cut:2200,res:3,envA:2600,dec:.5,sus:.45,hold:1.2,rel:.35,att:4,kt:.5,subosc:0,oct2:.15,drv:0,crush:.14,fold:0,penv:0,glide:0,vib:4,vibr:5.2,ds:.35,rs:.4},
-  'Juno pulse':{pg:.89,eng:'Pulse',pw:.38,uni:3,usp:11,wid:.65,ft:'LP24',cut:1300,res:3.5,envA:2600,dec:.3,sus:.3,hold:1,rel:.25,att:2,kt:.4,subosc:.18,oct2:0,drv:0,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.38,rs:.35}});
+  'Formant wave':{pg:.57,eng:'Vowel',vow:.35,uni:2,usp:7,wid:.45,ft:'LP24',cut:2200,res:3,envA:2600,dec:.5,sus:.45,hold:1.2,rel:.35,att:4,kt:.5,subosc:0,oct2:.15,drv:0,crush:.14,fold:0,penv:0,glide:0,vib:4,vibr:5.2,ds:.35,rs:.4},
+  'Chorus pulse':{pg:.89,eng:'Pulse',pw:.38,uni:3,usp:11,wid:.65,ft:'LP24',cut:1300,res:3.5,envA:2600,dec:.3,sus:.3,hold:1,rel:.25,att:2,kt:.4,subosc:.18,oct2:0,drv:0,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.38,rs:.35}});
  const LAdd={'Hard sync':['Distorted Electro','Tense','Groove Techno','Dark'],'String pluck':['Dreamy','Melodic House','Hopeful','Ethereal','Breaks'],
-  'West Coast fold':['Vector','Bleep','Ethereal','Melodic House'],'PPG wave':['Melancholic','Noir','Deep Space','Vector'],'Juno pulse':['Hopeful','Italo','Dreamy','Melancholic']};
+  'West Coast fold':['Vector','Bleep','Ethereal','Melodic House'],'Formant wave':['Melancholic','Noir','Deep Space','Vector'],'Chorus pulse':['Hopeful','Italo','Dreamy','Melancholic']};
  for(const n in LAdd)LAdd[n].forEach(m=>{if(LMOOD[m]&&!LMOOD[m].includes(n))LMOOD[m].push(n)});
  // ---------- pads into mood palettes
  const PAdd={'EP chords':['Melodic House','Dreamy','Hopeful','Vector'],Abyss:['Dark','Noir','Drone','Tense','Power','Deep Space'],
@@ -4894,33 +4894,33 @@ window.MOODX={
   Temporal:()=>R()<.33?{n:'Dub chord techno',kit:'Rumble',lead:{mute:1},pad:{p:['EP chords','Organ'],mute:0},bass:{s:['Pedal','Off-beat'],ch:'deep'}}:null,
   Acid:[{n:'Raw acid',bpm:[124,128],kit:'808',pad:{mute:.8}},{n:'Rolling acid',bpm:[136,142],kit:'909',pad:{mute:.7}}],
   'Distorted Electro':()=>G.deFlav==='techno'&&R()<.5?{n:'Dark electro',kit:'Raw',lead:{p:['Hard sync','Aggro','Techno stab']},pad:{p:['Sync sweep'],mute:.2}}:null,
-  Melancholic:[{n:'Dark arp',bpm:[120,124],kit:'909',lead:{p:['PPG wave','Mini lead','Hollow BP'],m:['Motif','Turing loop'],len:[4,6],h:[4,6]},pad:{p:['Abyss','Strings'],mute:.2},bass:{s:['Syncopated','Pedal'],n:['Melodic','Root + fifth'],ch:'round'}},
-   {n:'Melancholic synth',bpm:[118,122],kit:'808',lead:{p:['Juno pulse','Glass'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords','Tape'],mute:.1},bass:{held:.4,s:['Off-beat'],n:['Chord tones'],ch:'deep'}}],
+  Melancholic:[{n:'Dark arp',bpm:[120,124],kit:'909',lead:{p:['Formant wave','Mini lead','Hollow BP'],m:['Motif','Turing loop'],len:[4,6],h:[4,6]},pad:{p:['Abyss','Strings'],mute:.2},bass:{s:['Syncopated','Pedal'],n:['Melodic','Root + fifth'],ch:'round'}},
+   {n:'Melancholic synth',bpm:[118,122],kit:'808',lead:{p:['Chorus pulse','Glass'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords','Tape'],mute:.1},bass:{held:.4,s:['Off-beat'],n:['Chord tones'],ch:'deep'}}],
   'Melodic House':()=>R()<.33?{n:'Deep arp',kit:'808',lead:{p:['String pluck','FM keys'],m:['Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords'],mute:0},bass:{s:['Walking','Syncopated'],n:['Melodic'],ch:'round'},perc:{pv:'Conga',ch:.6}}
-   :G.mhFlav==='cinematic'?{n:'Melodic hook',lead:R()<.5?{p:['PPG wave']}:null}:{n:'Hook house',lead:R()<.5?{p:['String pluck']}:null},
+   :G.mhFlav==='cinematic'?{n:'Melodic hook',lead:R()<.5?{p:['Formant wave']}:null}:{n:'Hook house',lead:R()<.5?{p:['String pluck']}:null},
   Noir:[{n:'Trip-hop dub',bpm:[118,122],kit:'808',lead:{mute:.7},pad:{p:['EP chords','Abyss'],mute:0},bass:{s:['Pedal','Syncopated'],n:['Root'],ch:'deep'}},
-   {n:'Rain garage',bpm:[124,128],kit:'Rumble',lead:{p:['PPG wave','Mist'],m:['Turing loop'],h:[2,4],mute:.4},pad:{p:['Wind','Abyss'],mute:0},bass:{s:['Off-beat'],ch:'deep',held:.3}}],
+   {n:'Rain garage',bpm:[124,128],kit:'Rumble',lead:{p:['Formant wave','Mist'],m:['Turing loop'],h:[2,4],mute:.4},pad:{p:['Wind','Abyss'],mute:0},bass:{s:['Off-beat'],ch:'deep',held:.3}}],
   Vector:()=>G.vecFlav&&/rubber/.test(G.vecFlav)&&R()<.4?{n:'Modular fold',lead:{p:['West Coast fold']}}:G.vecFlav&&/night/.test(G.vecFlav)&&R()<.5?{n:'Night modular',pad:{p:['EP chords'],mute:0}}:null,
   Dreamy:[{n:'Folk electronica',bpm:[118,122],kit:'808',lead:{p:['String pluck','Glass'],m:['Motif','Marbles'],len:[4,6],h:[4,7]},pad:{p:['EP chords','Bell pad'],mute:.2},bass:{s:['Syncopated','Walking'],n:['Melodic'],ch:'round'},perc:{pv:'Conga',ch:.5}},
-   {n:'Warm psych',bpm:[120,124],kit:'909',lead:{p:['Juno pulse','Soft sine'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['Glass','Poly'],mute:.2},bass:{s:['Octave bounce','Off-beat'],n:['Root + fifth'],ch:'rubbery'}}],
+   {n:'Warm psych',bpm:[120,124],kit:'909',lead:{p:['Chorus pulse','Soft sine'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['Glass','Poly'],mute:.2},bass:{s:['Octave bounce','Off-beat'],n:['Root + fifth'],ch:'rubbery'}}],
   Ethereal:[{n:'Tape nostalgia',bpm:[100,110],kit:'808',lead:{p:['Soft sine','Glass'],m:['Motif'],h:[2,4]},pad:{p:['Tape','Air'],mute:0},bass:{held:.6,ch:'round'}},
    {n:'Glacial ambient',bpm:[108,116],kit:'Rumble',lead:{p:['West Coast fold','Glass'],m:['Turing loop'],h:[3,5]},pad:{p:['Wind','Glass'],mute:0},bass:{held:.4,ch:'deep'}}],
-  Hopeful:[{n:'Twin arps',bpm:[124,128],kit:'909',arp:1,lead:{p:['Juno pulse'],m:['Pedal arp','Chord arp'],h:[8,12]},pad:{p:['Strings','Glass'],mute:0},bass:{s:['Octave bounce','Off-beat'],ch:'rubbery'}},
+  Hopeful:[{n:'Twin arps',bpm:[124,128],kit:'909',arp:1,lead:{p:['Chorus pulse'],m:['Pedal arp','Chord arp'],h:[8,12]},pad:{p:['Strings','Glass'],mute:0},bass:{s:['Octave bounce','Off-beat'],ch:'rubbery'}},
    {n:'Trance pulse',bpm:[126,130],kit:'909',lead:{p:['String pluck','Pluck'],m:['Motif'],len:[3,4],h:[5,7]},pad:{p:['Poly'],mute:.4},bass:{s:['Rolling 16ths','Syncopated'],ch:'deep'}}],
-  Italo:[{n:'Sequencer disco',bpm:[116,120],kit:'808',lead:{p:['Juno pulse','Mini lead'],m:['Motif'],len:[4,8],h:[5,7]},pad:{mute:.5},bass:{s:['Octave 8ths','Octave bounce'],ch:'rubbery'}},
-   {n:'Hi-NRG',bpm:[122,126],kit:'909',arp:1,lead:{p:['Juno pulse','Mini edge'],m:['Pedal arp'],h:[8,12]},bass:{s:['Octave 8ths','Disco run'],ch:'gritty'},perc:{pv:'Cowbell',ch:.6}}],
+  Italo:[{n:'Sequencer disco',bpm:[116,120],kit:'808',lead:{p:['Chorus pulse','Mini lead'],m:['Motif'],len:[4,8],h:[5,7]},pad:{mute:.5},bass:{s:['Octave 8ths','Octave bounce'],ch:'rubbery'}},
+   {n:'Hi-NRG',bpm:[122,126],kit:'909',arp:1,lead:{p:['Chorus pulse','Mini edge'],m:['Pedal arp'],h:[8,12]},bass:{s:['Octave 8ths','Disco run'],ch:'gritty'},perc:{pv:'Cowbell',ch:.6}}],
   Breaks:[{n:'Liquid atmos',kit:'808',lead:{p:['Soft sine','Glass'],h:[3,3]},pad:{p:['EP chords','Wind','Air'],mute:0},bass:{s:['Syncopated'],ch:'deep'},perc:{pv:'Conga',ch:.5}},
    {n:'Jungle sweep',kit:'Rumble',lead:{p:['Reese','Hollow BP'],h:[2,3]},pad:{p:['Abyss','Strings'],mute:.2},bass:{s:['Syncopated','Rolling 16ths'],ch:'gritty'}}],
   Bleep:[{n:'Sub bleep',kit:'909',lead:{p:['Bleep','Hollow BP'],m:['Motif'],h:[3,5]},pad:{mute:.8},bass:{s:['Off-beat','Syncopated'],n:['Root'],ch:'deep'}},
    {n:'Bleep bass',kit:'808',lead:{p:['West Coast fold','Bleep'],m:['Interval'],h:[2,4]},pad:{mute:.7},bass:{s:['Syncopated'],ch:'round'},perc:{pv:'Cowbell',ch:.5}}],
   'Deep Space':[{n:'Arctic drone',kit:'Rumble',lead:{p:['Mist','Soft sine'],h:[1,2]},pad:{p:['Wind','Air'],mute:0}},
-   {n:'Space techno',kit:'Rumble',lead:{p:['PPG wave','Mini drone'],m:['Turing loop'],h:[2,3]},pad:{p:['Abyss','Glass'],mute:0}}],
+   {n:'Space techno',kit:'Rumble',lead:{p:['Formant wave','Mini drone'],m:['Turing loop'],h:[2,3]},pad:{p:['Abyss','Glass'],mute:0}}],
   Ambient:[{n:'Generative ambient',lead:{p:['Glass','Soft sine'],h:[1,3]},pad:{p:['Wind','EP chords'],mute:0}},{n:'Slow strings',lead:{mute:.7},pad:{p:['Strings','Abyss','Air'],mute:0}}]};
  const ARPOK=()=>G.arpOn||G.flav==='Twin arps'||G.flav==='Hi-NRG'||(curMood==='Vector'&&/cascade/.test(G.vecFlav||''));
  /* v0.25: quick arp leads in the moods they belong to — filtered, a slow filter sweep on a free LFO, a touch of echo; never a bare oscillator */
  const ARPM={Melancholic:.45,'Melodic House':.4,Hopeful:.5,Italo:.35,Vector:.3,Dreamy:.3,Tense:.25};
- const ARPP={Melancholic:['PPG wave','Pluck','Mini lead','Cinematic arp'],'Melodic House':['Cinematic arp','PPG wave','Pluck','String pluck'],Hopeful:['Juno pulse','Pluck','String pluck'],
-  Italo:['Juno pulse','Mini lead','Pluck'],Vector:['Pluck','West Coast fold','Glass'],Dreamy:['String pluck','Glass','Juno pulse'],Tense:['Hollow BP','Mini edge','Hard sync']};
+ const ARPP={Melancholic:['Formant wave','Pluck','Mini lead','Cinematic arp'],'Melodic House':['Cinematic arp','Formant wave','Pluck','String pluck'],Hopeful:['Chorus pulse','Pluck','String pluck'],
+  Italo:['Chorus pulse','Mini lead','Pluck'],Vector:['Pluck','West Coast fold','Glass'],Dreamy:['String pluck','Glass','Chorus pulse'],Tense:['Hollow BP','Mini edge','Hard sync']};
  /* v0.25: a bit more rotate drift in the hypnotic, spacious and melodic moods — one more track (perc, hats, stab or a non-arp lead) rotates every 8 or 16 bars */
  const DRM={Ethereal:.7,Drone:.7,'Deep Space':.7,Melancholic:.6,Dreamy:.6,Bleep:.6,'Melodic House':.55,Noir:.55,Power:.5,Breaks:.45,Acid:.45,'Groove Techno':.3,Temporal:.3,Hopeful:.3,Vector:.3,Italo:.2,Dark:.25,Tense:.25};   /* v0.33: slightly higher */
  const driftMore=()=>{const ch=DRM[curMood];if(!ch||R()>=ch)return;const c=[3,1,8,4].filter(k=>{const T=TR[k];return T&&!T.m&&!((T.p.rdr||0)>0)&&T.h>0&&!(k===4&&(G.arpOn||T.p.mode==='Acid 303'||T.p.mode==='Riff'))&&!(k===1&&window.rigidHats&&rigidHats.on())});
@@ -5064,7 +5064,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    Four modern families: Rolling (melodic techno), Bounce (UK house and breaks), peak-time techno, minimal / tech house.
    New lead presets: Wide saw, Bright pluck, Soft keys, FM stab, Hypno stab, Rubber blip.
    New bass sounds: Rolling sub, Reese mid, Rubber, FM round.
-   Launch: the lowest-rated sounds never come up any more (Hollow BP, PPG wave, West Coast fold, Glass and Soft sine as leads,
+   Launch: the lowest-rated sounds never come up any more (Hollow BP, Formant wave, West Coast fold, Glass and Soft sine as leads,
    Interval and Turing loop note modes, Wind pad); Air pad and the Rumble kit become rare; the bass is rarely muted;
    most Launches pick a modern family for the mood and set lead sound + pattern and bass sound + pattern from it.
    The old sounds stay selectable by hand. ---- */
@@ -5081,7 +5081,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   'FM round':{sub:1,cut:260,res:1,envA:1,det:6,sqm:0,bpp:.25,bdrv:0,bgr:.25,dec:.3}};
  const FAM={
   rolling:{lead:['Wide saw','Bright pluck','Wide saw','String pluck'],modes:[['Chord arp',16,0],['Up/Down',12,0],['Motif',7,0],['Chord arp',8,2]],bass:['Rolling sub','Reese mid'],bsty:[['Rolling 16ths','Root'],['Off-beat','Root'],['Rolling 16ths','Root']]},
-  bounce:{lead:['Soft keys','Bright pluck','Soft keys','String pluck','Juno pulse'],modes:[['Motif',3,0,8],['Pedal arp',5,0],['Motif',5,1],['Chord arp',7,0]],bass:['FM round','Rolling sub'],bsty:[['Syncopated','Phrase'],['Off-beat','Root'],['Syncopated','Root']]},
+  bounce:{lead:['Soft keys','Bright pluck','Soft keys','String pluck','Chorus pulse'],modes:[['Motif',3,0,8],['Pedal arp',5,0],['Motif',5,1],['Chord arp',7,0]],bass:['FM round','Rolling sub'],bsty:[['Syncopated','Phrase'],['Off-beat','Root'],['Syncopated','Root']]},
   peak:{lead:['FM stab','Hypno stab','Hard sync','Techno stab'],modes:[['Motif',3,0],['Motif',4,2],['Motif',5,0]],bass:['Reese mid','Rolling sub'],bsty:[['Rolling 16ths','Root'],['Off-beat','Root']]},
   minimal:{lead:['Rubber blip','FM stab'],modes:[['Motif',3,1],['Motif',4,0],['Pedal arp',3,0]],bass:['Rubber','FM round'],bsty:[['Syncopated','Root'],['Gallop','Root'],['Off-beat','Octave']]}};
  /* drum programming per family (by style):
@@ -5128,7 +5128,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   Drone:{rolling:1},'Deep Space':{rolling:.7,bounce:.3},Power:{peak:1},Tense:{peak:1},'Distorted Electro':{peak:1},Temporal:{peak:.6,minimal:.4},
   'Groove Techno':{minimal:.6,peak:.4},Vector:{minimal:.5,bounce:.5},Bleep:{minimal:1},Italo:{bounce:.5,rolling:.5}};
  const MCH={Italo:.35};                                  // Satellite Disco already rated well: modern sound only sometimes
- const BADL=new Set(['Hollow BP','PPG wave','West Coast fold','Glass','Soft sine']),BADM=new Set(['Interval','Turing loop']);
+ const BADL=new Set(['Hollow BP','Formant wave','West Coast fold','Glass','Soft sine']),BADM=new Set(['Interval','Turing loop']);
  const AMB=new Set(['Ambient','Ethereal','Drone','Deep Space']);
  const wp=o=>{let t=Object.values(o).reduce((a,b)=>a+b,0)*R();for(const k in o)if((t-=o[k])<0)return k;return Object.keys(o)[0]};
  window.orbModern={FAM,MFAM,BASSP,last:null};
@@ -5286,11 +5286,11 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    Few controls: Role, Sound, Motion, Register (Auto / Low / High), Amount, Tone, Space, Level. Thinned by THIN, filtered by the low-pass,
    lifted by the +1/+2 octave Thrusters. Launch adds it sparingly in melodic, spacious and groovy moods. ---- */
 {const S=TR[9];S.pt=pat(S);
- const SND={Counter:['Super saw','Juno','Keys','FM pluck','Strings'],Sparkle:['Mallet','Glass bell','FM pluck','Music box']};
- const OLDSND={'Warm saw':'Super saw',Reed:'Juno',Pluck:'FM pluck'};
+ const SND={Counter:['Super saw','Poly pulse','Keys','FM pluck','Strings'],Sparkle:['Mallet','Glass bell','FM pluck','Music box']};
+ const OLDSND={'Warm saw':'Super saw',Reed:'Poly pulse',Pluck:'FM pluck'};
  try{['Amount','Role','Motion','Register'].forEach(x=>{if(!PATL.includes(x))PATL.push(x)})}catch(e){}
  /* v0.26: Attack and Release knobs (each sound sets its own starting values), and an Arp motion: short chord-tone stabs running up and down, two notes together on the half bars */
- const SDEF={'Super saw':[.3,.4],Juno:[.15,.3],Keys:[.05,.35],'FM pluck':[.02,.35],Strings:[.6,.45],Mallet:[.01,.5],'Glass bell':[.03,.7],'Music box':[.01,.6]};
+ const SDEF={'Super saw':[.3,.4],'Poly pulse':[.15,.3],Keys:[.05,.35],'FM pluck':[.02,.35],Strings:[.6,.45],Mallet:[.01,.5],'Glass bell':[.03,.7],'Music box':[.01,.6]};
  const sdef=p=>{const d=SDEF[p.snd];if(d){p.att=d[0];p.rel=d[1]}};
  let cp=null,lPrev=0,ai=0;
  const regOct=p=>{const L=TR[4],r=p.reg||'Auto';if(p.role==='Sparkle')return r==='Low'?4:r==='High'?6:5;
@@ -5301,7 +5301,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
     Answer · call and response: in bars 3–4 it echoes what the lead played in bars 1–2, an 8th later and an octave away, only where the lead rests;
     Arp    · electro / house stab figures from a small library, the 4th bar answers;
     Sparkle· short bell cascades in bars 2 and 4, in the lead's gaps.
-    Richer sounds: Super saw (5 detuned saws, wide), Juno (two pulses + sub), Keys, FM pluck, Strings, Mallet, Glass bell, Music box. */
+    Richer sounds: Super saw (5 detuned saws, wide), Poly pulse (two pulses + sub), Keys, FM pluck, Strings, Mallet, Glass bell, Music box. */
  const _=null,SPK=[[_,_,10,_,_,_,12,_,_,_,14,_,_,_,_,_],[_,_,_,_,_,_,14,_,12,_,_,_,10,_,_,_],[_,_,4,_,10,_,_,_,_,_,12,_,_,_,_,_],[_,_,_,10,_,_,_,_,_,_,12,_,_,14,_,_]],
   ARPT=[[0,_,4,_,10,_,4,_,0,_,4,_,12,_,10,_],[2,_,_,2,_,_,4,_,_,_,2,_,_,4,_,_],[0,10,_,0,10,_,0,_,0,10,_,0,10,_,4,_],[_,_,4,_,_,_,4,_,_,_,4,_,_,2,_,_]];
  const SST={tpl:null,mem:{},cp:null};window.orbSatState=SST;
@@ -5335,7 +5335,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    at=mot==='Arp'?Math.min(AT,.03):AT,rl=mot==='Arp'?Math.min(RL,.35):RL;
   if(snd==='Super saw'){env(at,hold,rl);const fl=lpF(f*(1.3+tone*4),.7);fl.frequency.setValueAtTime(Math.min(cap*1.4,f*(2+tone*6)),w);fl.frequency.setTargetAtTime(Math.min(cap*1.4,f*(1.3+tone*4)),w+.01,.15);
    FQ.forEach(fq=>[-14,-7,0,7,14].forEach((dt,i)=>{const o=osc('sawtooth',fq,w,e),pn=ctx.createStereoPanner(),vg=ctx.createGain();o.detune.value=dt+(R()-.5)*3;pn.pan.value=(i-2)*.32;vg.gain.value=.45;o.connect(vg);vg.connect(pn);pn.connect(fl)}))}
-  else if(snd==='Juno'){env(at,hold,rl);const fl=lpF(f*(1.5+tone*4),1.4);FQ.forEach(fq=>{[0,6].forEach(dt=>{const o=ctx.createOscillator();o.setPeriodicWave(pulseWave(.4));o.frequency.value=fq;o.detune.value=dt;o.start(w);o.stop(e);o.connect(fl)});const sb=osc('square',fq/2,w,e),sg=ctx.createGain();sg.gain.value=.25;sb.connect(sg);sg.connect(fl)})}
+  else if(snd==='Poly pulse'){env(at,hold,rl);const fl=lpF(f*(1.5+tone*4),1.4);FQ.forEach(fq=>{[0,6].forEach(dt=>{const o=ctx.createOscillator();o.setPeriodicWave(pulseWave(.4));o.frequency.value=fq;o.detune.value=dt;o.start(w);o.stop(e);o.connect(fl)});const sb=osc('square',fq/2,w,e),sg=ctx.createGain();sg.gain.value=.25;sb.connect(sg);sg.connect(fl)})}
   else if(snd==='Keys'){env(Math.min(at,.02),Math.min(hold,sd*2),Math.max(rl,.25));const fl=lpF(f*(2+tone*5),.8);fl.frequency.setTargetAtTime(Math.min(cap*1.4,f*1.5),w+.02,.25);FQ.forEach(fq=>{const o=ctx.createOscillator();o.setPeriodicWave(pulseWave(.45));o.frequency.value=fq;o.start(w);o.stop(e);o.connect(fl);const t=osc('triangle',fq*2,w,e),tg=ctx.createGain();tg.gain.value=.2;t.connect(tg);tg.connect(fl)})}
   else if(snd==='FM pluck'){env(.003,.01,Math.max(.25,rl));const fl=lpF(cap,.6);FQ.forEach(fq=>{const c=osc('sine',fq,w,e),m=osc('sine',fq*2,w,e),mg=ctx.createGain();mg.gain.setValueAtTime(fq*(1.2+tone*2),w);mg.gain.setTargetAtTime(0,w,.05);m.connect(mg);mg.connect(c.frequency);c.connect(fl)})}
   else if(snd==='Strings'){env(Math.max(at,.15),hold,rl);const fl=lpF(f*(1.5+tone*4),.6);FQ.forEach(fq=>[-10,0,10].forEach(dt=>{const o=osc('sawtooth',fq,w,e);o.detune.value=dt;o.connect(fl)}))}
@@ -5370,8 +5370,8 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    const take=L.m&&(MEL.has(curMood)||SPC.has(curMood));
    if(c&&R()<(take?.4:c[0])){const p=S.p,wantArp=!take&&R()<(ARPS[curMood]||0),role=take||wantArp||R()<c[1]?'Counter':'Sparkle';p.role=role;p.snd=pick(SND[role]);p.reg='Auto';
     p.mot=take?'Long':c[2]==='mix'?pick(['Long','Answer']):c[2]==='long'?'Long':'Answer';
-    if(wantArp){p.mot='Arp';p.snd=pick(['Juno','Keys','FM pluck','Super saw'])}
-    {const fm=window.orbModern&&orbModern.last;if(fm&&role==='Counter'&&p.mot!=='Arp')p.snd=({rolling:pick(['Super saw','Strings']),bounce:pick(['Keys','Juno']),peak:'FM pluck',minimal:pick(['FM pluck','Keys'])})[fm];if(fm&&role==='Sparkle')p.snd=({rolling:'Glass bell',bounce:'Mallet',peak:'Mallet',minimal:'FM pluck'})[fm]}
+    if(wantArp){p.mot='Arp';p.snd=pick(['Poly pulse','Keys','FM pluck','Super saw'])}
+    {const fm=window.orbModern&&orbModern.last;if(fm&&role==='Counter'&&p.mot!=='Arp')p.snd=({rolling:pick(['Super saw','Strings']),bounce:pick(['Keys','Poly pulse']),peak:'FM pluck',minimal:pick(['FM pluck','Keys'])})[fm];if(fm&&role==='Sparkle')p.snd=({rolling:'Glass bell',bounce:'Mallet',peak:'Mallet',minimal:'FM pluck'})[fm]}
     sdef(p);if(p.mot==='Arp'){p.att=.05;p.rel=.2}
     if(role==='Counter'&&p.mot==='Arp')Object.assign(S,{st:16,h:pick([8,8,6,12]),r:pick([0,2]),ten:0});
     else if(role==='Counter'&&p.mot==='Long')Object.assign(S,{st:16,h:pick([2,2,3]),r:0,ten:0});
@@ -6397,7 +6397,8 @@ window.ORB_BUILD='2026-11-12-v0.5';
 </script>
 <script>
 /* ---- v0.4: the electric-piano stab lead is now called "EP stab"; saved patterns that still carry its old name are renamed on load ---- */
-{const fix=()=>{try{const P=TR[4]&&TR[4].p;if(P&&P.patch==='Rhodes'+' stab')P.patch='EP stab'}catch(e){}};fix();setInterval(fix,1000)}
+{const OLD={['Rhodes'+' stab']:'EP stab',['P'+'PG wave']:'Formant wave',['Ju'+'no pulse']:'Chorus pulse'};   /* v0.5: old sound names in saved patterns get their new names */
+ const fix=()=>{try{const P=TR[4]&&TR[4].p;if(P&&OLD[P.patch])P.patch=OLD[P.patch];const S=TR[9]&&TR[9].p;if(S&&S.snd==='Ju'+'no')S.snd='Poly pulse'}catch(e){}};fix();setInterval(fix,1000)}
 </script>
 <script>
 /* ---- v0.4: ACID LINE GENERATOR — written like a 303 part instead of a random note per step.
@@ -6509,7 +6510,7 @@ var __ADC={};function acidDrive(t,d){if(t!=='Crunch'&&t!=='Fuzz')return acidWarm
 /* ---- v0.5: LONG BASS ON LAUNCH — in Ambient, Deep Space, Dreamy, Melodic House and Noir a Launch sometimes gives the bass one of the two
    long styles: "Held" (one note per bar, held, following the chords) or "Held, syncopated" (notes on steps 1, 7, 12 and 15, each held until
    the next; the one on 15 already plays the next chord when the chord changes). ---- */
-{const W={Ambient:[.4,.7],'Deep Space':[.35,.5],Dreamy:[.35,.5],'Melodic House':[.3,.35],Noir:[.3,.5]};   // [chance, share of plain Held]
+{const W={Ambient:[.48,.7],'Deep Space':[.42,.5],Dreamy:[.42,.5],'Melodic House':[.36,.35],Noir:[.36,.5]};   // [chance, share of plain Held]
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const w=W[curMood],B=TR[6];
    if(w&&!B.m&&TR[4].p.mode!=='Acid 303'&&R()<w[0]&&window.bassStyle){bassStyle(R()<w[1]?'Held':'Held, syncopated');try{build()}catch(e){}}
    const fc=FAN[curMood];if(fc&&!B.m&&R()<fc[0]){B.p.bfan=+(fc[1]+R()*(fc[2]-fc[1])).toFixed(2);try{window.syncFaders&&syncFaders()}catch(e){}}
@@ -6518,8 +6519,8 @@ var __ADC={};function acidDrive(t,d){if(t!=='Crunch'&&t!=='Fuzz')return acidWarm
    const bc=BOUNCY[curMood];if(bc&&!B.m&&TR[4].p.mode!=='Acid 303'&&!/^Held/.test(B.p.bsty||'')&&R()<bc&&window.bassStyle){
     bassStyle('Bouncy');if(R()<.6){const M=window.orbModern;if(M&&M.BASSP&&M.BASSP.Rubber){Object.assign(B.p,M.BASSP.Rubber);G.bchar='Rubber'}}   // Launch: often a short, round, resonant sound with it
     try{build()}catch(e){}try{window.syncFaders&&syncFaders();window.bassSync&&bassSync()}catch(e){}}}catch(e){}return r}}
-const BOUNCY={'Melodic House':.25,'Groove Techno':.15,Italo:.25,Breaks:.15,Hopeful:.15,Bleep:.15};   /* v0.5: chance per Launch */
+const BOUNCY={'Melodic House':.32,'Groove Techno':.2,Italo:.32,Breaks:.2,Hopeful:.2,Bleep:.2};   /* v0.5: chance per Launch */
 /* v0.5: Launch gives the bass some Fancy notes in groovy moods: [chance, min, max] */
-const FAN={'Melodic House':[.45,.2,.45],'Groove Techno':[.35,.15,.4],Italo:[.5,.25,.5],Breaks:[.45,.2,.5],Hopeful:[.35,.15,.35],Power:[.3,.15,.35],'Deep Space':[.25,.1,.3],Dreamy:[.25,.1,.3],Bleep:[.3,.15,.35]};
+const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.25,.5],Breaks:[.55,.2,.5],Hopeful:[.42,.15,.35],Power:[.36,.15,.35],'Deep Space':[.3,.1,.3],Dreamy:[.3,.1,.3],Bleep:[.36,.15,.35]};
 </script>
 </body></html>
