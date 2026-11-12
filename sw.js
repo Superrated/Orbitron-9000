@@ -1,7 +1,7 @@
 // Orbitron 9000 service worker: makes the app installable and fully offline.
 // Strategy: serve from cache instantly (stable on stage, no network needed),
 // fetch a fresh copy in the background; updates apply on the next launch.
-const CACHE = 'orbitron-v1';
+const CACHE = 'orbitron-v2';
 const CORE = [
   './',
   './index.html',

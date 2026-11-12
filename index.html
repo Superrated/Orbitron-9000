@@ -6213,5 +6213,16 @@ html body #t-perf .arm.g5{grid-template-columns:repeat(5,minmax(0,1fr))!importan
   const u=ps.underrunEvents;if(ur!=null&&u>ur){const n=performance.now();for(let i=0;i<u-ur;i++)ut.push(n);ut=ut.filter(t=>n-t<10000);
    if(low&&ut.length>=3&&n-last>60000){last=n;ut=[];try{say&&say('▲ CRACKLES · try a bigger Audio buffer (Mix → Engine)')}catch(e){}}}ur=u}catch(e){}},500)}
 </script>
-<script>/* PWA: offline + install */if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){addEventListener('load',()=>{try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}})}</script>
+<script>/* PWA: offline + install. An Install button joins the Export · Import · Rec row on the Launch tab, only while Chrome
+   offers installation; it disappears once Orbitron is installed (and never shows inside the installed app). */
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){addEventListener('load',()=>{try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}})}
+{const st=document.createElement('style');st.textContent='.sio.inst4{grid-template-columns:repeat(4,1fr)!important}.sio button.sinst{border-color:rgba(255,230,0,.6)!important;color:var(--acc,#ffe600)!important;opacity:1!important;padding:0 4px!important;letter-spacing:.03em!important;white-space:nowrap}';document.head.appendChild(st);
+ const b=document.createElement('button');b.className='sinst';b.textContent='⤓ Install';b.title='Install Orbitron as an app on this device';let dp=null;
+ const inApp=()=>matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
+ const show=on=>{const row=document.querySelector('.sio');if(!row){if(on)setTimeout(()=>show(!!dp),500);return}
+  if(on&&!b.isConnected)row.appendChild(b);if(!on&&b.isConnected)b.remove();row.classList.toggle('inst4',on)};
+ addEventListener('beforeinstallprompt',e=>{e.preventDefault();if(inApp())return;dp=e;show(true)});
+ b.addEventListener('click',async()=>{if(!dp)return;const d=dp;try{d.prompt();const r=await d.userChoice;if(r&&r.outcome==='accepted'){dp=null;show(false)}}catch(e){dp=null;show(false)}});
+ addEventListener('appinstalled',()=>{dp=null;show(false)})}
+</script>
 </body></html>
