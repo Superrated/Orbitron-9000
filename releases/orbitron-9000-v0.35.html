@@ -6044,25 +6044,21 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 {const _g=generate;generate=function(){window.__launchT=performance.now();return _g.apply(this,arguments)}}
 </script>
 <script>
-/* ---- v0.35: DRIFT thruster (hold). Every ring except the kick and pad jumps to an odd length (hats 7, clap 5, perc 9, lead 11, bass 13,
-   snare 5, stab 9, satellite 11) with about the same density, so the groove slips out of step against the kick and churns. Let go and it all
-   snaps back to your own rings on the next downbeat. Only the step patterns change — no extra sound. ---- */
-{const LEN={1:5,2:7,3:7,4:5,6:7,7:3,8:5,9:7}; /* harder: short odd rings that cycle fast against the kick */let saved=null,pend=false,held=false,btn=null;
+/* ---- v0.35: DRIFT thruster (hold). Your patterns stay exactly the same, but every ring except the kick and pad gets a few empty steps
+   longer (hats +1, clap +3, perc +2, lead +1, bass +2, snare +3, stab +3, satellite +1), so each pattern slowly drifts away from the
+   kick at its own speed. Let go and they all snap back in phase on the next downbeat. Only the step patterns change — no extra sound. ---- */
+{const ADD={1:1,2:3,3:2,4:1,6:2,7:3,8:3,9:1};let saved=null,pend=false,held=false,btn=null;
  const redraw=()=>{try{TR.forEach(T=>{if(!T.pad)draw(T,-1)})}catch(e){}};
- const on=()=>{if(saved){pend=false;return}saved={};for(const k in LEN){const T=TR[k];if(!T||T.pad)continue;saved[k]={st:T.st,h:T.h,r:T.r,pt:T.pt.slice()};
-   const L=LEN[k],h=k==2?1:Math.max(1,Math.min(L-1,Math.round(T.h*L/T.st*1.3)));   /* clap: one hit in 7, so it stays an accent */T.st=L;T.h=h;T.r=(T.r||0)%L;try{T.pt=pat(T)}catch(e){}if(T.pt.length!==L){const a=Array(L).fill(0);for(let i=0;i<L;i++)if((i*h)%L<h)a[i]=1;T.pt=a}}
-  redraw();space(true);try{say&&say('◉ DRIFT · rings out of phase')}catch(e){}};
- // while held: every beat each drifting ring rotates one step further, and the space (delay + reverb) swells; release snaps it dry
- const rot=()=>{if(!saved)return;for(const k in saved){const T=TR[k];T.r=((T.r||0)+1)%T.st;try{const p=pat(T);if(p.length===T.st)T.pt=p;else T.pt=T.pt.slice(-1).concat(T.pt.slice(0,-1))}catch(e){T.pt=T.pt.slice(-1).concat(T.pt.slice(0,-1))}}redraw()};
- const space=up=>{try{if(!A.dF||!ctx)return;const t=ctx.currentTime;if(up){A.dF.gain.setTargetAtTime(Math.min(.86,G.fb+.3),t,1.2);A.dO.gain.setTargetAtTime(Math.min(.9,G.dly*1.7+.08),t,1);A.rO.gain.setTargetAtTime(Math.min(.95,G.rev*1.5+.1),t,1.5)}
-   else{[A.dF,A.dO,A.rO].forEach(n=>n.gain.cancelScheduledValues(t));applyFX()}}catch(e){}};
- const restore=()=>{if(!saved)return;for(const k in saved){const T=TR[k],o=saved[k];Object.assign(T,{st:o.st,h:o.h,r:o.r,pt:o.pt})}saved=null;pend=false;space(false);redraw();paint();try{say&&say('◉ DRIFT · back in phase')}catch(e){}};
+ const on=()=>{if(saved){pend=false;return}saved={};for(const k in ADD){const T=TR[k];if(!T||T.pad||!T.pt)continue;saved[k]={st:T.st,pt:T.pt.slice()};
+   T.pt=T.pt.slice(0,T.st).concat(Array(ADD[k]).fill(0));T.st=T.pt.length}
+  redraw();try{say&&say('◉ DRIFT · patterns drifting')}catch(e){}};
+ const restore=()=>{if(!saved)return;for(const k in saved){const T=TR[k],o=saved[k];T.st=o.st;T.pt=o.pt}saved=null;pend=false;redraw();paint();try{say&&say('◉ DRIFT · back in phase')}catch(e){}};
  const off=()=>{if(!saved)return;if(!playing){restore();return}pend=true;paint()};
- const _as=arrStep;arrStep=function(w){try{if(pend&&!held&&((tk%16)+16)%16===0)restore();else if(saved&&held&&tk%4===0)rot()}catch(e){}return _as.apply(this,arguments)};
- const _g=generate;generate=function(){if(saved)space(false);saved=null;pend=false;held=false;paint();return _g.apply(this,arguments)};   // a Launch replaces the rings anyway
+ const _as=arrStep;arrStep=function(w){try{if(pend&&!held&&((tk%16)+16)%16===0)restore()}catch(e){}return _as.apply(this,arguments)};
+ const _g=generate;generate=function(){saved=null;pend=false;held=false;paint();return _g.apply(this,arguments)};   // a Launch replaces the rings anyway
  const paint=()=>{if(!btn)return;btn.classList.toggle('on',held);btn.classList.toggle('kpend',pend&&!held);const t=held?'Drift<span> · drifting</span>':pend?'Drift<span> → in phase · next bar</span>':'Drift<span> (hold)</span>';if(btn._h!==t){btn._h=t;btn.innerHTML=t}};
  const make=()=>{const g=document.querySelector('#t-perf .thr');if(!g||g.querySelector('.drfb'))return;btn=document.createElement('button');btn.className='pad drfb';btn.style.setProperty('--col','#7ad7ff');
-  btn.title='Hold: every ring except the kick goes to a short odd length, keeps rotating every beat, and the space swells · let go: back dry and in phase on the next downbeat';
+  btn.title='Hold: your patterns stay the same but every ring except the kick gets a few steps longer, so they drift away from the kick · let go: back in phase on the next downbeat';
   btn.addEventListener('pointerdown',e=>{e.preventDefault();if(held)return;try{ensure()}catch(x){}held=true;on();paint()});
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev,()=>{if(!held)return;held=false;off();paint()}));
   btn.addEventListener('contextmenu',e=>e.preventDefault());paint();const oc=[...g.children].find(b=>/^\+1 octave/.test(b.textContent));oc?oc.after(btn):g.appendChild(btn)};
