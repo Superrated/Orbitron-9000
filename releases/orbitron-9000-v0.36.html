@@ -6065,20 +6065,43 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  make();setTimeout(make,700);setTimeout(make,2600);setInterval(()=>{make();if(pend)paint()},1500);window.orbDrift={on:()=>{held=true;on();paint()},off:()=>{held=false;off();paint()},state:()=>({held,pend,active:!!saved})}}
 </script>
 <script>
+/* ---- v0.36: two harmony thrusters (tap on / off).
+   CHORD HOLD: the harmony stays on the chord that is playing — pad, bass and lead keep to it — until you tap again; then the progression moves on.
+   LIFT: on the next bar the whole tune moves up a whole tone (pad, bass, lead, stab, satellite, tuned perc); tap again to come back down on the next bar.
+   A Launch clears both. ---- */
+{const H={hold:false,idx:null,last:0,lift:false,pend:null,base:null},bt={};window.orbHarm=H;
+ const wrap=fn=>function(t){const a=[...arguments];if(H.hold){if(H.idx==null)H.idx=H.last;a[0]=H.idx}else{H.idx=null;H.last=t}return fn.apply(this,a)};
+ pad=wrap(pad);padChord=wrap(padChord);
+ const setRoot=r=>{G.root=((r%12)+12)%12;try{const el=document.querySelector('#root');if(el)el.value=G.root}catch(e){}};
+ const _as=arrStep;arrStep=function(w){try{if(H.pend!=null&&((tk%16)+16)%16===0){const up=H.pend;H.pend=null;if(up){H.base=G.root;setRoot(G.root+2);H.lift=true;say&&say('◉ LIFT · up a whole tone')}else{if(H.base!=null)setRoot(H.base);H.lift=false;H.base=null;say&&say('◉ LIFT · home key')}paint()}}catch(e){}return _as.apply(this,arguments)};
+ const _g=generate;generate=function(){H.hold=false;H.idx=null;H.lift=false;H.pend=null;H.base=null;const r=_g.apply(this,arguments);paint();return r};
+ const paint=()=>{const c=bt.c,l=bt.l;if(c){c.classList.toggle('on',H.hold);const t='Chord hold<span>'+(H.hold?' · on':' (toggle)')+'</span>';if(c._h!==t){c._h=t;c.innerHTML=t}}
+  if(l){l.classList.toggle('on',H.lift&&H.pend==null);l.classList.toggle('hpend',H.pend!=null);const t='Lift<span>'+(H.pend!=null?(H.pend?' → up · next bar':' → home · next bar'):H.lift?' · +2':' (toggle)')+'</span>';if(l._h!==t){l._h=t;l.innerHTML=t}}};
+ const mk=(cls,col,title,fn)=>{const b=document.createElement('button');b.className='pad '+cls;b.style.setProperty('--col',col);b.title=title;b.addEventListener('click',e=>{e.preventDefault();try{ensure()}catch(x){}fn();paint()});return b};
+ const make=()=>{const g=document.querySelector('#t-perf .thr');if(!g||g.querySelector('.chdb'))return;
+  bt.c=mk('chdb','#b8a6ff','Tap: the harmony stays on the current chord · tap again: the progression moves on',()=>{H.hold=!H.hold;if(!H.hold)H.idx=null;try{say&&say(H.hold?'◉ CHORD HOLD':'◉ CHORD HOLD · off')}catch(e){}});
+  bt.l=mk('lftb','#7dffb5','Tap: the whole tune moves up a whole tone on the next bar · tap again: back home on the next bar',()=>{if(H.pend!=null){H.pend=null;return}if(!playing){H.pend=null;if(!H.lift){H.base=G.root;setRoot(G.root+2);H.lift=true}else{if(H.base!=null)setRoot(H.base);H.lift=false;H.base=null}return}H.pend=!H.lift});
+  g.appendChild(bt.c);g.appendChild(bt.l);paint()};
+ const st=document.createElement('style');st.textContent='#t-perf .pad.hpend{animation:kspulse .45s ease-in-out infinite alternate}';document.head.appendChild(st);
+ make();setTimeout(make,700);setTimeout(make,2600);setInterval(()=>{make();paint()},1000)}
+</script>
+<script>
 /* ---- v0.35: Flight thrusters and drop hits in a logical order without taking more room: the thrusters stay two rows — the hold pads
    first (Snare roll, octave) then the switches (Kick, Break!, Fill, Hat push, Ride push) — and the drop hits sit in one row, low → high
    (Sub boom, Steel drop, Horn, Noise sweep, Ride in). The Funky claps hold pad is retired (Sub boom joins the drop hits). ---- */
 {const st=document.createElement('style');st.textContent=`html body #t-perf .thr.g12{grid-template-columns:repeat(12,minmax(0,1fr))!important}
 html body #t-perf .g12>.pad{grid-column:span 3}html body #t-perf .g12>.pad.w4{grid-column:span 4}
 html body #t-perf .arm.g5{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:5px!important}html body #t-perf .arm.g5>.pad{font-size:9.5px!important;padding:2px 2px!important;letter-spacing:0!important}`;document.head.appendChild(st);
- const ORDER_T=[/^Snare roll/,/^\+1 octave/,/^\+2 octaves/,/^Drift/,/^KICK/i,/^Break!/,/^Fill/,/^Hat push/,/^Ride push/],ORDER_D=[/^Sub boom/,/^Steel drop/,/^Horn/,/^Noise sweep/,/^Ride in/];
+ const ORDER_T=[/^Snare roll/,/^\+1 octave/,/^\+2 octaves/,/^Drift/,/^KICK/i,/^Break!/,/^Fill/,/^Hat push/,/^Ride push/,/^Chord hold/,/^Lift/],ORDER_D=[/^Sub boom/,/^Steel drop/,/^Horn/,/^Noise sweep/,/^Ride in/];
  const txt=b=>b.textContent.trim();
  const order=(box,pats)=>{const pads=[...box.querySelectorAll(':scope>.pad')],used=new Set(),list=[];pats.forEach(p=>{const b=pads.find(x=>!used.has(x)&&p.test(txt(x)));if(b){used.add(b);list.push(b)}});
   pads.filter(b=>!used.has(b)).forEach(b=>list.push(b));list.forEach(b=>box.appendChild(b));return list};
  const run=()=>{try{document.querySelectorAll('#t-perf button').forEach(b=>{if(/^Funky claps/.test(b.textContent))b.remove()});
   const g=document.querySelector('#t-perf .thr'),a=document.querySelector('#t-perf .arm');if(!g)return;
   const s0=g.previousElementSibling;if(s0&&s0.classList.contains('sub'))s0.textContent='Hold pads, then on / off switches';
-  const L=order(g,ORDER_T);g.classList.add('g12');const n=L.length,r1=n>4?Math.ceil(n/2):n;L.forEach((b,i)=>{b.classList.toggle('w4',i>=r1&&n-r1===3)});   // 4 + 3: second row spans the width
+  const L=order(g,ORDER_T);g.classList.add('g12');const n=L.length,r1=n>4?Math.ceil(n/2):n;
+  if(n>8){g.style.setProperty('grid-template-columns','repeat('+r1+',minmax(0,1fr))','important');L.forEach(b=>{b.classList.remove('w4');b.style.gridColumn='span 1'})}   // 9–10 pads: two rows of five
+  else{g.style.removeProperty('grid-template-columns');L.forEach((b,i)=>{b.style.gridColumn='';b.classList.toggle('w4',i>=r1&&n-r1===3)})}   // 4 + 3: second row spans the width
   if(a){order(a,ORDER_D);a.classList.add('g5');const sl=a.previousElementSibling;if(sl&&sl.classList.contains('sub'))sl.textContent='Drop hits · tap to arm, fire on release · low → high'}}catch(e){console.warn('[orbitron] flight layout',e)}};
  run();setTimeout(run,600);setTimeout(run,2500);
  setInterval(()=>{const g=document.querySelector('#t-perf .thr');if(g&&g.offsetParent&&(!g.classList.contains('g12')||[...g.querySelectorAll(':scope>.pad')].some(b=>/^Funky claps/.test(b.textContent))))run()},2000)}
