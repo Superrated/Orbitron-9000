@@ -6240,12 +6240,12 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){addEventLi
 /* ---- v0.4: the pre-rendered drum hits (kick, snare, clap, fixed perc) are capped at 60 variants, oldest dropped first, like the other
    sound caches — before, every new drum variant from a Launch stayed in memory for the whole set. ---- */
 {try{const C=window.DR&&DR.cache;if(C&&!C.__cap){const set=C.set.bind(C);C.set=function(k,v){const r=set(k,v);while(C.size>60)C.delete(C.keys().next().value);return r};C.__cap=1}}catch(e){}}
-/* ---- v0.41: DFAM character on the Perc synth (CPU-lean: no extra nodes except 2 when Drive is up).
+/* ---- v0.4: analog drum-synth character on the Perc synth (CPU-lean: no extra nodes except 2 when Drive is up).
    · Pitch: in Follow scale mode the perc no longer picks a random note per hit; hit 1, 2, 3 … of its own ring walk through the chord tones
      (every 4th hit an octave up), so the perc plays a knocking melody that loops with its pattern and follows the chords.
    · Pitch drop: Pitch bend now goes up to 3 (two octaves of drop) and has its own Drop time.
    · Velocity: the first hit of the ring is full, hits on a beat strong, the rest softer and darker (only when the track has no accent pattern).
-   · Drive: the DFAM mixer's grit, a saturator after the filter. ---- */
+   · Drive: mixer-style grit, a saturator after the filter. ---- */
 var PDC={};
 {const st=()=>{const T=TR[3];return T&&T.st?((typeof tk==='number'?tk:0)%T.st+T.st)%T.st:0};
  const hitNo=s=>{const pt=TR[3].pt||[];let i=0;for(let j=0;j<s;j++)if(pt[j])i++;return i};
@@ -6255,7 +6255,7 @@ var PDC={};
  const fill=()=>{const P=TR[3].p;if(P.pdt==null)P.pdt=.04;if(P.pdrv==null)P.pdrv=0};fill();
  // a sector or file saved before these controls existed loads with them at their defaults
  const _bd=build;build=function(){try{fill()}catch(e){}return _bd.apply(this,arguments)};
- // Launch: each mood brings the DFAM side in its own way. [chance, drive range, pitch bend range, drop time range]; null = leave as is
+ // Launch: each mood brings the perc drive and drop in its own way. [chance, drive range, pitch bend range, drop time range]; null = leave as is
  const DF={Power:[.6,[.4,.6],[1.2,2],[.08,.14]],'Distorted Electro':[.6,[.4,.6],[.4,.9],[.02,.05]],
   'Groove Techno':[.5,[.15,.3],[.4,.9],[.02,.05]],Temporal:[.5,[.15,.3],[.4,.9],[.02,.05]],
   Dark:[.4,[.25,.45],[.6,1.2],[.04,.08]],Tense:[.4,[.25,.45],[.6,1.2],[.04,.08]],Acid:[.4,[.25,.45],[.6,1.2],[.04,.08]],
@@ -6264,6 +6264,6 @@ var PDC={};
   'Melodic House':[.3,null,[.4,.8],[.08,.15]],Ambient:[.3,null,[.4,.8],[.08,.15]],Ethereal:[.3,null,[.4,.8],[.08,.15]],Dreamy:[.3,null,[.4,.8],[.08,.15]],Melancholic:[.3,null,[.4,.8],[.08,.15]],'Deep Space':[.3,null,[.4,.8],[.08,.15]]};
  const rr=(r,dp)=>+(r[0]+R()*(r[1]-r[0])).toFixed(dp);
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const p=TR[3].p,c=DF[curMood];p.pdt=.04;p.pdrv=0;
-  if(c&&R()<c[0]){if(c[1])p.pdrv=rr(c[1],2);if(c[2])p.bend=rr(c[2],2);if(c[3])p.pdt=rr(c[3],3)}}catch(e){console.warn('[orbitron] dfam',e)}return r}}
+  if(c&&R()<c[0]){if(c[1])p.pdrv=rr(c[1],2);if(c[2])p.bend=rr(c[2],2);if(c[3])p.pdt=rr(c[3],3)}}catch(e){console.warn('[orbitron] perc launch',e)}return r}}
 </script>
 </body></html>
