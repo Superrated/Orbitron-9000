@@ -435,7 +435,7 @@ pads.forEach((b,i)=>b.style.setProperty('--col',COL[i]));
 $('#lg').innerHTML=TR.map(T=>'<span><i style="background:'+T.c+'"></i>'+T.n.split(' ')[0]+'</span>').join('');
 const selT={'#t-drums':0,'#t-synth':3};
 /* tracks: every control is tagged PATTERN (what plays) or SOUND (how it sounds); a switch shows one set at a time */
-const PATL=['Steps','Chords','Hits','Rotate','Tension','Break feel','Bassline','Lock','Phrase','Gate length','Slide','Ghost notes','Accent','Ghosts','Variation','Arp mode','Range oct','Spread','Bias','D\u00e9j\u00e0 vu','Loop len','Chord lock','Reseed','Pad style','Chord length (bars)','Chord notes','Open voicing','New progression','Fifth prob','Octave jump','Fancy notes','Glide chance','Accent chance','Follow chords','Hold (steps)'];
+const PATL=['Steps','Chords','Hits','Rotate','Tension','Break feel','Bassline','Lock','Phrase','Gate length','Slide','Ghost notes','Accent','Ghosts','Variation','Arp mode','Range oct','Spread','Bias','D\u00e9j\u00e0 vu','Loop len','Chord lock','Reseed','Pad style','Chord length (bars)','Chord notes','Open voicing','New progression','Fifth prob','Octave jump','Fancy notes','Glide chance','Glide time ms','Accent chance','Follow chords','Hold (steps)'];
 let tmode='pat';
 const MCAP={pat:'PATTERN \u00b7 what plays: steps, hits, rotation, melody and harmony rules',snd:'SOUND \u00b7 how it sounds: level, tone, envelopes, effect sends'};
 function tagCtl(){document.querySelectorAll('#t-drums .grid>*,#t-synth .grid>*').forEach(el=>{const sp=el.querySelector('span>b')?el.querySelector('span'):null,lab=(sp?sp.firstChild.textContent:el.firstChild&&el.firstChild.nodeType===3?el.firstChild.textContent:el.textContent).trim();el.dataset.g=el.dataset.keep||(PATL.includes(lab)?'pat':'snd')})}
@@ -1565,7 +1565,7 @@ LGRP.Osc.push('Osc 1 wave','Osc 1 range','Osc 1 level','Osc 2 wave','Osc 2 range
 LGRP.Filter.push('Filter attack ms','Filter decay','Filter sustain');LGRP.Amp.push('Decay switch');LGRP.FX.push('Glide ms');
 const NOTMINI=['Stack','Pulse','FM','Vowel','Organ','Sine'];
 ['Osc 1 wave','Osc 1 range','Osc 1 level','Osc 2 wave','Osc 2 range','Osc 2 detune ¢','Osc 2 level','Osc 3 wave','Osc 3 range','Osc 3 detune ¢','Osc 3 level','Noise','Filter attack ms','Filter decay','Filter sustain','Decay switch','Glide ms'].forEach(l=>LENGK[l]=['Mini']);
-['Unison','Unison spread ¢','Stereo width','Sub osc','Octave up','Pitch env st','Pitch env time','Filter type','Fold','Fold env','Fold bias','Glide chance','Glide time ms'].forEach(l=>LENGK[l]=NOTMINI);
+['Unison','Unison spread ¢','Stereo width','Sub osc','Octave up','Pitch env st','Pitch env time','Filter type','Fold','Fold env','Fold bias'].forEach(l=>LENGK[l]=NOTMINI);
 const _b55=build;build=function(){_b55();queueMicrotask(()=>queueMicrotask(miniSels))};function miniSels(){const c=TR[4].mb&&TR[4].mb.closest('.card');if(!c||c.querySelector('[data-mini]'))return;const g=c.querySelector('.grid'),P=TR[4].p,anchor=[...g.children].find(el=>labOf(el)==='Osc 1 level');
  [['Osc 1 wave',MWN,'o1w'],['Osc 1 range',MRN,'o1r'],['Osc 2 wave',MWN,'o2w'],['Osc 2 range',MRN,'o2r'],['Osc 3 wave',MWN,'o3w'],['Osc 3 range',MRN,'o3r']].forEach(([lab,opts,key])=>{
   const isR=key.endsWith('r'),cur=isR?opts[Math.round(P[key]||0)+2]:opts[Math.round(P[key]||0)],el=mkSel(lab,opts,cur,v=>{const i=opts.indexOf(v);P[key]=isR?i-2:i;P.patch=''});el.dataset.g='snd';el.dataset.mini=1;g.insertBefore(el,anchor||null)});
@@ -2430,23 +2430,23 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
 /* ---- v125: Mood finish — per-mood mastering polish: tilt EQ (sub / mud / presence / air), mono bass + side width, reverb tone + pre-delay, loudness trim. Cheap fixed nodes, click-free ramps, survives engine rebuilds ---- */
 {const FIN={
   // hp: master high-pass Hz · sub: low shelf 70 Hz dB · mud: peak dB · mf: mud freq · pres: peak 3.2 kHz dB · air: high shelf 10 kHz dB · w: extra side width (side is high-passed at 120 Hz = mono bass) · rt: reverb return low-pass Hz · pre: reverb pre-delay ms · tr: level trim dB
-  Dark:        {hp:28,sub:-1.5,mud:-.5,mf:320,pres:1.5,air:2.5,w:.25,rt:4500, pre:18,tr:-1.5},
+  Dark:        {hp:28,sub:-1.5,mud:-.5,mf:320,pres:1.5,air:2.5,w:.25,rt:4500, pre:18,tr:-2.5},
   Melancholic: {hp:28,sub:-1,  mud:-.5,mf:300,pres:1.5,air:3,  w:.3, rt:6000, pre:25,tr:-.3},
-  Dreamy:      {hp:28,sub:-.5, mud:-2, mf:350,pres:1,  air:4,  w:.4, rt:9500, pre:35,tr:-.5},
+  Dreamy:      {hp:28,sub:-.5, mud:-2, mf:350,pres:1,  air:4,  w:.4, rt:9500, pre:35,tr:.3},
   Tense:       {hp:32,sub:0,   mud:-1.5,mf:280,pres:2, air:1,  w:.2, rt:5000, pre:12,tr:-.5},
-  Ethereal:    {hp:36,sub:-2.5,mud:-1, mf:300,pres:1.5,air:5,  w:.5, rt:11000,pre:45,tr:.3},
+  Ethereal:    {hp:36,sub:-2.5,mud:-1, mf:300,pres:1.5,air:5,  w:.5, rt:11000,pre:45,tr:1.3},
   Hopeful:     {hp:28,sub:-1,  mud:-1.5,mf:320,pres:1.5,air:3.5,w:.35,rt:8500, pre:25,tr:-2.5},   /* v0.5: First Light calmer and ~1.5 dB down */
   Noir:        {hp:30,sub:-2,  mud:1,  mf:240,pres:1,  air:1.5,w:.2, rt:3500, pre:20,tr:0},
   Drone:       {hp:36,sub:-2.5,mud:-.5,mf:300,pres:1,  air:3,  w:.4, rt:6500, pre:30,tr:-2.5},   /* v0.5: Orbital Hum ~2 dB down */
   Acid:        {hp:30,sub:0,   mud:-1, mf:300,pres:.5, air:1,  w:.15,rt:5000, pre:8, tr:-.3},
-  Power:       {hp:30,sub:0,   mud:-3,  mf:260,pres:1, air:2,  w:-.2,  rt:4000, pre:10,tr:-2},
-  Italo:       {hp:28,sub:-.5, mud:-1, mf:350,pres:0,  air:1.5,w:.6, rt:9000, pre:20,tr:.5},
+  Power:       {hp:30,sub:0,   mud:-3,  mf:260,pres:1, air:2,  w:-.2,  rt:4000, pre:10,tr:-3},
+  Italo:       {hp:28,sub:-.5, mud:-1, mf:350,pres:0,  air:1.5,w:.6, rt:9000, pre:20,tr:-.5},
   Breaks:      {hp:28,sub:0,   mud:0,  mf:300,pres:0,  air:-1, w:.6, rt:7000, pre:10,tr:-1.5},
-  'Deep Space':{hp:28,sub:-.5, mud:0,  mf:300,pres:-1, air:3,  w:.45,rt:7000, pre:50,tr:3.5},
+  'Deep Space':{hp:28,sub:-.5, mud:0,  mf:300,pres:-1, air:3,  w:.45,rt:7000, pre:50,tr:4.5},
   Bleep:       {hp:30,sub:0,   mud:-1, mf:300,pres:1.5,air:3,  w:.5, rt:6000, pre:15,tr:.5},
   'Melodic House':{hp:28,sub:-.5,mud:-1,mf:320,pres:1.5,air:3,w:.4,rt:8000,pre:25,tr:-.5},
   'Distorted Electro':{hp:32,sub:0,mud:-1.5,mf:280,pres:1,air:1.5,w:.2,rt:5000,pre:10,tr:-1.5},
-  Ambient:{hp:34,sub:-2,mud:-1.5,mf:320,pres:.5,air:4.5,w:.55,rt:11000,pre:50,tr:3.5},
+  Ambient:{hp:34,sub:-2,mud:-1.5,mf:320,pres:.5,air:4.5,w:.55,rt:11000,pre:50,tr:4.5},
   'Groove Techno':{hp:30,sub:-.5,mud:-2.5,mf:280,pres:1,air:1.5,w:.3,rt:4500,pre:12,tr:-1},
   Temporal:{hp:32,sub:-1,mud:-1.5,mf:300,pres:1.5,air:1,w:.2,rt:4000,pre:12,tr:-1.5},
   Vector:{hp:28,sub:-.5,mud:-1,mf:320,pres:1.5,air:3.5,w:.45,rt:8500,pre:25,tr:-.5}},
@@ -2933,7 +2933,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   const order=[hdr('Rhythm','the Euclid ring · when the lead plays'),steps,by('Hits'),by('Rotate'),by('Tension'),
    hdr('Notes','which pitches'),by('Arp mode'),info,by('Range oct'),by('Chord lock'),by('Spread'),by('Bias'),
    hdr('Loop & cycle','length · repeats · restart'),by('Loop len'),by('Déjà vu'),by('Cycle (0 = off)'),by('Note repeat'),rsb,by('Reseed'),
-   hdr('Feel','slides and accents'),by('Glide chance'),by('Accent chance')].filter(Boolean);
+   hdr('Feel','slides and accents'),by('Glide chance'),by('Glide time ms'),by('Accent chance')].filter(Boolean);
   const rs=by('Reseed');if(rs)rs.style.gridColumn='1/-1';
   order.forEach(e=>{e.dataset.g='pat';e.dataset.keep='pat';steps.parentElement.appendChild(e)});
   const am=by('Arp mode');if(am){const sel=am.querySelector('select');if(sel)sel.addEventListener('change',()=>setTimeout(refresh,0))}}
@@ -2941,7 +2941,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   const used=acid?ACID:eng==='Mini'?MINI:POLY,vn=acid?'the Acid 303 voice':eng==='Mini'?'the Mini engine':'the '+eng+' engine';
   const rsS=card.querySelector('label.lrst select');if(rsS)rsS.value=['Off','Every bar','Every 2 bars','Every 4 bars'][[0,1,2,0,3][P.rst||0]||0];const info=card.querySelector('.lmodei');if(info)info.textContent=minfo(m);
   card.querySelectorAll('.sl,label.sl,button').forEach(el=>{const l=lab(el);if(!l)return;
-   if(el.dataset.g==='pat'){if(USE[l])ctlOff(el,!USE[l](m),WHY[l]);else if(l==='Glide chance')ctlOff(el,!acid&&eng==='Mini','the Mini engine uses Glide ms on the Sound page');return}
+   if(el.dataset.g==='pat'){if(USE[l])ctlOff(el,!USE[l](m),WHY[l]);return}
    if(el.dataset.g!=='snd'||l==='Level')return;if(l==='Engine'){ctlOff(el,acid,'Acid 303 uses its own voice');return}
    const k=keyOf(l);if(!k)return;ctlOff(el,!used.includes(k),'not part of '+vn)})}
  window.leadRefresh=refresh;
@@ -5818,7 +5818,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const XR={"italo": [{"b": 1, "t": [0, null, null, 10, null, null, 4, null, null, null, 2, null, null, 4, null, null, 0, null, null, 10, null, null, 5, null, null, null, 4, null, null, 2, null, null]}, {"b": 0, "t": [0, null, null, 0, null, null, 6, null, null, null, null, 4, null, null, null, null, 0, null, null, 0, null, null, 1, null, null, null, null, 0, null, null, null, null]}, {"b": 1, "t": [2, null, null, null, 4, null, null, 5, null, null, null, 4, null, null, null, null, 2, null, null, null, 4, null, null, 10, null, null, null, 5, null, null, null, null]}, {"b": 0, "t": [10, null, null, 6, null, null, 4, null, null, null, 0, null, null, null, null, null, 10, null, null, 6, null, null, 4, null, null, null, 1, null, null, null, null, null]}], "trance": [{"b": 1, "t": [null, null, 4, null, null, null, 4, null, null, null, 5, null, null, null, 4, null, null, null, 2, null, null, null, 2, null, null, null, 4, null, null, null, 10, null]}, {"b": 0, "t": [null, null, 0, null, null, null, 0, null, null, null, 6, null, null, null, 0, null, null, null, 0, null, null, null, 1, null, null, null, 0, null, null, null, 4, null]}, {"b": 1, "t": [4, null, null, 4, null, null, 5, null, null, 4, null, null, 2, null, null, null, 4, null, null, 4, null, null, 10, null, null, 5, null, null, 4, null, null, null]}, {"b": 0, "t": [0, null, null, 0, null, null, null, 4, null, null, null, null, 6, null, null, null, 0, null, null, 0, null, null, null, 4, null, null, null, null, 1, null, null, null]}], "dub": [{"b": 0, "t": [null, null, null, null, 0, null, null, null, null, null, null, null, null, null, 0, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, null, 6, null]}, {"b": 1, "t": [null, null, null, null, null, null, 2, null, null, null, null, null, 4, null, null, null, null, null, null, null, null, null, 2, null, null, null, null, null, 5, null, null, null]}, {"b": 0, "t": [null, null, null, 0, null, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, 1, null, null, null, null, null, null, 0, null, null, null, null, null]}, {"b": 1, "t": [null, null, null, null, 4, null, null, null, null, null, null, 2, null, null, null, null, null, null, null, null, 4, null, null, null, null, null, null, 5, null, null, null, null]}], "breaks": [{"b": 1, "t": [4, null, null, 2, null, null, null, 0, null, null, null, null, null, null, null, null, 4, null, null, 5, null, null, null, 10, null, null, null, null, null, null, null, null]}, {"b": 0, "t": [0, null, 1, null, null, 0, null, null, null, 6, null, null, null, null, null, null, 6, null, 4, null, null, 1, null, null, null, 0, null, null, null, null, null, null]}, {"b": 1, "t": [null, null, 2, null, null, 4, null, null, null, 5, null, null, null, null, null, null, null, null, 10, null, null, 5, null, null, null, 4, null, null, null, null, null, null]}, {"b": 0, "t": [null, 10, null, null, null, 6, null, null, 4, null, null, null, null, null, null, null, null, 0, null, null, null, 1, null, null, 0, null, null, null, null, null, null, null]}]},XN={italo:'Italo',trance:'Trance',dub:'Dub',breaks:'Break',desert:'Desert',gamelan:'Gamelan'};window.orbRiffX=XR;
  const list=()=>{const o=[];for(const f in FAM())(FAM()[f].riff||[]).forEach((t,i)=>o.push({lab:NM[f]+' '+(i+1),t}));for(const f in XR)XR[f].forEach((r,i)=>o.push({lab:XN[f]+' '+(i+1),t:r.t,st:f,b:r.b}));return o};
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
- const curLab=()=>{const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff')return'Off';const s=JSON.stringify(R.t),h=list().find(x=>JSON.stringify(x.t)===s);return h?h.lab:'Off'};
+ const curLab=()=>{const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff')return'Off';const s=JSON.stringify(R.t),h=list().find(x=>JSON.stringify(x.t)===s)||(R.base&&list().find(x=>JSON.stringify(x.t)===R.base));return h?h.lab:'Off'};   /* v0.5: a riff Launch varied shows the riff it came from */
  let pend=null;
  const apply=lab=>{const L=TR[4],P=L.p,R=window.orbRiff;if(!R)return;
   if(lab==='Off'){if(P.mode==='Riff'){P.mode='Motif';R.t=null;try{mot=[];mp=-1;buf=[]}catch(e){}}}
@@ -6558,9 +6558,8 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
    if(m){Object.assign(S.p,{role:'Counter',mot:m,snd:pick(SN[m]),reg:'Auto',amt:+(.45+R()*.3).toFixed(2)});try{orbSatSdef(S.p)}catch(e){}S.m=false;S.lv=.4}}}catch(e){}return r}}
 </script>
 <script>
-/* ---- v0.5: the Marimba perc sound skips most of the per-mood perc boost (that boost was measured for the quieter perc sounds),
-   so it no longer sticks out in moods like Lost Signal (was up to ~6 dB too hot) ---- */
-{const _wd=wood;wood=function(w){const T=TR[3],o=T.lv;T.lv=o*Math.pow(10,-Math.max(0,TRIM[3]||0)/20);try{return _wd.apply(this,arguments)}finally{T.lv=o}}}
+/* ---- v0.5: Marimba level matched closer to the other perc sounds ---- */
+{const _wd=wood;wood=function(w){const T=TR[3],o=T.lv;T.lv=o*Math.pow(10,-7/20);   /* v0.5: the Marimba voice played ~10 dB above the other perc sounds at the same fader: now 7 dB down, and it follows the mood levels like the others */try{return _wd.apply(this,arguments)}finally{T.lv=o}}}
 </script>
 <script>
 /* ---- v0.5: MORE VARIETY IN AFTERGLOW AND LOST SIGNAL — these moods leaned on a few written riffs, one lead sound and four chord progressions.
@@ -6574,10 +6573,10 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
   Melancholic:['Bright pluck','String pluck','Chorus pulse','Soft keys','Cinematic arp','Pluck','FM keys','Wide saw','Mini lead']};
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const UP={0:2,1:2,2:4,3:4,4:10,10:12,11:12,12:14,14:14},INV={0:10,10:0,2:4,4:2,12:4,14:2};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const v=VAR[curMood],L=TR[4],P=L.p;if(!v||L.m||P.mode==='Acid 303')return r;const RF=window.orbRiff;
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(window.orbRiff)orbRiff.base=null;const v=VAR[curMood],L=TR[4],P=L.p;if(!v||L.m||P.mode==='Acid 303')return r;const RF=window.orbRiff;
    if(P.mode==='Riff'&&RF&&RF.t){
     if(R()<v.riff){const [md,hs,rg]=pick(MODES);P.mode=md;RF.t=null;RF.f=null;L.st=pick([16,16,12]);L.ten=0;L.r=pick([0,0,2,3]);L.h=Math.min(pick(hs),L.st);L.pt=pat(L);P.range=pick(rg);P.len=pick([3,4,6,8]);mot=[];mp=-1;buf=[]}
-    else{const T=pick(['up','inv','oct','none']);if(T!=='none'){const nt=RF.t.map(x=>x==null?null:T==='up'?(UP[x]!=null?UP[x]:x):T==='inv'?(INV[x]!=null?INV[x]:x):(x<10?x+10:x-10));RF.t=nt;RF.f=fillT(nt)}}}
+    else{const T=pick(['up','inv','oct','none']);if(T!=='none'){RF.base=JSON.stringify(RF.t);const nt=RF.t.map(x=>x==null?null:T==='up'?(UP[x]!=null?UP[x]:x):T==='inv'?(INV[x]!=null?INV[x]:x):(x<10?x+10:x-10));RF.t=nt;RF.f=fillT(nt)}}}
    if(R()<v.snd){const ok=SNDS[curMood].filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1)}
    if(prog.length===4&&R()<v.prog)prog=pick(PROGS).slice();
    try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){console.warn('[orbitron] variety',e)}return r}}
@@ -6694,5 +6693,18 @@ window.orbExoProg=function(kind){try{let P,sh;
  setTimeout(()=>{try{clampAll();build()}catch(e){}},0);
  /* presets that had their own portamento time keep it as Glide time (with Glide chance 1) */
  const _lp=applyLP;applyLP=function(){const r=_lp.apply(this,arguments);try{const P=TR[4].p;if(P.glk>0){P.gt=Math.max(10,Math.min(600,P.glk));P.glide=1;P.glk=0}}catch(e){}return r}}
+</script>
+<script>
+/* ---- v0.5 UI fixes: the Gate rhythm menu always shows the rhythm that plays; old bass style names show their new name;
+   the Launch message wraps on a phone instead of being cut off ---- */
+{const GR={Disco:'1011011010110101',Eighths:'1010101010101010',Shuffle:'1101101101101101',Sparse:'1001001010010010',Stutter:'1111011101110111'};
+ const ALIAS={Walking:'Slow pulse','Acid run':'Rolling techno','Disco run':'Octave 8ths'};
+ const gateSync=()=>{try{const P=TR[5].p,gs=[...document.querySelectorAll('select')].find(s=>[...s.options].some(x=>x.value==='Trance 16ths'));if(!gs||document.activeElement===gs)return;
+   let v='Off';if((P.pgate||0)>.01&&P.pgpat){const pat=P.pgpat.join('');const R=window.orbPadRhy||{};v=Object.keys(R).find(k=>R[k]===pat)||Object.keys(GR).find(k=>GR[k]===pat)||(G.prhy&&R[G.prhy]?G.prhy:gs.value)}
+   if([...gs.options].some(x=>x.value===v)&&gs.value!==v)gs.value=v}catch(e){}};
+ const bassName=()=>{try{const P=TR[6].p;if(ALIAS[P.bsty]){P.bsty=ALIAS[P.bsty];setTimeout(()=>{try{window.bassSync&&bassSync()}catch(e){}},0)}}catch(e){}};
+ const _b=build;build=function(){const r=_b.apply(this,arguments);setTimeout(()=>{gateSync();bassName()},120);return r};
+ setInterval(()=>{gateSync();bassName()},1500);
+ const st=document.createElement('style');st.textContent='@media (max-width:700px){.mctl{white-space:normal!important;text-overflow:clip!important;line-height:1.3}}';document.head.appendChild(st)}
 </script>
 </body></html>
