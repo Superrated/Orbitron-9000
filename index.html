@@ -1538,7 +1538,7 @@ registerProcessor('mini-ladder',class extends AudioWorkletProcessor{static get p
   for(let ch=1;ch<o.length;ch++)o[ch].set(y);return true}})`;
 function ladCap(){let q='Eco';try{q=localStorage.getItem('orb-q')||'Eco'}catch(e){}const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4;return q==='Survival'?0:q==='Hi-fi'?16:q==='Eco'?(mob?8:10):(mob?10:14)}
 const _init55=init;init=function(){const nw=!ctx;_init55();A.ladN=0;if(!nw||!ctx.audioWorklet)return;const W=ctx.audioWorklet,ok=()=>{A.ladder=true},viaData=()=>W.addModule('data:application/javascript;base64,'+btoa(LADDER_SRC)).then(ok).catch(()=>{A.ladder=false});try{W.addModule(URL.createObjectURL(new Blob([LADDER_SRC],{type:'application/javascript'}))).then(ok).catch(viaData)}catch(e){viaData()}};
-function miniVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,d=leadNote(p);lastDeg=d;const f=leadFold(d2f(d,3+leadOct(p))),glk=(p.glk>0?p.glk:p.gt||0)/1000,ghs=Math.sin(((tk%T.st)+1)*12.9898+(p.seed||0)*78.233)*43758.5453,sl=glk>.001&&LF>0&&w-LW<4*sd&&(p.glk>0||ghs-Math.floor(ghs)<(p.glide||0)),f0=sl?LF:f;   /* v0.5: one glide for every engine — Glide chance + Glide time */
+function miniVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,d=leadNote(p);lastDeg=d;const f=leadFold(d2f(d,3+leadOct(p))),glk=(p.glk>=5?p.glk:p.gt||0)/1000,ghs=Math.sin(((tk%T.st)+1)*12.9898+(p.seed||0)*78.233)*43758.5453,sl=glk>.001&&LF>0&&w-LW<4*sd&&(p.glk>=5||ghs-Math.floor(ghs)<(p.glide||0)),f0=sl?LF:f;   /* v0.5: one glide for every engine — Glide chance + Glide time */
  const att=Math.max(.002,(p.att||2)/1000),dec=Math.max(.02,p.dec*Math.pow(2,1.2*mv("Lead decay",w))),susM=(p.sus||0)>.01,gate=Math.max(att+.01,(p.hold||1)*sd),rel=p.dsw?dec:Math.max(.01,p.rel||.05),
   e=w+(susM?gate+rel*1.6:att+dec+.03)+.04,mix=ctx.createGain(),vs=[];
  let vib=null;if(p.vib>.5){const l=osc('sine',p.vibr||5.5,w,e);vib=ctx.createGain();vib.gain.setValueAtTime(0,w);vib.gain.linearRampToValueAtTime(p.vib,w+.2);l.connect(vib)}
@@ -1864,7 +1864,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.5 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.5';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.6 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.6';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -5925,10 +5925,10 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const idle=f=>window.requestIdleCallback?requestIdleCallback(f,{timeout:2000}):setTimeout(f,200);
  const flightOn=()=>{const t=document.querySelector('#t-perf');return !!(t&&t.offsetParent)};
  const prepDrops=()=>{if(!ctx||!window.orbPrepDrops||!flightOn())return;window.orbPrepDrops.forEach((f,i)=>setTimeout(()=>idle(()=>orbHeavy(f)),i*700))};
- let lastBpm=0,lastCtx=null,wasOn=false;
+ let lastBpm=0,lastCtx=null,wasOn=false,PDAT=0;
  setInterval(()=>{try{if(!ctx)return;
    if(lastCtx!==ctx&&ctx.state==='running'){lastCtx=ctx;idle(()=>orbHeavy(()=>{try{window.rollVerb&&rollVerb()}catch(e){}try{window.gapGate&&gapGate()}catch(e){}}))}
-   const on=flightOn();if(on&&(!wasOn||G.bpm!==lastBpm)){lastBpm=G.bpm;prepDrops()}wasOn=on}catch(e){}},1000);
+   const on=flightOn();if(on&&(!wasOn||G.bpm!==lastBpm)){lastBpm=G.bpm;PDAT=performance.now()+(wasOn?4*16*60/G.bpm/4*1000:0)}if(on&&PDAT&&performance.now()>=PDAT){PDAT=0;prepDrops()}wasOn=on}catch(e){}},1000);   /* v0.5 perf: after a Launch the drop hits are prepared ~4 bars later, not in the busy moment right after it (arming a drop still prepares it at once) */
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{setTimeout(prepDrops,1500)}catch(e){}return r};
 }
 </script>
@@ -6422,7 +6422,7 @@ window.ORB_BUILD='2026-11-12-v0.5';
 <script>
 /* ---- v0.4: the electric-piano stab lead is now called "EP stab"; saved patterns that still carry its old name are renamed on load ---- */
 {const OLD={['Rhodes'+' stab']:'EP stab',['P'+'PG wave']:'Formant wave',['Ju'+'no pulse']:'Chorus pulse'};   /* v0.5: old sound names in saved patterns get their new names */
- const fix=()=>{try{const P=TR[4]&&TR[4].p;if(P&&OLD[P.patch])P.patch=OLD[P.patch];if(P&&P.glk>0){P.gt=Math.max(10,Math.min(600,P.glk));P.glide=1;P.glk=0}const S=TR[9]&&TR[9].p;if(S&&S.snd==='Ju'+'no')S.snd='Poly pulse'}catch(e){}};fix();setInterval(fix,1000)}
+ const fix=()=>{try{const P=TR[4]&&TR[4].p;if(P&&OLD[P.patch])P.patch=OLD[P.patch];if(P&&P.glk>=5){P.gt=Math.max(10,Math.min(600,P.glk));P.glide=1;P.glk=0}const S=TR[9]&&TR[9].p;if(S&&S.snd==='Ju'+'no')S.snd='Poly pulse'}catch(e){}};fix();setInterval(fix,1000)}
 </script>
 <script>
 /* ---- v0.4: ACID LINE GENERATOR — written like a 303 part instead of a random note per step.
@@ -6648,7 +6648,7 @@ window.orbExoProg=function(kind){try{let P,sh;
  try{if(X){X.desert=D}}catch(e){}
  const setScale=sc=>{if(DS.has(G.scale))return;G.scale=sc;try{const e=document.querySelector('#scale');if(e)e.value=sc}catch(e){}orbExoProg('desert')};
  // a Desert riff chosen in the Riff menu also brings the scale
- let last=null;setInterval(()=>{try{const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff'){last=null;return}const k=JSON.stringify(R.t);if(k===last)return;last=k;if(D.some(d=>JSON.stringify(d.t)===k))setScale('Hijaz')}catch(e){}},300);
+ let last=null;const DJ=D.map(d=>JSON.stringify(d.t));setInterval(()=>{try{const sp=document.querySelector('#t-synth');if(!sp||sp.hidden)return;const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff'){last=null;return}if(R.t===last)return;last=R.t;if(DJ.includes(JSON.stringify(R.t)))setScale('Hijaz')}catch(e){}},700);
  const FIT={Tense:.2,Dark:.15,Noir:.15,'Groove Techno':.12,Vector:.12,Breaks:.1,'Distorted Electro':.12,Power:.1,Temporal:.1};
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],P=L.p,c=FIT[curMood];if(!c||L.m||P.mode==='Acid 303'||R()>=c||!window.orbRiff)return r;
@@ -6665,8 +6665,8 @@ window.orbExoProg=function(kind){try{let P,sh;
    riff by hand switches the scale to Pelog (unless it is already Pelog or In). Launch sometimes builds a Gamelan groove. ---- */
 {const _=null,X=window.orbRiffX,D=[[1, [0, _, 1, _, 3, _, 1, _, 0, _, 1, _, 4, _, 3, _, 0, _, 1, _, 3, _, 1, _, 0, _, 1, _, 2, _, 1, _]], [0, [_, 3, _, 2, _, 3, _, 4, _, 3, _, 2, _, 1, _, 0, _, 3, _, 2, _, 3, _, 10, _, 4, _, 3, _, 1, _, 0]], [1, [0, 1, _, 0, 1, _, 3, _, 0, 1, _, 0, 1, _, 4, _, 0, 1, _, 0, 1, _, 3, _, 0, 1, _, 3, 4, _, 10, _]], [0, [10, _, _, 4, _, _, 3, _, _, 1, _, _, 0, _, _, _, 10, _, _, 4, _, _, 3, _, _, 4, _, _, 10, _, _, _]], [0, [_, _, 0, _, _, _, 1, _, _, _, 0, _, _, _, 3, _, _, _, 0, _, _, _, 1, _, _, _, 4, _, _, _, 3, _]], [1, [3, 4, 3, _, 1, _, 0, _, 3, 4, 3, _, 1, _, 2, _, 3, 4, 3, _, 1, _, 0, _, 3, 4, 10, _, 4, _, 3, _]]].map(([b,t])=>({b,t}));const DS=new Set(['Pelog','In']);
  try{if(X){X.gamelan=D}}catch(e){}
- let last=null;setInterval(()=>{try{const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff'){last=null;return}const k=JSON.stringify(R.t);if(k===last)return;last=k;
-   if(D.some(d=>JSON.stringify(d.t)===k)&&!DS.has(G.scale)){G.scale='Pelog';try{document.querySelector('#scale').value='Pelog'}catch(e){}orbExoProg('gamelan')}}catch(e){}},300);
+ let last=null;const DJ=D.map(d=>JSON.stringify(d.t));setInterval(()=>{try{const sp=document.querySelector('#t-synth');if(!sp||sp.hidden)return;const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff'){last=null;return}if(R.t===last)return;last=R.t;const k=JSON.stringify(R.t);
+   if(DJ.includes(k)&&!DS.has(G.scale)){G.scale='Pelog';try{document.querySelector('#scale').value='Pelog'}catch(e){}orbExoProg('gamelan')}}catch(e){}},300);
  const FIT={Bleep:.2,Noir:.15,'Deep Space':.15,Tense:.12,Ethereal:.1,Drone:.1,Vector:.1};
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],P=L.p,c=FIT[curMood];if(!c||L.m||P.mode==='Acid 303'||R()>=c||!window.orbRiff)return r;
@@ -6692,7 +6692,7 @@ window.orbExoProg=function(kind){try{let P,sh;
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{clampAll()}catch(e){}return r};
  setTimeout(()=>{try{clampAll();build()}catch(e){}},0);
  /* presets that had their own portamento time keep it as Glide time (with Glide chance 1) */
- const _lp=applyLP;applyLP=function(){const r=_lp.apply(this,arguments);try{const P=TR[4].p;if(P.glk>0){P.gt=Math.max(10,Math.min(600,P.glk));P.glide=1;P.glk=0}}catch(e){}return r}}
+ const _lp=applyLP;applyLP=function(){const r=_lp.apply(this,arguments);try{const P=TR[4].p;if(P.glk>=5){P.gt=Math.max(10,Math.min(600,P.glk));P.glide=1;P.glk=0}}catch(e){}return r}}
 </script>
 <script>
 /* ---- v0.5 UI fixes: the Gate rhythm menu always shows the rhythm that plays; old bass style names show their new name;
@@ -6704,7 +6704,14 @@ window.orbExoProg=function(kind){try{let P,sh;
    if([...gs.options].some(x=>x.value===v)&&gs.value!==v)gs.value=v}catch(e){}};
  const bassName=()=>{try{const P=TR[6].p;if(ALIAS[P.bsty]){P.bsty=ALIAS[P.bsty];setTimeout(()=>{try{window.bassSync&&bassSync()}catch(e){}},0)}}catch(e){}};
  const _b=build;build=function(){const r=_b.apply(this,arguments);setTimeout(()=>{gateSync();bassName()},120);return r};
- setInterval(()=>{gateSync();bassName()},1500);
+ setInterval(()=>{const sp=document.querySelector('#t-synth');if(sp&&!sp.hidden){gateSync();bassName()}},1500);
  const st=document.createElement('style');st.textContent='@media (max-width:700px){.mctl{white-space:normal!important;text-overflow:clip!important;line-height:1.3}}';document.head.appendChild(st)}
+</script>
+<script>
+/* ---- v0.5 perf: the Euclid rings only redraw while the Drums or Synths page is open (they can't be seen elsewhere);
+   when you open the page they are drawn fresh. ---- */
+{let RV=true;const chk=()=>{const d=document.querySelector('#t-drums'),y=document.querySelector('#t-synth');const was=RV;RV=!!((d&&!d.hidden)||(y&&!y.hidden));if(RV&&!was)TR.forEach(T=>{try{draw(T,-1)}catch(e){}})};
+ setInterval(chk,400);document.addEventListener('click',()=>setTimeout(chk,30),true);
+ const _dr=draw;draw=function(T,s){if(!RV&&s>=0&&playing)return;return _dr.apply(this,arguments)}}
 </script>
 </body></html>
