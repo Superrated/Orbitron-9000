@@ -6213,4 +6213,5 @@ html body #t-perf .arm.g5{grid-template-columns:repeat(5,minmax(0,1fr))!importan
   const u=ps.underrunEvents;if(ur!=null&&u>ur){const n=performance.now();for(let i=0;i<u-ur;i++)ut.push(n);ut=ut.filter(t=>n-t<10000);
    if(low&&ut.length>=3&&n-last>60000){last=n;ut=[];try{say&&say('▲ CRACKLES · try a bigger Audio buffer (Mix → Engine)')}catch(e){}}}ur=u}catch(e){}},500)}
 </script>
+<script>/* PWA: offline + install */if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){addEventListener('load',()=>{try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}})}</script>
 </body></html>
