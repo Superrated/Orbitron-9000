@@ -6255,9 +6255,15 @@ var PDC={};
  const fill=()=>{const P=TR[3].p;if(P.pdt==null)P.pdt=.04;if(P.pdrv==null)P.pdrv=0};fill();
  // a sector or file saved before these controls existed loads with them at their defaults
  const _bd=build;build=function(){try{fill()}catch(e){}return _bd.apply(this,arguments)};
- // Launch: the drier, harder moods sometimes give the perc some DFAM grit and a longer drop
- const GR={Power:.6,'Groove Techno':.5,Temporal:.5,'Distorted Electro':.6,Tense:.4,Dark:.4,Acid:.4,Bleep:.3};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const p=TR[3].p,c=GR[curMood]||0;p.pdt=.04;p.pdrv=0;
-  if(R()<c){p.pdrv=+(.2+R()*.35).toFixed(2);if(R()<.5){p.bend=+(Math.max(p.bend||0,.6)+R()*.8).toFixed(2);p.pdt=+(.05+R()*.07).toFixed(3)}}}catch(e){console.warn('[orbitron] dfam',e)}return r}}
+ // Launch: each mood brings the DFAM side in its own way. [chance, drive range, pitch bend range, drop time range]; null = leave as is
+ const DF={Power:[.6,[.4,.6],[1.2,2],[.08,.14]],'Distorted Electro':[.6,[.4,.6],[.4,.9],[.02,.05]],
+  'Groove Techno':[.5,[.15,.3],[.4,.9],[.02,.05]],Temporal:[.5,[.15,.3],[.4,.9],[.02,.05]],
+  Dark:[.4,[.25,.45],[.6,1.2],[.04,.08]],Tense:[.4,[.25,.45],[.6,1.2],[.04,.08]],Acid:[.4,[.25,.45],[.6,1.2],[.04,.08]],
+  Bleep:[.3,null,[1.5,2.5],[.01,.025]],
+  Breaks:[.2,[.1,.2],null,null],Italo:[.2,[.1,.2],null,null],Hopeful:[.2,[.1,.2],null,null],Noir:[.2,[.1,.2],null,null],Drone:[.2,[.1,.2],null,null],Vector:[.2,[.1,.2],null,null],
+  'Melodic House':[.3,null,[.4,.8],[.08,.15]],Ambient:[.3,null,[.4,.8],[.08,.15]],Ethereal:[.3,null,[.4,.8],[.08,.15]],Dreamy:[.3,null,[.4,.8],[.08,.15]],Melancholic:[.3,null,[.4,.8],[.08,.15]],'Deep Space':[.3,null,[.4,.8],[.08,.15]]};
+ const rr=(r,dp)=>+(r[0]+R()*(r[1]-r[0])).toFixed(dp);
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const p=TR[3].p,c=DF[curMood];p.pdt=.04;p.pdrv=0;
+  if(c&&R()<c[0]){if(c[1])p.pdrv=rr(c[1],2);if(c[2])p.bend=rr(c[2],2);if(c[3])p.pdt=rr(c[3],3)}}catch(e){console.warn('[orbitron] dfam',e)}return r}}
 </script>
 </body></html>
