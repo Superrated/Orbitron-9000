@@ -5687,14 +5687,14 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  // ---------- Launch: new sounds, lead rhythms, bass roles, bed ----------
  const AMB=new Set(['Ambient','Ethereal','Drone','Deep Space']);
  const rp=a=>a[Math.floor(R()*a.length)],wp=o=>{let t=Object.values(o).reduce((a,b)=>a+b,0)*R();for(const k in o)if((t-=o[k])<0)return k;return Object.keys(o)[0]};
- const NEWL={bounce:[.35,{'Rave stab':1,'House piano':1,'EP stab':1}],peak:[.3,{'Organ stab':1,'Rave stab':1}],minimal:[.3,{'Organ stab':1,'EP stab':.7}],rolling:[.08,{'EP stab':1}]};
- const MOODL={Italo:[.25,{'House piano':1}],Hopeful:[.3,{'House piano':1,'EP stab':1}],'Melodic House':[.35,{'EP stab':2,'House piano':1}],Breaks:[.3,{'Rave stab':1,'House piano':.5}],'Groove Techno':[.25,{'Organ stab':1}],Dreamy:[.2,{'EP stab':1}]};
+ const NEWL={bounce:[.48,{'Rave stab':1,'House piano':1,'EP stab':1}],peak:[.42,{'Organ stab':1,'Rave stab':1}],minimal:[.42,{'Organ stab':1,'EP stab':.7}],rolling:[.14,{'EP stab':1}]};
+ const MOODL={Italo:[.35,{'House piano':1}],Hopeful:[.42,{'House piano':1,'EP stab':1}],'Melodic House':[.48,{'EP stab':2,'House piano':1}],Breaks:[.42,{'Rave stab':1,'House piano':.5}],'Groove Techno':[.35,{'Organ stab':1}],Dreamy:[.3,{'EP stab':1}]}; /* v0.4: new leads ~40 % more often */
  const RHY={rolling:['x.xx.xx.x.xx.xx.','x..x..x..x..x.x.'],bounce:['x..x..x.x..x..x.','..x..x....x..x..','x.x...x...x.x...'],peak:['x..x..x.........','..x...x...x.....','x.....x...x.....'],minimal:['...x..x....x....','.x....x..x......','..x..x..x.......']};
  const SPARSE=['x..x..x.........','..x...x...x.....','...x..x....x....','x.....x...x.....','..x..x....x..x..'];
  const pt16=s=>[...s].map(c=>c==='x'?1:0);
  const setRing=(T,pt)=>{T.st=16;try{const ft=bassFit(T,pt);Object.assign(T,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(T,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}T.pt=pt.slice()};
- const ROLE={rolling:{Rolling:.65,Anchor:.35},bounce:{Answer:.45,'808':.35,Rolling:.2},peak:{Anchor:.5,Rolling:.5},minimal:{Rolling:.5,Answer:.5}};
- const RSND={Rolling:['Rolling pluck','Rolling sub','Rolling pluck'],Anchor:['Reese mid','Rolling sub'],Answer:['FM round','Rubber','Rolling pluck'],'808':['808 glide']};
+ const ROLE={rolling:{Rolling:.65,Anchor:.35},bounce:{Answer:.4,'808':.42,Rolling:.18},peak:{Anchor:.5,Rolling:.5},minimal:{Rolling:.45,Answer:.4,'808':.15}};
+ const RSND={Rolling:['Rolling pluck','Rolling sub','Rolling pluck'],Anchor:['Reese mid','Rolling sub'],Answer:['FM round','Rubber','Rolling pluck','Rolling pluck'],'808':['808 glide']};
  const RT={Rolling:[[_,0,0,0,_,0,0,0,_,0,0,0,_,0,0,0],[_,0,0,_,_,0,0,10,_,0,0,_,_,0,0,4],[_,0,10,0,_,0,10,0,_,0,10,0,_,0,4,0],[_,_,0,0,_,_,0,0,_,_,0,0,_,_,0,10]],
   Anchor:[[0,_,_,_,_,_,_,_,0,_,_,_,_,_,10,_],[0,_,_,_,_,_,0,_,_,_,_,_,_,_,10,_],[0,_,_,10,_,_,0,_,_,_,_,_,_,_,4,10]],
   '808':[[0,_,_,_,_,_,_,_,_,_,0,_,_,_,_,_],[0,_,_,_,_,_,_,0,_,_,_,_,4,_,_,_],[0,_,_,_,_,_,10,_,_,_,0,_,_,_,_,_],[0,_,_,_,_,_,_,_,_,_,_,_,4,_,2,_]]};
@@ -5718,7 +5718,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
     // modern lead rhythm for the family (the Riff mode keeps its own rhythm)
     if(P.mode!=='Riff'){const ch=P.chd&&P.chd!=='Off';if(ch&&(L.h>7||['Chord arp','Up/Down','Up','Random'].includes(P.mode))){P.mode='Motif';try{mot=[];mp=-1;buf=[]}catch(e){}setRing(L,pt16(rp(SPARSE)))}
      else if(fam&&RHY[fam]&&R()<(fam==='rolling'?(P.mode==='Motif'?.35:0):.6))setRing(L,pt16(rp(RHY[fam])))}}
-   if(fam&&!B.m&&!acid&&R()<.8)bassRole(fam);
+   if(fam&&!B.m&&!acid&&R()<.9)bassRole(fam);
    G.bed=fam&&R()<.6?rp(FAMB[fam]):rp(BEDM[curMood]||['Tape','Vinyl','Air']);G.bedLv=AMB.has(curMood)?rr(.5,.7):fam==='peak'?rr(.25,.35):rr(.3,.5);prep(G.bed);
    setTimeout(()=>{try{bedUI();bedTick();const s=document.querySelector('.bsnd select');if(s)s.value=BP[G.bchar]?G.bchar:'Classic';window.bassSync&&bassSync()}catch(e){}},80)
   }catch(e){console.warn('[orbitron] v0.29',e)}return r}}
