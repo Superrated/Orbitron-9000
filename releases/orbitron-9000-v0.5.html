@@ -6435,8 +6435,17 @@ var __AB=null;function acidBus(){try{if(!ctx||ctx instanceof OfflineAudioContext
  sat.curve=acidWarm(.25);sat.oversample='2x';body.type='peaking';body.frequency.value=220;body.Q.value=.8;body.gain.value=2.5;
  top.type='highshelf';top.frequency.value=6000;top.gain.value=-3;
  cmp.threshold.value=-18;cmp.ratio.value=3;cmp.knee.value=8;cmp.attack.value=.005;cmp.release.value=.12;mk.gain.value=.56; /* level-matched to the old acid voice */
- inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(out);inp.__k=4;
- __AB={ctx,out,inp};return inp}catch(e){return null}}
+ const trim=ctx.createGain(),an=ctx.createAnalyser();an.fftSize=1024;inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(trim);trim.connect(out);trim.connect(an);inp.__k=4;
+ trim.gain.value=(window.orbAcidLvl&&orbAcidLvl.trim)||1;__AB={ctx,out,inp,trim,an};return inp}catch(e){return null}}
+</script>
+<script>
+/* ---- v0.5: 303 GUEST LINES — in fitting moods a Launch sometimes turns the lead into a 303 line that takes the bass's place
+   (like the Acid mood): Distorted Electro and Tense 20 %, Groove Techno, Dark and Temporal 15 %, Bleep 12 %, Vector and Breaks 10 %. ---- */
+{const FIT={'Distorted Electro':.2,Tense:.2,'Groove Techno':.15,Dark:.15,Temporal:.15,Bleep:.12,Vector:.1,Breaks:.1};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],c=FIT[curMood];G.acidGuest=0;
+   if(c&&!L.m&&L.p.mode!=='Acid 303'&&R()<c&&typeof LPRE!=='undefined'&&LPRE['Acid 303']){const B=Object.assign({},LPRE['Acid 303']),tt=B._t;delete B._t;
+    Object.assign(L.p,B,{res:Math.min(12,8+R()*4),cut:240+R()*260,envA:2600+R()*1600,dec:.2+R()*.25,drv:.25+R()*.25,grit:0,crush:0,glide:.2+R()*.2,accp:.25+R()*.15,wave:R()<.3?.8:.1,subosc:0,seed:R()*1e3,mode:'Acid 303',patch:'Acid 303'});
+    if(tt)Object.assign(L,tt);L.lv=Math.max(.35,Math.min(.55,L.lv||.45));AC.key='';TR[6].m=true;G.acidGuest=1;try{window.lfoUI&&lfoUI();build()}catch(e){}}}catch(e){}return r}}
 </script>
 <script>
 /* ---- v0.5: 303 FINE-TUNING
@@ -6468,5 +6477,15 @@ var __ADC={};function acidDrive(t,d){if(t!=='Crunch'&&t!=='Fuzz')return acidWarm
   el.style.display=drv2(c)?'':'none'; /* shown on the same page as Drive */const s=el.querySelector('select');if(s&&document.activeElement!==s&&s.value!==(T.p.dty||'Warm'))s.value=T.p.dty||'Warm'}catch(e){}},800);
  function dfind(c){return [...c.querySelectorAll('.grid>.sl')].find(d=>{const sp=d.querySelector('span');return sp&&sp.firstChild&&sp.firstChild.textContent.trim()==='Drive'})}
  function drv2(c){const d=dfind(c);return d&&d.style.display!=='none'&&d.offsetParent!==null}}
+</script>
+<script>
+/* ---- v0.5: 303 LEVEL ON LAUNCH — for about 4 bars after an acid Launch the acid bus measures the line and sets one correction
+   (at most ±6 dB) so every acid Launch sits at the same level in the mix; then it freezes, so your own fader moves are never undone. ---- */
+{const T0=.235;const LV={trim:1,cal:null};window.orbAcidLvl=LV;const buf=new Float32Array(1024);
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(TR[4].p.mode==='Acid 303'&&!TR[4].m){LV.trim=1;LV.cal={t0:performance.now(),dur:Math.max(6000,4*4*60/G.bpm*1000),sum:0,n:0};
+   if(window.__AB&&__AB.ctx===ctx)__AB.trim.gain.setTargetAtTime(1,ctx.currentTime,.05)}else LV.cal=null}catch(e){}return r};
+ setInterval(()=>{try{const C=LV.cal,AB=window.__AB;if(!C||!playing||!AB||AB.ctx!==ctx||TR[4].m)return;AB.an.getFloatTimeDomainData(buf);let ss=0;for(let i=0;i<1024;i++)ss+=buf[i]*buf[i];const rms=Math.sqrt(ss/1024);
+   if(rms>.002){C.sum+=rms;C.n++}
+   if(performance.now()-C.t0>C.dur&&C.n>=8){const m=C.sum/C.n,tr=Math.max(.5,Math.min(2,T0/m));LV.trim=tr;LV.cal=null;AB.trim.gain.setTargetAtTime(tr,ctx.currentTime,1.2)}}catch(e){}},250)}
 </script>
 </body></html>
