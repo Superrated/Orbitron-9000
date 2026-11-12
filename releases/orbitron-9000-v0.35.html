@@ -6044,13 +6044,34 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 {const _g=generate;generate=function(){window.__launchT=performance.now();return _g.apply(this,arguments)}}
 </script>
 <script>
+/* ---- v0.35: DRIFT thruster (hold). Every ring except the kick and pad jumps to an odd length (hats 7, clap 5, perc 9, lead 11, bass 13,
+   snare 5, stab 9, satellite 11) with about the same density, so the groove slips out of step against the kick and churns. Let go and it all
+   snaps back to your own rings on the next downbeat. Only the step patterns change — no extra sound. ---- */
+{const LEN={1:7,2:5,3:9,4:11,6:13,7:5,8:9,9:11};let saved=null,pend=false,held=false,btn=null;
+ const redraw=()=>{try{TR.forEach(T=>{if(!T.pad)draw(T,-1)})}catch(e){}};
+ const on=()=>{if(saved){pend=false;return}saved={};for(const k in LEN){const T=TR[k];if(!T||T.pad)continue;saved[k]={st:T.st,h:T.h,r:T.r,pt:T.pt.slice()};
+   const L=LEN[k],h=Math.max(1,Math.min(L-1,Math.round(T.h*L/T.st)));T.st=L;T.h=h;T.r=(T.r||0)%L;try{T.pt=pat(T)}catch(e){}if(T.pt.length!==L){const a=Array(L).fill(0);for(let i=0;i<L;i++)if((i*h)%L<h)a[i]=1;T.pt=a}}
+  redraw();try{say&&say('◉ DRIFT · rings out of phase')}catch(e){}};
+ const restore=()=>{if(!saved)return;for(const k in saved){const T=TR[k],o=saved[k];Object.assign(T,{st:o.st,h:o.h,r:o.r,pt:o.pt})}saved=null;pend=false;redraw();paint();try{say&&say('◉ DRIFT · back in phase')}catch(e){}};
+ const off=()=>{if(!saved)return;if(!playing){restore();return}pend=true;paint()};
+ const _as=arrStep;arrStep=function(w){try{if(pend&&!held&&((tk%16)+16)%16===0)restore()}catch(e){}return _as.apply(this,arguments)};
+ const _g=generate;generate=function(){saved=null;pend=false;held=false;paint();return _g.apply(this,arguments)};   // a Launch replaces the rings anyway
+ const paint=()=>{if(!btn)return;btn.classList.toggle('on',held);btn.classList.toggle('kpend',pend&&!held);const t=held?'Drift<span> · drifting</span>':pend?'Drift<span> → in phase · next bar</span>':'Drift<span> (hold)</span>';if(btn._h!==t){btn._h=t;btn.innerHTML=t}};
+ const make=()=>{const g=document.querySelector('#t-perf .thr');if(!g||g.querySelector('.drfb'))return;btn=document.createElement('button');btn.className='pad drfb';btn.style.setProperty('--col','#7ad7ff');
+  btn.title='Hold: every ring except the kick goes to an odd length and drifts against the kick · let go: back in phase on the next downbeat';
+  btn.addEventListener('pointerdown',e=>{e.preventDefault();if(held)return;try{ensure()}catch(x){}held=true;on();paint()});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev,()=>{if(!held)return;held=false;off();paint()}));
+  btn.addEventListener('contextmenu',e=>e.preventDefault());paint();const oc=[...g.children].find(b=>/^\+1 octave/.test(b.textContent));oc?oc.after(btn):g.appendChild(btn)};
+ make();setTimeout(make,700);setTimeout(make,2600);setInterval(()=>{make();if(pend)paint()},1500);window.orbDrift={on:()=>{held=true;on();paint()},off:()=>{held=false;off();paint()},state:()=>({held,pend,active:!!saved})}}
+</script>
+<script>
 /* ---- v0.35: Flight thrusters and drop hits in a logical order without taking more room: the thrusters stay two rows — the hold pads
    first (Snare roll, octave) then the switches (Kick, Break!, Fill, Hat push, Ride push) — and the drop hits sit in one row, low → high
    (Sub boom, Steel drop, Horn, Noise sweep, Ride in). The Funky claps hold pad is retired (Sub boom joins the drop hits). ---- */
 {const st=document.createElement('style');st.textContent=`html body #t-perf .thr.g12{grid-template-columns:repeat(12,minmax(0,1fr))!important}
 html body #t-perf .g12>.pad{grid-column:span 3}html body #t-perf .g12>.pad.w4{grid-column:span 4}
 html body #t-perf .arm.g5{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:5px!important}html body #t-perf .arm.g5>.pad{font-size:9.5px!important;padding:2px 2px!important;letter-spacing:0!important}`;document.head.appendChild(st);
- const ORDER_T=[/^Snare roll/,/^\+1 octave/,/^\+2 octaves/,/^KICK/i,/^Break!/,/^Fill/,/^Hat push/,/^Ride push/],ORDER_D=[/^Sub boom/,/^Steel drop/,/^Horn/,/^Noise sweep/,/^Ride in/];
+ const ORDER_T=[/^Snare roll/,/^\+1 octave/,/^\+2 octaves/,/^Drift/,/^KICK/i,/^Break!/,/^Fill/,/^Hat push/,/^Ride push/],ORDER_D=[/^Sub boom/,/^Steel drop/,/^Horn/,/^Noise sweep/,/^Ride in/];
  const txt=b=>b.textContent.trim();
  const order=(box,pats)=>{const pads=[...box.querySelectorAll(':scope>.pad')],used=new Set(),list=[];pats.forEach(p=>{const b=pads.find(x=>!used.has(x)&&p.test(txt(x)));if(b){used.add(b);list.push(b)}});
   pads.filter(b=>!used.has(b)).forEach(b=>list.push(b));list.forEach(b=>box.appendChild(b));return list};
