@@ -304,23 +304,24 @@ function acidVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,s=tk%16,d=acidNot
  // louder note, and consecutive accents charge up the cutoff (the 303 accent circuit).
  const f=d2f(d,2+(G.ldUp||0)),acc=AC.a[s]?1:0,sl=AC.s[s]&&LF>0&&w-LW<=2.2*sd,nx=AC.s[(s+1)%16],dur=sd*(nx?1.15:.55),e=w+dur+.06,
   o=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e),q1=ctx.createBiquadFilter(),q2=ctx.createBiquadFilter(),pre=ctx.createGain(),g=ctx.createGain();
- if(sl)o.frequency.setTargetAtTime(f,w,.02);
+ if(sl){const gt=.065*(G.bpm<118?1.2:1);o.frequency.setValueAtTime(LF,w);o.frequency.exponentialRampToValueAtTime(f,w+gt)} /* v0.5: even 303-style slide */
  /* v0.4: ONE oscillator like the 303 (the detuned second one smeared the squelch) */
  let src=o;if(p.wave>.5){const sg=ctx.createGain();sg.gain.value=.8;o.connect(sg);src=sg}
  q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(14,p.res)*.38;q2.Q.value=.5; /* v0.4: second stage sits 1.7x higher → a softer, about 18 dB-like slope */
- AC.chg=(AC.chg||0)*Math.exp(-Math.max(0,w-(AC.tw||w))/.35);AC.tw=w;if(acc)AC.chg=Math.min(2.5,AC.chg+1);
- const cm=Math.pow(2,2.5*mv("Lead cutoff",w)),base=Math.max(40,p.cut*cm),ea=p.envA*(acc?1.5+p.acc3*.8+.35*AC.chg:1),
-  cd=acc?Math.min(.2,Math.max(.06,p.dec*.6)):Math.max(.06,p.dec*Math.pow(2,1.2*mv("Lead decay",w)));
+ AC.chg=(AC.chg||0)*Math.exp(-Math.max(0,w-(AC.tw||w))/.45);AC.tw=w;if(acc)AC.chg=Math.min(3,AC.chg+1.3); /* v0.5: accents charge up more */
+ const cm=Math.pow(2,2.5*mv("Lead cutoff",w)),base=Math.max(40,p.cut*cm),ea=p.envA*(1+.35*mv("Lead cutoff",w))*(acc?1.5+p.acc3*.8+.4*AC.chg:1),
+  cd=acc?Math.min(.16,Math.max(.05,p.dec*.5)):Math.max(.06,p.dec*Math.pow(2,1.2*mv("Lead decay",w)));
  [q1,q2].forEach((q,qi)=>{const m=qi?1.7:1;if(sl&&AC.fq){const el=w-AC.ft,cur=Math.max(base,AC.fb+(AC.fp-AC.fb)*Math.exp(-el*3/AC.fd));q.frequency.setValueAtTime(Math.min(16000,cur*m),w);q.frequency.setTargetAtTime(base*m,w,AC.fd/3)}
   else{q.frequency.setValueAtTime(Math.min(16000,(base+ea)*m),w);q.frequency.setTargetAtTime(base*m,w+.002,cd/3)}});
  if(!sl){AC.fq=1;AC.ft=w;AC.fp=Math.min(12000,base+ea);AC.fb=base;AC.fd=cd}
- const pk=v*.3*(acc?1.35+p.acc3*.4:1)*(1+(p.drv||0)*.2);
+ const pk=v*.3*(acc?1.6+p.acc3*.5:1)*(1+(p.drv||0)*.2); /* v0.5: accents ~2.5 dB louder */
  if(sl)g.gain.setValueAtTime(pk,w);else{g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(pk,w+.003)}
  g.gain.setValueAtTime(pk,w+dur);g.gain.linearRampToValueAtTime(.0001,w+dur+.02);
  pre.gain.value=(1+(acc?.3:0))*1.45;src.connect(pre);pre.connect(q1);q1.connect(q2); /* 1.45: makes up for the removed second oscillator */
  /* v0.4: no sub oscillator and no noise click (the 303 has neither); resonance thins the bass instead */
  let tl=q2;if(p.res>2){const ls=ctx.createBiquadFilter();ls.type='lowshelf';ls.frequency.value=180;ls.gain.value=-Math.min(4,(p.res-2)*.35);q2.connect(ls);tl=ls}
- {const dv=Math.max(.2,p.drv||0),dg=ctx.createGain(),dw=ctx.createWaveShaper();dg.gain.value=.7+dv*2.2;dw.curve=acidWarm(dv);tl.connect(dg);dg.connect(dw);tl=dw} /* v0.4: warm pedal-style drive, always a little on */
+ {const dv=Math.max(.2,p.drv||0),dt=p.dty||'Warm',dg=ctx.createGain(),dw=ctx.createWaveShaper();dg.gain.value=(.7+dv*2.2)*(dt==='Fuzz'?1.8:dt==='Crunch'?1.3:1);dw.curve=acidDrive(dt,dv);tl.connect(dg);dg.connect(dw);tl=dw;
+  if(dt==='Crunch'){const mg=ctx.createBiquadFilter();mg.type='peaking';mg.frequency.value=1200;mg.Q.value=.9;mg.gain.value=3;tl.connect(mg);tl=mg}} /* v0.4: warm pedal-style drive, always a little on */
  if(p.drv>.3){const tm=ctx.createBiquadFilter();tm.type='lowpass';tm.frequency.value=9000;tm.Q.value=.5;tl.connect(tm);tl=tm} /* v0.4: no more 4.2 kHz cut; only a gentle 9 kHz one when the drive pedal is pushed */
  tl.connect(g);send(g,acidBus()||A.ld||A.dk,p.ds,p.rs);leadVoice(g,w);LF=f;LW=w}
 function foldCurve(){if(!FC){FC=new Float32Array(4097);for(let i=0;i<4097;i++){const u=(i/2048-1)*8;FC[i]=2/Math.PI*Math.asin(Math.sin(Math.PI/2*u))}}return FC}
@@ -6436,5 +6437,36 @@ var __AB=null;function acidBus(){try{if(!ctx||ctx instanceof OfflineAudioContext
  cmp.threshold.value=-18;cmp.ratio.value=3;cmp.knee.value=8;cmp.attack.value=.005;cmp.release.value=.12;mk.gain.value=.56; /* level-matched to the old acid voice */
  inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(out);inp.__k=4;
  __AB={ctx,out,inp};return inp}catch(e){return null}}
+</script>
+<script>
+/* ---- v0.5: 303 FINE-TUNING
+   · Drive type: Warm (soft, slightly asymmetric), Crunch (harder, uneven clipping plus a mid push) or Fuzz (raw, near-square clipping).
+   · On an acid Launch: a slow cutoff "knob ride" on LFO 3 (16 or 32 bars, starting closed; the envelope moves along), a decay that is
+     sometimes long and open (up to 1.2 s, more often in dark and slow moods), a drive type for the mood, and the dotted-1/8 echo with a
+     little more send. (The delay already darkens each repeat, and the acid line already pumps with the kick through PUMP.) ---- */
+var __ADC={};function acidDrive(t,d){if(t!=='Crunch'&&t!=='Fuzz')return acidWarm(d);const key=t+Math.round(d*20);if(__ADC[key])return __ADC[key];
+ const N=2048,c=new Float32Array(N);let pk=0;
+ for(let i=0;i<N;i++){const x=i/(N-1)*2-1;let y;if(t==='Crunch'){const a=2+d*8;y=x>0?Math.tanh(a*x):Math.tanh(a*1.4*x)*.85}else{const a=6+d*14;y=Math.sign(x)*(1-Math.exp(-a*Math.abs(x)))}c[i]=y;pk=Math.max(pk,Math.abs(y))}
+ const lv=t==='Fuzz'?.62:1;let m=0;for(let i=0;i<N;i++){c[i]=c[i]/(pk||1)*lv;m+=c[i]}m/=N;for(let i=0;i<N;i++)c[i]-=m;   // Fuzz −2.5 dB to sit level with the others   // normalised and centred (no DC thump)
+ return __ADC[key]=c}
+{const DARK=new Set(['Dark','Noir','Temporal','Drone','Melancholic','Deep Space']),HARD=new Set(['Distorted Electro','Power','Tense']);
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],P=L.p;if(P.mode!=='Acid 303'||L.m)return r;
+   // 1 knob ride on LFO 3
+   const L3=LFOS[2];Object.assign(L3,{tg:'Lead cutoff',sh:0,sync:1,div:R()<.55?64:128,d:+(.35+R()*.2).toFixed(2),ph:.75});try{window.lfoUI&&lfoUI()}catch(e){}
+   // 2 decay
+   P.dec=+(R()<(DARK.has(curMood)?.55:.3)?.5+R()*.7:.2+R()*.25).toFixed(2);
+   // 6 drive type
+   P.dty=HARD.has(curMood)?(R()<.6?'Fuzz':'Crunch'):DARK.has(curMood)?(R()<.75?'Warm':'Crunch'):(R()<.6?'Warm':R()<.75?'Crunch':'Fuzz');
+   // 7 dotted-1/8 echo
+   if(R()<.75){G.dt=.75;try{if(A.dl){A.dl.delayTime.value=.75*60/G.bpm;A.dl2.delayTime.value=.75*60/G.bpm}}catch(e){}}P.ds=Math.max(P.ds||0,+(.28+R()*.12).toFixed(2));
+  }catch(e){}return r};
+ // Drive type menu on the lead card (only in Acid 303 mode), under Drive
+ setInterval(()=>{try{const T=TR[4],c=T.mb&&T.mb.closest('.card');if(!c)return;let el=c.querySelector('label.dtysel');const acid=T.p.mode==='Acid 303';
+  if(!acid){if(el)el.style.display='none';return}
+  if(!el){const drv=dfind(c);if(!drv||typeof mkSel!=='function')return;
+   el=mkSel('Drive type',['Warm','Crunch','Fuzz'],T.p.dty||'Warm',v=>{T.p.dty=v});el.classList.add('dtysel');el.dataset.g=drv.dataset.g||'snd';el.title='Warm: soft and round · Crunch: harder with a mid push · Fuzz: raw';drv.after(el)}
+  el.style.display=drv2(c)?'':'none'; /* shown on the same page as Drive */const s=el.querySelector('select');if(s&&document.activeElement!==s&&s.value!==(T.p.dty||'Warm'))s.value=T.p.dty||'Warm'}catch(e){}},800);
+ function dfind(c){return [...c.querySelectorAll('.grid>.sl')].find(d=>{const sp=d.querySelector('span');return sp&&sp.firstChild&&sp.firstChild.textContent.trim()==='Drive'})}
+ function drv2(c){const d=dfind(c);return d&&d.style.display!=='none'&&d.offsetParent!==null}}
 </script>
 </body></html>
