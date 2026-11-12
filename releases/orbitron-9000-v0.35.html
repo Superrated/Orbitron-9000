@@ -5578,7 +5578,8 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const setPat=str=>{const T=TR[0],pt=[...str].map(c=>c==='x'?1:0);T.st=16;try{const ft=bassFit(T,pt);Object.assign(T,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}T.pt=pat(T);
   /* bassFit finds the closest ring; if it is not exact, use the pattern as is */if(T.pt.join('')!==pt.join(''))T.pt=pt;try{draw(T,-1)}catch(e){}};
  const cur16=()=>{const T=TR[0];let s='';for(let i=0;i<16;i++)s+=T.pt[i%T.st]?'x':'.';return s};
- const apply=()=>{if(isFour()){setPat(alt||pick(LIB));msg('KICK · BROKEN')}else{alt=cur16();setPat('x...x...x...x...');msg('KICK · FOUR TO THE FLOOR')}paint()};
+ const HALF='x.......x.......'; /* v0.35: the switch now goes 4/4 ↔ HALF (kick on beats 1 and 3) — the lower-energy partner */
+ const apply=()=>{if(isFour()){setPat(HALF);msg('KICK · HALF TIME')}else{alt=cur16();setPat('x...x...x...x...');msg('KICK · FOUR TO THE FLOOR')}paint()};
  const msg=t=>{try{if(typeof say==='function')say('◉ '+t)}catch(e){}};
  const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);try{if(pend&&((tk%16)+16)%16===0){pend=0;apply()}}catch(e){}return r};
  /* v0.33: clear state — the whole button shows the kick: solid = 4/4 (four to the floor), dark with an outline = BROKEN; while a switch waits it pulses and names the target */
@@ -5586,7 +5587,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 #t-perf .kswb.ksb{background:#170d07!important;color:#ff9b5d!important;box-shadow:inset 0 0 0 2px #ff9b5d!important}#t-perf .kswb.ksf{background:#ff9b5d!important;color:#140c06!important}
 #t-perf .kswb.kpend{animation:kspulse .45s ease-in-out infinite alternate}@keyframes kspulse{from{filter:brightness(1)}to{filter:brightness(1.6);box-shadow:inset 0 0 0 3px #fff}}`;document.head.appendChild(st)}
  let btn=null;const paint=()=>{if(!btn)return;const four=isFour();
-  const h='KICK<span class="ksv">'+(four?'4 / 4':'BROKEN')+'</span><span>'+(pend?'→ '+(four?'BROKEN':'4 / 4')+' · next bar':'tap to switch')+'</span>';
+  const h='KICK<span class="ksv">'+(four?'4 / 4':cur16()===HALF?'HALF':'BROKEN')+'</span><span>'+(pend?'→ '+(four?'HALF':'4 / 4')+' · next bar':'tap to switch')+'</span>';
   if(btn._h!==h){btn._h=h;btn.innerHTML=h}btn.classList.add('kswb');btn.classList.toggle('ksf',four);btn.classList.toggle('ksb',!four);btn.classList.toggle('kpend',!!pend);btn.classList.remove('on')};
  const hook=()=>{const old=[...document.querySelectorAll('#t-perf button.pad')].find(b=>/^Echo throw/i.test(b.textContent));if(!old)return false;
   btn=old.cloneNode(true);old.replaceWith(btn);btn.style.setProperty('--col','#ff9b5d');
