@@ -2492,7 +2492,8 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  const saveUI=()=>{try{localStorage.setItem(KEY+'-ui',JSON.stringify({prot:SS.prot,keepM:SS.keepM}))}catch(e){}};
  const cl=(v,d=0)=>{if(v==null)return v;const ty=typeof v;if(ty==='number')return isFinite(v)?v:0;if(ty!=='object')return ty==='function'?undefined:v;if(d>7)return undefined;
   if(Array.isArray(v))return v.map(x=>{const c=cl(x,d+1);return c===undefined?null:c});if(Object.getPrototypeOf(v)!==Object.prototype)return undefined;const o={};for(const k in v){const c=cl(v[k],d+1);if(c!==undefined)o[k]=c}return o};
- function snap(){const g={};for(const k in G){if(EXG.has(k))continue;const c=cl(G[k]);if(c!==undefined)g[k]=c}
+ function snap(){/* v0.5: a 303 lead that hasn't played yet gets its line now (as its first note would), so the saved ring and line match */try{const p=TR[4].p;if(p.mode==='Acid 303'&&!AC.keep&&AC.key!==G.scale+'|'+p.seed+'|'+(+p.glide||0).toFixed(2)+'|'+(+p.accp||0).toFixed(2))acidGen(p)}catch(e){}
+ const g={};for(const k in G){if(EXG.has(k))continue;const c=cl(G[k]);if(c!==undefined)g[k]=c}
   return{v:1,v4:1,mood:curMood,sel:$('#mood').value,padStyle,G:g,TR:TR.map(T=>{const o={};for(const k of Object.keys(T)){if(SKIPT.has(k))continue;const c=cl(T[k]);if(c!==undefined)o[k]=c}return o}),
    LF:cl(LFOS),TRIM:TRIM.slice(),prog:prog.slice(),pshape:pshape.slice(),PX:PX.slice(),PD:PD?PD.slice():null,PPUSH,mot:mot.slice(),buf:cl(buf),BPH:cl(window.BPH||null),RIFF:window.orbRiff&&orbRiff.t?{t:cl(orbRiff.t),f:cl(orbRiff.f)}:null,TU:window.TURING?TURING.get():[],FEEL:window.orbFeel?orbFeel.get():null,ACID:(typeof AC!=='undefined'&&AC.n&&AC.n.length)?{n:cl(AC.n),a:cl(AC.a),s:cl(AC.s),cell:AC.cell||8}:null}}
  const persist=()=>{try{localStorage.setItem(KEY+(bank?'-b'+bank:''),JSON.stringify(SL))}catch(e){msg('▲ SECTOR MEMORY FULL · could not store on this device')}};
@@ -2502,7 +2503,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   try{if(S.G&&S.G.shx>0&&typeof shimmerInit==='function')setTimeout(()=>{try{shimmerInit()}catch(e){}},400)}catch(e){}}
  function apply(S,w){window.__orbFromLaunch=0;const mm=TR.map(T=>T.m),kb=G.bpm,kr=G.root,ksc=G.scale;
   TR.forEach((T,k)=>{const o=S.TR[k];if(!o)return;const old=k===9&&!S.v4&&!(o.p&&o.p.role);for(const key in o){if(key==='n'||key==='c')continue;if(key==='p'&&T.p&&o.p){if(!old){if(S.v4)for(const pk in T.p){const v=T.p[pk];if(!(pk in o.p)&&(v==null||typeof v!=='object'&&typeof v!=='function'))delete T.p[pk]} /* v0.4 saves are complete: recall exactly what was saved */Object.assign(T.p,o.p);if(k===4&&!('chd' in o.p))T.p.chd='';if(k===6&&!('beng' in o.p))T.p.beng=''}}else T[key]=o[key]}if(old)T.m=true;if(!('tsd' in o))delete T.tsd});
-  ['bchar','flav','bed','bedLv','brole','padAuto'].forEach(k=>{if(S.G&&!(k in S.G))delete G[k]});if(S.v4&&S.G)for(const k in G){const v=G[k];if(!(k in S.G)&&!EXG.has(k)&&typeof v!=='function'&&!(v instanceof AudioNode))delete G[k]} /* v0.4 saves: no leftovers from a later Launch */window.BPH=S.BPH||null;try{if(S.FEEL&&S.FEEL.m&&window.orbFeel)orbFeel.set(S.FEEL.m,S.FEEL.a)}catch(e){}try{if(S.ACID&&typeof AC!=='undefined'){const P=TR[4].p;AC.n=cl(S.ACID.n);AC.a=cl(S.ACID.a);AC.s=cl(S.ACID.s);AC.cell=S.ACID.cell;AC.keep=1}else if(S.v4&&typeof AC!=='undefined'){AC.n=[];AC.a=[];AC.s=[];AC.key=''}}catch(e){} /* v0.5: the 303 line travels with the pattern */ /* v0.4: FEEL travels with the pattern */if(window.orbRiff){orbRiff.t=S.RIFF?S.RIFF.t:null;orbRiff.f=S.RIFF?S.RIFF.f:null}try{if(window.TURING){if(S.TU&&S.TU.length)TURING.set(S.TU);else TURING.reset()}}catch(e){}
+  ['bchar','flav','bed','bedLv','brole','padAuto'].forEach(k=>{if(S.G&&!(k in S.G))delete G[k]});if(S.v4&&S.G)for(const k in G){const v=G[k];if(!(k in S.G)&&!EXG.has(k)&&typeof v!=='function'&&!(v instanceof AudioNode))delete G[k]} /* v0.4 saves: no leftovers from a later Launch */window.BPH=S.BPH||null;try{if(S.FEEL&&S.FEEL.m&&window.orbFeel)orbFeel.set(S.FEEL.m,S.FEEL.a)}catch(e){}try{if(S.ACID&&typeof AC!=='undefined'){const P=TR[4].p;AC.n=cl(S.ACID.n);AC.a=cl(S.ACID.a);AC.s=cl(S.ACID.s);AC.cell=S.ACID.cell;AC.keep=1}}catch(e){} /* v0.5: the 303 line travels with the pattern */ /* v0.4: FEEL travels with the pattern */if(window.orbRiff){orbRiff.t=S.RIFF?S.RIFF.t:null;orbRiff.f=S.RIFF?S.RIFF.f:null}try{if(window.TURING){if(S.TU&&S.TU.length)TURING.set(S.TU);else TURING.reset()}}catch(e){}
   if(SS.keepM)TR.forEach((T,k)=>T.m=mm[k]);
   for(const k in S.G)if(!EXG.has(k))G[k]=S.G[k];if(G.bpmLock)G.bpm=kb;if(G.keyLock){G.root=kr;G.scale=ksc}
   if(Array.isArray(S.LF))S.LF.forEach((L,i)=>{if(LFOS[i]&&L)Object.assign(LFOS[i],L)});if(Array.isArray(S.TRIM))S.TRIM.forEach((v,i)=>TRIM[i]=v||0);
@@ -2788,13 +2789,16 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const STY={'Octave bounce':['xxxxxxxxxxxxxxxx','Octave',.35,0,0],'Off-beat':['..x...x...x...x.','Root',.5,0,.1],'Gallop':['x.xxx.xxx.xxx.xx','Root',.4,0,0],
   'Rolling 16ths':['.xxx.xxx.xxx.xxx','Root',.25,0,.15],'Syncopated':['x..x..x...x..x..','Chord tones',.55,.15,0],'Walking':['x.x.x.x.x.x.x.x.','Scale walk',.65,.1,0],
   'Pedal':['x.x.x.x.x.x.x.x.','Pedal',.4,0,.1],'Acid run':['xx.xx.xxx.xx.x.x','Chord tones',.3,.35,.2],'Octave 8ths':['x.x.x.x.x.x.x.x.','Octave',.45,0,0],'Disco run':['x.xx.xx.x.xx.xx.','Octave',.4,.1,0],
-  'Held':['x...............','Root',.98,.12,0],'Held, syncopated':['x.....x....x..x.','Anticipate',.97,.1,0]}; /* v0.5: long bass notes that follow the chords */
+  'Held':['x...............','Root',.98,.12,0],'Held, syncopated':['x.....x....x..x.','Anticipate',.97,.1,0],
+  'Bouncy':['x..x..x...x..x..','Chord tones',.55,.15,0]}; /* v0.5: long bass notes that follow the chords */
  const NAMES=Object.keys(STY);
  function fit(T,pt){const n=pt.length,h=pt.reduce((a,c)=>a+c,0);let best={h,r:0,ten:0,sc:-1};
   for(let ti=0;ti<=20&&best.sc<n;ti++)for(let r=0;r<n;r++){const ten=ti/20,q=pat(Object.assign({},T,{st:n,h,r,ten}));let sc=0;for(let i=0;i<n;i++)if(q[i]===pt[i])sc++;if(sc>best.sc){best={h,r,ten,sc};if(sc===n)break}}return best}
  /* perf 6: ring fitting is a brute-force search; remember results */{const C=new Map(),f0=fit;fit=function(T,pt){const k=pt.join('')+'|'+(T.tsd||T.n||'');let r=C.get(k);if(!r){r=f0(T,pt);if(C.size>500)C.clear();C.set(k,r)}return Object.assign({},r)}}
  function style(name,rot){const S=STY[name];if(!S)return;const T=TR[6],P=T.p;let pt=[...S[0]].map(c=>c==='x'?1:0);if(rot)pt=pt.slice(-rot).concat(pt.slice(0,-rot));
-  T.st=16;const ft=fit(T,pt);T.h=ft.h;T.r=ft.r;T.ten=ft.ten;T.pt=pat(T);Object.assign(P,{bns:S[1],bgt:S[2],bsl:S[3],bgh:S[4],fifth:0,jump:0,bsty:name,blk:'Free'});if(/^Held/.test(name)){P.bsus=Math.max(P.bsus||0,.85);P.bph=1}else if((P.bsus||0)>.5&&/^Held/.test(P.__lastSty||''))P.bsus=0;P.__lastSty=name;P.oct=Math.max(0,Math.min(2,Math.round(P.oct)||1))}
+  T.st=16;const ft=fit(T,pt);T.h=ft.h;T.r=ft.r;T.ten=ft.ten;T.pt=pat(T);Object.assign(P,{bns:S[1],bgt:S[2],bsl:S[3],bgh:S[4],fifth:0,jump:0,bsty:name,blk:'Free'});if(/^Held/.test(name)){P.bsus=Math.max(P.bsus||0,.85);P.bph=1}else if((P.bsus||0)>.5&&/^Held/.test(P.__lastSty||''))P.bsus=0;P.__lastSty=name;
+  if(name==='Bouncy'){G.bavoid=true;G.bavStrict=false;   /* v0.5: busy, hooky, bouncing line around the kick (pattern only — the sound stays as it is) */
+   Object.assign(P,{bfan:+(.45+R()*.15).toFixed(2),jump:.3,bsus:0,bgt:0,bsl:.15});G.bstyle=''}P.oct=Math.max(0,Math.min(2,Math.round(P.oct)||1))}
  window.bassStyle=style;window.bassFit=fit;setTimeout(()=>{window.bassRoll=roll},0);
  // the Euclid ring is the bass rhythm: old Lock modes are converted into ring settings (and Kick avoid) so the ring always shows what plays
  function setRing(pt){const T=TR[6],f=fit(T,pt);T.st=pt.length;T.h=f.h;T.r=f.r;T.ten=f.ten;T.pt=pat(T)}
@@ -6508,7 +6512,13 @@ var __ADC={};function acidDrive(t,d){if(t!=='Crunch'&&t!=='Fuzz')return acidWarm
 {const W={Ambient:[.4,.7],'Deep Space':[.35,.5],Dreamy:[.35,.5],'Melodic House':[.3,.35],Noir:[.3,.5]};   // [chance, share of plain Held]
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const w=W[curMood],B=TR[6];
    if(w&&!B.m&&TR[4].p.mode!=='Acid 303'&&R()<w[0]&&window.bassStyle){bassStyle(R()<w[1]?'Held':'Held, syncopated');try{build()}catch(e){}}
-   const fc=FAN[curMood];if(fc&&!B.m&&R()<fc[0]){B.p.bfan=+(fc[1]+R()*(fc[2]-fc[1])).toFixed(2);try{window.syncFaders&&syncFaders()}catch(e){}}}catch(e){}return r}}
+   const fc=FAN[curMood];if(fc&&!B.m&&R()<fc[0]){B.p.bfan=+(fc[1]+R()*(fc[2]-fc[1])).toFixed(2);try{window.syncFaders&&syncFaders()}catch(e){}}
+   /* v0.5 BOUNCY BASS: now and then a busy, hooky, bouncing bassline — syncopated rhythm around the kick, Fancy notes, octave jumps,
+      and a short, round, slightly resonant sound */
+   const bc=BOUNCY[curMood];if(bc&&!B.m&&TR[4].p.mode!=='Acid 303'&&!/^Held/.test(B.p.bsty||'')&&R()<bc&&window.bassStyle){
+    bassStyle('Bouncy');if(R()<.6){const M=window.orbModern;if(M&&M.BASSP&&M.BASSP.Rubber){Object.assign(B.p,M.BASSP.Rubber);G.bchar='Rubber'}}   // Launch: often a short, round, resonant sound with it
+    try{build()}catch(e){}try{window.syncFaders&&syncFaders();window.bassSync&&bassSync()}catch(e){}}}catch(e){}return r}}
+const BOUNCY={'Melodic House':.25,'Groove Techno':.15,Italo:.25,Breaks:.15,Hopeful:.15,Bleep:.15};   /* v0.5: chance per Launch */
 /* v0.5: Launch gives the bass some Fancy notes in groovy moods: [chance, min, max] */
 const FAN={'Melodic House':[.45,.2,.45],'Groove Techno':[.35,.15,.4],Italo:[.5,.25,.5],Breaks:[.45,.2,.5],Hopeful:[.35,.15,.35],Power:[.3,.15,.35],'Deep Space':[.25,.1,.3],Dreamy:[.25,.1,.3],Bleep:[.3,.15,.35]};
 </script>
