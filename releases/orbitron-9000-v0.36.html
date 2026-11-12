@@ -5578,7 +5578,8 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const setPat=str=>{const T=TR[0],pt=[...str].map(c=>c==='x'?1:0);T.st=16;try{const ft=bassFit(T,pt);Object.assign(T,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}T.pt=pat(T);
   /* bassFit finds the closest ring; if it is not exact, use the pattern as is */if(T.pt.join('')!==pt.join(''))T.pt=pt;try{draw(T,-1)}catch(e){}};
  const cur16=()=>{const T=TR[0];let s='';for(let i=0;i<16;i++)s+=T.pt[i%T.st]?'x':'.';return s};
- const apply=()=>{if(isFour()){setPat(alt||pick(LIB));msg('KICK · BROKEN')}else{alt=cur16();setPat('x...x...x...x...');msg('KICK · FOUR TO THE FLOOR')}paint()};
+ const HALF='x.......x.......'; /* v0.35: the switch now goes 4/4 ↔ HALF (kick on beats 1 and 3) — the lower-energy partner */
+ const apply=()=>{if(isFour()){setPat(HALF);msg('KICK · HALF TIME')}else{alt=cur16();setPat('x...x...x...x...');msg('KICK · FOUR TO THE FLOOR')}paint()};
  const msg=t=>{try{if(typeof say==='function')say('◉ '+t)}catch(e){}};
  const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);try{if(pend&&((tk%16)+16)%16===0){pend=0;apply()}}catch(e){}return r};
  /* v0.33: clear state — the whole button shows the kick: solid = 4/4 (four to the floor), dark with an outline = BROKEN; while a switch waits it pulses and names the target */
@@ -5586,7 +5587,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 #t-perf .kswb.ksb{background:#170d07!important;color:#ff9b5d!important;box-shadow:inset 0 0 0 2px #ff9b5d!important}#t-perf .kswb.ksf{background:#ff9b5d!important;color:#140c06!important}
 #t-perf .kswb.kpend{animation:kspulse .45s ease-in-out infinite alternate}@keyframes kspulse{from{filter:brightness(1)}to{filter:brightness(1.6);box-shadow:inset 0 0 0 3px #fff}}`;document.head.appendChild(st)}
  let btn=null;const paint=()=>{if(!btn)return;const four=isFour();
-  const h='KICK<span class="ksv">'+(four?'4 / 4':'BROKEN')+'</span><span>'+(pend?'→ '+(four?'BROKEN':'4 / 4')+' · next bar':'tap to switch')+'</span>';
+  const h='KICK<span class="ksv">'+(four?'4 / 4':cur16()===HALF?'HALF':'BROKEN')+'</span><span>'+(pend?'→ '+(four?'HALF':'4 / 4')+' · next bar':'tap to switch')+'</span>';
   if(btn._h!==h){btn._h=h;btn.innerHTML=h}btn.classList.add('kswb');btn.classList.toggle('ksf',four);btn.classList.toggle('ksb',!four);btn.classList.toggle('kpend',!!pend);btn.classList.remove('on')};
  const hook=()=>{const old=[...document.querySelectorAll('#t-perf button.pad')].find(b=>/^Echo throw/i.test(b.textContent));if(!old)return false;
   btn=old.cloneNode(true);old.replaceWith(btn);btn.style.setProperty('--col','#ff9b5d');
@@ -6043,13 +6044,34 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 {const _g=generate;generate=function(){window.__launchT=performance.now();return _g.apply(this,arguments)}}
 </script>
 <script>
+/* ---- v0.35: DRIFT thruster (hold). Your patterns stay exactly the same, but every ring except the kick and pad gets a few empty steps
+   longer (hats +1, clap +3, perc +2, lead +1, bass +2, snare +3, stab +3, satellite +1), so each pattern slowly drifts away from the
+   kick at its own speed. Let go and they all snap back in phase on the next downbeat. Only the step patterns change — no extra sound. ---- */
+{const ADD={1:1,2:3,3:2,4:1,6:2,7:3,8:3,9:1};let saved=null,pend=false,held=false,btn=null;
+ const redraw=()=>{try{TR.forEach(T=>{if(!T.pad)draw(T,-1)})}catch(e){}};
+ const on=()=>{if(saved){pend=false;return}saved={};for(const k in ADD){const T=TR[k];if(!T||T.pad||!T.pt)continue;saved[k]={st:T.st,pt:T.pt.slice()};
+   T.pt=T.pt.slice(0,T.st).concat(Array(ADD[k]).fill(0));T.st=T.pt.length}
+  redraw();try{say&&say('◉ DRIFT · patterns drifting')}catch(e){}};
+ const restore=()=>{if(!saved)return;for(const k in saved){const T=TR[k],o=saved[k];T.st=o.st;T.pt=o.pt}saved=null;pend=false;redraw();paint();try{say&&say('◉ DRIFT · back in phase')}catch(e){}};
+ const off=()=>{if(!saved)return;if(!playing){restore();return}pend=true;paint()};
+ const _as=arrStep;arrStep=function(w){try{if(pend&&!held&&((tk%16)+16)%16===0)restore()}catch(e){}return _as.apply(this,arguments)};
+ const _g=generate;generate=function(){saved=null;pend=false;held=false;paint();return _g.apply(this,arguments)};   // a Launch replaces the rings anyway
+ const paint=()=>{if(!btn)return;btn.classList.toggle('on',held);btn.classList.toggle('kpend',pend&&!held);const t=held?'Drift<span> · drifting</span>':pend?'Drift<span> → in phase · next bar</span>':'Drift<span> (hold)</span>';if(btn._h!==t){btn._h=t;btn.innerHTML=t}};
+ const make=()=>{const g=document.querySelector('#t-perf .thr');if(!g||g.querySelector('.drfb'))return;btn=document.createElement('button');btn.className='pad drfb';btn.style.setProperty('--col','#7ad7ff');
+  btn.title='Hold: your patterns stay the same but every ring except the kick gets a few steps longer, so they drift away from the kick · let go: back in phase on the next downbeat';
+  btn.addEventListener('pointerdown',e=>{e.preventDefault();if(held)return;try{ensure()}catch(x){}held=true;on();paint()});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev,()=>{if(!held)return;held=false;off();paint()}));
+  btn.addEventListener('contextmenu',e=>e.preventDefault());paint();const oc=[...g.children].find(b=>/^\+1 octave/.test(b.textContent));oc?oc.after(btn):g.appendChild(btn)};
+ make();setTimeout(make,700);setTimeout(make,2600);setInterval(()=>{make();if(pend)paint()},1500);window.orbDrift={on:()=>{held=true;on();paint()},off:()=>{held=false;off();paint()},state:()=>({held,pend,active:!!saved})}}
+</script>
+<script>
 /* ---- v0.35: Flight thrusters and drop hits in a logical order without taking more room: the thrusters stay two rows — the hold pads
    first (Snare roll, octave) then the switches (Kick, Break!, Fill, Hat push, Ride push) — and the drop hits sit in one row, low → high
    (Sub boom, Steel drop, Horn, Noise sweep, Ride in). The Funky claps hold pad is retired (Sub boom joins the drop hits). ---- */
 {const st=document.createElement('style');st.textContent=`html body #t-perf .thr.g12{grid-template-columns:repeat(12,minmax(0,1fr))!important}
 html body #t-perf .g12>.pad{grid-column:span 3}html body #t-perf .g12>.pad.w4{grid-column:span 4}
 html body #t-perf .arm.g5{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:5px!important}html body #t-perf .arm.g5>.pad{font-size:9.5px!important;padding:2px 2px!important;letter-spacing:0!important}`;document.head.appendChild(st);
- const ORDER_T=[/^Snare roll/,/^\+1 octave/,/^\+2 octaves/,/^KICK/i,/^Break!/,/^Fill/,/^Hat push/,/^Ride push/],ORDER_D=[/^Sub boom/,/^Steel drop/,/^Horn/,/^Noise sweep/,/^Ride in/];
+ const ORDER_T=[/^Snare roll/,/^\+1 octave/,/^\+2 octaves/,/^Drift/,/^KICK/i,/^Break!/,/^Fill/,/^Hat push/,/^Ride push/],ORDER_D=[/^Sub boom/,/^Steel drop/,/^Horn/,/^Noise sweep/,/^Ride in/];
  const txt=b=>b.textContent.trim();
  const order=(box,pats)=>{const pads=[...box.querySelectorAll(':scope>.pad')],used=new Set(),list=[];pats.forEach(p=>{const b=pads.find(x=>!used.has(x)&&p.test(txt(x)));if(b){used.add(b);list.push(b)}});
   pads.filter(b=>!used.has(b)).forEach(b=>list.push(b));list.forEach(b=>box.appendChild(b));return list};
