@@ -2790,16 +2790,21 @@ body .panel.top .stg{height:22px!important;min-height:22px!important}}
 window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=(1-a*.7)*x+a*.7*Math.sin(x*Math.PI*k)/1.15}let m=0;for(const v of c)m=Math.max(m,Math.abs(v));for(let i=0;i<n;i++)c[i]/=m||1;return c};
 {const BNS=['Auto','Root','Pedal','Octave','Root + fifth','Chord tones','Scale walk','Arp up','Arp down','Melodic','Phrase','Anticipate'];
  const STY={'Octave bounce':['xxxxxxxxxxxxxxxx','Octave',.35,0,0],'Off-beat':['..x...x...x...x.','Root',.5,0,.1],'Gallop':['x.xxx.xxx.xxx.xx','Root',.4,0,0],
-  'Rolling 16ths':['.xxx.xxx.xxx.xxx','Root',.25,0,.15],'Syncopated':['x..x..x...x..x..','Chord tones',.55,.15,0],'Walking':['x.x.x.x.x.x.x.x.','Scale walk',.65,.1,0],
-  'Pedal':['x.x.x.x.x.x.x.x.','Pedal',.4,0,.1],'Acid run':['xx.xx.xxx.xx.x.x','Chord tones',.3,.35,.2],'Octave 8ths':['x.x.x.x.x.x.x.x.','Octave',.45,0,0],'Disco run':['x.xx.xx.x.xx.xx.','Octave',.4,.1,0],
+  'Rolling 16ths':['.xxx.xxx.xxx.xxx','Root',.25,0,.15],'Syncopated':['x..x..x...x..x..','Chord tones',.55,.15,0],
+  'Pedal':['x.x.x.x.x.x.x.x.','Pedal',.4,0,.1],'Octave 8ths':['x.x.x.x.x.x.x.x.','Octave',.45,0,0],
+  /* v0.5 modern styles (Walking, Acid run and Disco run were retired — old saves and Launch use the closest new style) */
+  'Rolling techno':['.x.x.x.x.x.x.x.x','Root',.35,0,.1],'Melodic pulse':['xxxxxxxxxxxxxxxx','Root',.5,.05,0],'Reese':['x.......x.......','Anticipate',.97,.3,0],
+  'Half-time':['x.....x....x....','Root',.9,.1,0],'Slow pulse':['x.......x.......','Root + fifth',.8,.05,0],'Dub sub':['......x.......x.','Root',.95,.2,0],
   'Held':['x...............','Root',.98,.12,0],'Held, syncopated':['x.....x....x..x.','Anticipate',.97,.1,0],
   'Bouncy':['x..x..x...x..x..','Chord tones',.55,.15,0]}; /* v0.5: long bass notes that follow the chords */
  const NAMES=Object.keys(STY);
  function fit(T,pt){const n=pt.length,h=pt.reduce((a,c)=>a+c,0);let best={h,r:0,ten:0,sc:-1};
   for(let ti=0;ti<=20&&best.sc<n;ti++)for(let r=0;r<n;r++){const ten=ti/20,q=pat(Object.assign({},T,{st:n,h,r,ten}));let sc=0;for(let i=0;i<n;i++)if(q[i]===pt[i])sc++;if(sc>best.sc){best={h,r,ten,sc};if(sc===n)break}}return best}
  /* perf 6: ring fitting is a brute-force search; remember results */{const C=new Map(),f0=fit;fit=function(T,pt){const k=pt.join('')+'|'+(T.tsd||T.n||'');let r=C.get(k);if(!r){r=f0(T,pt);if(C.size>500)C.clear();C.set(k,r)}return Object.assign({},r)}}
- function style(name,rot){const S=STY[name];if(!S)return;const T=TR[6],P=T.p;let pt=[...S[0]].map(c=>c==='x'?1:0);if(rot)pt=pt.slice(-rot).concat(pt.slice(0,-rot));
-  T.st=16;const ft=fit(T,pt);T.h=ft.h;T.r=ft.r;T.ten=ft.ten;T.pt=pat(T);Object.assign(P,{bns:S[1],bgt:S[2],bsl:S[3],bgh:S[4],fifth:0,jump:0,bsty:name,blk:'Free'});if(/^Held/.test(name)){P.bsus=Math.max(P.bsus||0,.85);P.bph=1}else if((P.bsus||0)>.5&&/^Held/.test(P.__lastSty||''))P.bsus=0;P.__lastSty=name;
+ const ALIAS={Walking:'Slow pulse','Acid run':'Rolling techno','Disco run':'Octave 8ths'};
+ function style(name,rot){if(ALIAS[name])name=ALIAS[name];const S=STY[name];if(!S)return;const T=TR[6],P=T.p;let pt=[...S[0]].map(c=>c==='x'?1:0);if(rot)pt=pt.slice(-rot).concat(pt.slice(0,-rot));
+  T.st=16;const ft=fit(T,pt);T.h=ft.h;T.r=ft.r;T.ten=ft.ten;T.pt=pat(T);Object.assign(P,{bns:S[1],bgt:S[2],bsl:S[3],bgh:S[4],fifth:0,jump:0,bsty:name,blk:'Free'});if(/^Held|^Reese$|^Dub sub$/.test(name)){P.bsus=Math.max(P.bsus||0,name==='Reese'?.7:.85);P.bph=1}else if((P.bsus||0)>.5&&/^Held|^Reese$|^Dub sub$/.test(P.__lastSty||''))P.bsus=0;P.__lastSty=name;
+  if(name==='Rolling techno'||name==='Melodic pulse'){G.bavoid=true;G.bavStrict=false}if(name==='Melodic pulse')Object.assign(P,{fifth:.1,jump:.12});   /* v0.5: tight around the kick, a little note movement */
   if(name==='Bouncy'){G.bavoid=true;G.bavStrict=false;   /* v0.5: busy, hooky, bouncing line around the kick (pattern only — the sound stays as it is) */
    Object.assign(P,{bfan:+(.45+R()*.15).toFixed(2),jump:.3,bsus:0,bgt:0,bsl:.15});G.bstyle=''}P.oct=Math.max(0,Math.min(2,Math.round(P.oct)||1))}
  window.bassStyle=style;window.bassFit=fit;setTimeout(()=>{window.bassRoll=roll},0);
@@ -6600,5 +6605,19 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
 {const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(curMood!=='Groove Techno')return r;
   G.clip=Math.min(+G.clip||0,.38);G.bgrit=Math.min(+G.bgrit||0,.18);G.rumble=Math.min(+G.rumble||0,.22);const K=TR[0].p;K.drive=Math.min(+K.drive||0,2.5);
   setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){}return r}}
+</script>
+<script>
+/* ---- v0.5: Launch uses the modern bass styles where they fit — Rolling techno in driving moods, Melodic pulse in melodic ones,
+   Half-time / Slow pulse / Dub sub in slow and spacious ones, Reese in dark ones (Launch adds the Reese mid sound and a slow
+   filter movement on the bass with a free LFO; by hand, pattern and sound stay separate). ---- */
+{const W={Power:[.3,['Rolling techno']],'Groove Techno':[.25,['Rolling techno','Melodic pulse']],Dark:[.3,['Rolling techno','Reese']],Tense:[.25,['Reese','Rolling techno']],
+  'Distorted Electro':[.2,['Reese']],Noir:[.3,['Reese','Dub sub','Half-time']],'Melodic House':[.25,['Melodic pulse','Slow pulse']],Melancholic:[.3,['Melodic pulse','Half-time']],
+  Temporal:[.25,['Melodic pulse','Dub sub']],'Deep Space':[.3,['Dub sub','Half-time','Slow pulse']],Ambient:[.3,['Half-time','Slow pulse']],Drone:[.35,['Dub sub','Half-time']],
+  Dreamy:[.25,['Slow pulse','Half-time']],Ethereal:[.3,['Half-time','Slow pulse']],Bleep:[.2,['Melodic pulse']],Vector:[.2,['Rolling techno']]};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const B=TR[6],w=W[curMood];if(!w||B.m||TR[4].p.mode==='Acid 303'||!window.bassStyle||R()>=w[0])return r;
+   const st=pick(w[1]);bassStyle(st);
+   if(st==='Reese'){const M=window.orbModern;if(M&&M.BASSP&&M.BASSP['Reese mid']&&R()<.7){Object.assign(B.p,M.BASSP['Reese mid']);G.bchar='Reese mid'}
+    const F=LFOS.find(x=>!(x.d>0));if(F)Object.assign(F,{tg:'Bass cutoff',sh:0,sync:1,div:pick([64,128]),d:+(.25+R()*.15).toFixed(2),ph:0})}
+   try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync();if(typeof lfoUI==='function')lfoUI()}catch(e){}},0)}catch(e){console.warn('[orbitron] bass styles',e)}return r}}
 </script>
 </body></html>
