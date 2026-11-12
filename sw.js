@@ -34,7 +34,19 @@ self.addEventListener('fetch', e => {
     caches.open(CACHE).then(async cache => {
       const cached = await cache.match(key, { ignoreSearch: true });
       const fresh = fetch(req, { cache: 'no-cache' })
-        .then(res => { if (res && res.ok) cache.put(key, res.clone()); return res; })
+        .then(async res => {
+          if (res && res.ok) {
+            // the app page changed since the copy that is running: tell the open app, so it can show "update ready"
+            if (cached && (key === './index.html' || new URL(req.url).pathname.endsWith('/index.html'))) {
+              try {
+                const [a, b] = await Promise.all([cached.clone().text(), res.clone().text()]);
+                if (a !== b) (await self.clients.matchAll({ type: 'window' })).forEach(c => c.postMessage({ t: 'orb-update' }));
+              } catch (err) {}
+            }
+            await cache.put(key, res.clone());
+          }
+          return res;
+        })
         .catch(() => null);
       if (cached) { e.waitUntil(fresh); return cached; }
       return (await fresh) || new Response('Offline', { status: 503 });

@@ -6270,8 +6270,8 @@ var PDC={};
 {let inGen=0;const want={};const hold=n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(){if(inGen){want[n]=1;return}return f.apply(this,arguments)}};
  hold('build');hold('lfoUI');hold('syncMix');
  const _g=generate;generate=function(){inGen++;try{return _g.apply(this,arguments)}finally{inGen--;if(!inGen){for(const n of ['syncMix','build','lfoUI'])if(want[n]){want[n]=0;try{window[n]()}catch(e){console.warn('[orbitron] launch '+n,e)}}}}}}
-/* ---- quick win 3: pads sat ~0.5 after Launch in five moods (vs ~0.2 elsewhere); trimmed by 18 %. The fader stays fully yours. ---- */
-{const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
+/* ---- quick win 3: pads sat ~0.5 after Launch in eight moods (vs ~0.2 elsewhere); trimmed by 18 %. The fader stays fully yours. ---- */
+{const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
 window.ORB_BUILD='2026-11-12d';
@@ -6280,7 +6280,7 @@ window.ORB_BUILD='2026-11-12d';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
   x.style.cssText='min-width:44px;min-height:40px;border:2px solid #04100a;background:transparent;color:#04100a;font:700 13px ui-monospace,monospace';x.onclick=()=>d.remove();d.appendChild(x);document.body.appendChild(d)};
  const check=()=>{try{if(!window.caches||shown)return;caches.match('./index.html',{ignoreSearch:true}).then(r=>r&&r.text()).then(t=>{if(!t)return;const m=t.match(/ORB_BUILD='([^']+)'/);if(m&&m[1]!==window.ORB_BUILD)note()}).catch(()=>{})}catch(e){}};
- if(/^https?:$/.test(location.protocol)){setTimeout(check,15000);setInterval(check,600000)}}
+ if(/^https?:$/.test(location.protocol)){setTimeout(check,15000);setInterval(check,600000);try{navigator.serviceWorker&&navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.t==='orb-update')note()})}catch(e){}}}
 /* ---- screens: phones always upright; desktop and tablet use the width ---- */
 {const st=document.createElement('style');st.textContent=`
 @media (orientation:landscape) and (max-height:520px) and (pointer:coarse){
@@ -6310,7 +6310,7 @@ window.ORB_BUILD='2026-11-12d';
    · kick: the 4/4 moods sometimes get a few skipped or extra kicks through the kick's own Variation and Ghosts
    · drum feel: Ion Storm and Low Orbit get one now and then
    · tempo: Meteor Shower 164–176, Telemetry 120–133
-   · Cowbell / rim sits 25% lower on Launch */
+   · Cowbell / rim sits 25% lower on Launch, Conga 13% lower; Marimba comes up in the melodic moods */
 {const H=window.HARMFAM||{};
  Object.assign(H,{
   lifted:{sc:[['Major',.5],['Lydian',.3],['Mixolydian',.2]],pr:[[0,4,5,3],[0,3,4,4],[0,5,3,4],[0,4,1,5]],sh:['add9','9','sus2','tri']},
@@ -6332,7 +6332,10 @@ window.ORB_BUILD='2026-11-12d';
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const m=curMood;
   if(HM[m]&&!G.hfam&&R()<.6)harm(wpk(HM[m]));
   if(KV[m]&&!TR[0].m&&R()<.4){const K=TR[0];K.vari=+(.12+R()*.18).toFixed(2);if(R()<.5)K.gho=+(.08+R()*.12).toFixed(2)}
-  if(TR[3].p.pv==='Cowbell')TR[3].lv=+(TR[3].lv*.75).toFixed(2)}catch(e){console.warn('[orbitron] mood range',e)}return r}}
-window.ORB_BUILD='2026-11-12e';
+  const MAR={'Melodic House':.25,Hopeful:.25,Dreamy:.25,Ethereal:.2,Melancholic:.2,Ambient:.25,'Deep Space':.2};
+  if(MAR[m]&&!TR[3].m&&(TR[3].p.pv==='Blip'||TR[3].p.pv==='Conga')&&R()<MAR[m]&&window.setPercSound){setPercSound('Marimba');const P=TR[3].p;if(!(P.filt>0)||P.filt>3600)P.filt=3600}
+  if(TR[3].p.pv==='Cowbell')TR[3].lv=+(TR[3].lv*.75).toFixed(2);
+  if(TR[3].p.pv==='Conga')TR[3].lv=+(TR[3].lv*.87).toFixed(2)}catch(e){console.warn('[orbitron] mood range',e)}return r}}
+window.ORB_BUILD='2026-11-12f';
 </script>
 </body></html>
