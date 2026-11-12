@@ -485,7 +485,7 @@ MOODS.Drone={sc:['Major pentatonic','Sus pentatonic','Lydian'],pr:[[0,1,0,4],[0,
 MOODS.Acid={sc:['Phrygian','Minor','Harm. minor','Min pentatonic'],pr:[[0,0,5,0],[0,1,0,6],[0,5,0,4]],sh:['tri','sus4','tri'],b:[140,152],cut:500,sw:900,att:.2,lh:[9,11,13],sp:.3,bias:.3,dv:.85,md:['Acid 303'],wave:.05,dec:.2,res:9,pt:['Hollow','Air','Warm saw'],acid:1,hat:[[16,4,2],[16,8,1]],kick:{pitch:50,dec:.3,punch:5,drive:3},padlv:.28,mute:[6],grit:.3,duck:.75};
 MOODS.Power={sc:['Phrygian','Harm. minor','Minor'],pr:[[0,0,1,0],[0,5,0,6],[0,1,5,0]],sh:['sus4','tri','quart'],b:[138,148],cut:350,sw:800,att:.15,lh:[5,7,9],sp:.3,bias:.25,dv:.7,md:['Interval','Marbles'],wave:.6,dec:.22,res:5,pt:['Hollow','Choir','Warm saw'],power:1,hat:[[16,4,2],[16,11,0]],kick:{pitch:54,dec:.34,punch:6,drive:6},padlv:.3,grit:.35,duck:.85};
 let padStyle='Progression',curMood='Melancholic',pshape=[],pmean=null,mot=[],mp=-1;
-const SHP={tri:[0,2,4],'7':[0,2,4,6],'9':[0,2,4,6,8],add9:[0,2,4,8],sus2:[0,1,4],sus4:[0,3,4],quart:[0,3,6]};
+const SHP={tri:[0,2,4],'7':[0,2,4,6],'9':[0,2,4,6,8],add9:[0,2,4,8],sus2:[0,1,4],sus4:[0,3,4],quart:[0,3,6],open:[0,3,5]};
 // chord symbols: numbers = scale degrees; strings = roman numerals relative to the key (b/# prefix, upper = major, lower = minor) — out-of-scale ones are played as a shifted in-scale chord of the same quality
 const RMN={I:0,II:2,III:4,IV:5,V:7,VI:9,VII:11};
 function chordSpec(e){if(typeof e==='number')return{d:e,x:0};const m=/^([b#]?)([ivIV]+)$/.exec(e);if(!m)return{d:0,x:0};const up=m[2]===m[2].toUpperCase(),root=((RMN[m[2].toUpperCase()]||0)+(m[1]==='b'?-1:m[1]==='#'?1:0)+12)%12,s=SC[G.scale],n=s.length;
@@ -6632,13 +6632,19 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
    try{build()}catch(e){}setTimeout(()=>{try{const gs=[...document.querySelectorAll('select')].find(s=>[...s.options].some(x=>x.value==='Trance 16ths'));if(gs&&[...gs.options].some(x=>x.value===k))gs.value=k}catch(e){}},60)}catch(e){console.warn('[orbitron] pad gate',e)}return r}}
 </script>
 <script>
+/* v0.5: progressions that fit the Desert and Gamelan scales (used on Launch and when you pick such a riff by hand) */
+window.orbExoProg=function(kind){try{let P,sh;
+  if(kind==='desert'){P=pick([[0,0,0,0],[0,1,0,1],[0,0,1,0],[0,3,1,0],[0,1,3,1],[0,0,3,1]]);sh='tri'}       // root, half step up, minor 4th: no odd chords from the scale's 3rd and 7th
+  else{P=pick([[0,0,0,0],[0,0,0,0],[0,0,3,3],[0,3,0,3],[0,0,1,0]]);sh='open'}                                // drone or a slow 2-chord swing, open root-fifth-octave chords
+  const x0=(typeof PX!=='undefined'&&Array.isArray(PX))?PX[0]:undefined;prog=P.slice();pshape=prog.map(()=>sh);pmean=null;
+  if(typeof PX!=='undefined'&&Array.isArray(PX)){PX.length=0;prog.forEach(()=>PX.push(x0))}if(typeof PD!=='undefined')PD=null}catch(e){}};
 /* ---- v0.5: DESERT RIFFS AND SCALES — two new scales with the augmented-second sound of North African and Middle Eastern music
    (Hijaz = Phrygian dominant, Double harmonic) and six "Desert" lead riffs written for them: snake-like runs around the flat 2nd,
    trills on the 5th and flat 6th, octave calls. Choosing a Desert riff by hand switches the scale to Hijaz (unless it is already
    Hijaz or Double harmonic). Launch sometimes builds a whole Desert groove in dark and driving moods. ---- */
 {const _=null,X=window.orbRiffX,D=[[1, [0, 1, 2, _, 1, 0, _, _, 4, 5, 4, _, 2, 1, 0, _, 0, 1, 2, _, 1, 0, _, _, 4, 5, 6, _, 5, 4, 2, _]], [0, [10, _, _, 6, 5, _, 4, _, 5, _, 4, 2, _, 1, 0, _, 10, _, _, 6, 5, _, 4, _, 2, _, 1, 0, _, 1, 2, _]], [0, [0, _, _, 1, _, _, 0, _, _, _, _, _, 5, _, 4, _, 0, _, _, 1, _, _, 2, _, _, _, _, _, 1, _, 0, _]], [1, [4, 5, 4, 5, 4, _, 2, _, 1, _, 2, _, 1, _, 0, _, 4, 5, 4, 5, 4, _, 6, _, 5, _, 4, _, 2, _, 1, _]], [0, [_, _, 0, 1, 2, _, _, _, _, _, 2, 1, 0, _, _, _, _, _, 4, 5, 6, _, _, _, _, _, 5, 4, 2, _, _, _]], [0, [0, _, 10, _, 1, _, 11, _, 2, _, 1, _, 0, _, _, _, 0, _, 10, _, 1, _, 11, _, 2, _, 3, _, 2, _, _, _]]].map(([b,t])=>({b,t}));const DS=new Set(['Hijaz','Double harmonic']);
  try{if(X){X.desert=D}}catch(e){}
- const setScale=sc=>{if(DS.has(G.scale))return;G.scale=sc;try{const e=document.querySelector('#scale');if(e)e.value=sc}catch(e){}};
+ const setScale=sc=>{if(DS.has(G.scale))return;G.scale=sc;try{const e=document.querySelector('#scale');if(e)e.value=sc}catch(e){}orbExoProg('desert')};
  // a Desert riff chosen in the Riff menu also brings the scale
  let last=null;setInterval(()=>{try{const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff'){last=null;return}const k=JSON.stringify(R.t);if(k===last)return;last=k;if(D.some(d=>JSON.stringify(d.t)===k))setScale('Hijaz')}catch(e){}},300);
  const FIT={Tense:.2,Dark:.15,Noir:.15,'Groove Techno':.12,Vector:.12,Breaks:.1,'Distorted Electro':.12,Power:.1,Temporal:.1};
@@ -6648,7 +6654,7 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
    const q=pick(D);orbRiff.t=q.t.slice();orbRiff.f=fillT(q.t);P.mode='Riff';P.rdr=0;mot=[];mp=-1;buf=[];
    const ok=['String pluck','Mini lead','Vowel','FM keys','Pluck'].filter(n=>LPRE[n]);if(ok.length&&R()<.75)applyLP(pick(ok),1);
    const pt=q.t.slice(0,16).map(x=>x==null?0:1);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}L.pt=pt.slice();
-   if(prog.length===4&&R()<.5){prog=pick([[0,0,1,0],[0,1,0,6],[0,0,5,1],[0,6,5,1]]).slice()}
+   orbExoProg('desert');
    try{build()}catch(e){}}catch(e){console.warn('[orbitron] desert',e)}return r}}
 </script>
 <script>
@@ -6658,7 +6664,7 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
 {const _=null,X=window.orbRiffX,D=[[1, [0, _, 1, _, 3, _, 1, _, 0, _, 1, _, 4, _, 3, _, 0, _, 1, _, 3, _, 1, _, 0, _, 1, _, 2, _, 1, _]], [0, [_, 3, _, 2, _, 3, _, 4, _, 3, _, 2, _, 1, _, 0, _, 3, _, 2, _, 3, _, 10, _, 4, _, 3, _, 1, _, 0]], [1, [0, 1, _, 0, 1, _, 3, _, 0, 1, _, 0, 1, _, 4, _, 0, 1, _, 0, 1, _, 3, _, 0, 1, _, 3, 4, _, 10, _]], [0, [10, _, _, 4, _, _, 3, _, _, 1, _, _, 0, _, _, _, 10, _, _, 4, _, _, 3, _, _, 4, _, _, 10, _, _, _]], [0, [_, _, 0, _, _, _, 1, _, _, _, 0, _, _, _, 3, _, _, _, 0, _, _, _, 1, _, _, _, 4, _, _, _, 3, _]], [1, [3, 4, 3, _, 1, _, 0, _, 3, 4, 3, _, 1, _, 2, _, 3, 4, 3, _, 1, _, 0, _, 3, 4, 10, _, 4, _, 3, _]]].map(([b,t])=>({b,t}));const DS=new Set(['Pelog','In']);
  try{if(X){X.gamelan=D}}catch(e){}
  let last=null;setInterval(()=>{try{const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff'){last=null;return}const k=JSON.stringify(R.t);if(k===last)return;last=k;
-   if(D.some(d=>JSON.stringify(d.t)===k)&&!DS.has(G.scale)){G.scale='Pelog';try{document.querySelector('#scale').value='Pelog'}catch(e){}}}catch(e){}},300);
+   if(D.some(d=>JSON.stringify(d.t)===k)&&!DS.has(G.scale)){G.scale='Pelog';try{document.querySelector('#scale').value='Pelog'}catch(e){}orbExoProg('gamelan')}}catch(e){}},300);
  const FIT={Bleep:.2,Noir:.15,'Deep Space':.15,Tense:.12,Ethereal:.1,Drone:.1,Vector:.1};
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],P=L.p,c=FIT[curMood];if(!c||L.m||P.mode==='Acid 303'||R()>=c||!window.orbRiff)return r;
@@ -6666,7 +6672,7 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
    const q=pick(D);orbRiff.t=q.t.slice();orbRiff.f=fillT(q.t);P.mode='Riff';P.rdr=0;mot=[];mp=-1;buf=[];
    const ok=['FM bell','FM keys','Rubber blip','Space blip','Bright pluck'].filter(n=>LPRE[n]);if(ok.length&&R()<.8)applyLP(pick(ok),1);
    const pt=q.t.slice(0,16).map(x=>x==null?0:1);L.st=16;try{const ft=bassFit(L,pt);Object.assign(L,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}L.pt=pt.slice();
-   if(prog.length===4&&R()<.5)prog=[0,0,0,0];
+   orbExoProg('gamelan');
    try{build()}catch(e){}}catch(e){console.warn('[orbitron] gamelan',e)}return r}}
 </script>
 <script>
