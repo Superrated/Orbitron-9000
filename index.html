@@ -305,24 +305,24 @@ function acidVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,s=tk%16,d=acidNot
  const f=d2f(d,2+(G.ldUp||0)),acc=AC.a[s]?1:0,sl=AC.s[s]&&LF>0&&w-LW<=2.2*sd,nx=AC.s[(s+1)%16],dur=sd*(nx?1.15:.55),e=w+dur+.06,
   o=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e),q1=ctx.createBiquadFilter(),q2=ctx.createBiquadFilter(),pre=ctx.createGain(),g=ctx.createGain();
  if(sl)o.frequency.setTargetAtTime(f,w,.02);
- /* v0.27: a second, slightly detuned oscillator for a fatter tone */const o2=osc(p.wave>.5?'square':'sawtooth',sl?LF:f,w,e);o2.detune.value=9;if(sl)o2.frequency.setTargetAtTime(f,w,.02);const o2g=ctx.createGain();o2g.gain.value=.55;o2.connect(o2g);
- q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(14,p.res)*.38;q2.Q.value=.55; /* v0.27: rounder resonance peak */
+ /* v0.4: ONE oscillator like the 303 (the detuned second one smeared the squelch) */
+ let src=o;if(p.wave>.5){const sg=ctx.createGain();sg.gain.value=.8;o.connect(sg);src=sg}
+ q1.type=q2.type='lowpass';q1.Q.value=.7+Math.min(14,p.res)*.38;q2.Q.value=.5; /* v0.4: second stage sits 1.7x higher → a softer, about 18 dB-like slope */
  AC.chg=(AC.chg||0)*Math.exp(-Math.max(0,w-(AC.tw||w))/.35);AC.tw=w;if(acc)AC.chg=Math.min(2.5,AC.chg+1);
  const cm=Math.pow(2,2.5*mv("Lead cutoff",w)),base=Math.max(40,p.cut*cm),ea=p.envA*(acc?1.5+p.acc3*.8+.35*AC.chg:1),
   cd=acc?Math.min(.2,Math.max(.06,p.dec*.6)):Math.max(.06,p.dec*Math.pow(2,1.2*mv("Lead decay",w)));
- [q1,q2].forEach(q=>{if(sl&&AC.fq){const el=w-AC.ft,cur=Math.max(base,AC.fb+(AC.fp-AC.fb)*Math.exp(-el*3/AC.fd));q.frequency.setValueAtTime(Math.min(12000,cur),w);q.frequency.setTargetAtTime(base,w,AC.fd/3)}
-  else{q.frequency.setValueAtTime(Math.min(12000,base+ea),w);q.frequency.setTargetAtTime(base,w+.002,cd/3)}});
+ [q1,q2].forEach((q,qi)=>{const m=qi?1.7:1;if(sl&&AC.fq){const el=w-AC.ft,cur=Math.max(base,AC.fb+(AC.fp-AC.fb)*Math.exp(-el*3/AC.fd));q.frequency.setValueAtTime(Math.min(16000,cur*m),w);q.frequency.setTargetAtTime(base*m,w,AC.fd/3)}
+  else{q.frequency.setValueAtTime(Math.min(16000,(base+ea)*m),w);q.frequency.setTargetAtTime(base*m,w+.002,cd/3)}});
  if(!sl){AC.fq=1;AC.ft=w;AC.fp=Math.min(12000,base+ea);AC.fb=base;AC.fd=cd}
  const pk=v*.3*(acc?1.35+p.acc3*.4:1)*(1+(p.drv||0)*.2);
  if(sl)g.gain.setValueAtTime(pk,w);else{g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(pk,w+.003)}
  g.gain.setValueAtTime(pk,w+dur);g.gain.linearRampToValueAtTime(.0001,w+dur+.02);
- pre.gain.value=1+(acc?.3:0);o.connect(pre);o2g.connect(pre);pre.connect(q1);q1.connect(q2);
- if(p.subosc>.01){const so=osc('sine',f*.5,w,e),sg=ctx.createGain();sg.gain.value=p.subosc*.9;so.connect(sg);sg.connect(g)}
- if(p.grit>.01){const ns=ctx.createBufferSource(),ng=ctx.createGain(),nf=ctx.createBiquadFilter();ns.buffer=A.nb;nf.type='highpass';nf.frequency.value=1500;ng.gain.setValueAtTime(p.grit*.4,w);ng.gain.exponentialRampToValueAtTime(.001,w+.06);ns.connect(nf);nf.connect(ng);ng.connect(g);ns.start(w,R()*.5);ns.stop(w+.08)}
- let tl=q2;if(p.drv>.01){const dg=ctx.createGain(),dw=ctx.createWaveShaper();dg.gain.value=.6+p.drv*2.4;dw.curve=curve(p.drv*10);q2.connect(dg);dg.connect(dw);tl=dw}
- if(p.crush>.01){const cr=ctx.createWaveShaper();cr.curve=crushCurve(p.crush);tl.connect(cr);tl=cr}
- {const tm=ctx.createBiquadFilter();tm.type='lowpass';tm.frequency.value=4200;tm.Q.value=.5;tl.connect(tm);tl=tm} /* v0.27: tame the fizz */
- tl.connect(g);send(g,A.ld||A.dk,p.ds,p.rs);leadVoice(g,w);LF=f;LW=w}
+ pre.gain.value=(1+(acc?.3:0))*1.45;src.connect(pre);pre.connect(q1);q1.connect(q2); /* 1.45: makes up for the removed second oscillator */
+ /* v0.4: no sub oscillator and no noise click (the 303 has neither); resonance thins the bass instead */
+ let tl=q2;if(p.res>2){const ls=ctx.createBiquadFilter();ls.type='lowshelf';ls.frequency.value=180;ls.gain.value=-Math.min(4,(p.res-2)*.35);q2.connect(ls);tl=ls}
+ {const dv=Math.max(.2,p.drv||0),dg=ctx.createGain(),dw=ctx.createWaveShaper();dg.gain.value=.7+dv*2.2;dw.curve=acidWarm(dv);tl.connect(dg);dg.connect(dw);tl=dw} /* v0.4: warm pedal-style drive, always a little on */
+ if(p.drv>.3){const tm=ctx.createBiquadFilter();tm.type='lowpass';tm.frequency.value=9000;tm.Q.value=.5;tl.connect(tm);tl=tm} /* v0.4: no more 4.2 kHz cut; only a gentle 9 kHz one when the drive pedal is pushed */
+ tl.connect(g);send(g,acidBus()||A.ld||A.dk,p.ds,p.rs);leadVoice(g,w);LF=f;LW=w}
 function foldCurve(){if(!FC){FC=new Float32Array(4097);for(let i=0;i<4097;i++){const u=(i/2048-1)*8;FC[i]=2/Math.PI*Math.asin(Math.sin(Math.PI/2*u))}}return FC}
 function fireVoice(k,w){const T=TR[k],p=T.p,v=T.lv;if(window.DR&&DR.on(k,w,v,p))return;
  if(k===0){if(A.ksd!==p.drive){A.ks.curve=curve(p.drive);A.ksd=p.drive}const o=ctx.createOscillator(),g=ctx.createGain(),f=p.pitch,d=p.dec,pu=p.punch,vk=v*.9;o.frequency.setValueAtTime(f*(1+pu),w);o.frequency.exponentialRampToValueAtTime(f*(1+pu*.12),w+.011);o.frequency.exponentialRampToValueAtTime(f,w+.06);o.frequency.exponentialRampToValueAtTime(f*.93,w+d);g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(vk,w+.0015);g.gain.setValueAtTime(vk,w+d*.2);g.gain.exponentialRampToValueAtTime(.0001,w+d);o.connect(g);g.connect(A.ks);const r=ctx.createGain();r.gain.value=.55*(G.rfeed||1);g.connect(r);r.connect(A.ru);o.start(w);o.stop(w+d+.05);{const ck=p.click==null?1:p.click;if(ck>.01){const c=ctx.createOscillator(),cg=ctx.createGain(),cq=ctx.createBiquadFilter();c.type='triangle';c.frequency.setValueAtTime(2200,w);c.frequency.exponentialRampToValueAtTime(320,w+.008);cq.type='highpass';cq.frequency.value=700;cg.gain.setValueAtTime(v*.3*ck,w);cg.gain.exponentialRampToValueAtTime(.0001,w+.012);c.connect(cq);cq.connect(cg);cg.connect(A.ks);c.start(w);c.stop(w+.02)}}nz(w,"highpass",4500,.007,v*.22,A.m);duck(w)}
@@ -2893,7 +2893,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   'Loop len':'only the loop modes (Marbles, Interval, Motif, Turing loop) use it; the others use Cycle','Cycle (0 = off)':'loop modes use Loop len instead','Note repeat':'Acid 303 has its own line','Reset on bar':'this mode has no position to reset','Chord lock':'this mode already follows the chord or has its own notes','Reseed':'this mode has no random seed','Accent chance':'only Acid 303'};
  const POLY=['att','crush','cut','dec','det','drv','ds','envA','fenv','fmi','fmr','fold','fsym','ft','glide','grit','gt','hold','kt','oct2','pdec','penv','pg','pw','rel','res','rs','subosc','sus','uni','usp','vib','vibr','vow','wave','wid','eng'];
  const MINI=['att','cut','dec','ds','dsw','envA','fatt','fdec','fsus','glk','hold','kt','mnz','o1l','o1r','o1w','o2d','o2l','o2r','o2w','o3d','o3l','o3r','o3w','pg','rel','res','rs','sus','vib','vibr','eng'];
- const ACID=['acc3','crush','cut','dec','drv','ds','envA','grit','gt','res','rs','subosc','wave','glide'];
+ const ACID=['acc3','cut','dec','drv','ds','envA','gt','res','rs','wave','glide'];
  const SELK={'Engine':'eng','Filter type':'ft','Osc 1 wave':'o1w','Osc 1 range':'o1r','Osc 2 wave':'o2w','Osc 2 range':'o2r','Osc 3 wave':'o3w','Osc 3 range':'o3r'};
  const lab=el=>{const f=el.firstChild;if(!f)return'';return(f.nodeType===3?f.textContent:(f.firstChild&&f.firstChild.textContent)||el.textContent).trim()};
  function keyOf(l){if(SELK[l])return SELK[l];const x=TR[4].x.find(x=>x[0]===l);return x?x[1]:null}
@@ -6411,5 +6411,30 @@ window.ORB_BUILD='2026-11-12-v0.5';
   AC.n=best.N;AC.a=best.A;AC.s=best.S;AC.cell=best.L;AC.key=G.scale+'|'+p.seed+'|'+p.glide.toFixed(2)+'|'+p.accp.toFixed(2);
   try{const T=TR[4];T.st=16;T.pt=best.P.slice();T.h=best.P.reduce((a,b)=>a+b,0);T.r=0;setTimeout(()=>{try{draw(T,-1);window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){}};
  window.orbAcid={gen:()=>acidGen(TR[4].p),line:()=>({n:AC.n,a:AC.a,s:AC.s,pt:TR[4].pt,cell:AC.cell})}}
+</script>
+<script>
+/* ---- v0.4: Déjà vu changes on the acid line keep to the line's own notes; a changed note never keeps a slide from the same pitch,
+   and accents only flip on the cell start or an octave note ---- */
+{const _an=acidNote;acidNote=function(p){const s=tk%16,before=AC.last;const bn=AC.n?AC.n.slice():null,ba=AC.a?AC.a.slice():null;const r=_an(p);
+  try{if(bn&&s<before&&AC.n&&AC.n.join()!==bn.join()||ba&&AC.a&&AC.a.join()!==ba.join()){const n=SC[G.scale].length,pal=[...new Set(bn.filter(v=>v%n!==0))],ok=[0,n].concat(pal);
+   for(let i=0;i<16;i++){if(AC.n[i]!==bn[i]&&!ok.includes(AC.n[i]))AC.n[i]=pal.length?pal[i%pal.length]:0;
+    if(AC.a[i]!==ba[i]&&AC.a[i]&&!(i%(AC.cell||8)===0||AC.n[i]>=n))AC.a[i]=0;
+    const pv=(i+15)%16;if(AC.s[i]&&AC.n[pv]===AC.n[i])AC.s[i]=0}}}catch(e){}return r}}
+</script>
+<script>
+/* ---- v0.4: ACID PRODUCTION — so the line sounds like a finished record, not a dry 303.
+   · Per note: a warm, slightly asymmetric drive (soft clipping with a touch of even harmonics, like a pedal or a tube stage).
+   · One shared acid bus after it: gentle saturation glue → +2.5 dB body at 220 Hz → slightly softer top (−3 dB above 6 kHz) →
+     a soft compressor (3:1, fast attack) so it sits in the mix like a produced part. The bus is built once, so it costs almost nothing. ---- */
+var __AWC={};function acidWarm(d){const k=Math.round(d*20);if(__AWC[k])return __AWC[k];const N=2048,c=new Float32Array(N),a=1+d*6;
+ for(let i=0;i<N;i++){const x=i/(N-1)*2-1,y=Math.tanh(a*x+.12*d*x*x)/Math.tanh(a);c[i]=y}return __AWC[k]=c}
+var __AB=null;function acidBus(){try{if(!ctx||ctx instanceof OfflineAudioContext||!(A.ld||A.dk))return null;const out=A.ld||A.dk;
+ if(__AB&&__AB.ctx===ctx&&__AB.out===out)return __AB.inp;
+ const inp=ctx.createGain(),sat=ctx.createWaveShaper(),body=ctx.createBiquadFilter(),top=ctx.createBiquadFilter(),cmp=ctx.createDynamicsCompressor(),mk=ctx.createGain();
+ sat.curve=acidWarm(.25);sat.oversample='2x';body.type='peaking';body.frequency.value=220;body.Q.value=.8;body.gain.value=2.5;
+ top.type='highshelf';top.frequency.value=6000;top.gain.value=-3;
+ cmp.threshold.value=-18;cmp.ratio.value=3;cmp.knee.value=8;cmp.attack.value=.005;cmp.release.value=.12;mk.gain.value=.56; /* level-matched to the old acid voice */
+ inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(out);inp.__k=4;
+ __AB={ctx,out,inp};return inp}catch(e){return null}}
 </script>
 </body></html>
