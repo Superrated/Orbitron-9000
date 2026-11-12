@@ -1322,7 +1322,7 @@ const _gen39=generate;generate=function(){_gen39();const P=TR[4].p,ac=P.mode==='
  let lt0=0,lastT=performance.now();
  setInterval(()=>{const d=$('#diag');if(!d||!d.offsetParent)return;const now=performance.now(),dt=(now-lastT)/1000;lastT=now;const late=QOS.lateTot-lt0;lt0=QOS.lateTot;
   const lat=ctx?Math.round(((ctx.baseLatency||0)+(ctx.outputLatency||0))*1000):0,ps=ctx&&ctx.playbackStats;
-  let tx=d.querySelector('.dtx');if(!tx){tx=document.createElement('div');tx.className='dtx';[...d.childNodes].forEach(n=>{if(n.nodeType===3)n.remove()});d.prepend(tx)}const dtxt='FLIGHT DIAGNOSTICS\n'+'core level   '+QOS.nm[QOS.lvl]+(QOS.floor?'  (floor '+QOS.nm[QOS.floor]+')':'')+'\n'+'voices       '+(QOS.eco2?QOS.voices()+' / 64':QOS.src.size)+'\n'+'audio load   '+(QOS.load?Math.round(QOS.load*100)+'%':'n/a on this browser')+'\n'+'late steps   '+late+' /s'+(late?'  ← sequencer can\'t keep up':'')+'\n'+'screen       '+Math.round(1000/Math.max(8,QOS.ft))+' fps'+'\n'+'buffer       '+(lat?lat+' ms':'n/a')+(ps&&ps.underrunEvents!=null?'\nunderruns    '+ps.underrunEvents:'')+'\n'+'mode         '+qual()+(mob?' · phone':'')+(lean()?' · lean':'');if(tx.textContent!==dtxt)tx.textContent=dtxt},1000)}
+  let tx=d.querySelector('.dtx');if(!tx){tx=document.createElement('div');tx.className='dtx';[...d.childNodes].forEach(n=>{if(n.nodeType===3)n.remove()});d.prepend(tx)}const dtxt='FLIGHT DIAGNOSTICS\n'+'core level   '+QOS.nm[QOS.lvl]+(QOS.floor?'  (floor '+QOS.nm[QOS.floor]+')':'')+'\n'+'voices       '+(QOS.eco2?QOS.voices()+' / 64':QOS.src.size)+'\n'+'audio load   '+(QOS.load?Math.round(QOS.load*100)+'%':'n/a on this browser')+'\n'+'late steps   '+late+' /s'+(late?'  ← sequencer can\'t keep up':'')+'\n'+'screen       '+Math.round(1000/Math.max(8,QOS.ft))+' fps'+'\n'+'latency      '+(lat?lat+' ms (actual)':'n/a')+(ps&&ps.underrunEvents!=null?'\nunderruns    '+ps.underrunEvents:'')+'\n'+'mode         '+qual()+(mob?' · phone':'')+(lean()?' · lean':'');if(tx.textContent!==dtxt)tx.textContent=dtxt},1000)}
 gb.onclick=()=>{generate();try{if(!playing)toggle()}catch(e){}};$("#rnd").before(gb);
 /* ---- v35: fun space UI — shooting stars, rocket liftoff on Generate, mission-control course banner, transmission ticker, warp-speed easter egg ---- */
 {const st=document.createElement('style');st.textContent=`
@@ -4360,7 +4360,7 @@ window.MOODX={
 <script>
 /* ---- v0.22 performance: "Audio buffer" (bigger buffer = fewer underruns, more delay; restarts the engine for a moment, groove kept)
    and "Visuals" (Full / Low / Off — frees the main thread that schedules the notes). Both in Mix → Bus & FX under Engine quality. ---- */
-{const BUF={'Small · 26 ms':.025,'Standard':'playback','Large · 52 ms':.05, /* v0.27: Small = lowest latency for fast pads and faders; may crackle on busy phones */'Extra large · 102 ms':.1,'Max · 186 ms':.2},VIS=['Full','Low','Off'];
+{const BUF={'Minimum · lowest':'interactive', /* v0.4: asks the browser for its lowest latency; the phone picks the value */'Small · 26 ms':.025,'Standard':'playback','Large · 52 ms':.05, /* v0.27: Small = lowest latency for fast pads and faders; may crackle on busy phones */'Extra large · 102 ms':.1,'Max · 186 ms':.2},VIS=['Full','Low','Off'];
  const get=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},put=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
  let buf=get('orb-buf2','Extra large · 102 ms');if(!(buf in BUF))buf='Extra large · 102 ms'; /* v0.22 stability: 0.1 s is the default (new key, so an old 'Standard' choice does not stick) *//* v0.31: until you pick Visuals yourself, Eco and Survival start with Low visuals (about 15 fps) and Hi-fi/Auto with Full */
  let visSet=get('orb-vis','');const visNow=()=>VIS.includes(visSet)?visSet:(['Eco','Survival'].includes(get('orb-q','Eco'))?'Low':'Full');let vis=visNow();
@@ -6205,5 +6205,12 @@ html body #t-perf .arm.g5{grid-template-columns:repeat(5,minmax(0,1fr))!importan
  window.orbCleanStart=reset;
  const _g=generate;generate=function(){reset();return _g.apply(this,arguments)};
  const _t=toggle;toggle=function(){const r=_t.apply(this,arguments);try{if(!playing)reset()}catch(e){}return r};try{$('#play').onclick=toggle}catch(e){}}
+</script>
+<script>
+/* ---- v0.4: with the Minimum or Small audio buffer, repeated dropouts (3 within 10 s) bring a one-line tip to pick a bigger buffer;
+   nothing changes by itself. The measured latency is in Mix → Engine → Flight diagnostics ("latency … ms (actual)"). ---- */
+{let ur=null,ut=[],last=0;setInterval(()=>{try{if(!ctx||!playing)return;const low=/^(Minimum|Small)/.test((window.orbPerf&&orbPerf.buf())||'');let ps=null;try{ps=ctx.playbackStats}catch(e){}if(!ps||ps.underrunEvents==null)return;
+  const u=ps.underrunEvents;if(ur!=null&&u>ur){const n=performance.now();for(let i=0;i<u-ur;i++)ut.push(n);ut=ut.filter(t=>n-t<10000);
+   if(low&&ut.length>=3&&n-last>60000){last=n;ut=[];try{say&&say('▲ CRACKLES · try a bigger Audio buffer (Mix → Engine)')}catch(e){}}}ur=u}catch(e){}},500)}
 </script>
 </body></html>
