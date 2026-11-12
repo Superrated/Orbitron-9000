@@ -2483,7 +2483,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   if(Array.isArray(v))return v.map(x=>{const c=cl(x,d+1);return c===undefined?null:c});if(Object.getPrototypeOf(v)!==Object.prototype)return undefined;const o={};for(const k in v){const c=cl(v[k],d+1);if(c!==undefined)o[k]=c}return o};
  function snap(){const g={};for(const k in G){if(EXG.has(k))continue;const c=cl(G[k]);if(c!==undefined)g[k]=c}
   return{v:1,v4:1,mood:curMood,sel:$('#mood').value,padStyle,G:g,TR:TR.map(T=>{const o={};for(const k of Object.keys(T)){if(SKIPT.has(k))continue;const c=cl(T[k]);if(c!==undefined)o[k]=c}return o}),
-   LF:cl(LFOS),TRIM:TRIM.slice(),prog:prog.slice(),pshape:pshape.slice(),PX:PX.slice(),PD:PD?PD.slice():null,PPUSH,mot:mot.slice(),buf:cl(buf),BPH:cl(window.BPH||null),RIFF:window.orbRiff&&orbRiff.t?{t:cl(orbRiff.t),f:cl(orbRiff.f)}:null,TU:window.TURING?TURING.get():[],FEEL:window.orbFeel?orbFeel.get():null}}
+   LF:cl(LFOS),TRIM:TRIM.slice(),prog:prog.slice(),pshape:pshape.slice(),PX:PX.slice(),PD:PD?PD.slice():null,PPUSH,mot:mot.slice(),buf:cl(buf),BPH:cl(window.BPH||null),RIFF:window.orbRiff&&orbRiff.t?{t:cl(orbRiff.t),f:cl(orbRiff.f)}:null,TU:window.TURING?TURING.get():[],FEEL:window.orbFeel?orbFeel.get():null,ACID:(typeof AC!=='undefined'&&AC.n&&AC.n.length)?{n:cl(AC.n),a:cl(AC.a),s:cl(AC.s),cell:AC.cell||8}:null}}
  const persist=()=>{try{localStorage.setItem(KEY+(bank?'-b'+bank:''),JSON.stringify(SL))}catch(e){msg('▲ SECTOR MEMORY FULL · could not store on this device')}};
  // pre-render the sector's drum hits while it waits, staggered, so the boundary itself costs nothing
  function prewarm(S){if(!ctx||!window.DR||!window.OfflineAudioContext)return;[0,7,2].forEach((k,j)=>setTimeout(()=>{try{const o=S.TR[k];if(!o||!o.p)return;const T=TR[k],sv=T.p,p=Object.assign({},sv,o.p);T.p=p;
@@ -2491,7 +2491,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   try{if(S.G&&S.G.shx>0&&typeof shimmerInit==='function')setTimeout(()=>{try{shimmerInit()}catch(e){}},400)}catch(e){}}
  function apply(S,w){window.__orbFromLaunch=0;const mm=TR.map(T=>T.m),kb=G.bpm,kr=G.root,ksc=G.scale;
   TR.forEach((T,k)=>{const o=S.TR[k];if(!o)return;const old=k===9&&!S.v4&&!(o.p&&o.p.role);for(const key in o){if(key==='n'||key==='c')continue;if(key==='p'&&T.p&&o.p){if(!old){if(S.v4)for(const pk in T.p){const v=T.p[pk];if(!(pk in o.p)&&(v==null||typeof v!=='object'&&typeof v!=='function'))delete T.p[pk]} /* v0.4 saves are complete: recall exactly what was saved */Object.assign(T.p,o.p);if(k===4&&!('chd' in o.p))T.p.chd='';if(k===6&&!('beng' in o.p))T.p.beng=''}}else T[key]=o[key]}if(old)T.m=true;if(!('tsd' in o))delete T.tsd});
-  ['bchar','flav','bed','bedLv','brole','padAuto'].forEach(k=>{if(S.G&&!(k in S.G))delete G[k]});if(S.v4&&S.G)for(const k in G){const v=G[k];if(!(k in S.G)&&!EXG.has(k)&&(v==null||typeof v!=='object'&&typeof v!=='function'))delete G[k]} /* v0.4 saves: no leftovers from a later Launch */window.BPH=S.BPH||null;try{if(S.FEEL&&S.FEEL.m&&window.orbFeel)orbFeel.set(S.FEEL.m,S.FEEL.a)}catch(e){} /* v0.4: FEEL travels with the pattern */if(window.orbRiff){orbRiff.t=S.RIFF?S.RIFF.t:null;orbRiff.f=S.RIFF?S.RIFF.f:null}try{if(window.TURING){if(S.TU&&S.TU.length)TURING.set(S.TU);else TURING.reset()}}catch(e){}
+  ['bchar','flav','bed','bedLv','brole','padAuto'].forEach(k=>{if(S.G&&!(k in S.G))delete G[k]});if(S.v4&&S.G)for(const k in G){const v=G[k];if(!(k in S.G)&&!EXG.has(k)&&typeof v!=='function'&&!(v instanceof AudioNode))delete G[k]} /* v0.4 saves: no leftovers from a later Launch */window.BPH=S.BPH||null;try{if(S.FEEL&&S.FEEL.m&&window.orbFeel)orbFeel.set(S.FEEL.m,S.FEEL.a)}catch(e){}try{if(S.ACID&&typeof AC!=='undefined'){const P=TR[4].p;AC.n=cl(S.ACID.n);AC.a=cl(S.ACID.a);AC.s=cl(S.ACID.s);AC.cell=S.ACID.cell;AC.keep=1}}catch(e){} /* v0.5: the 303 line travels with the pattern */ /* v0.4: FEEL travels with the pattern */if(window.orbRiff){orbRiff.t=S.RIFF?S.RIFF.t:null;orbRiff.f=S.RIFF?S.RIFF.f:null}try{if(window.TURING){if(S.TU&&S.TU.length)TURING.set(S.TU);else TURING.reset()}}catch(e){}
   if(SS.keepM)TR.forEach((T,k)=>T.m=mm[k]);
   for(const k in S.G)if(!EXG.has(k))G[k]=S.G[k];if(G.bpmLock)G.bpm=kb;if(G.keyLock){G.root=kr;G.scale=ksc}
   if(Array.isArray(S.LF))S.LF.forEach((L,i)=>{if(LFOS[i]&&L)Object.assign(LFOS[i],L)});if(Array.isArray(S.TRIM))S.TRIM.forEach((v,i)=>TRIM[i]=v||0);
@@ -6416,7 +6416,7 @@ window.ORB_BUILD='2026-11-12-v0.5';
 <script>
 /* ---- v0.4: Déjà vu changes on the acid line keep to the line's own notes; a changed note never keeps a slide from the same pitch,
    and accents only flip on the cell start or an octave note ---- */
-{const _an=acidNote;acidNote=function(p){const s=tk%16,before=AC.last;const bn=AC.n?AC.n.slice():null,ba=AC.a?AC.a.slice():null;const r=_an(p);
+{const _an=acidNote;acidNote=function(p){if(AC.keep){AC.keep=0;AC.key=G.scale+'|'+p.seed+'|'+p.glide.toFixed(2)+'|'+p.accp.toFixed(2)} /* a recalled 303 line is kept, not regenerated */const s=tk%16,before=AC.last;const bn=AC.n?AC.n.slice():null,ba=AC.a?AC.a.slice():null;const r=_an(p);
   try{if(bn&&s<before&&AC.n&&AC.n.join()!==bn.join()||ba&&AC.a&&AC.a.join()!==ba.join()){const n=SC[G.scale].length,pal=[...new Set(bn.filter(v=>v%n!==0))],ok=[0,n].concat(pal);
    for(let i=0;i<16;i++){if(AC.n[i]!==bn[i]&&!ok.includes(AC.n[i]))AC.n[i]=pal.length?pal[i%pal.length]:0;
     if(AC.a[i]!==ba[i]&&AC.a[i]&&!(i%(AC.cell||8)===0||AC.n[i]>=n))AC.a[i]=0;
@@ -6441,11 +6441,11 @@ var __AB=null;function acidBus(){try{if(!ctx||ctx instanceof OfflineAudioContext
 <script>
 /* ---- v0.5: 303 GUEST LINES — in fitting moods a Launch sometimes turns the lead into a 303 line that takes the bass's place
    (like the Acid mood): Distorted Electro and Tense 20 %, Groove Techno, Dark and Temporal 15 %, Bleep 12 %, Vector and Breaks 10 %. ---- */
-{const FIT={'Distorted Electro':.2,Tense:.2,'Groove Techno':.15,Dark:.15,Temporal:.15,Bleep:.12,Vector:.1,Breaks:.1};
+{const FIT={'Distorted Electro':.2,Tense:.2,'Groove Techno':.12,Dark:.15,Temporal:.12,Bleep:.12,Vector:.1,Breaks:.1};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],c=FIT[curMood];G.acidGuest=0;
-   if(c&&!L.m&&L.p.mode!=='Acid 303'&&R()<c&&typeof LPRE!=='undefined'&&LPRE['Acid 303']){const B=Object.assign({},LPRE['Acid 303']),tt=B._t;delete B._t;
+   if(c&&L.p.mode!=='Acid 303'&&R()<c&&typeof LPRE!=='undefined'&&LPRE['Acid 303']){const B=Object.assign({},LPRE['Acid 303']),tt=B._t;delete B._t;
     Object.assign(L.p,B,{res:Math.min(12,8+R()*4),cut:240+R()*260,envA:2600+R()*1600,dec:.2+R()*.25,drv:.25+R()*.25,grit:0,crush:0,glide:.2+R()*.2,accp:.25+R()*.15,wave:R()<.3?.8:.1,subosc:0,seed:R()*1e3,mode:'Acid 303',patch:'Acid 303'});
-    if(tt)Object.assign(L,tt);L.lv=Math.max(.35,Math.min(.55,L.lv||.45));AC.key='';TR[6].m=true;G.acidGuest=1;try{window.lfoUI&&lfoUI();build()}catch(e){}}}catch(e){}return r}}
+    if(tt)Object.assign(L,tt);L.m=false;L.lv=Math.max(.35,Math.min(.55,L.lv||.45));AC.key='';TR[6].m=true;G.acidGuest=1;try{window.lfoUI&&lfoUI();build()}catch(e){}}}catch(e){}return r}}
 </script>
 <script>
 /* ---- v0.5: 303 FINE-TUNING
