@@ -6204,12 +6204,4 @@ html body #t-perf .arm.g5{grid-template-columns:repeat(5,minmax(0,1fr))!importan
   ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>box.addEventListener(ev,e=>{if(d&&(tt.contains(e.target)||e.target===tt)){e.stopPropagation();if(d.go)last=0}d=null},true));return true};
  if(!hook())setTimeout(hook,600);setTimeout(hook,2500);setInterval(()=>{try{fix()}catch(e){}},500)}
 </script>
-<script>
-/* ---- v0.36 (test): while the Eclipse breakdown is held, the harmony stays on the chord that was playing — pad, bass and lead keep to it —
-   and the pad opens up a little (brighter, longer tail). Release: the progression moves on with the groove. ---- */
-{let hold=null,last=0;const ecl=()=>{const B=window.orbBD;return B&&B.on&&B.k===1};
- const wrap=(fn,isPad)=>function(t){const a=[...arguments];if(ecl()){if(hold==null)hold=last;a[0]=hold}else{hold=null;last=t}
-  if(isPad&&ecl()){const p=TR[5].p,c=p.cut,r=p.rel;p.cut=c*1.35;p.rel=r*1.5;try{return fn.apply(this,a)}finally{p.cut=c;p.rel=r}}return fn.apply(this,a)};
- pad=wrap(pad,true);padChord=wrap(padChord,false);window.orbChordHold=()=>({hold,last})}
-</script>
 </body></html>
