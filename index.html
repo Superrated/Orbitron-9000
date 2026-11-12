@@ -1538,7 +1538,7 @@ registerProcessor('mini-ladder',class extends AudioWorkletProcessor{static get p
   for(let ch=1;ch<o.length;ch++)o[ch].set(y);return true}})`;
 function ladCap(){let q='Eco';try{q=localStorage.getItem('orb-q')||'Eco'}catch(e){}const mob=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4;return q==='Survival'?0:q==='Hi-fi'?16:q==='Eco'?(mob?8:10):(mob?10:14)}
 const _init55=init;init=function(){const nw=!ctx;_init55();A.ladN=0;if(!nw||!ctx.audioWorklet)return;const W=ctx.audioWorklet,ok=()=>{A.ladder=true},viaData=()=>W.addModule('data:application/javascript;base64,'+btoa(LADDER_SRC)).then(ok).catch(()=>{A.ladder=false});try{W.addModule(URL.createObjectURL(new Blob([LADDER_SRC],{type:'application/javascript'}))).then(ok).catch(viaData)}catch(e){viaData()}};
-function miniVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,d=leadNote(p);lastDeg=d;const f=leadFold(d2f(d,3+leadOct(p))),glk=(p.glk||0)/1000,sl=glk>.001&&LF>0&&w-LW<4*sd,f0=sl?LF:f;
+function miniVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,d=leadNote(p);lastDeg=d;const f=leadFold(d2f(d,3+leadOct(p))),glk=(p.glk>0?p.glk:p.gt||0)/1000,ghs=Math.sin(((tk%T.st)+1)*12.9898+(p.seed||0)*78.233)*43758.5453,sl=glk>.001&&LF>0&&w-LW<4*sd&&(p.glk>0||ghs-Math.floor(ghs)<(p.glide||0)),f0=sl?LF:f;   /* v0.5: one glide for every engine — Glide chance + Glide time */
  const att=Math.max(.002,(p.att||2)/1000),dec=Math.max(.02,p.dec*Math.pow(2,1.2*mv("Lead decay",w))),susM=(p.sus||0)>.01,gate=Math.max(att+.01,(p.hold||1)*sd),rel=p.dsw?dec:Math.max(.01,p.rel||.05),
   e=w+(susM?gate+rel*1.6:att+dec+.03)+.04,mix=ctx.createGain(),vs=[];
  let vib=null;if(p.vib>.5){const l=osc('sine',p.vibr||5.5,w,e);vib=ctx.createGain();vib.gain.setValueAtTime(0,w);vib.gain.linearRampToValueAtTime(p.vib,w+.2);l.connect(vib)}
@@ -1560,7 +1560,7 @@ function miniVoice(w){const T=TR[4],p=T.p,v=T.lv,sd=60/G.bpm/4,d=leadNote(p);las
  send(g,A.ld||A.dk,p.ds,p.rs);leadVoice(g,w);LF=f;LW=w}
 // knobs + menus
 TR[4].x.push(['Osc 1 level','o1l',0,1,.01],['Osc 2 detune ¢','o2d',-50,50,1],['Osc 2 level','o2l',0,1,.01],['Osc 3 detune ¢','o3d',-50,50,1],['Osc 3 level','o3l',0,1,.01],['Noise','mnz',0,1,.01],
- ['Filter attack ms','fatt',1,2000,1],['Filter decay','fdec',.02,3,.01],['Filter sustain','fsus',0,1,.01],['Decay switch','dsw',0,1,1],['Glide ms','glk',0,600,5]);
+ ['Filter attack ms','fatt',1,2000,1],['Filter decay','fdec',.02,3,.01],['Filter sustain','fsus',0,1,.01],['Decay switch','dsw',0,1,1]);   /* v0.5: 'Glide ms' merged into Glide chance + Glide time */
 LGRP.Osc.push('Osc 1 wave','Osc 1 range','Osc 1 level','Osc 2 wave','Osc 2 range','Osc 2 detune ¢','Osc 2 level','Osc 3 wave','Osc 3 range','Osc 3 detune ¢','Osc 3 level','Noise');
 LGRP.Filter.push('Filter attack ms','Filter decay','Filter sustain');LGRP.Amp.push('Decay switch');LGRP.FX.push('Glide ms');
 const NOTMINI=['Stack','Pulse','FM','Vowel','Organ','Sine'];
@@ -2090,7 +2090,7 @@ PADN.push('PWM','Brass','Bell pad','Fold','Tape');Object.assign(PGAIN,{PWM:1.15,
   if(nm==='Stab gate')P.rel=Math.min(P.rel||.5,.25);build()};
  TR[5].x.push(['Rhythm gate','pgate',0,1,.01])}
 /* ---- v82: The Touch refined — each Launch picks a flavour (Filter disco, Robot, Sunny); disco bass templates, chopped chord-stab loops, lead only on some Launches ---- */
-LPRE['Talkbox']={pg:1.2,eng:'Vowel',vow:2,uni:2,usp:8,wid:.4,ft:'LP12',cut:1800,envA:1200,res:3,att:4,dec:.25,sus:.5,kt:.4,drv:.35,ds:.25,rs:.2,vib:10,vibr:5.5,glide:.35,gt:70};
+LPRE['Talkbox']={pg:1.2,eng:'Vowel',vow:1,uni:2,usp:8,wid:.4,ft:'LP12',cut:1800,envA:1200,res:3,att:4,dec:.25,sus:.5,kt:.4,drv:.35,ds:.25,rs:.2,vib:10,vibr:5.5,glide:.35,gt:70};
 LPRE['Sunny keys']={pg:1.1,eng:'FM',fmr:1,fmi:1.2,fenv:.5,ft:'LP12',cut:2400,envA:800,res:1,att:2,dec:.5,sus:.3,kt:.3,ds:.2,rs:.35,vib:0,uni:1,wid:.5};
 {const BT=['1010001010100010','1001001010010010','1011001010110010','1000101010001010','1010101010101011','1001011010010110','1010001110100010'];
  const SL=['0010010000100100','1001001000100100','0010001100100010','1000100110001001','0010100000101000','1001000010010000'];
@@ -4329,7 +4329,7 @@ window.MOODX={
  const TC=(()=>{const n=2048,c=new Float32Array(n),k=.8,b=.08,sc=k/Math.pow(Math.cosh(k*b),2);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=((Math.tanh(k*(x+b))-Math.tanh(k*b))/sc)/2}return c})();
  window.tapeSet=()=>{if(A.tape)A.tape.curve=G.pro?TC:null};
  // ---- 1. auto mix balance ----
- const RANGE={1:[-30,-20],2:[-22,-13],3:[-26,-12],4:[-24,-14],5:[-24,-10],6:[-16,-6],7:[-20,-11],8:[-24,-15],9:[-16,-6]},NM=['Kick','Hi-hat','Clap','Perc','Lead','Pad','Bass','Snare','Stab','Satellite'];
+ const RANGE={1:[-30,-22],2:[-22,-15],3:[-26,-16],4:[-24,-15],5:[-24,-11],6:[-16,-6],7:[-20,-13],8:[-24,-17],9:[-18,-9]}   /* v0.5: tighter on the loud side for hats, clap, perc, snare, stab, lead and Satellite — the parts that stuck out */,NM=['Kick','Hi-hat','Clap','Perc','Lead','Pad','Bass','Snare','Stab','Satellite'];
  let BAL={state:'idle',msg:'',pend:0};
  const status=m=>{BAL.msg=m;document.querySelectorAll('.balst').forEach(e=>e.textContent=m)};
  function measure(ms){return new Promise(res=>{const A_={},acc={},buf=new Float32Array(2048);
@@ -6422,7 +6422,7 @@ window.ORB_BUILD='2026-11-12-v0.5';
 <script>
 /* ---- v0.4: the electric-piano stab lead is now called "EP stab"; saved patterns that still carry its old name are renamed on load ---- */
 {const OLD={['Rhodes'+' stab']:'EP stab',['P'+'PG wave']:'Formant wave',['Ju'+'no pulse']:'Chorus pulse'};   /* v0.5: old sound names in saved patterns get their new names */
- const fix=()=>{try{const P=TR[4]&&TR[4].p;if(P&&OLD[P.patch])P.patch=OLD[P.patch];const S=TR[9]&&TR[9].p;if(S&&S.snd==='Ju'+'no')S.snd='Poly pulse'}catch(e){}};fix();setInterval(fix,1000)}
+ const fix=()=>{try{const P=TR[4]&&TR[4].p;if(P&&OLD[P.patch])P.patch=OLD[P.patch];if(P&&P.glk>0){P.gt=Math.max(10,Math.min(600,P.glk));P.glide=1;P.glk=0}const S=TR[9]&&TR[9].p;if(S&&S.snd==='Ju'+'no')S.snd='Poly pulse'}catch(e){}};fix();setInterval(fix,1000)}
 </script>
 <script>
 /* ---- v0.4: ACID LINE GENERATOR — written like a 303 part instead of a random note per step.
@@ -6682,5 +6682,17 @@ window.orbExoProg=function(kind){try{let P,sh;
 /* ---- v0.5: FIRST LIGHT rebalance — the lead (often a wide saw stack) took over: lead and arps a little lower, pad a touch lower ---- */
 {const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(curMood!=='Hopeful')return r;const L=TR[4],P=TR[5];
   if(!L.m&&L.p.mode!=='Acid 303')L.lv=+((L.lv||.45)*.85).toFixed(3);if(!P.m)P.lv=+((P.lv||.5)*.9).toFixed(3);setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){}return r}}
+</script>
+<script>
+/* ---- v0.5 ENGINE TIDY — slider ranges cover every value Launch or a preset can set (before, touching such a slider made the sound jump),
+   and after every Launch each slider value is kept inside its range, so what a slider shows is what plays. ---- */
+{const W=(k,key,mn,mx)=>{const x=(TR[k].x||[]).find(x=>x[1]===key);if(!x)return;if(mn!=null)x[2]=mn;if(mx!=null)x[3]=mx};
+ W(4,'fenv',null,2.5);W(4,'att',null,1500);W(4,'len',null,32);W(4,'rel',null,3);W(4,'dec',null,2.5);W(4,'vibr',.2,null);W(4,'o2d',-1200,1200);W(4,'o3d',-1200,1200);W(4,'gt',10,600);
+ W(5,'att',.005,null);W(5,'rel',.1,null);W(5,'bars',null,8);
+ const clampAll=()=>TR.forEach(T=>(T.x||[]).forEach(x=>{const [,key,mn,mx]=x,v=T.p[key];if(typeof v!=='number'||!isFinite(v)||!(mx>mn))return;if(v<mn)T.p[key]=mn;else if(v>mx)T.p[key]=mx}));
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{clampAll()}catch(e){}return r};
+ setTimeout(()=>{try{clampAll();build()}catch(e){}},0);
+ /* presets that had their own portamento time keep it as Glide time (with Glide chance 1) */
+ const _lp=applyLP;applyLP=function(){const r=_lp.apply(this,arguments);try{const P=TR[4].p;if(P.glk>0){P.gt=Math.max(10,Math.min(600,P.glk));P.glide=1;P.glk=0}}catch(e){}return r}}
 </script>
 </body></html>
