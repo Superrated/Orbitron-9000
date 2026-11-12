@@ -1857,7 +1857,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.4 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.4';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.5 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.5';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -6364,7 +6364,7 @@ window.ORB_BUILD='2026-11-12g';
   try{M.lim2.disconnect(A.out)}catch(e){}M.lim2.connect(pre);pre.connect(ws);const cap=ctx.createWaveShaper();cap.curve=CAP;cap.oversample='none';   // the 4x clipper can ring slightly past its ceiling; this plain stage holds the line
   ws.connect(cap);cap.connect(A.out);A.out.gain.value=.9;F={ctx,lim2:M.lim2,pre,ws,cap}}catch(e){console.warn('[orbitron] final stage',e)}};
  setInterval(fit,1000);window.orbFinal=()=>F;}
-window.ORB_BUILD='2026-11-12i';
+window.ORB_BUILD='2026-11-12-v0.5';
 /* ---- v0.4: the re-roll buttons (New lead line, New bassline, Chords, Whole part, Random patch) match the rest of the UI: cut corner,
    dark panel, green edge, and a small line-drawn die in the accent colour instead of the colour emoji. ---- */
 {const st=document.createElement('style');st.textContent=`
