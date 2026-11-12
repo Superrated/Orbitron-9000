@@ -1757,13 +1757,16 @@ TR[4].x.forEach(x=>{if(x[1]==='o2d'||x[1]==='o3d'){x[2]=-700;x[3]=700}});
   nz(w,'highpass',3000,.45,.5,A.m,.5);nz(w,'bandpass',800,.2,.5,A.m,.3);
   fb.gain.setValueAtTime(.7,w+56*sd);fb.gain.linearRampToValueAtTime(0,w+64*sd);
   setTimeout(()=>{try{dl.disconnect();fb.disconnect();lp.disconnect()}catch(x){}},Math.max(0,(w+68*sd-ctx.currentTime)*1000))}
-/* v0.35: Sub boom — a clean, deep boom tuned to the key on the drop: a short pitch drop into the root, then a slow fall of about a fifth
-    over ~1.5 bars. A soft second harmonic keeps it audible on phone speakers; it runs through the bass sidechain so the kick punches through. */
- function subBoom(w){const sd=sdur(),bar=16*sd,len=Math.min(4.2,Math.max(1.6,bar*1.5));let f=440*Math.pow(2,((G.root||0)+12-69)/12);while(f<40)f*=2;while(f>62)f/=2;
-  const e=w+len+.1,o=osc('sine',f,w,e),h=osc('sine',f*2,w,e),hg=ctx.createGain(),g=ctx.createGain(),ws=ctx.createWaveShaper();ws.curve=satCurve(1.6);
-  [o,h].forEach((x,i)=>{const m=i?2:1;x.frequency.setValueAtTime(f*m*1.9,w);x.frequency.exponentialRampToValueAtTime(f*m,w+.09);x.frequency.exponentialRampToValueAtTime(f*m*.68,w+len)});
-  hg.gain.setValueAtTime(.22,w);hg.gain.exponentialRampToValueAtTime(.05,w+len*.6);h.connect(hg);hg.connect(ws);o.connect(ws);ws.connect(g);
-  const v=.62*(TR[6].lv||.55)/.55;g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(v,w+.004);g.gain.setValueAtTime(v,w+.08);g.gain.exponentialRampToValueAtTime(v*.45,w+len*.35);g.gain.exponentialRampToValueAtTime(.0001,w+len);
+/* v0.35: Sub boom — a deep boom tuned to the key on the drop: a short pitch drop into the root, then it holds (v0.5: heavier, ~2.5 bars). A soft second harmonic keeps it audible on phone speakers; it runs through the bass sidechain so the kick punches through. */
+ function subBoom(w){const sd=sdur(),bar=16*sd,len=Math.min(6.5,Math.max(2.4,bar*2.5));let f=440*Math.pow(2,((G.root||0)+12-69)/12);while(f<40)f*=2;while(f>62)f/=2;
+  /* v0.5: heavier and more droney — holds its pitch much longer (only a small fall at the end), lasts ~2.5 bars, a slowly beating
+     second sine and a low-passed saw layer for weight, a bit more saturation */
+  const e=w+len+.1,o=osc('sine',f,w,e),o2=osc('sine',f*1.004,w,e),h=osc('sine',f*2,w,e),sw=osc('sawtooth',f,w,e),hg=ctx.createGain(),sg=ctx.createGain(),slp=ctx.createBiquadFilter(),g=ctx.createGain(),ws=ctx.createWaveShaper();ws.curve=satCurve(2.4);
+  [o,o2,h,sw].forEach((x,i)=>{const m=i===2?2:i===1?1.004:1;x.frequency.setValueAtTime(f*m*1.9,w);x.frequency.exponentialRampToValueAtTime(f*m,w+.12);x.frequency.setValueAtTime(f*m,w+len*.6);x.frequency.exponentialRampToValueAtTime(f*m*.84,w+len)});
+  hg.gain.setValueAtTime(.24,w);hg.gain.exponentialRampToValueAtTime(.08,w+len*.7);h.connect(hg);hg.connect(ws);
+  slp.type='lowpass';slp.frequency.setValueAtTime(220,w);slp.frequency.exponentialRampToValueAtTime(110,w+len*.5);slp.Q.value=.7;sg.gain.value=.2;sw.connect(slp);slp.connect(sg);sg.connect(ws);
+  const og=ctx.createGain();og.gain.value=.55;o2.connect(og);og.connect(ws);o.connect(ws);ws.connect(g);
+  const v=.6*(TR[6].lv||.55)/.55;g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(v,w+.005);g.gain.setValueAtTime(v,w+.1);g.gain.exponentialRampToValueAtTime(v*.8,w+len*.4);g.gain.exponentialRampToValueAtTime(v*.5,w+len*.75);g.gain.exponentialRampToValueAtTime(.0001,w+len);
   g.connect(A.dkb)}
  armBtn('Noise sweep','#e8f4ff',noiseSweep,1,prepNoise);armBtn('Steel drop','#9dff00',steelDrop,0,prepSteel);armBtn('Sub boom','#ff7a3d',subBoom,0,null);window.orbPrepDrops=[prepNoise,prepSteel]}
 /* ---- v62: Flight tab tuned for vertical phone screens — section labels, compact riser/breakdown pads, hold pads and arm buttons in separate tidy rows, room for the ticker ---- */
@@ -2433,7 +2436,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   Noir:        {hp:30,sub:-2,  mud:1,  mf:240,pres:1,  air:1.5,w:.2, rt:3500, pre:20,tr:0},
   Drone:       {hp:36,sub:-2.5,mud:-.5,mf:300,pres:1,  air:3,  w:.4, rt:6500, pre:30,tr:-.4},
   Acid:        {hp:30,sub:0,   mud:-1, mf:300,pres:.5, air:1,  w:.15,rt:5000, pre:8, tr:-.3},
-  Power:       {hp:30,sub:0,   mud:-1.5,mf:260,pres:1, air:2,  w:-.2,  rt:4000, pre:10,tr:-2},
+  Power:       {hp:30,sub:0,   mud:-3,  mf:260,pres:1, air:2,  w:-.2,  rt:4000, pre:10,tr:-2},
   Italo:       {hp:28,sub:-.5, mud:-1, mf:350,pres:0,  air:1.5,w:.6, rt:9000, pre:20,tr:.5},
   Breaks:      {hp:28,sub:0,   mud:0,  mf:300,pres:0,  air:-1, w:.6, rt:7000, pre:10,tr:-1.5},
   'Deep Space':{hp:28,sub:-.5, mud:0,  mf:300,pres:-1, air:3,  w:.45,rt:7000, pre:50,tr:3.5},
@@ -2441,7 +2444,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   'Melodic House':{hp:28,sub:-.5,mud:-1,mf:320,pres:1.5,air:3,w:.4,rt:8000,pre:25,tr:-.5},
   'Distorted Electro':{hp:32,sub:0,mud:-1.5,mf:280,pres:1,air:1.5,w:.2,rt:5000,pre:10,tr:-1.5},
   Ambient:{hp:34,sub:-2,mud:-1.5,mf:320,pres:.5,air:4.5,w:.55,rt:11000,pre:50,tr:3.5},
-  'Groove Techno':{hp:30,sub:-.5,mud:-1,mf:300,pres:1,air:1.5,w:.3,rt:4500,pre:12,tr:-1},
+  'Groove Techno':{hp:30,sub:-.5,mud:-2.5,mf:280,pres:1,air:1.5,w:.3,rt:4500,pre:12,tr:-1},
   Temporal:{hp:32,sub:-1,mud:-1.5,mf:300,pres:1.5,air:1,w:.2,rt:4000,pre:12,tr:-1.5},
   Vector:{hp:28,sub:-.5,mud:-1,mf:320,pres:1.5,air:3.5,w:.45,rt:8500,pre:25,tr:-.5}},
   OFF={hp:10,sub:0,mud:0,mf:300,pres:0,air:0,w:0,rt:20000,pre:0,tr:0,mono:0};
@@ -6556,7 +6559,7 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
    Launch now often turns the riff into a generated arp (chord arp, pedal arp, converge, diverge, motif or up/down, with its own ring and range),
    otherwise varies the riff's notes (same rhythm: up a chord tone, inverted or octave-flipped), picks from a wider set of lead sounds,
    and from a larger pool of 4-chord progressions. ---- */
-{const VAR={'Melodic House':{riff:.45,prog:.45,snd:.4},Melancholic:{riff:.5,prog:.5,snd:.45}};
+{const VAR={'Melodic House':{riff:.3,prog:.45,snd:.4},Melancholic:{riff:.35,prog:.5,snd:.45}};
  const PROGS=[[0,5,3,4],[0,3,6,4],[0,5,6,4],[0,2,3,4],[5,3,0,4],[0,4,5,3],[0,6,3,5],[3,5,0,4],[0,3,4,6],[0,5,1,4],[0,2,5,4],[5,6,0,0],[0,6,5,4],[3,6,0,5],[0,5,2,6],[0,3,5,4]];
  const MODES=[['Chord arp',[8,12,16],[1,2]],['Pedal arp',[6,8,12],[1,2]],['Converge',[5,6,8],[2]],['Diverge',[5,6,8],[2]],['Motif',[3,4,5,6,7],[1,2,3]],['Up/Down',[6,8],[1,2]]];
  const SNDS={'Melodic House':['Bright pluck','String pluck','Chorus pulse','Soft keys','Cinematic arp','Pluck','FM keys','House piano','Wide saw'],
@@ -6570,5 +6573,32 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
    if(R()<v.snd){const ok=SNDS[curMood].filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1)}
    if(prog.length===4&&R()<v.prog)prog=pick(PROGS).slice();
    try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){console.warn('[orbitron] variety',e)}return r}}
+</script>
+<script>
+/* ---- v0.5: MAX Q — cleaner and more varied. Less mud and heat: rumble, bus clip, grit and reverb are capped a little lower, the pad sits ~2 dB down
+   the master cuts a bit more around 260 Hz, and the kick is a little less driven and shorter. More variety: sometimes a short techno lead (stab-like Motif) and sometimes a second chord
+   in the progression instead of one chord all the way. ---- */
+{const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(curMood!=='Power')return r;
+  G.rumble=Math.min(+G.rumble||0,.3);G.clip=Math.min(+G.clip||0,.46);G.bgrit=Math.min(+G.bgrit||0,.27);G.rev=Math.min(+G.rev||0,.24);
+  if(!TR[5].m)TR[5].lv=+((TR[5].lv||.5)*.8).toFixed(3);
+  {const K=TR[0].p;K.drive=Math.min(+K.drive||0,2.5);K.dec=Math.min(+K.dec||.4,.32)}   // the kick was the main source of mud (driven, long body)
+  if(R()<.4){const np=pick([[0,0,1,0],[0,0,5,0],[0,0,6,0],[0,0,0,1],[0,3,0,3],[0,0,3,0]]),s0=pshape[0],x0=(typeof PX!=='undefined'&&PX)?PX[0]:undefined;prog=np.slice();pshape=prog.map(()=>s0);if(typeof PX!=='undefined'&&Array.isArray(PX)){PX.length=0;prog.forEach(()=>PX.push(x0))}if(typeof PD!=='undefined')PD=null}
+  const L=TR[4];if(L.m&&R()<.5){const ok=['Hypno stab','FM stab','Techno stab','Hard sync','Metal FM'].filter(n=>LPRE[n]);if(ok.length){applyLP(pick(ok),1);L.m=false;L.p.mode='Motif';
+   Object.assign(L,{st:16,h:pick([3,4,5]),r:pick([0,2,3]),ten:0});L.pt=pat(L);L.p.range=1;L.p.len=pick([3,4]);L.lv=Math.min(L.lv||.45,.42);mot=[];mp=-1;buf=[];if(window.orbRiff)orbRiff.t=null}}
+  try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){console.warn('[orbitron] max q',e)}return r}}
+</script>
+<script>
+/* ---- v0.5: TWICE AS MANY RIFFS — four more lead riffs for every modern family (Rolling, Bounce, Peak, Minimal) and every riff style
+   (Italo, Trance, Dub, Break). Same rules as the others: scale degrees on the chord root (10+ = an octave up), bar 2 answers bar 1 with the
+   same rhythm. They show up in the lead's Riff menu (numbers 5–8) and Launch picks from all of them. ---- */
+{const _=null,F=window.orbModern&&orbModern.FAM,X=window.orbRiffX;
+ const NF={"rolling": [[0, 4, 10, 4, 0, 4, 10, 12, 0, 4, 10, 4, 2, 4, 10, 4], [10, _, 4, _, 2, _, 0, _, 10, _, 4, _, 12, _, 10, _], [0, _, _, 2, _, _, 4, _, 0, _, _, 2, _, _, 10, _], [4, 2, 0, _, 4, 2, 0, _, 4, 2, 0, _, 12, 10, 4, _]], "bounce": [[0, _, _, 10, _, _, _, 4, _, _, 2, _, _, 0, _, _], [_, _, 4, _, _, 2, _, _, 4, _, _, _, 10, _, _, _], [2, _, _, _, 4, _, _, 2, _, _, 0, _, _, _, 4, _], [0, _, _, 4, _, _, 10, _, _, 4, _, _, 2, _, _, _]], "peak": [[0, _, 0, _, _, 0, _, _, 0, _, _, _, 0, _, 1, _], [_, _, 0, _, _, _, _, 0, _, _, 0, _, _, _, _, _], [0, _, _, 10, _, _, 0, _, _, _, 0, _, _, 10, _, _], [_, 0, _, _, _, 0, _, _, _, 0, _, _, _, 0, _, 6]], "minimal": [[_, _, _, 0, _, _, _, _, _, _, 4, _, _, _, _, _], [0, _, _, _, _, _, _, 2, _, _, _, _, _, _, 0, _], [_, _, 10, _, _, _, _, _, _, 0, _, _, _, _, _, 4], [_, 4, _, _, _, _, 0, _, _, _, _, _, 2, _, _, _]]},NX={"italo": [[1, [0, _, 10, _, 4, _, 10, _, 0, _, 10, _, 5, _, 4, _], [0, _, 10, _, 4, _, 10, _, 2, _, 10, _, 4, _, 2, _]], [1, [4, _, _, 2, _, _, 0, _, 4, _, _, 2, _, _, 10, _], [4, _, _, 2, _, _, 0, _, 5, _, _, 4, _, _, 2, _]], [0, [0, _, _, 0, _, _, 6, _, 0, _, _, 0, _, _, 4, _], [0, _, _, 0, _, _, 6, _, 0, _, _, 1, _, _, 0, _]], [0, [10, _, 6, _, _, 4, _, _, 10, _, 6, _, _, 0, _, _], [10, _, 6, _, _, 4, _, _, 10, _, 6, _, _, 1, _, _]]], "trance": [[1, [_, _, 0, _, _, _, 4, _, _, _, 10, _, _, _, 4, _], [_, _, 2, _, _, _, 4, _, _, _, 12, _, _, _, 10, _]], [1, [0, _, 4, _, 10, _, 4, _, 0, _, 4, _, 10, _, 12, _], [2, _, 5, _, 10, _, 5, _, 2, _, 4, _, 10, _, 4, _]], [0, [_, _, 0, _, _, _, 0, _, _, _, 6, _, _, _, 0, _], [_, _, 0, _, _, _, 1, _, _, _, 0, _, _, _, 6, _]], [0, [0, _, _, 4, _, _, 0, _, _, 6, _, _, 0, _, _, _], [0, _, _, 4, _, _, 1, _, _, 0, _, _, 6, _, _, _]]], "dub": [[0, [_, _, _, _, 0, _, _, _, _, _, _, _, 0, _, _, _], [_, _, _, _, 0, _, _, _, _, _, _, _, 6, _, _, _]], [1, [_, _, 4, _, _, _, _, _, _, _, 2, _, _, _, _, _], [_, _, 4, _, _, _, _, _, _, _, 5, _, _, _, _, _]], [0, [_, _, _, _, _, _, 0, _, _, _, _, _, _, _, 0, _], [_, _, _, _, _, _, 1, _, _, _, _, _, _, _, 0, _]], [1, [_, _, _, 2, _, _, _, _, _, _, _, 4, _, _, _, _], [_, _, _, 2, _, _, _, _, _, _, _, 10, _, _, _, _]]], "breaks": [[1, [0, _, _, 4, _, _, 10, _, _, _, 4, _, _, _, _, _], [0, _, _, 4, _, _, 12, _, _, _, 10, _, _, _, _, _]], [1, [_, _, 4, _, 5, _, _, 4, _, _, 2, _, _, _, _, _], [_, _, 4, _, 5, _, _, 10, _, _, 5, _, _, _, _, _]], [0, [0, _, _, 0, _, _, 6, _, _, _, 0, _, _, _, _, _], [0, _, _, 0, _, _, 1, _, _, _, 0, _, _, _, _, _]], [0, [_, 0, _, _, 6, _, _, _, 4, _, _, _, _, _, _, _], [_, 0, _, _, 6, _, _, _, 1, _, _, _, _, _, _, _]]]};
+ try{if(F)for(const f in NF)if(F[f]&&F[f].riff)F[f].riff.push(...NF[f]);if(X)for(const k in NX)if(X[k])NX[k].forEach(([b,a,c])=>X[k].push({b,t:a.concat(c)}))}catch(e){console.warn('[orbitron] riffs+',e)}setTimeout(()=>{try{build()}catch(e){}},0)}
+</script>
+<script>
+/* ---- v0.5: GRAVITY ASSIST a little less hot: bus clip, grit and rumble capped slightly lower, kick less driven, more cut around 280 Hz ---- */
+{const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(curMood!=='Groove Techno')return r;
+  G.clip=Math.min(+G.clip||0,.38);G.bgrit=Math.min(+G.bgrit||0,.18);G.rumble=Math.min(+G.rumble||0,.22);const K=TR[0].p;K.drive=Math.min(+K.drive||0,2.5);
+  setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){}return r}}
 </script>
 </body></html>
