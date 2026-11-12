@@ -144,7 +144,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
    from a single shared 100 ms clock instead of its own timer, so the phone wakes up once instead of dozens of times. Fast timers (LFOs, delay sync,
    playheads, the scheduler) keep their own exact timers. ---- */
 (function(){const si=window.setInterval.bind(window),ci=window.clearInterval.bind(window);const J=new Map();let id=1e6,beat=null;
- const run=()=>{const n=performance.now();for(const [k,j] of J){if(n>=j.due){j.due=n+j.ms-(n-j.due>j.ms?0:Math.min(j.ms*.5,n-j.due));try{j.fn.apply(window,j.a)}catch(e){setTimeout(()=>{throw e})}}}};
+ let hb=0;const run=()=>{if(document.hidden&&(++hb%20))return; /* quick win 8: screen off → slow UI jobs at most every 2 s */const n=performance.now();for(const [k,j] of J){if(n>=j.due){j.due=n+j.ms-(n-j.due>j.ms?0:Math.min(j.ms*.5,n-j.due));try{j.fn.apply(window,j.a)}catch(e){setTimeout(()=>{throw e})}}}};
  window.setInterval=function(fn,ms,...a){if(typeof fn!=='function'||!(ms>=200))return si(fn,ms,...a);const k=++id;J.set(k,{fn,ms,a,due:performance.now()+ms});if(!beat)beat=si(run,100);return k};
  window.clearInterval=function(k){if(J.has(k)){J.delete(k);return}return ci(k)};window.orbBeat={count:()=>J.size}})();
 </script>
@@ -6265,5 +6265,21 @@ var PDC={};
  const rr=(r,dp)=>+(r[0]+R()*(r[1]-r[0])).toFixed(dp);
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const p=TR[3].p,c=DF[curMood];p.pdt=.04;p.pdrv=0;
   if(c&&R()<c[0]){if(c[1])p.pdrv=rr(c[1],2);if(c[2])p.bend=rr(c[2],2);if(c[3])p.pdt=rr(c[3],3)}}catch(e){console.warn('[orbitron] perc launch',e)}return r}}
+/* ---- quick win 1: one screen rebuild per Launch. The Launch layers called build() ~24 times, syncMix() ~6 and lfoUI() ~3 times; each call also queued
+   a dozen follow-up UI jobs. While a Launch runs, those calls are now collected and done once at its end. Sound is unchanged. ---- */
+{let inGen=0;const want={};const hold=n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(){if(inGen){want[n]=1;return}return f.apply(this,arguments)}};
+ hold('build');hold('lfoUI');hold('syncMix');
+ const _g=generate;generate=function(){inGen++;try{return _g.apply(this,arguments)}finally{inGen--;if(!inGen){for(const n of ['syncMix','build','lfoUI'])if(want[n]){want[n]=0;try{window[n]()}catch(e){console.warn('[orbitron] launch '+n,e)}}}}}}
+/* ---- quick win 3: pads sat ~0.5 after Launch in five moods (vs ~0.2 elsewhere); trimmed by 18 %. The fader stays fully yours. ---- */
+{const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
+/* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
+   a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
+window.ORB_BUILD='2026-11-12b';
+{let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
+  d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
+  d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
+  x.style.cssText='min-width:44px;min-height:40px;border:2px solid #04100a;background:transparent;color:#04100a;font:700 13px ui-monospace,monospace';x.onclick=()=>d.remove();d.appendChild(x);document.body.appendChild(d)};
+ const check=()=>{try{if(!window.caches||shown)return;caches.match('./index.html',{ignoreSearch:true}).then(r=>r&&r.text()).then(t=>{if(!t)return;const m=t.match(/ORB_BUILD='([^']+)'/);if(m&&m[1]!==window.ORB_BUILD)note()}).catch(()=>{})}catch(e){}};
+ if(/^https?:$/.test(location.protocol)){setTimeout(check,15000);setInterval(check,600000)}}
 </script>
 </body></html>
