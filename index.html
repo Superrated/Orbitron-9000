@@ -7063,13 +7063,6 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
    if(R()<v.snd){const ok=SNDS[curMood].filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1)}
    if(prog.length===4&&R()<v.prog)prog=pick(PROGS).slice();
    try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){console.warn('[orbitron] variety',e)}return r}}
-/* ---- v0.83: Lost Signal · Afterglow lead — never the cheesy bright sounds (a flavour can still pick them: they are swapped for a warmer one),
-   and the lead cutoff stays at or below 1500 Hz so it sits under the pad instead of on top. ---- */
-{const CHEESE=new Set(['House piano','Bright pluck','Chorus pulse','Rave stab','Organ stab','Hoover']),WARM=['Soft keys','String pluck','FM keys','Pluck'];
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(curMood!=='Melancholic'&&curMood!=='Melodic House')return r;const P=TR[4].p;
-  if(CHEESE.has(P.patch)&&typeof applyLP==='function'&&typeof LPRE!=='undefined'){const ok=WARM.filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1)}
-  if(P.mode!=='Acid 303'&&P.cut>1500)P.cut=1500;setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){console.warn('[orbitron] lead sync',e)}},0)}
- catch(e){console.warn('[orbitron] lost-signal lead',e)}return r}}
 </script>
 <script>
 /* ---- v0.5: MAX Q — cleaner and more varied. Less mud and heat: rumble, bus clip, grit and reverb are capped a little lower, the pad sits ~2 dB down
@@ -7097,12 +7090,6 @@ const FAN={'Melodic House':[.55,.2,.45],'Groove Techno':[.42,.15,.4],Italo:[.6,.
 {const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(curMood!=='Groove Techno')return r;
   G.clip=Math.min(+G.clip||0,.38);G.bgrit=Math.min(+G.bgrit||0,.18);G.rumble=Math.min(+G.rumble||0,.22);const K=TR[0].p;K.drive=Math.min(+K.drive||0,2.5);
   setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){}return r}}
-/* ---- v0.83: Gravity Assist lead is never cheesy — Organ stab, EP stab, Rave stab, FM keys, House piano and Bright pluck are swapped for
-   one of the mood's techno sounds (Hypno stab, Techno stab, Hard sync, FM stab, Rubber blip). Acid 303 lines are left alone. ---- */
-{const CHEESE=new Set(['Organ stab','EP stab','Rave stab','FM keys','House piano','Bright pluck','Chorus pulse','Hoover']),TECH=['Hypno stab','Techno stab','Hard sync','FM stab','Rubber blip'];
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(curMood!=='Groove Techno')return r;const P=TR[4].p;
-  if(P.mode!=='Acid 303'&&CHEESE.has(P.patch)&&typeof applyLP==='function'&&typeof LPRE!=='undefined'){const ok=TECH.filter(n=>LPRE[n]);if(ok.length){applyLP(pick(ok),1);setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){console.warn('[orbitron] gravity lead sync',e)}},0)}}}
- catch(e){console.warn('[orbitron] gravity-assist lead',e)}return r}}
 </script>
 <script>
 /* ---- v0.5: Launch uses the modern bass styles where they fit — Rolling techno in driving moods, Melodic pulse in melodic ones,
@@ -7578,5 +7565,21 @@ window.orbExoProg=function(kind){try{let P,sh;
 {const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const H=TR[1];if(H.m||!H.st)return r;
   const n=(H.pt||[]).filter(Boolean).length*16/H.st;if(n>8){H.lv=+(H.lv*Math.sqrt(8/n)).toFixed(3);setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){console.warn('[orbitron] hat-density sync',e)}},0)}}
  catch(e){console.warn('[orbitron] hat-density level',e)}return r}}
+</script>
+<script>/* ---- v0.83: LEAD TASTE — per mood, lead sounds that came out cheesy are swapped for one that suits the mood, and the lead's cutoff
+   can be capped so it doesn't get too bright. One line per mood:  ban · sounds swapped out · swap · what they become · cut · highest cutoff (Hz).
+   Acid 303 lines are left alone. Notes by ear (Nov 2026): Lost Signal · Afterglow and Ion Storm too cheesy and bright, Gravity Assist cheesy. ---- */
+{const CHEESE=['House piano','Bright pluck','Chorus pulse','Organ stab','EP stab','Rave stab','Hoover','Donk'];
+ const LT={
+  Melancholic:      {ban:CHEESE, swap:['Soft keys','String pluck','FM keys','Pluck'], cut:1500},
+  'Melodic House':  {ban:CHEESE, swap:['Soft keys','String pluck','FM keys','Pluck'], cut:1500},
+  'Groove Techno':  {ban:[...CHEESE,'FM keys'], swap:['Hypno stab','Techno stab','Hard sync','FM stab','Rubber blip']},
+  'Distorted Electro':{ban:CHEESE, swap:['Hard sync','Techno stab','Hypno stab','FM stab','Metal FM','Mini edge','Aggro','Vowel'], cut:1800}};
+ window.orbLeadTaste=LT;
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const t=LT[curMood],P=TR[4].p;if(!t||P.mode==='Acid 303')return r;
+  if(t.ban.includes(P.patch)&&typeof applyLP==='function'&&typeof LPRE!=='undefined'){const ok=t.swap.filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1)}
+  if(t.cut&&P.cut>t.cut)P.cut=t.cut;
+  setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){console.warn('[orbitron] lead-taste sync',e)}},0)}
+ catch(e){console.warn('[orbitron] lead taste',e)}return r}}
 </script>
 </body></html>

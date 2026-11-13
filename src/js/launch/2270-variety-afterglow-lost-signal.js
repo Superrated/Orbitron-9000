@@ -17,10 +17,3 @@
    if(R()<v.snd){const ok=SNDS[curMood].filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1)}
    if(prog.length===4&&R()<v.prog)prog=pick(PROGS).slice();
    try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){console.warn('[orbitron] variety',e)}return r}}
-/* ---- v0.83: Lost Signal · Afterglow lead — never the cheesy bright sounds (a flavour can still pick them: they are swapped for a warmer one),
-   and the lead cutoff stays at or below 1500 Hz so it sits under the pad instead of on top. ---- */
-{const CHEESE=new Set(['House piano','Bright pluck','Chorus pulse','Rave stab','Organ stab','Hoover']),WARM=['Soft keys','String pluck','FM keys','Pluck'];
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(curMood!=='Melancholic'&&curMood!=='Melodic House')return r;const P=TR[4].p;
-  if(CHEESE.has(P.patch)&&typeof applyLP==='function'&&typeof LPRE!=='undefined'){const ok=WARM.filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1)}
-  if(P.mode!=='Acid 303'&&P.cut>1500)P.cut=1500;setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){console.warn('[orbitron] lead sync',e)}},0)}
- catch(e){console.warn('[orbitron] lost-signal lead',e)}return r}}
