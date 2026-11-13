@@ -35,11 +35,11 @@
   let a,sh;for(let i=0;i<8;i++){[a,sh]=pickProg();if(a&&a.join(',')!==old)break}const L=a.length===4&&R()<.35?pick([2,3,6,8]):a.length;window.padProgApply&&padProgApply(a,L,sh);const T=TR[5];if(T.h!==T.st){T.h=T.st;T.r=0;T.pt=pat(T)}};
  const go=(fn)=>{if(PEND)return;fn=fn||roll;window.__pdw=fn===rollC?'c':'a';const now=()=>{PEND=0;try{fn()}catch(e){}lab()};
   if(playing&&ctx){const left=(16-((tk%16)+16)%16)%16||16,ms=Math.max(0,left*sdur()*1000-120);PEND=1;lab();setTimeout(now,ms)}else now()}
- let ui=null;const lab=()=>{if(!ui)return;ui.querySelector('.pda').textContent=PEND&&window.__pdw==='a'?'… next bar':'Whole part';ui.querySelector('.pdc').textContent=PEND&&window.__pdw==='c'?'… next bar':'Chords';ui.querySelector('.pdu').disabled=!UNDO};
+ let ui=null;const lab=()=>{if(!ui)return;ui.querySelector('.pda').textContent=PEND&&window.__pdw==='a'?'… next bar':'New part';ui.querySelector('.pdc').textContent=PEND&&window.__pdw==='c'?'… next bar':'New chords';ui.querySelector('.pdu').disabled=!UNDO};
  const pdAdd=()=>{const c=card();if(!c||c.querySelector('.pdice'))return;const g=c.querySelector('.grid');if(!g)return;
   const pp=[...g.children].find(e=>e.dataset&&e.dataset.pp)||[...g.children].find(e=>labOf(e).trim()==='Pad style');
   ui=document.createElement('div');ui.className='pdice';ui.dataset.g='pat';ui.dataset.keep='pat';
-  ui.innerHTML='<button type="button" class="pdr pdc" title="New chords only: a fresh progression that suits the mood (as Launch would pick). Rhythm, voicing and style stay. Lands on the next bar.">Chords</button><button type="button" class="pdr pda" title="Re-roll the whole pad pattern page: style, chords, length, colours, rhythm, gates, voicing, top line. Lands on the next bar.">Whole part</button><button type="button" class="pdu" title="Back to the pad part before the last roll">↶</button>';
+  ui.innerHTML='<button type="button" class="pdr pdc" title="New chords only: a fresh progression that suits the mood (as Launch would pick). Rhythm, voicing and style stay. Lands on the next bar.">New chords</button><button type="button" class="pdr pda" title="Re-roll the whole pad pattern page: style, chords, length, colours, rhythm, gates, voicing, top line. Lands on the next bar.">New part</button><button type="button" class="pdu" title="Back to the pad part before the last roll">↶</button>';
   ui.querySelector('.pdc').onclick=e=>{e.preventDefault();go(rollC)};
   ui.querySelector('.pda').onclick=e=>{e.preventDefault();go(roll)};ui.querySelector('.pdu').onclick=e=>{e.preventDefault();if(UNDO){const u=UNDO;UNDO=null;restore(u);lab()}};
   if(pp)g.insertBefore(ui,pp);else g.prepend(ui);lab()}

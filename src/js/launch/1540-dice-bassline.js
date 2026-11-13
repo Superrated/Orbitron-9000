@@ -22,12 +22,12 @@
    try{if(typeof say==='function')say('🎲 NEW BASSLINE · HELD · '+P.bns.toUpperCase())}catch(e){}}
   else P.bsus=0};
  let ui=null;
- const lab=()=>{if(!ui||!ui.isConnected)return;ui.querySelector('.pdr').textContent=PEND?'… next bar':'New bassline';ui.querySelector('.pdu').disabled=!UNDO};
+ const lab=()=>{if(!ui||!ui.isConnected)return;ui.querySelector('.pdr').textContent=PEND?'… next bar':'New line';ui.querySelector('.pdu').disabled=!UNDO};
  const go=()=>{if(PEND)return;const now=()=>{PEND=0;try{roll()}catch(e){}lab()};
   if(playing&&ctx){const left=(16-((tk%16)+16)%16)%16||16,ms=Math.max(0,left*sdur()*1000-120);PEND=1;lab();setTimeout(now,ms)}else now()};
  const swap=()=>{const c=TR[6].mb&&TR[6].mb.closest('.card');if(!c)return;const old=c.querySelector('button.bassroll');if(!old)return;
   ui=document.createElement('div');ui.className='pdice bdice bassroll';ui.dataset.g='pat';ui.dataset.keep='pat';
-  ui.innerHTML='<button type="button" class="pdr" title="Re-roll only the bass rhythm and notes, in the style of the mood in from. Sometimes a held bass. Lands on the next bar.">New bassline</button><button type="button" class="pdu" title="Back to the bassline before the last roll">↶</button><label class="pds">from<select></select></label>';
+  ui.innerHTML='<button type="button" class="pdr" title="Re-roll only the bass rhythm and notes, in the style of the mood in from. Sometimes a held bass. Lands on the next bar.">New line</button><button type="button" class="pdu" title="Back to the bassline before the last roll">↶</button><label class="pds">from<select></select></label>';
   const s=ui.querySelector('select');srcList().forEach(o=>s.add(new Option(o,o)));s.value=SRC;s.onchange=()=>{SRC=s.value};
   ui.querySelector('.pdr').onclick=e=>{e.preventDefault();go()};ui.querySelector('.pdu').onclick=e=>{e.preventDefault();if(UNDO){const u=UNDO;UNDO=null;restore(u);lab()}};
   old.replaceWith(ui);lab();try{window.bassLayout&&bassLayout()}catch(e){}};

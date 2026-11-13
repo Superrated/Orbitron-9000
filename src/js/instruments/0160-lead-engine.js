@@ -78,7 +78,7 @@ function mkSel(lab,opts,val,fn){const l=document.createElement('label');l.classN
 function leadPresetUI(g){const P=TR[4].p,card=g.closest('.card');
  const row=document.createElement('div');row.style.cssText='grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center';
  const ps=document.createElement('select');ps.setAttribute('aria-label','Lead patch');['Custom',...Object.keys(LPRE)].forEach(k=>ps.add(new Option(k==='Custom'?'Patch: custom':'Patch: '+k,k)));ps.value=LPRE[P.patch]?P.patch:'Custom';ps.onchange=()=>{if(ps.value!=='Custom'){applyLP(ps.value,0);build()}};
- const rb=document.createElement('button');rb.className='dice';rb.textContent='Random patch';rb.onclick=()=>{const ks=Object.keys(LPRE).filter(k=>k!=='Acid 303'||P.mode==='Acid 303');applyLP(pick(ks),1);build()};
+ const rb=document.createElement('button');rb.className='dice';rb.textContent='New patch';rb.title='Pick a random lead patch';rb.onclick=()=>{const ks=Object.keys(LPRE).filter(k=>k!=='Acid 303'||P.mode==='Acid 303');applyLP(pick(ks),1);build()};
  row.append(ps,rb);g.prepend(row);
  g.insertBefore(mkSel('Engine',LENG,(!P.eng||P.eng==='Saw')?'Stack':P.eng,v=>{P.eng=v;P.patch='';leadPages()}),row.nextSibling);
  g.insertBefore(mkSel('Filter type',LFT,P.ft||'LP12',v=>{P.ft=v;P.patch=''}),row.nextSibling.nextSibling);

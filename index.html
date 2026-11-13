@@ -220,13 +220,17 @@ function buildCards(){const root=$("#tracks");root.innerHTML="";TR.forEach((t,k)
  if(!t.pad){sl(g,"Hits",0,32,t.h,1,v=>{t.h=Math.min(v,t.st);upd()});sl(g,"Rotate",0,31,t.r,1,v=>{t.r=v;upd()});sl(g,"Tension",0,1,t.ten||0,.01,v=>{t.ten=v;upd()});if(k===6){const sep=document.createElement("div");sep.className="bksep";sep.textContent="Bassline";g.appendChild(sep);const P=t.p;g.appendChild(mkSel("Lock",["Free","Kick lock","Around kick","Offbeats","Rolling"],P.blk||"Free",v=>P.blk=v));g.appendChild(mkSel("Phrase",["1 bar","2 bars","4 bars"],(P.bph||1)+(P.bph>1?" bars":" bar"),v=>P.bph=parseInt(v)));sl(g,"Gate (0 = Decay)",0,1,P.bgt||0,.01,v=>P.bgt=v);sl(g,"Slide",0,1,P.bsl||0,.01,v=>P.bsl=v);sl(g,"Ghost notes",0,1,P.bgh||0,.01,v=>P.bgh=v);try{window.bassUI&&bassUI(g,t)}catch(e){}}
  if([0,1,2,3,7].includes(k)){const sep=document.createElement("div");sep.className="bksep";sep.textContent="Break feel";g.appendChild(sep);sl(g,"Accent",0,1,t.acc||0,.01,v=>t.acc=v);sl(g,"Ghosts",0,1,t.gho||0,.01,v=>t.gho=v);sl(g,"Variation",0,1,t.vari||0,.01,v=>t.vari=v)}}
  sl(g,"Level",0,t===TR[4]?1.4:1,t.lv,.01,v=>t.lv=v);
- if(k===4){const s=document.createElement("label");s.className="sl";s.innerHTML="Arp mode";const se=document.createElement("select");MODES.forEach(x=>se.add(new Option(x)));se.value=t.p.mode;se.onchange=()=>t.p.mode=se.value;s.appendChild(se);g.appendChild(s);const rs=document.createElement("button");rs.textContent="Reseed";rs.onclick=()=>{buf=[];mot=[];mp=-1;TR[4].p.seed=Math.random()*1e3};g.appendChild(rs)}
+ if(k===4){const s=document.createElement("label");s.className="sl";s.innerHTML="Arp mode";const se=document.createElement("select");MODES.forEach(x=>se.add(new Option(x)));se.value=t.p.mode;se.onchange=()=>t.p.mode=se.value;s.appendChild(se);g.appendChild(s);const rs=document.createElement("button");rs.className="dice reseed";rs.textContent="Reseed";rs.onclick=()=>{buf=[];mot=[];mp=-1;TR[4].p.seed=Math.random()*1e3};g.appendChild(rs)}
  if(t.pad){const np=document.createElement("button");np.textContent="New progression";np.onclick=()=>newProg(t.st);g.appendChild(np)}
  t.x.forEach(([l,key,mn,mx,sp])=>sl(g,l,mn,mx,t.p[key],sp,v=>t.p[key]=v));
  b.appendChild(g);c.appendChild(b);root.appendChild(c);draw(t,-1)});
 }
-function draw(t,s){const c=t.cv;if(!c)return;const x=c.getContext("2d"),tx=window.DTX||(window.DTX=getComputedStyle(document.body).getPropertyValue("--text")),mu=window.DMU||(window.DMU=getComputedStyle(document.body).getPropertyValue("--muted"));x.clearRect(0,0,208,208);const n=t.st,P=i=>{const a=-Math.PI/2+2*Math.PI*i/n;return[104+78*Math.cos(a),104+78*Math.sin(a)]};
- x.strokeStyle=mu;x.globalAlpha=.25;x.beginPath();x.arc(104,104,78,0,7);x.stroke();x.globalAlpha=.8;x.strokeStyle=t.c;x.lineWidth=2;x.beginPath();let f=1;t.pt.forEach((h,i)=>{if(h&&!t.pad){const[a,b]=P(i);f?x.moveTo(a,b):x.lineTo(a,b);f=0}});x.closePath();x.stroke();x.globalAlpha=1;
+function draw(t,s){const c=t.cv;if(!c)return;const x=c.getContext("2d"),tx=window.DTX||(window.DTX=getComputedStyle(document.body).getPropertyValue("--text")),mu=window.DMU||(window.DMU=getComputedStyle(document.body).getPropertyValue("--muted"));x.clearRect(0,0,208,208);const n=t.st;
+ /* v0.5: the pad ring follows the Chord rhythm — each dot sits where its chord starts and an arc shows how long the chord lasts (a long chord gets a long arc, a half chord a short one) */
+ let FR=null;if(t.pad&&typeof PD!=='undefined'&&PD&&PD.length===n){let C=0;for(let i=0;i<n;i++)C+=PD[i];if(C>0){FR=[0];for(let i=0;i<n;i++)FR.push(FR[i]+PD[i]/C)}}
+ const AN=i=>-Math.PI/2+2*Math.PI*(FR?FR[i]:i/n),P=i=>{const a=AN(i);return[104+78*Math.cos(a),104+78*Math.sin(a)]};
+ x.strokeStyle=mu;x.globalAlpha=.25;x.beginPath();x.arc(104,104,78,0,7);x.stroke();
+ if(t.pad&&n>1){x.strokeStyle=t.c;x.lineWidth=5;x.lineCap='round';for(let i=0;i<n;i++){const gp=Math.min(.26,(AN(i+1)-AN(i))*.32);x.globalAlpha=i===s?.9:.45;x.beginPath();x.arc(104,104,78,AN(i)+gp,AN(i+1)-gp);x.stroke()}x.lineCap='butt'}x.globalAlpha=.8;x.strokeStyle=t.c;x.lineWidth=2;x.beginPath();let f=1;t.pt.forEach((h,i)=>{if(h&&!t.pad){const[a,b]=P(i);f?x.moveTo(a,b):x.lineTo(a,b);f=0}});x.closePath();x.stroke();x.globalAlpha=1;
  t.pt.forEach((h,i)=>{const[a,b]=P(i);x.beginPath();x.arc(a,b,h?9:4,0,7);x.fillStyle=h?t.c:mu;x.globalAlpha=h?1:.5;x.fill();if(i===s){x.globalAlpha=1;x.lineWidth=3;x.strokeStyle=tx;x.beginPath();x.arc(a,b,13,0,7);x.stroke()}});x.globalAlpha=1}
 // ---------- Audio ----------
 function irM(b){const m=ctx.createBuffer(1,b.length,b.sampleRate);m.copyToChannel(b.getChannelData(0),0);return m} /* v0.22: mono impulse = half the convolution work */
@@ -837,7 +841,7 @@ function mkSel(lab,opts,val,fn){const l=document.createElement('label');l.classN
 function leadPresetUI(g){const P=TR[4].p,card=g.closest('.card');
  const row=document.createElement('div');row.style.cssText='grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center';
  const ps=document.createElement('select');ps.setAttribute('aria-label','Lead patch');['Custom',...Object.keys(LPRE)].forEach(k=>ps.add(new Option(k==='Custom'?'Patch: custom':'Patch: '+k,k)));ps.value=LPRE[P.patch]?P.patch:'Custom';ps.onchange=()=>{if(ps.value!=='Custom'){applyLP(ps.value,0);build()}};
- const rb=document.createElement('button');rb.className='dice';rb.textContent='Random patch';rb.onclick=()=>{const ks=Object.keys(LPRE).filter(k=>k!=='Acid 303'||P.mode==='Acid 303');applyLP(pick(ks),1);build()};
+ const rb=document.createElement('button');rb.className='dice';rb.textContent='New patch';rb.title='Pick a random lead patch';rb.onclick=()=>{const ks=Object.keys(LPRE).filter(k=>k!=='Acid 303'||P.mode==='Acid 303');applyLP(pick(ks),1);build()};
  row.append(ps,rb);g.prepend(row);
  g.insertBefore(mkSel('Engine',LENG,(!P.eng||P.eng==='Saw')?'Stack':P.eng,v=>{P.eng=v;P.patch='';leadPages()}),row.nextSibling);
  g.insertBefore(mkSel('Filter type',LFT,P.ft||'LP12',v=>{P.ft=v;P.patch=''}),row.nextSibling.nextSibling);
@@ -2290,8 +2294,8 @@ TR[5].p.mov=TR[5].p.mov||'Classic';
   sel(g,'Chord type',Object.keys(CT),ctNow,v=>{pshape=prog.map(()=>CT[v]||pick(M.sh||['7']));pmean=null});
   if(PD&&PD.length!==T.st)PD=G.prhN?rhFit(G.prhN,T.st):null;
   const rhNow=PD?((G.prhN&&(rhFit(G.prhN,T.st)||[]).join()===PD.join()?G.prhN:Object.keys(RHS).find(k=>(rhFit(k,T.st)||[]).join()===PD.join()))||'(custom)'):'Even';
-  sel(g,'Chord rhythm',rhNow==='(custom)'?['(custom)',...Object.keys(RH)]:Object.keys(RH),rhNow,v=>{if(v==='(custom)')return;PD=rhFit(v,T.st);G.prhN=PD?v:''});
-  sel(g,'Push',['Off','On'],PPUSH?'On':'Off',v=>PPUSH=v==='On'?1:0);
+  sel(g,'Chord rhythm',rhNow==='(custom)'?['(custom)',...Object.keys(RH)]:Object.keys(RH),rhNow,v=>{if(v==='(custom)')return;PD=rhFit(v,T.st);G.prhN=PD?v:'';draw(T,-1)});
+  sel(g,'Push',['Off','On'],PPUSH?'On':'Off',v=>{PPUSH=v==='On'?1:0});
   const grNow=(P.pgate||0)>.01?(Object.keys(GR).find(k=>GR[k]&&P.pgpat&&GR[k]===P.pgpat.join(''))||'Disco'):'Off';
   sel(g,'Gate rhythm',Object.keys(GR),grNow,v=>{if(!GR[v]){P.pgate=0;return}P.pgpat=GR[v].split('').map(Number);if((P.pgate||0)<.3)P.pgate=.8});
   sel(g,'Inversions',['Smooth top','Close'],G.pvoice,v=>{G.pvoice=v;PTOP=null})}
@@ -4255,7 +4259,9 @@ window.MOODX={
 <script>
 /* ---- v0.22: pad Progression menu lists every progression Launch can play, grouped: this mood, lengths of the playing progression
    (2, 3, 4, 6, 8 chords, as Launch makes them), the four dark-harmony families, then every other mood. Whatever plays shows by name;
-   "(custom)" only after a manual chord edit. Choosing one never changes the scale or anything else. ---- */
+   "(custom)" only after a manual chord edit. Choosing one never changes the scale or anything else.
+   v0.5: easier to use — ◀ ▶ buttons beside the menu step to the previous / next progression (try them by ear without opening
+   the long list), and the "Same chords · shorter or longer" group became a row of chord-count chips (2 3 4 6 8) under the menu. ---- */
 {const RN=['1','2','3','4','5','6','7'],plab=a=>a.map(x=>typeof x==='number'?RN[((x%7)+7)%7]:x).join('–');
  /* v0.22: entries read as chord names in the current key ("Am F Dm Em · 1–6–4–5") */
  const cn=x=>{const s=SC[G.scale]||[0,2,3,5,7,8,10],n=s.length,pc=d=>((G.root+s[((d%n)+n)%n]+12*Math.floor(d/n))%12+12)%12;
@@ -4267,14 +4273,14 @@ window.MOODX={
   FAMN={'cinematic minor':'Dark · cinematic','phrygian':'Dark · ominous','hypnotic':'Dark · hypnotic (1–2 chords)','suspended':'Dark · floating'};
  const VAR=(a,L)=>L===2?a.slice(0,2):L===3?a.slice(0,3):L===6?a.concat(a.slice(0,2)):L===8?a.concat([a[0],a[1],a[3],a[2]]):a;
  const ky=a=>JSON.stringify(a.map(x=>{const c=chordSpec(x);return[c.d,c.x||0]})),curKey=()=>JSON.stringify(prog.map((d,i)=>[d,(PX&&PX[i])||0]));
- let ENT=[],SIG='';
+ let ENT=[],SIG='',HIT=null;
  function build_(){const M=MOODS[curMood]||{},E=[],seen=new Set(),ck=curKey(),add=(g,v,lab,a,sh,L)=>{E.push({g,v,lab,a,sh,L:L||a.length,k:ky(VAR(a,L||a.length))})};
   (M.pr||[]).forEach(a=>{add('This mood · '+MN(curMood),plab(a),nm(a),a,M.sh);seen.add(ky(a))});
   // the playing progression's base (any library) and its lengths
   const bases=[];(M.pr||[]).forEach(a=>bases.push([a,M.sh]));Object.values(window.HARMFAM||{}).forEach(F=>F.pr.forEach(a=>bases.push([a,F.sh])));
   Object.keys(MOODS).forEach(k=>(MOODS[k].pr||[]).forEach(a=>bases.push([a,MOODS[k].sh])));
   const hit=bases.find(([a])=>a.length===4&&[2,3,4,6,8].some(L=>ky(VAR(a,L))===ck));
-  if(hit){const[a,sh]=hit;[2,3,4,6,8].forEach(L=>add('Same chords · shorter or longer','len:'+L+':'+plab(a),L+' chords:  '+VAR(a,L).map(cn).join(' '),a,sh,L))}
+  HIT=hit?{a:hit[0],sh:hit[1]}:null;
   const FAM=window.HARMFAM||{};Object.keys(FAM).forEach(f=>FAM[f].pr.forEach((a,i)=>{if(seen.has(ky(a)))return;seen.add(ky(a));add(FAMN[f]||('Dark · '+f),'fam:'+f+':'+i,nm(a),a,FAM[f].sh)}));
   const more=[];Object.keys(MOODS).filter(k=>k!==curMood).forEach(k=>(MOODS[k].pr||[]).forEach((a,i)=>{if(seen.has(ky(a)))return;seen.add(ky(a));more.push([feel(k),'mood:'+k+':'+i,nm(a),a,MOODS[k].sh])}));
   ['More · bright & uplifting','More · melancholic & deep','More · dark & driving'].forEach(g=>more.filter(m=>m[0]===g).forEach(m=>add(...m)));
@@ -4288,7 +4294,26 @@ window.MOODX={
   if(sig!==SIG||!s.querySelector('optgroup')){SIG=sig;ENT=build_();s.innerHTML='';s.add(new Option(padStyle==='Progression'||padStyle==='Pedal chords'?'(custom)':'(set by '+padStyle+')','custom'));let og=null,gn='';
    ENT.forEach(e=>{if(e.g!==gn){gn=e.g;og=document.createElement('optgroup');og.label=e.g;s.appendChild(og)}og.appendChild(new Option(e.lab,e.v))});
    s.dataset.mood=curMood;s.onchange=()=>{const e=ENT.find(x=>x.v===s.value);if(e)apply(e)}}
-  const m=ENT.find(e=>e.k===ck&&!e.v.startsWith('len:'))||ENT.find(e=>e.k===ck);const v=m?m.v:'custom';if(s.value!==v)s.value=v}
+  const m=ENT.find(e=>e.k===ck);const v=m?m.v:'custom';
+  const o0=s.options[0];if(o0&&o0.value==='custom'){const t=!m&&HIT&&(padStyle==='Progression'||padStyle==='Pedal chords')?VAR(HIT.a,prog.length).map(cn).join(' ')+'  ·  '+prog.length+' chords':o0.dataset.t||(o0.dataset.t=o0.text);if(o0.text!==t)o0.text=t}
+  if(s.value!==v)s.value=v;nav(l,s)}
+ /* v0.5: ◀ ▶ step through the menu; chips change the number of chords of the same progression */
+ const step=d=>{if(!ENT.length)ENT=build_();const ck=curKey();let i=ENT.findIndex(e=>e.k===ck);i=i<0?(d>0?0:ENT.length-1):(i+d+ENT.length)%ENT.length;apply(ENT[i])};
+ function nav(l,s){let w=l.querySelector('.ppn');if(!w){l.classList.add('ppfull');w=document.createElement('div');w.className='ppn';
+   const b=(t,d,ti)=>{const x=document.createElement('button');x.type='button';x.className='ppst';x.textContent=t;x.title=ti;x.onclick=e=>{e.preventDefault();e.stopPropagation();step(d)};return x};
+   s.replaceWith(w);w.append(b('◀',-1,'Previous progression'),s,b('▶',1,'Next progression'));
+   const c=document.createElement('div');c.className='ppc';l.appendChild(c)}
+  const c=l.querySelector('.ppc'),n=prog.length,sig=HIT?plab(HIT.a)+'|'+n:'';if(c.dataset.sig===sig)return;c.dataset.sig=sig;c.innerHTML='';c.hidden=!HIT;if(!HIT)return;
+  c.appendChild(Object.assign(document.createElement('span'),{textContent:'chords'}));
+  [2,3,4,6,8].forEach(L=>{const x=document.createElement('button');x.type='button';x.className='ppch'+(L===n?' on':'');x.textContent=L;x.title=L+' chords: '+VAR(HIT.a,L).map(cn).join(' ');
+   x.onclick=e=>{e.preventDefault();e.stopPropagation();if(L!==prog.length)apply({a:HIT.a,L,sh:HIT.sh})};c.appendChild(x)})}
+ {const st=document.createElement('style');st.textContent=`.card[data-k="5"] label.ppfull{grid-column:1/-1}
+ .ppn{display:flex;gap:6px;align-items:stretch}.ppn select{flex:1;min-width:0}
+ .ppst,.ppch{border-radius:0;background:#0f2418;border:1px solid rgba(0,255,156,.32);color:var(--acc,#ffe44d);font:inherit;font-weight:700;cursor:pointer;padding:0;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))}
+ .ppst{width:34px;min-height:34px;font-size:12px;flex:none}.ppst:active,.ppch:active{background:rgba(255,228,77,.16)}
+ .ppc{display:flex;gap:5px;align-items:center;margin-top:6px}.ppc[hidden]{display:none}.ppc span{font-size:10px;letter-spacing:.08em;opacity:.7;margin-right:4px}
+ .ppch{width:34px;height:28px;font-size:12px}.ppch.on{background:var(--acc,#ffe44d);color:#0b1a12;border-color:var(--acc,#ffe44d)}`;document.head.appendChild(st)}
  BUILD.hooks.push({post(){setTimeout(()=>{try{SIG='';sync()}catch(e){}},30)}});
  UI.on(()=>{try{sync()}catch(e){}})}
 </script>
@@ -4329,11 +4354,11 @@ window.MOODX={
   let a,sh;for(let i=0;i<8;i++){[a,sh]=pickProg();if(a&&a.join(',')!==old)break}const L=a.length===4&&R()<.35?pick([2,3,6,8]):a.length;window.padProgApply&&padProgApply(a,L,sh);const T=TR[5];if(T.h!==T.st){T.h=T.st;T.r=0;T.pt=pat(T)}};
  const go=(fn)=>{if(PEND)return;fn=fn||roll;window.__pdw=fn===rollC?'c':'a';const now=()=>{PEND=0;try{fn()}catch(e){}lab()};
   if(playing&&ctx){const left=(16-((tk%16)+16)%16)%16||16,ms=Math.max(0,left*sdur()*1000-120);PEND=1;lab();setTimeout(now,ms)}else now()}
- let ui=null;const lab=()=>{if(!ui)return;ui.querySelector('.pda').textContent=PEND&&window.__pdw==='a'?'… next bar':'Whole part';ui.querySelector('.pdc').textContent=PEND&&window.__pdw==='c'?'… next bar':'Chords';ui.querySelector('.pdu').disabled=!UNDO};
+ let ui=null;const lab=()=>{if(!ui)return;ui.querySelector('.pda').textContent=PEND&&window.__pdw==='a'?'… next bar':'New part';ui.querySelector('.pdc').textContent=PEND&&window.__pdw==='c'?'… next bar':'New chords';ui.querySelector('.pdu').disabled=!UNDO};
  const pdAdd=()=>{const c=card();if(!c||c.querySelector('.pdice'))return;const g=c.querySelector('.grid');if(!g)return;
   const pp=[...g.children].find(e=>e.dataset&&e.dataset.pp)||[...g.children].find(e=>labOf(e).trim()==='Pad style');
   ui=document.createElement('div');ui.className='pdice';ui.dataset.g='pat';ui.dataset.keep='pat';
-  ui.innerHTML='<button type="button" class="pdr pdc" title="New chords only: a fresh progression that suits the mood (as Launch would pick). Rhythm, voicing and style stay. Lands on the next bar.">Chords</button><button type="button" class="pdr pda" title="Re-roll the whole pad pattern page: style, chords, length, colours, rhythm, gates, voicing, top line. Lands on the next bar.">Whole part</button><button type="button" class="pdu" title="Back to the pad part before the last roll">↶</button>';
+  ui.innerHTML='<button type="button" class="pdr pdc" title="New chords only: a fresh progression that suits the mood (as Launch would pick). Rhythm, voicing and style stay. Lands on the next bar.">New chords</button><button type="button" class="pdr pda" title="Re-roll the whole pad pattern page: style, chords, length, colours, rhythm, gates, voicing, top line. Lands on the next bar.">New part</button><button type="button" class="pdu" title="Back to the pad part before the last roll">↶</button>';
   ui.querySelector('.pdc').onclick=e=>{e.preventDefault();go(rollC)};
   ui.querySelector('.pda').onclick=e=>{e.preventDefault();go(roll)};ui.querySelector('.pdu').onclick=e=>{e.preventDefault();if(UNDO){const u=UNDO;UNDO=null;restore(u);lab()}};
   if(pp)g.insertBefore(ui,pp);else g.prepend(ui);lab()}
@@ -4364,12 +4389,12 @@ window.MOODX={
   P.range=any?pick([1,2,3]):pick([1,1,2]);P.lock=r2(.5+R()*.5);P.spread=r2(J(any?R():(M.sp!=null?M.sp:.3),.12,0,1));P.bias=r2(J(any?R():(M.bias!=null?M.bias:.4),.15,0,1));
   P.dv=r2(J(any?.5+R()*.45:(M.dv!=null?M.dv:.8),.1,.3,.98));P.len=pick([3,4,5,6,8]);P.cyc=R()<.2?pick([3,5,6,7]):0;P.nrep=R()<.15?pick([2,3]):1;P.rst=R()<.2?pick([1,2,4]):0;
   P.glide=r2(R()*.25);P.accp=r2(.1+R()*.3);buf=[];mot=[];mp=-1;P.seed=Math.random()*1e3;T.pt=pat(T);build()};
- const lab=()=>{if(!ui)return;ui.querySelector('.pdr').textContent=PEND?'… next bar':'New lead line';ui.querySelector('.pdu').disabled=!UNDO};
+ const lab=()=>{if(!ui)return;ui.querySelector('.pdr').textContent=PEND?'… next bar':'New line';ui.querySelector('.pdu').disabled=!UNDO};
  const go=()=>{if(PEND)return;const now=()=>{PEND=0;try{roll()}catch(e){}lab()};
   if(playing&&ctx){const left=(16-((tk%16)+16)%16)%16||16,ms=Math.max(0,left*sdur()*1000-120);PEND=1;lab();setTimeout(now,ms)}else now()};
  const ldAdd=()=>{const c=card();if(!c)return;const g=c.querySelector('.grid');if(!g)return;const old=g.querySelector('.ldice');if(old){ui=old;return}
   ui=document.createElement('div');ui.className='pdice ldice';ui.dataset.g='pat';ui.dataset.keep='pat';
-  ui.innerHTML='<button type="button" class="pdr" title="Re-roll the whole lead pattern page: rhythm, notes, loop and feel, in the style of the mood in from. Lands on the next bar.">New lead line</button><button type="button" class="pdu" title="Back to the lead line before the last roll">↶</button><label class="pds">from<select></select></label>';
+  ui.innerHTML='<button type="button" class="pdr" title="Re-roll the whole lead pattern page: rhythm, notes, loop and feel, in the style of the mood in from. Lands on the next bar.">New line</button><button type="button" class="pdu" title="Back to the lead line before the last roll">↶</button><label class="pds">from<select></select></label>';
   const s=ui.querySelector('select');srcList().forEach(o=>s.add(new Option(o,o)));s.value=SRC;s.onchange=()=>{SRC=s.value};
   ui.querySelector('.pdr').onclick=e=>{e.preventDefault();go()};ui.querySelector('.pdu').onclick=e=>{e.preventDefault();if(UNDO){const u=UNDO;UNDO=null;restore(u);lab()}};
   const first=[...g.children].find(e=>e.dataset&&e.dataset.g==='pat');if(first)g.insertBefore(ui,first);else g.prepend(ui);lab()};
@@ -4542,9 +4567,10 @@ window.MOODX={
 </script>
 <script>
 /* ---- v0.22: pad Pattern page tidied. Dice row on top (🎲 Chords · 🎲 Whole part · ↶), then three headed groups:
-   CHORDS (Pad style, Progression, Chords, Chord type) · RHYTHM (Chord length, Chord rhythm, Push, Gate rhythm) ·
-   VOICING (Chord notes, Open voicing, Inversions, Top line). The old "New progression" button is replaced by 🎲 Chords. ---- */
-{const GR=[['Chords · what plays',['Pad style','Progression','Chords','Chord type']],['Rhythm · when it changes',['Chord length (bars)','Chord rhythm','Push','Gate rhythm']],['Voicing · how it is spread',['Chord notes','Open voicing','Inversions','Top line']]];
+   CHORDS (Pad style, Chord type, Progression, Chords) · RHYTHM (Chord length, Chord rhythm, Push, Gate rhythm) ·
+   VOICING (Chord notes, Open voicing, Inversions, Top line). The old "New progression" button is replaced by 🎲 Chords.
+   v0.5: Progression gets a full row (it has ◀ ▶ and chord-count chips now), so Pad style and Chord type share the row above it. ---- */
+{const GR=[['Chords · what plays',['Pad style','Chord type','Progression','Chords']],['Rhythm · when it changes',['Chord length (bars)','Chord rhythm','Push','Gate rhythm']],['Voicing · how it is spread',['Chord notes','Open voicing','Inversions','Top line']]];
  const st=document.createElement('style');st.textContent='.card[data-k="5"] .grid>.pph{grid-column:1/-1;margin:8px 0 0;padding-top:8px;border-top:1px dashed rgba(0,255,156,.3);font:700 10px ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;opacity:.75}.card[data-k="5"] .grid>.ppx{display:none!important}';document.head.appendChild(st);
  const lay=()=>{const c=[...document.querySelectorAll('.card')].find(c=>+c.dataset.k===5);if(!c)return;const g=c.querySelector('.grid');if(!g)return;
   const kids=[...g.children];kids.forEach(e=>{if(e.tagName==='BUTTON'&&e.textContent.trim()==='New progression')e.classList.add('ppx')});
@@ -4631,12 +4657,12 @@ window.MOODX={
    try{if(typeof say==='function')say('🎲 NEW BASSLINE · HELD · '+P.bns.toUpperCase())}catch(e){}}
   else P.bsus=0};
  let ui=null;
- const lab=()=>{if(!ui||!ui.isConnected)return;ui.querySelector('.pdr').textContent=PEND?'… next bar':'New bassline';ui.querySelector('.pdu').disabled=!UNDO};
+ const lab=()=>{if(!ui||!ui.isConnected)return;ui.querySelector('.pdr').textContent=PEND?'… next bar':'New line';ui.querySelector('.pdu').disabled=!UNDO};
  const go=()=>{if(PEND)return;const now=()=>{PEND=0;try{roll()}catch(e){}lab()};
   if(playing&&ctx){const left=(16-((tk%16)+16)%16)%16||16,ms=Math.max(0,left*sdur()*1000-120);PEND=1;lab();setTimeout(now,ms)}else now()};
  const swap=()=>{const c=TR[6].mb&&TR[6].mb.closest('.card');if(!c)return;const old=c.querySelector('button.bassroll');if(!old)return;
   ui=document.createElement('div');ui.className='pdice bdice bassroll';ui.dataset.g='pat';ui.dataset.keep='pat';
-  ui.innerHTML='<button type="button" class="pdr" title="Re-roll only the bass rhythm and notes, in the style of the mood in from. Sometimes a held bass. Lands on the next bar.">New bassline</button><button type="button" class="pdu" title="Back to the bassline before the last roll">↶</button><label class="pds">from<select></select></label>';
+  ui.innerHTML='<button type="button" class="pdr" title="Re-roll only the bass rhythm and notes, in the style of the mood in from. Sometimes a held bass. Lands on the next bar.">New line</button><button type="button" class="pdu" title="Back to the bassline before the last roll">↶</button><label class="pds">from<select></select></label>';
   const s=ui.querySelector('select');srcList().forEach(o=>s.add(new Option(o,o)));s.value=SRC;s.onchange=()=>{SRC=s.value};
   ui.querySelector('.pdr').onclick=e=>{e.preventDefault();go()};ui.querySelector('.pdu').onclick=e=>{e.preventDefault();if(UNDO){const u=UNDO;UNDO=null;restore(u);lab()}};
   old.replaceWith(ui);lab();try{window.bassLayout&&bassLayout()}catch(e){}};
@@ -6577,17 +6603,29 @@ window.ORB_BUILD='2026-11-13-v0.76-c';
   ws.connect(cap);cap.connect(A.out);A.out.gain.value=.9;F={ctx,lim2:M.lim2,pre,ws,cap}}catch(e){console.warn('[orbitron] final stage',e)}};
  setInterval(fit,1000);window.orbFinal=()=>F;}
 /* v0.75: an older build id was set here and overrode the real one (see ORB_BUILD above) */
-/* ---- v0.4: the re-roll buttons (New lead line, New bassline, Chords, Whole part, Random patch) match the rest of the UI: cut corner,
-   dark panel, green edge, and a small line-drawn die in the accent colour instead of the colour emoji. ---- */
-{const st=document.createElement('style');st.textContent=`
-.pdr,.bassroll:not(:empty),button.dice{border-radius:0!important;background:#0f2418!important;border:1px solid rgba(0,255,156,.32)!important;color:var(--acc,#ffe44d)!important;
- clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));font-family:inherit;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
- display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px}
-.pdu{border-radius:0!important;background:#0f2418!important;min-height:44px;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px))}
-.pdr:active,.bassroll:active,button.dice:active{background:rgba(255,228,77,.16)!important}
-.pdr::before,.bassroll:not(:empty)::before,button.dice::before{content:'';width:16px;height:16px;flex:none;background:currentColor;
- -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1.5' y='1.5' width='13' height='13' rx='2.5' fill='none' stroke='black' stroke-width='1.6'/%3E%3Ccircle cx='5' cy='5' r='1.3'/%3E%3Ccircle cx='11' cy='11' r='1.3'/%3E%3Ccircle cx='8' cy='8' r='1.3'/%3E%3Ccircle cx='11' cy='5' r='1.3'/%3E%3Ccircle cx='5' cy='11' r='1.3'/%3E%3C/svg%3E") center/contain no-repeat;
- mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1.5' y='1.5' width='13' height='13' rx='2.5' fill='none' stroke='black' stroke-width='1.6'/%3E%3Ccircle cx='5' cy='5' r='1.3'/%3E%3Ccircle cx='11' cy='11' r='1.3'/%3E%3Ccircle cx='8' cy='8' r='1.3'/%3E%3Ccircle cx='11' cy='5' r='1.3'/%3E%3Ccircle cx='5' cy='11' r='1.3'/%3E%3C/svg%3E") center/contain no-repeat}`;document.head.appendChild(st)}
+/* ---- v0.4: the re-roll buttons (New line, New chords, New part, New patch, Reseed) match the rest of the UI: cut corner,
+   dark panel, green edge, and a small line-drawn die in the accent colour instead of the colour emoji.
+   v0.5: one compact look for every dice and reseed button — same height (34 px), same small caps text on one line, same ↶ and
+   "from" menu — and each dice row (roll · undo · from) sits on a single line, so they take half the room they used to. ---- */
+{const die="url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1.5' y='1.5' width='13' height='13' rx='2.5' fill='none' stroke='black' stroke-width='1.6'/%3E%3Ccircle cx='5' cy='5' r='1.3'/%3E%3Ccircle cx='11' cy='11' r='1.3'/%3E%3Ccircle cx='8' cy='8' r='1.3'/%3E%3Ccircle cx='11' cy='5' r='1.3'/%3E%3Ccircle cx='5' cy='11' r='1.3'/%3E%3C/svg%3E\") center/contain no-repeat",
+  cut='polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px))';
+ const st=document.createElement('style');st.textContent=`
+.pdr,button.bassroll,button.dice{border-radius:0!important;background:#0f2418!important;border:1px solid rgba(0,255,156,.32)!important;color:var(--acc,#ffe44d)!important;
+ clip-path:${cut};font-family:inherit;font-size:11px!important;font-weight:700;letter-spacing:.1em!important;text-transform:uppercase;white-space:nowrap;
+ display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px!important;height:34px;padding:0 12px!important;line-height:1;cursor:pointer}
+.pdu{border-radius:0!important;background:#0f2418!important;border:1px solid rgba(0,255,156,.32)!important;color:var(--acc,#ffe44d)!important;
+ clip-path:${cut};width:34px!important;min-height:34px!important;height:34px;padding:0!important;font-size:15px!important;flex:none!important;cursor:pointer}
+.pdu:disabled{opacity:.3;cursor:default}
+.pdr:active,button.bassroll:active,button.dice:active,.pdu:active{background:rgba(255,228,77,.16)!important}
+.pdr::before,button.bassroll::before,button.dice::before{content:'';width:13px;height:13px;flex:none;background:currentColor;-webkit-mask:${die};mask:${die}}
+/* one row: roll button(s) · undo · from menu */
+.pdice{grid-column:1/-1;display:flex;flex-wrap:nowrap!important;gap:6px!important;align-items:center!important}
+.pdice .pdr{flex:1 1 auto!important;min-width:0}
+.pdice:has(.pds) .pdr{flex:0 0 auto!important}
+.pdice .pds{flex:1 1 0!important;min-width:0;display:flex;align-items:center;gap:6px;font-size:10px!important;letter-spacing:.08em;text-transform:lowercase;opacity:.85}
+.pdice .pds select{flex:1;min-width:0;min-height:34px!important;height:34px;padding-top:0;padding-bottom:0;font-size:12px}
+/* Reseed: a small button, not a full-width bar */
+button.dice.reseed{justify-self:start;width:auto}`;document.head.appendChild(st)}
 </script>
 <script>
 /* ---- v0.4: the electric-piano stab lead is now called "EP stab"; saved patterns that still carry its old name are renamed on load ---- */
