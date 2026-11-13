@@ -14,7 +14,7 @@ window.orbExoProg=function(kind){try{let P,sh;
  const setScale=sc=>{if(DS.has(G.scale))return;G.scale=sc;try{const e=document.querySelector('#scale');if(e)e.value=sc}catch(e){}orbExoProg('desert')};
  // a Desert riff chosen in the Riff menu also brings the scale
  let last=null;const DJ=D.map(d=>JSON.stringify(d.t));setInterval(()=>{try{const sp=document.querySelector('#t-synth');if(!sp||sp.hidden)return;const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff'){last=null;return}if(R.t===last)return;last=R.t;if(DJ.includes(JSON.stringify(R.t)))setScale('Hijaz')}catch(e){}},700);
- const FIT={Tense:.2,Dark:.15,Noir:.15,'Groove Techno':.12,Vector:.12,Breaks:.1,'Distorted Electro':.12,Power:.1,Temporal:.1};
+ const FIT={Tense:.3,Dark:.22,Noir:.22,'Groove Techno':.18,Vector:.18,Breaks:.15,'Distorted Electro':.18,Power:.15,Temporal:.15,Chug:.15} /* v0.83: ×1.5 and Red Giant: a little more of the world scales */;
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],P=L.p,c=FIT[curMood];if(!c||L.m||P.mode==='Acid 303'||R()>=c||!window.orbRiff)return r;
    G.scale=R()<.7?'Hijaz':'Double harmonic';try{document.querySelector('#scale').value=G.scale}catch(e){}

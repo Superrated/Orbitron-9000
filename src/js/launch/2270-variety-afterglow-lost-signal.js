@@ -6,8 +6,8 @@
 {const VAR={'Melodic House':{riff:.3,prog:.45,snd:.4},Melancholic:{riff:.35,prog:.5,snd:.45}};
  const PROGS=[[0,5,3,4],[0,3,6,4],[0,5,6,4],[0,2,3,4],[5,3,0,4],[0,4,5,3],[0,6,3,5],[3,5,0,4],[0,3,4,6],[0,5,1,4],[0,2,5,4],[5,6,0,0],[0,6,5,4],[3,6,0,5],[0,5,2,6],[0,3,5,4]];
  const MODES=[['Chord arp',[8,12,16],[1,2]],['Pedal arp',[6,8,12],[1,2]],['Converge',[5,6,8],[2]],['Diverge',[5,6,8],[2]],['Motif',[3,4,5,6,7],[1,2,3]],['Up/Down',[6,8],[1,2]]];
- const SNDS={'Melodic House':['Bright pluck','String pluck','Chorus pulse','Soft keys','Cinematic arp','Pluck','FM keys','House piano','Wide saw'],
-  Melancholic:['Bright pluck','String pluck','Chorus pulse','Soft keys','Cinematic arp','Pluck','FM keys','Wide saw','Mini lead']};
+ const SNDS={'Melodic House':['String pluck','Soft keys','Cinematic arp','Pluck','FM keys','Wide saw'],   /* v0.83: no House piano / Bright pluck / Chorus pulse (cheesy, too bright) */
+  Melancholic:['String pluck','Soft keys','Cinematic arp','Pluck','FM keys','Wide saw','Mini lead']};
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const UP={0:2,1:2,2:4,3:4,4:10,10:12,11:12,12:14,14:14},INV={0:10,10:0,2:4,4:2,12:4,14:2};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(window.orbRiff)orbRiff.base=null;const v=VAR[curMood],L=TR[4],P=L.p;if(!v||L.m||P.mode==='Acid 303')return r;const RF=window.orbRiff;
@@ -17,3 +17,10 @@
    if(R()<v.snd){const ok=SNDS[curMood].filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1)}
    if(prog.length===4&&R()<v.prog)prog=pick(PROGS).slice();
    try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){console.warn('[orbitron] variety',e)}return r}}
+/* ---- v0.83: Lost Signal · Afterglow lead — never the cheesy bright sounds (a flavour can still pick them: they are swapped for a warmer one),
+   and the lead cutoff stays at or below 1500 Hz so it sits under the pad instead of on top. ---- */
+{const CHEESE=new Set(['House piano','Bright pluck','Chorus pulse','Rave stab','Organ stab','Hoover']),WARM=['Soft keys','String pluck','FM keys','Pluck'];
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(curMood!=='Melancholic'&&curMood!=='Melodic House')return r;const P=TR[4].p;
+  if(CHEESE.has(P.patch)&&typeof applyLP==='function'&&typeof LPRE!=='undefined'){const ok=WARM.filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1)}
+  if(P.mode!=='Acid 303'&&P.cut>1500)P.cut=1500;setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){console.warn('[orbitron] lead sync',e)}},0)}
+ catch(e){console.warn('[orbitron] lost-signal lead',e)}return r}}

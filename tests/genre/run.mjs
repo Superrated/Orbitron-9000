@@ -6,6 +6,7 @@
 //   node tests/genre/run.mjs --seed 4242          repeat an earlier run exactly (the seed is printed every run)
 //   node tests/genre/run.mjs --bars 4 --workers 2 longer audio per Launch / parallel browser tabs
 //   node tests/genre/run.mjs --no-audio           patterns + arrangement only (a few seconds)
+//   node tests/genre/run.mjs --after "setPercSound('Conga')"   run JS right after each Launch (force a sound, solo a part …)
 //   node tests/genre/run.mjs --fresh              reload the app before every Launch (slower; no memory of earlier Launches)
 //
 // How it works, fast: Launches run in headless-Chrome tabs that stay open (the app is reloaded every 25 Launches), and the app's AudioContext is swapped for an
@@ -27,7 +28,7 @@ import { check } from './rules.mjs';
 const argv = process.argv.slice(2), arg = (k, d) => { const i = argv.indexOf(k); return i < 0 ? d : (argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : true); };
 const N = +arg('--n', 100), BARS = +arg('--bars', 2), WARM = 1, ONLY = arg('--mood', null), AUDIO = !argv.includes('--no-audio');
 const SEED = +arg('--seed', Date.now() % 1e6), WORKERS = +arg('--workers', Math.max(1, Math.min(4, os.cpus().length)));
-const VERBOSE = argv.includes('--verbose'), FRESH = argv.includes('--fresh'), RELOAD = 25;
+const AFTER = arg('--after', ''), VERBOSE = argv.includes('--verbose'), FRESH = argv.includes('--fresh'), RELOAD = 25;
 
 // ---------- browser + server ----------
 const require = createRequire(import.meta.url);
@@ -69,6 +70,8 @@ function initScript() {
   };
   Fake.prototype = RealAC.prototype;
   window.AudioContext = window.webkitAudioContext = Fake;
+  // the app skips some voices inside offline renders (Ride, Marimba: `ctx instanceof OfflineAudioContext`); its main engine must not count as one
+  Object.defineProperty(OAC, Symbol.hasInstance, { value: o => o != null && o !== window.__oc && Object.getPrototypeOf(o) === OAC.prototype });
 
   /** Measure rendered audio: loudness (BS.1770 / LUFS), peaks, tone, stereo, glitches. Runs in the page so the samples never leave it. */
   window.__analyze = (buf, from, barLen, bars) => {
@@ -118,12 +121,12 @@ async function launchOnce(page, job) {
     await page.waitForFunction(() => typeof generate === 'function' && document.querySelector('#mood'));
   }
   page.__n++;
-  return page.evaluate(async ({ mood, seed, warm, bars, audio }) => {
+  return page.evaluate(async ({ mood, seed, warm, bars, audio, after }) => {
     __errors.length = 0;
     if (window.__oc && playing) toggle(); // stop the previous Launch's engine (its render is finished)
     const sel = document.querySelector('#mood'); sel.value = mood; __seed(seed);
     const t0 = performance.now(); let genErr = null;
-    try { generate(); } catch (e) { genErr = String(e && e.stack || e); }
+    try { generate(); if (after) (0, eval)(after); } catch (e) { genErr = String(e && e.stack || e); }
     const genMs = performance.now() - t0;
     let a = null;
     if (audio && !genErr) {
@@ -141,10 +144,10 @@ async function launchOnce(page, job) {
     }
     const r4 = v => Math.round(v * 1e4) / 1e4;
     const d = { mood: curMood, bpm: G.bpm, swing: r4(G.swing || 0), scale: G.scale, root: G.root,
-      TR: TR.map(T => ({ n: T.n, st: T.st, h: T.h, m: !!T.m, pt: (T.pt || []).map(x => x ? 1 : 0).join(''), mode: T.p && T.p.mode || '', snd: T.p && T.p.pv || '' })) };
+      TR: TR.map(T => ({ n: T.n, st: T.st, h: T.h, m: !!T.m, pt: (T.pt || []).map(x => x ? 1 : 0).join(''), mode: T.p && T.p.mode || '', snd: T.p && (T.p.pv || T.p.patch) || '' })) };
     const errors = [...__errors]; if (genErr) errors.unshift('generate: ' + genErr);
     return { d, a, genMs, errors };
-  }, { ...job, warm: WARM, bars: BARS, audio: AUDIO });
+  }, { ...job, warm: WARM, bars: BARS, audio: AUDIO, after: AFTER });
 }
 
 // ---------- run ----------

@@ -19,13 +19,13 @@
  function wood(w){const T=TR[3],p=T.p,c=(typeof chordAt==='function'?chordAt(w):cur)||cur,n=SC[G.scale].length,ch=((c&&c.n&&c.n.length)?c.n:[0,2,4]).map(x=>((x%n)+n)%n),
    pool=[...new Set([...ch,...ch.map(x=>x+n)])].sort((a,b)=>a-b),pos=((tk%T.st)+T.st)%T.st,hv=Math.sin((pos+1)*78.233+(p.mseed||1)*12.9898)*43758.5453,
    d=pool[Math.floor((hv-Math.floor(hv))*pool.length)],sO=OCT,sF=FIX;OCT=0;FIX=0;let f;try{f=d2f(d,4)}finally{OCT=sO;FIX=sF}
-  while(f<250)f*=2;while(f>1050)f/=2;f*=Math.pow(2,Math.round(p.wtn||0));
+  while(f<220)f*=2;while(f>740)f/=2; /* v0.83: an octave lower at the top (was 250–1050 Hz): the high notes poked out */f*=Math.pow(2,Math.round(p.wtn||0));
   const dec=Math.max(.12,p.wdc||.45),e=w+dec+.1,v=T.lv*1.5,out=ctx.createGain(),g1=ctx.createGain(),g2=ctx.createGain(),g3=ctx.createGain();
   const o1=osc('sine',f,w,e),o2=osc('sine',f*3.93,w,w+dec*.35+.05),o3=osc('sine',f*9.2,w,w+.05);
   g1.gain.setValueAtTime(.0001,w);g1.gain.exponentialRampToValueAtTime(v,w+.002);g1.gain.exponentialRampToValueAtTime(.0001,w+dec);
-  g2.gain.setValueAtTime(.0001,w);g2.gain.exponentialRampToValueAtTime(v*.28,w+.0015);g2.gain.exponentialRampToValueAtTime(.0001,w+dec*.35);
-  g3.gain.setValueAtTime(.0001,w);g3.gain.exponentialRampToValueAtTime(v*.08,w+.001);g3.gain.exponentialRampToValueAtTime(.0001,w+.04);
-  o1.connect(g1);o2.connect(g2);o3.connect(g3);g1.connect(out);g2.connect(out);g3.connect(out);nz(w,'bandpass',f*2.5,.005,v*.08,out,0);
+  g2.gain.setValueAtTime(.0001,w);g2.gain.exponentialRampToValueAtTime(v*.2,w+.0015);g2.gain.exponentialRampToValueAtTime(.0001,w+dec*.35);
+  g3.gain.setValueAtTime(.0001,w);g3.gain.exponentialRampToValueAtTime(v*.035,w+.001);g3.gain.exponentialRampToValueAtTime(.0001,w+.04);
+  o1.connect(g1);o2.connect(g2);o3.connect(g3);g1.connect(out);g2.connect(out);g3.connect(out);nz(w,'bandpass',f*2.5,.005,v*.05,out,0); /* v0.83: softer overtones and click → warmer, sits in the mix */
   const lpq=ctx.createBiquadFilter();lpq.type='lowpass';lpq.Q.value=.6;lpq.frequency.value=Math.max(60,Math.min(12000,p.filt||8000));out.connect(lpq); // v0.22: the Filter fader works on the marimba too
   send(lpq,A.m,p.ds==null?.15:p.ds,p.rs==null?.2:p.rs)}
  const _fv91=fireVoice;fireVoice=function(k,w){if(k===3&&ctx&&!(ctx instanceof OfflineAudioContext)){if(TR[3].p.pv==='Ride')return ride(w);if(TR[3].p.pv==='Marimba'||TR[3].p.pv==='Woodblock')return wood(w)}return _fv91(k,w)};

@@ -6,7 +6,7 @@
  try{if(X){X.gamelan=D}}catch(e){}
  let last=null;const DJ=D.map(d=>JSON.stringify(d.t));setInterval(()=>{try{const sp=document.querySelector('#t-synth');if(!sp||sp.hidden)return;const R=window.orbRiff;if(!R||!R.t||TR[4].p.mode!=='Riff'){last=null;return}if(R.t===last)return;last=R.t;const k=JSON.stringify(R.t);
    if(DJ.includes(k)&&!DS.has(G.scale)){G.scale='Pelog';try{document.querySelector('#scale').value='Pelog'}catch(e){}orbExoProg('gamelan')}}catch(e){}},300);
- const FIT={Bleep:.2,Noir:.15,'Deep Space':.15,Tense:.12,Ethereal:.1,Drone:.1,Vector:.1};
+ const FIT={Bleep:.3,Noir:.22,'Deep Space':.22,Tense:.18,Ethereal:.15,Drone:.15,Vector:.15,Polymeter:.15,Ambient:.12} /* v0.83: ×1.5, plus Tidal Lock and Low Orbit */;
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const L=TR[4],P=L.p,c=FIT[curMood];if(!c||L.m||P.mode==='Acid 303'||R()>=c||!window.orbRiff)return r;
    G.scale=R()<.6?'Pelog':'In';try{document.querySelector('#scale').value=G.scale}catch(e){}
