@@ -1,20 +1,27 @@
 /* ---- v39: lead taming — lead bus (de-harsh EQ + compressor), max 3 overlapping lead notes, calmer generated lead settings ---- */
-G.ldOut=.82;
+G.ldOut=1;   /* v0.77: was .82 */
 const _init39=init;init=function(){const nw=!ctx;_init39();if(!nw)return;const pk=ctx.createBiquadFilter(),hs=ctx.createBiquadFilter(),c=ctx.createDynamicsCompressor(),o=ctx.createGain();A.ld=ctx.createGain();
  pk.type='peaking';pk.frequency.value=3000;pk.Q.value=1;pk.gain.value=-3.5;hs.type='highshelf';hs.frequency.value=8000;hs.gain.value=-2.5;
- c.threshold.value=-22;c.ratio.value=4;c.knee.value=8;c.attack.value=.004;c.release.value=.16;o.gain.value=G.ldOut;A.ldo=o;A.ldc=c;
+ c.threshold.value=-26;c.ratio.value=3;c.knee.value=10;c.attack.value=.008;c.release.value=.2;o.gain.value=G.ldOut;A.ldo=o;A.ldc=c;
  {const fd=ctx.createGain(),fi=ctx.createGain(),fz=ctx.createWaveShaper(),ft=ctx.createBiquadFilter(),fw=ctx.createGain();fd.gain.value=1;fi.gain.value=1;fw.gain.value=0;
   const n=2048,c=new Float32Array(n),k=2.2,b=.1,o0=Math.atan(k*b),nm=Math.atan(k*(1+b))-o0;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=(Math.atan(k*(x+b))-o0)/nm}fz.curve=c;fz.oversample='2x'; /* warm overdrive */
   ft.type='lowpass';ft.frequency.value=5200;ft.Q.value=.5;A.ld.connect(fd);fd.connect(pk);A.ld.connect(fi);{const fh=ctx.createBiquadFilter(),pe=ctx.createBiquadFilter(),de=ctx.createBiquadFilter();fh.type='highpass';fh.frequency.value=180;fh.Q.value=.6;pe.type=de.type='highshelf';pe.frequency.value=de.frequency.value=1500;pe.gain.value=6;de.gain.value=-6;
    fi.connect(fh);fh.connect(pe);pe.connect(fz);fz.connect(de);de.connect(ft)} /* brighter notes drive the overdrive harder, like a filter into a pedal */ft.connect(fw);fw.connect(pk);A.fz={fd,fi,fw}} // v0.22 lead bus fuzz (LEAD fader)
- pk.connect(hs);hs.connect(o);o.connect(A.dk);
+ pk.connect(hs);hs.connect(c);c.connect(o);o.connect(A.dk);
+ /* v0.77: leads were barely audible in many Launches. Measured against the kick over 60 Launches the lead sat at −20 dB in the middle and
+    down to −31 dB; v0.7 was −19 / −27. The fixed per-patch gain of v0.75 could not follow how much a patch's level changes with the cutoff,
+    drive and register a Launch picks. Three changes, nothing that listens over time:
+    · the lead bus compressor that was built here but never connected is in the path (3:1 above −26 dB): quiet patches pass, loud ones are held;
+    · the per-patch gain below does half of what it did (the compressor does the rest); the 303 keeps its own full value;
+    · the lead bus is 1.7 dB hotter.
+    Result on the same kind of Launches: −15.6 dB in the middle, quietest −24 dB, loudest unchanged at about −8 dB. */
  /* v0.75: the automatic level control on the lead bus is gone (it read the bus ten times a second and kept moving the gain). The lead bus
     gain is now fixed per lead patch — see LK below. */
  ldSet()};
 /* v0.75 lead bus level per patch (dB): the gain the old automatic control settled on, measured per patch over many Launches. Applied together
    with the mood's lead level (G.ldMul); set when the patch or mood changes, checked as a note starts (two compares, nothing else). */
-const LK={'Acid 303':-9,'Aggro':-4.5,'Bleep':-3,'Bright pluck':2,'Chorus pulse':-1.5,'Cinematic arp':-1.5,'Clean':2,'Dense':-4,'Donk':-3.5,'EP stab':-2,'FM bell':2.5,'FM keys':-8,'Formant wave':-2,'Glass':-0.5,'Hard sync':-0.5,'Hollow BP':-2.5,'Hoover':0.5,'House piano':1.5,'Hypno stab':-0.5,'Metal FM':-2.5,'Mini acid':-0.5,'Mini bass':4,'Mini brass':-1,'Mini drone':1,'Mini edge':6,'Mini fifths':6,'Mini lead':-1.5,'Mini sparkle':-0.5,'Mini wobble':-1,'Mist':-6,'Organ':-4,'Organ stab':-5.5,'Pluck':2,'Rave stab':-7,'Reese':-1,'Rubber blip':0.5,'Soft keys':-3.5,'Soft sine':-0.5,'Space blip':4,'Square chip':-3.5,'String pluck':-4.5,'Sunny keys':-4.5,'Talkbox':-4.5,'Techno stab':-2,'Vowel':-0.5,'Weird drone':-3.5,'West Coast fold':-6,'Wide saw':1};for(const k in LK)LK[k]=Math.pow(10,LK[k]/20);let _ldV=-1,_ldO=null;
-function ldSet(){const o=A.ldo;if(!o||!ctx||o.context!==ctx)return;const P=TR[4].p,v=G.ldOut*(G.ldMul||1)*(LK[P.mode==='Acid 303'?'Acid 303':P.patch]||1);if(v===_ldV&&o===_ldO)return;
+const LK={'Acid 303':-9,'Aggro':-4.5,'Bleep':-3,'Bright pluck':2,'Chorus pulse':-1.5,'Cinematic arp':-1.5,'Clean':2,'Dense':-4,'Donk':-3.5,'EP stab':-2,'FM bell':2.5,'FM keys':-8,'Formant wave':-2,'Glass':-0.5,'Hard sync':-0.5,'Hollow BP':-2.5,'Hoover':0.5,'House piano':1.5,'Hypno stab':-0.5,'Metal FM':-2.5,'Mini acid':-0.5,'Mini bass':4,'Mini brass':-1,'Mini drone':1,'Mini edge':6,'Mini fifths':6,'Mini lead':-1.5,'Mini sparkle':-0.5,'Mini wobble':-1,'Mist':-6,'Organ':-4,'Organ stab':-5.5,'Pluck':2,'Rave stab':-7,'Reese':-1,'Rubber blip':0.5,'Soft keys':-3.5,'Soft sine':-0.5,'Space blip':4,'Square chip':-3.5,'String pluck':-4.5,'Sunny keys':-4.5,'Talkbox':-4.5,'Techno stab':-2,'Vowel':-0.5,'Weird drone':-3.5,'West Coast fold':-6,'Wide saw':1};for(const k in LK)LK[k]=Math.pow(10,LK[k]/20);let _ldV=-1,_ldO=null;const LKA=LK['Acid 303'];
+function ldSet(){const o=A.ldo;if(!o||!ctx||o.context!==ctx)return;const P=TR[4].p,ac=P.mode==='Acid 303',v=G.ldOut*(G.ldMul||1)*(ac?LKA:Math.sqrt(LK[P.patch]||1));if(v===_ldV&&o===_ldO)return;
  const first=o!==_ldO;_ldV=v;_ldO=o;try{if(first)o.gain.value=v;else o.gain.setTargetAtTime(v,ctx.currentTime,.1)}catch(e){}}
 const LVQ=[];function leadVoice(g,w){ldSet();for(let i=LVQ.length-1;i>=0;i--)if(w-LVQ[i].w>2.5)LVQ.splice(i,1);
  while(LVQ.length>=((QOS.floor||0)>=1||(QOS.lvl||0)>=1?2:3)){const o=LVQ.shift();try{o.g.gain.cancelScheduledValues(w);o.g.gain.setTargetAtTime(.0001,w,.06)}catch(e){}
