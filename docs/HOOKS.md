@@ -34,11 +34,11 @@ ui/0210-viz-solar-system.js → ui/0220-viz-cinematic.js → ui/0270-viz-orbit-m
 ## toggle — 8 wraps, defined in js/core/0050-base-state-engine-ui.js
 platform/0740-stability-guards-worker-clock.js → platform/0960-engine-sleep.js → platform/1580-overload-guard.js → platform/1600-pad-chord-ids.js → platform/1700-safety-loop.js → instruments/1780-sub-hold.js → sequencer/2040-lfo-bar-sync.js → flight/2130-clean-start.js
 
+## duck — 7 wraps, defined in js/core/0050-base-state-engine-ui.js
+platform/0430-prerendered-drums-interruptions.js → flight/0520-thrusters-drop-hits.js → launch/1280-tight-low-end.js → engine/1330-ducked-reverb.js → platform/1700-safety-loop.js → engine/2010-tempo-synced-tails.js → engine/2450-bass-sub-sidechain.js
+
 ## send — 7 wraps, defined in js/core/0050-base-state-engine-ui.js
 engine/0340-shimmer-reverb.js → ui/0550-mix-tab-channels.js → engine/1020-space-stereo.js → launch/1090-pad-generation-4.js → instruments/1210-produced-leads.js → instruments/1310-hat-clap-808-room.js → engine/2020-frequency-slots.js
-
-## duck — 6 wraps, defined in js/core/0050-base-state-engine-ui.js
-platform/0430-prerendered-drums-interruptions.js → flight/0520-thrusters-drop-hits.js → launch/1280-tight-low-end.js → engine/1330-ducked-reverb.js → platform/1700-safety-loop.js → engine/2010-tempo-synced-tails.js
 
 ## applyFX — 5 wraps, defined in js/launch/0180-mood-production-profiles.js
 engine/0340-shimmer-reverb.js → platform/0460-survival-voice-cap.js → instruments/1910-new-sounds-patterns.js → launch/1930-tonal-balance.js → engine/1950-mastering.js

@@ -42,11 +42,14 @@
   5:{Abyss:-2.6,Tape:4.9,Air:-10,Choir:-4.6,Strings:4.3,Brass:10,'Warm saw':1.2,Hollow:-1.8,Wavetable:1.8,'Bell pad':-3.6,'EP chords':-1.4,Cloud:1.4},   // pad sound
   6:{'Rolling techno':1.5,Reese:-3.4,'Held, syncopated · 808':7.5,'Held, syncopated':-1.3,Held:-3,'Rolling 16ths':2.3,'Off-beat':3.1,'Held · 808':10,'Octave bounce':-1.5,'Modern minimal · 808':3.9,'Modern minimal':1.7,Gallop:3.3,'Rolling techno · 808':-4,Pedal:-1.2,Bouncy:-1.3,'Modern bounce · 808':1.4}   // bass style (· 808 = the 808 bass engine)
  };
+ /* v0.79: the kick is what everything else is measured against, so it has to be the same size whatever drum kit a flavour picks.
+    Played alone on the same grooves, Rumble came out 1.3 dB quieter and Raw 1.2 dB louder than 909 and 808 (which agree). */
+ const KB={Rumble:2.5,Raw:-2.5};   /* the drum bus gives back about half of a kick trim, so the trims are twice the difference */
  const snd=k=>{const p=TR[k].p;return k===4?(p.mode==='Acid 303'?'Acid 303':p.patch):k===5?p.patch:k===3?p.pv:(p.bsty||'')+(p.beng==='808'?' · 808':'')};
  /* the perc sounds read the track level themselves (most are played from pre-rendered hits), so the track trim never reached them: their part of the balance is applied here, around the voice */
  let pg=1;{const _fv=fireVoice;fireVoice=function(k,w){if(k!==3||pg===1)return _fv.apply(this,arguments);const T=TR[3],o=T.lv;T.lv=o*pg;try{return _fv.apply(this,arguments)}finally{T.lv=o}}}
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);
-  try{pg=1;const b=MB[curMood]||{};for(let k=1;k<10;k++){const s=SB[k],d=(b[k]||0)+((s&&s[snd(k)])||0);if(!d)continue;
+  try{pg=1;const kb=KB[G.kit];if(kb)TRIM[0]=(TRIM[0]||0)+kb;const b=MB[curMood]||{};for(let k=1;k<10;k++){const s=SB[k],d=(b[k]||0)+((s&&s[snd(k)])||0);if(!d)continue;
     if(k===4)G.ldMul=+((G.ldMul||1)*Math.pow(10,d/20)).toFixed(3);else if(k===3)pg=Math.pow(10,d/20);else TRIM[k]=(TRIM[k]||0)+d}}catch(e){console.warn('[orbitron] level balance',e)}
   return r};
  window.orbLevelBalance={MB,SB}}

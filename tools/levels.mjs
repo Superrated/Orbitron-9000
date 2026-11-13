@@ -122,10 +122,11 @@ const jobs = []; for (const mood of moods) for (const pick of merge[mood] || [nu
 const rows = []; let done = 0;
 const prep = async page => {
   await page.evaluate(PAGE_HELPERS);
-  await page.evaluate(() => {
+  await page.evaluate(hold => {
+    if (hold) Object.defineProperty(orbHeadroom, 'db', { get: () => 0, set() {} });   // solo readings: the headroom keeper must not move the mix gain between them
     viz = function () {};                                       // no visuals: more browsers fit on the machine
     for (const k of ['lvl', 'ml']) Object.defineProperty(QOS, k, { get: () => 0, set() {} });   // a busy test machine must not make the app shed voices and effects
-  });
+  }, !LOUDMODE);
 };
 const worker = async app => {
   try {
