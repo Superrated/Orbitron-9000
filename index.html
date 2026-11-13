@@ -471,7 +471,12 @@ Object.assign(TR[3].p,{mode:"Fixed",tune:57});TR[3].x.push(["Tune (MIDI note, 57
 BUILD.sync.push(function(){const g=TR[3].mb.closest(".card").querySelector(".grid"),l=document.createElement("label");l.className="sl";l.innerHTML="Tuning";const s=document.createElement("select");["Fixed","Follow scale"].forEach(x=>s.add(new Option(x)));s.value=TR[3].p.mode==="Fixed"?"Fixed":"Follow scale";s.onchange=()=>TR[3].p.mode=s.value;l.appendChild(s);g.insertBefore(l,g.children[3])});
 /* v4: Generate (musical pattern builder), chord-tone lock, swing, smoother master */
 TR[4].p.lock=.6;TR[4].x.push(["Chord lock","lock",0,1,.01]);Object.assign(TR[4].p,{res:3.5,envA:2400,det:7,fold:0,fenv:.4,fsym:0,glide:.3,gt:70,seed:1});TR[4].x.push(["Fold","fold",0,1,.01],["Fold env","fenv",0,1,.01],["Fold bias","fsym",0,1,.01],["Glide chance","glide",0,1,.01],["Glide time ms","gt",10,300,5]);
-const _ln=leadNote;leadNote=function(p){let d=_ln(p);const lr=(p.mode==='Marbles'||p.mode==='Interval')?(x=>x-Math.floor(x))(Math.sin((bp+1)*91.7+(p.seed||0)*7.31)*43758.5453):R();if(lr<p.lock){const n=SC[G.scale].length,ct=cur.n.map(x=>((x%n)+n)%n);let b=d,bd=99;for(let c=-1;c<=3;c++)ct.forEach(t=>{const q=t+n*c,dd=Math.abs(q-d);if(dd<bd){bd=dd;b=q}});d=Math.max(0,Math.min(b,p.range*n-1))}return d};
+/* v0.71 lead arps: the chord tones the lead's chord arps and Chord lock work with. A pad chord of only one or two notes (Chord notes 1–2,
+   One note) left Chord arp, Converge, Diverge and Pedal arp on a single repeated note; such a chord is now filled up to a triad from the
+   scale (root, third, fifth). An empty chord (nothing played yet) gives the scale's own triad instead of no note at all. */
+function leadCT(){const n=SC[G.scale].length,src=cur&&cur.n&&cur.n.length?cur.n:[0],a=[...new Set(src.map(x=>((x%n)+n)%n))];
+ if(a.length<3){const r=a[0];for(const s of [2,4]){const q=(r+s)%n;if(a.length<3&&!a.includes(q))a.push(q)}}return a}
+const _ln=leadNote;leadNote=function(p){let d=_ln(p);const lr=(p.mode==='Marbles'||p.mode==='Interval')?(x=>x-Math.floor(x))(Math.sin((bp+1)*91.7+(p.seed||0)*7.31)*43758.5453):R();if(lr<p.lock){const n=SC[G.scale].length,ct=leadCT();let b=d,bd=99;for(let c=-1;c<=3;c++)ct.forEach(t=>{const q=t+n*c,dd=Math.abs(q-d);if(dd<bd){bd=dd;b=q}});d=Math.max(0,Math.min(b,p.range*n-1))}return d};
 const gb=document.createElement("button");gb.textContent="✨ Generate";gb.style.cssText="background:#b583ff;color:#14101c;font-weight:700";/* v5: dub stab track, palette, one-track-at-a-time view, compact perform tab */
 TR.push({n:'Stab',sn:'Dub stab',c:'#9dff00', /* v0.4: one name everywhere; sn keeps the old rhythm seed so stab patterns stay the same */st:16,h:3,r:2,lv:.35,p:{dec:.18,cut:900,envA:1800,det:12,oct:3,size:3,ds:.7,rs:.35},x:[['Decay','dec',.05,.8,.01],['Cutoff','cut',200,3000,10],['Env amount','envA',0,4000,50],['Detune ¢','det',0,30,1],['Octave','oct',2,5,1],['Chord notes','size',2,4,1],['Delay send','ds',0,1,.01],['Reverb send','rs',0,1,.01]]});TR[8].pt=pat(TR[8]);
 function stab(w){OCT=G.oct||0;const T=TR[8],p=T.p,e=w+p.dec+.4,q=ctx.createBiquadFilter(),g=ctx.createGain();q.type='lowpass';q.Q.value=2;{const sm=Math.pow(2,2*mv("Stab cutoff",w));q.frequency.setValueAtTime(p.cut*sm+p.envA,w);q.frequency.exponentialRampToValueAtTime(Math.max(30,p.cut*sm),w+p.dec)}env(g,w,T.lv*.15,p.dec+.05,.004);cur.n.slice(0,Math.round(p.size)).forEach(d=>[-1,1].forEach(c=>{const o=osc('sawtooth',d2f(d,p.oct),w,e);o.detune.value=c*p.det;o.connect(q)}));q.connect(g);send(g,A.dk,p.ds,p.rs)}
@@ -539,8 +544,9 @@ function chordSpec(e){if(typeof e==='number')return{d:e,x:0};const m=/^([b#]?)([
  const want=up?4:3;let best=null;for(let d=0;d<n;d++){const[t3,t5]=q(d);if(t3!==want||t5!==7)continue;let x=((root-s[d])%12+12)%12;if(x>6)x-=12;if(!best||Math.abs(x)<Math.abs(best.x))best={d,x}}
  return best||{d:0,x:0}}
 // harmonic rhythm patterns (in units of the pad's Bars setting), per chord count
-const HRP={4:[[1,1,1,1],[1,1,1,1],[2,1,1,2],[2,2,3,1],[3,1,3,1],[1.5,.5,1.5,.5],[2,1,1,4]],3:[[2,1,1],[1,1,2],[2,2,4]],2:[[1,1],[3,1],[2,1]],1:[[1]]};
-function padSched(T,L){const n=T.st;if(!PD||PD.length!==n)return tk%L===0?[Math.floor(tk/L)%n,L]:null;const u=L,st=[];let a=0;PD.forEach(d=>{st.push(a);a+=Math.round(d*u)});const C=a,q=((tk%C)+C)%C;
+const HRP={4:[[1,1,1,1],[1,1,1,1],[2,1,1,2],[2,2,3,1],[3,1,3,1],[1.5,.5,1.5,.5],[2,1,1,4],[1,1,.5,.5],[1,.5,.5,1]],3:[[2,1,1],[1,1,2],[2,2,4],[1,.5,.5]], /* v0.71: + shapes with half-length chords */2:[[1,1],[3,1],[2,1]],1:[[1]]};
+function padSched(T,L){const n=T.st;if(PD&&PD.length!==n)PD=G.prhN&&window.padRh?padRh(G.prhN,n):null;   /* v0.71: the chord rhythm follows a changed number of chords */
+ if(!PD||PD.length!==n)return tk%L===0?[Math.floor(tk/L)%n,L]:null;const u=L,st=[];let a=0;PD.forEach(d=>{st.push(a);a+=Math.round(d*u)});const C=a,q=((tk%C)+C)%C;
  for(let i=0;i<n;i++){const s0=(st[i]-(PPUSH&&i>0?1:0)+C)%C;if(q===s0){const nx=(i+1<n?st[i+1]-(PPUSH?1:0):C)-(st[i]-(PPUSH&&i>0?1:0));return[i,nx]}}return null}
 function topLead(ds,n){if(PTOP==null){PTOP=Math.max(...ds);return ds}let best=ds,bc=1e9;const L=ds.length;
  for(let r=0;r<L;r++){let c=ds.slice();for(let j=0;j<r;j++)c=c.slice(1).concat(c[0]+n);for(const sh of[-n,0,n]){const v=c.map(x=>x+sh),mn=v.reduce((a,b)=>a+b,0)/L;if(mn<-2||mn>n+3)continue;const cost=Math.abs(Math.max(...v)-PTOP)+.25*Math.abs(mn-(pmean||0));if(cost<bc){bc=cost;best=v}}}
@@ -657,7 +663,7 @@ function gateStep(w,sd){if(!A.gt)return;if(GT.depth<.01){if(GT.was){A.gt.gain.ca
  sl(g2,'Gate depth',0,1,GT.depth,.01,v=>{GT.depth=v});sl(g2,'Gate steps',2,32,GT.st,1,v=>{GT.st=v;gtPat()});sl(g2,'Gate hits',1,32,GT.h,1,v=>{GT.h=v;gtPat()});sl(g2,'Gate rotate',0,31,GT.r,1,v=>{GT.r=v;gtPat()});sl(g2,'Gate length',.1,1,GT.len,.01,v=>{GT.len=v})}
 /* lead: chord arp mode (plays the pad's own chord tones) */
 MODES.push('Chord arp');let ca=0;
-const _ln3=leadNote;leadNote=function(p){if(p.mode!=='Chord arp')return _ln3(p);const n=SC[G.scale].length;let arr=[];for(let o=0;o<Math.round(p.range);o++)cur.n.forEach(d=>arr.push(((d%n)+n)%n+o*n));arr=[...new Set(arr)].sort((a,b)=>a-b);const L=arr.length;if(R()>p.dv)ca+=1+Math.floor(R()*2);const m=ca%Math.max(1,2*(L-1)),i=L<2?0:(m<L?m:2*(L-1)-m);ca++;return arr[Math.min(i,L-1)]};
+const _ln3=leadNote;leadNote=function(p){if(p.mode!=='Chord arp')return _ln3(p);const n=SC[G.scale].length;let arr=[];const ct=leadCT();for(let o=0;o<Math.max(1,Math.round(p.range));o++)ct.forEach(d=>arr.push(d+o*n));arr=[...new Set(arr)].sort((a,b)=>a-b);const L=arr.length;if(R()>p.dv)ca+=1+Math.floor(R()*2);const m=ca%Math.max(1,2*(L-1)),i=L<2?0:(m<L?m:2*(L-1)-m);ca++;return arr[Math.min(i,L-1)]};
 const _ln4=leadNote;leadNote=function(p){return p.mode==='Acid 303'?acidNote(p):_ln4(p)};
 /* lead: unison, sub osc, drive, grit + presets */
 Object.assign(TR[4].p,{uni:1,usp:18,subosc:0,drv:0,grit:0});TR[4].x.push(['Unison','uni',1,7,1],['Unison spread \u00a2','usp',0,50,1],['Sub osc','subosc',0,1,.01],['Drive','drv',0,1,.01],['Grit','grit',0,1,.01],['Crush','crush',0,1,.01],['Accent amount','acc3',0,1,.01],['Accent chance','accp',0,1,.01]);Object.assign(TR[4].p,{crush:0,acc3:.6,accp:.3});MODES.push('Acid 303');
@@ -1542,7 +1548,7 @@ const _gen47=generate;generate=function(){_gen47();if(curMood!=='Power')return;c
  else G.pstyle='stabs';buf=[];mot=[];mp=-1;build()};
 /* ---- v48: Power lead = one fixed pitch, no melody ---- */
 G.pnote=0;
-const _ln48=leadNote;leadNote=function(p){const d=_ln48(p);return curMood==='Power'?G.pnote:d};
+const _ln48=leadNote;leadNote=function(p){const d=_ln48(p);return curMood==='Power'&&p.mode===G.pwMode?G.pnote:d};   /* v0.71: once you pick another Arp mode yourself, that mode plays */
 const _gen48=generate;generate=function(){_gen48();if(curMood!=='Power')return;G.pnote=R()<.75?0:4;Object.assign(TR[4].p,{glide:0,penv:0,vib:G.pstyle==='drone'?TR[4].p.vib:0})};
 /* ---- v49: Power techno-stab variations (some with wild filtering) ---- */
 const STABV={
@@ -2077,7 +2083,7 @@ const _gen72=generate;generate=function(){_gen72();if(curMood!=='Power')return;c
 /* ---- v74: Power lead plays 2–3 note dark cells (root, fifth, octave, flat 2nd / minor 3rd) instead of one pitch; one note mutates every 4 bars ---- */
 {G.pcell=[0];G.pci=0;let lastBar=-1;
  const cellSet=()=>{const n=SC[G.scale].length;return{R:0,b2:1,m3:2,P5:4,oct:n,low5:4-n}};
- const _ln74=leadNote;leadNote=function(p){const d=_ln74(p);if(curMood!=='Power')return d;
+ const _ln74=leadNote;leadNote=function(p){const d=_ln74(p);if(curMood!=='Power'||p.mode!==G.pwMode)return d;
   const b=Math.floor(tk/64);if(b!==lastBar){lastBar=b;if(b>0&&G.pcell.length>1&&R()<.6){const s=cellSet(),pool=[s.R,s.b2,s.m3,s.P5,s.oct,s.low5],i=1+Math.floor(R()*(G.pcell.length-1)),opts=pool.filter(x=>x!==G.pcell[i]&&x!==G.pcell[0]);if(opts.length)G.pcell[i]=pick(opts)}}
   return G.pcell[(G.pci++)%G.pcell.length]};
  const _g74=generate;generate=function(){_g74();if(curMood!=='Power')return;const s=cellSet();
@@ -2253,7 +2259,16 @@ TR[5].p.mov=TR[5].p.mov||'Classic';
 {PATL.push('Progression','Chord type','Chord rhythm','Push','Gate rhythm','Inversions');G.pvoice=G.pvoice||'Smooth top';
  const RN=['1','2','3','4','5','6','7'],lab=a=>a.map(x=>typeof x==='number'?RN[((x%7)+7)%7]:x).join('–');
  const CT={Auto:null,Triad:'tri','7th':'7','9th':'9',add9:'add9',sus2:'sus2',sus4:'sus4',Quartal:'quart'};
- const RH={'Even':null,'2+1+1+2':[2,1,1,2],'2+2+3+1':[2,2,3,1],'3+1+3+1':[3,1,3,1],'1½+½+1½+½':[1.5,.5,1.5,.5],'2+1+1+4':[2,1,1,4],'1+1+2':[1,1,2],'2+1+1':[2,1,1]};
+ /* v0.71 chord rhythm: every rhythm now works with any number of chords. Before, a rhythm only did something when it had exactly as many
+    parts as there were chords (the 3-part ones did nothing on 4 chords, none worked on 3 or 5) and the menu still showed it as chosen.
+    New shapes with half-length chords: long long … half half, half half long …, long half alternating, a short last chord, a held last chord.
+    Lengths are in "Chord length" units; the numbered ones repeat their figure over the chords. */
+ const RHS={'Long long · half half':n=>n<2?null:n===2?[1,.5]:[...Array(n-2).fill(1),.5,.5],'Half half · long long':n=>n<2?null:n===2?[.5,1]:[.5,.5,...Array(n-2).fill(1)],
+  'Long half · long half':[1,.5],'Half long · half long':[.5,1],'Long · short last':n=>n<2?null:[...Array(n-1).fill(1),.5],'Long · held last':n=>n<2?null:[...Array(n-1).fill(1),2],
+  'Long · half half · long':n=>n<4?null:[1,.5,.5,...Array(n-3).fill(1)],
+  '2+1+1+2':[2,1,1,2],'2+2+3+1':[2,2,3,1],'3+1+3+1':[3,1,3,1],'1½+½+1½+½':[1.5,.5,1.5,.5],'2+1+1+4':[2,1,1,4],'1+1+2':[1,1,2],'2+1+1':[2,1,1]};
+ const rhFit=(name,n)=>{const f=RHS[name];if(!f||n<2)return null;return typeof f==='function'?f(n):Array.from({length:n},(_,i)=>f[i%f.length])};window.padRh=rhFit;
+ const RH={Even:null};for(const k in RHS)RH[k]=1;
  const GR={Off:null,Disco:'1011011010110101',Eighths:'1010101010101010',Shuffle:'1101101101101101',Sparse:'1001001010010010',Stutter:'1111011101110111'};
  const _tl=topLead;topLead=function(ds,n){return G.pvoice==='Close'?ds:_tl(ds,n)};
  const sel=(g,lab_,opts,val,fn)=>{const el=mkSel(lab_,opts,val,fn);el.dataset.g='pat';el.dataset.pp=1;g.appendChild(el);return el};
@@ -2262,8 +2277,9 @@ TR[5].p.mov=TR[5].p.mov||'Classic';
   sel(g,'Progression',['(custom)',...lib],cur0,v=>{const i=lib.indexOf(v);if(i<0)return;const a=M.pr[i],sp=a.map(chordSpec);prog=sp.map(s=>s.d);PX=sp.map(s=>s.x);T.st=prog.length;pshape=prog.map(()=>pick(M.sh||['7']));pmean=null;PTOP=null;T.pt=pat(T);if(PD&&PD.length!==T.st)PD=null;build()});
   const ctNow=(()=>{const s=new Set(pshape);if(s.size!==1)return'Auto';const k=[...s][0];return Object.keys(CT).find(x=>CT[x]===k)||'Auto'})();
   sel(g,'Chord type',Object.keys(CT),ctNow,v=>{pshape=prog.map(()=>CT[v]||pick(M.sh||['7']));pmean=null});
-  const rhNow=PD?(Object.keys(RH).find(k=>RH[k]&&RH[k].join()===PD.join())||'Even'):'Even';
-  sel(g,'Chord rhythm',Object.keys(RH),rhNow,v=>{const r=RH[v];PD=r&&r.length===T.st?r.slice():null;if(r&&r.length!==T.st){PD=null}});
+  if(PD&&PD.length!==T.st)PD=G.prhN?rhFit(G.prhN,T.st):null;
+  const rhNow=PD?((G.prhN&&(rhFit(G.prhN,T.st)||[]).join()===PD.join()?G.prhN:Object.keys(RHS).find(k=>(rhFit(k,T.st)||[]).join()===PD.join()))||'(custom)'):'Even';
+  sel(g,'Chord rhythm',rhNow==='(custom)'?['(custom)',...Object.keys(RH)]:Object.keys(RH),rhNow,v=>{if(v==='(custom)')return;PD=rhFit(v,T.st);G.prhN=PD?v:''});
   sel(g,'Push',['Off','On'],PPUSH?'On':'Off',v=>PPUSH=v==='On'?1:0);
   const grNow=(P.pgate||0)>.01?(Object.keys(GR).find(k=>GR[k]&&P.pgpat&&GR[k]===P.pgpat.join(''))||'Disco'):'Off';
   sel(g,'Gate rhythm',Object.keys(GR),grNow,v=>{if(!GR[v]){P.pgate=0;return}P.pgpat=GR[v].split('').map(Number);if((P.pgate||0)<.3)P.pgate=.8});
@@ -2615,7 +2631,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   $('#root').value=G.root;$('#scale').value=G.scale;$('#bpm').value=G.bpm;$('#bv').textContent=G.bpm}catch(e){}
   try{syncMix()}catch(e){}requestAnimationFrame(()=>{try{build()}catch(e){}try{kl()}catch(e){}})}
  // the scheduler hook: runs first in every step, before any track fires
- const _as=arrStep;arrStep=function(w){if(SS.q&&tk%64===0&&!SS.held){const S=SS.q,gq=SS._q,qn=SS.qn;SS.q=null;SS._q=-1;try{apply(S,w);SS._a=gq;try{window.orbMPlus&&orbMPlus.mood()}catch(e){}msg('▶ ARRIVED AT '+(qn||'SECTOR').toUpperCase()+' · '+MN(curMood))}catch(e){console.warn('sector',e)}paint()}return _as.apply(this,arguments)};
+ const _as=arrStep;arrStep=function(w){if(SS.q&&tk%64===0&&!SS.held){const S=SS.q,gq=SS._q,qn=SS.qn;SS.q=null;SS._q=-1;try{apply(S,w);SS._a=gq;window.__orbSecArr=1;try{window.orbMPlus&&orbMPlus.mood()}catch(e){}msg('▶ ARRIVED AT '+(qn||'SECTOR').toUpperCase()+' · '+MN(curMood))}catch(e){console.warn('sector',e)}paint()}return _as.apply(this,arguments)};
  // hold off while a riser / breakdown pad is held (they restore their own snapshot on release)
  document.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('#t-perf .rz'))SS.held++},true);
  const rel=()=>{if(SS.held)SS.held=0};['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,rel,true));
@@ -3059,13 +3075,13 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  TR[4].x.push(['Cycle (0 = off)','cyc',0,16,1],['Note repeat','nrep',1,4,1]);
  let TU=[],ti=-1,cv=0,pc=0;window.TURING={get:()=>TU.slice(),set:a=>{TU=a.slice();ti=-1},reset:()=>{TU=[];ti=-1}};
  const fr=x=>x-Math.floor(x),hh=(i,sd)=>fr(Math.sin((i+1)*91.7+(sd||0)*7.31)*43758.5453);
- function chordArr(p){const n=SC[G.scale].length;let a=[];for(let o=0;o<Math.max(1,Math.round(p.range));o++)cur.n.forEach(d=>a.push(((d%n)+n)%n+o*n));return [...new Set(a)].sort((x,y)=>x-y)}
- function snap(d,p){const n=SC[G.scale].length,ct=cur.n.map(x=>((x%n)+n)%n);let b=d,bd=99;for(let c=-1;c<=3;c++)ct.forEach(t=>{const q=t+n*c,dd=Math.abs(q-d);if(dd<bd){bd=dd;b=q}});return Math.max(0,Math.min(b,p.range*n-1))}
+ function chordArr(p){const n=SC[G.scale].length,ct=leadCT();let a=[];for(let o=0;o<Math.max(1,Math.round(p.range));o++)ct.forEach(d=>a.push(d+o*n));return [...new Set(a)].sort((x,y)=>x-y)}
+ function snap(d,p){const n=SC[G.scale].length,ct=leadCT();let b=d,bd=99;for(let c=-1;c<=3;c++)ct.forEach(t=>{const q=t+n*c,dd=Math.abs(q-d);if(dd<bd){bd=dd;b=q}});return Math.max(0,Math.min(b,p.range*n-1))}
  const _nm=leadNote;leadNote=function(p){const m=p.mode;if(!NEWM.includes(m))return _nm(p);const n=SC[G.scale].length,top=Math.max(1,Math.round(p.range)*n);
   if(m==='Turing loop'){const L=Math.max(2,Math.round(p.len||8));if(TU.length!==L){TU=[];for(let i=0;i<L;i++)TU.push(R())}ti=(ti+1)%L;
    if(R()<(1-(p.dv==null?.9:p.dv))*.5)TU[ti]=R();let d=Math.round(TU[ti]*(top-1));if(hh(ti,p.seed)<(p.lock||0))d=snap(d,p);prev=d;return d}
   const a=chordArr(p),L=a.length;if(L<2)return a[0]||0;
-  if(m==='Pedal arp'){const root=((cur.n[0]%n)+n)%n,up=a.filter(x=>x>root);const k=pc++;if(k%2===0||!up.length)return root;return up[Math.floor(k/2)%up.length]}
+  if(m==='Pedal arp'){const root=leadCT()[0],up=a.filter(x=>x!==root);const k=pc++;if(k%2===0||!up.length)return root;return up[Math.floor(k/2)%up.length]}   /* v0.71: was "tones above the root" — none when the root is the chord's top note, so the arp sat on one note */
   const ord=[];let lo=0,hi=L-1;while(lo<=hi){ord.push(lo);if(hi!==lo)ord.push(hi);lo++;hi--}if(m==='Diverge')ord.reverse();const d=a[ord[cv%ord.length]];cv++;return d};
  function resetPos(m){bp=-1;mp=-1;ca=0;ti=-1;cv=0;pc=0;if(m==='Up/Down'){ar=1;ad=-1}else{ar=-1;ad=1}}
  window.leadResetPos=()=>{resetPos(TR[4].p.mode)};
@@ -3387,7 +3403,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   const pdb=p>0?20*Math.log10(p):-70,now=performance.now();if(pdb>pk||now-pkT>1200){pk=pdb;pkT=now}
   show()},500);   /* v0.33: loudness read twice a second */
  const _in=init;init=function(){const r=_in.apply(this,arguments);try{setTimeout(()=>{try{mstBuild();if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1}catch(e){console.warn('master+',e)}},0)}catch(e){}return r};
- const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();hist=[];mgSet(.15);ldSet()}catch(e){}return r};
+ const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();hist=[];mgSet(.15);ldSet();G.pwMode=TR[4].p.mode}catch(e){}return r};
  // UI under Mood finish
  let box=null;const lab=()=>{if(!box)return;const b=box.querySelector('button');{const h=on?'▲ Master+ <b>ON</b> · peak control + −9 LUFS':'△ Master+ <b>OFF</b> · previous master';if(b.innerHTML!==h)b.innerHTML=h}b.classList.toggle('on',on)};
  function show(){if(!box||!box.offsetParent)return;const t=box.querySelector('.mtx'),f=box.querySelector('.mfl');const l=stv<-60?'—':stv.toFixed(1);
@@ -4284,7 +4300,7 @@ window.MOODX={
   if(st==='Chord memory'&&window.cmPrep)cmPrep();
   setTimeout(()=>{const c2=card();if(!c2)return;
    setSel(c2,'Chord type',W([['Auto',50],['Triad',8],['7th',10],['9th',8],['add9',8],['sus2',6],['sus4',5],['Quartal',5]]));
-   const rh=selBy(c2,'Chord rhythm');if(rh){const ok=[...rh.options].map(o=>o.value).filter(v=>v==='Even'||(v.split('+').length===TR[5].st));setSel(c2,'Chord rhythm',R()<.5||ok.length<2?'Even':pick(ok.filter(v=>v!=='Even')))}
+   const rh=selBy(c2,'Chord rhythm');if(rh){const ok=[...rh.options].map(o=>o.value).filter(v=>v==='Even'||(window.padRh&&padRh(v,TR[5].st)));setSel(c2,'Chord rhythm',R()<.5||ok.length<2?'Even':pick(ok.filter(v=>v!=='Even')))}
    setSel(c2,'Push',R()<.3?'On':'Off');
    const gr=selBy(c2,'Gate rhythm');if(gr){const o=[...gr.options].map(x=>x.value).filter(v=>v!=='Off');setSel(c2,'Gate rhythm',R()<.6||!o.length?'Off':pick(o))}
    setSel(c2,'Inversions',R()<.7?'Smooth top':'Close');setSel(c2,'Top line',R()<.3?'On':'Off')},60)}
@@ -5665,16 +5681,27 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    (the last one you had, or one from a small library: breaks, tresillo, half-step, electro, skip); any other kick switches to four-to-the-floor.
    The change lands on the next bar. ---- */
 {const LIB=['x.....x...x.....','x..x..x...x.....','x.........x.x...','x.....x.x.......','x..x....x..x....','x.....x...x..x..'];
- let alt=null,pend=0;
+ let alt=null,pend=0,keep=null;
  const hits=()=>{const T=TR[0],o=[];for(let i=0;i<16;i++)if(T.pt[i%T.st])o.push(i);return o};
  const isFour=()=>{const h=hits();return h.length===4&&h.every((x,i)=>x===i*4)};
  const setPat=str=>{const T=TR[0],pt=[...str].map(c=>c==='x'?1:0);T.st=16;try{const ft=bassFit(T,pt);Object.assign(T,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){}T.pt=pat(T);
   /* bassFit finds the closest ring; if it is not exact, use the pattern as is */if(T.pt.join('')!==pt.join(''))T.pt=pt;try{draw(T,-1)}catch(e){}};
  const cur16=()=>{const T=TR[0];let s='';for(let i=0;i<16;i++)s+=T.pt[i%T.st]?'x':'.';return s};
  const HALF='x.......x.......'; /* v0.35: the switch now goes 4/4 ↔ HALF (kick on beats 1 and 3) — the lower-energy partner */
- const apply=()=>{if(isFour()){setPat(HALF);msg('KICK · HALF TIME')}else{alt=cur16();setPat('x...x...x...x...');msg('KICK · FOUR TO THE FLOOR')}paint()};
+ /* v0.71: the switch acted up after some Launches. Two causes, both fixed here:
+    · a Launch can give the kick Variation and Ghosts (skipped / extra kicks); the switch kept them, so "4 / 4" and "HALF" came out broken.
+      HALF is now clean, and switching back returns the kick exactly as it was (ring, tension, accents, ghosts, variation).
+    · a switch that was still waiting for the next bar survived a Launch or a Sector change and then flipped the new kick. It is dropped now.
+    Variation and Ghosts are also cleared when a broken kick switches to 4 / 4. */
+ const snapK=()=>{const T=TR[0];return {st:T.st,h:T.h,r:T.r,ten:T.ten,acc:T.acc,gho:T.gho,vari:T.vari,pt:T.pt.slice()}};
+ const clean=()=>!((TR[0].vari||0)>0||(TR[0].gho||0)>0);
+ const apply=()=>{const T=TR[0],four=isFour(),to=four?HALF:'x...x...x...x...',back=keep&&keep.to===cur16()&&clean()?keep.was:null;
+  if(back&&back.is===to){Object.assign(T,{st:back.st,h:back.h,r:back.r,ten:back.ten,acc:back.acc,gho:back.gho,vari:back.vari});T.pt=back.pt.slice();keep=null;try{draw(T,-1)}catch(e){}}
+  else{const was=snapK();was.is=four?'x...x...x...x...':null;alt=cur16();T.gho=0;T.vari=0;setPat(to);keep={to,was}}
+  msg(four?'KICK · HALF TIME':'KICK · FOUR TO THE FLOOR');try{window.syncFaders&&syncFaders()}catch(e){}paint()};
+ {const _g=generate;generate=function(){pend=0;keep=null;return _g.apply(this,arguments)}}
  const msg=t=>{try{if(typeof say==='function')say('◉ '+t)}catch(e){}};
- const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);try{if(pend&&((tk%16)+16)%16===0){pend=0;apply()}}catch(e){}return r};
+ const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);try{if(pend&&window.__orbSecArr){pend=0;keep=null}window.__orbSecArr=0;if(pend&&((tk%16)+16)%16===0){pend=0;apply()}}catch(e){}return r};
  /* v0.33: clear state — the whole button shows the kick: solid = 4/4 (four to the floor), dark with an outline = BROKEN; while a switch waits it pulses and names the target */
  {const st=document.createElement('style');st.textContent=`#t-perf .kswb .ksv{display:block;font:800 15px ui-monospace,monospace;letter-spacing:.1em;margin-top:2px}
 #t-perf .kswb.ksb{background:#170d07!important;color:#ff9b5d!important;box-shadow:inset 0 0 0 2px #ff9b5d!important}#t-perf .kswb.ksf{background:#ff9b5d!important;color:#140c06!important}
@@ -5774,7 +5801,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   if(from){o.frequency.setValueAtTime(from,w);o.frequency.exponentialRampToValueAtTime(f,w+.09)}
   else{const pp=p.bpp||0;o.frequency.setValueAtTime(f*Math.pow(2,.25+pp*1.2),w);o.frequency.exponentialRampToValueAtTime(f,w+.03+pp*.05)}
   o.start(w);o.stop(e);
-  const pk=v*.12;g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(pk,w+.004);g.gain.setValueAtTime(pk,w+Math.min(.08,dec*.25));g.gain.exponentialRampToValueAtTime(.0001,w+dec);
+  const pk=v*.36;   /* v0.71: was .12 (+9.5 dB). On the bass bus the 808 peaked about 20 dB under the other bass sounds, and a near-pure low sine sounds quieter still */g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(pk,w+.004);g.gain.setValueAtTime(pk,w+Math.min(.08,dec*.25));g.gain.exponentialRampToValueAtTime(.0001,w+dec);
   let src=o;const dv=p.bdrv||0;if(dv>.02){const k=Math.round((1+dv*6)*10)/10,ws=ctx.createWaveShaper(),mk=ctx.createGain();ws.curve=BDC[k]||(BDC[k]=satCurve(k));mk.gain.value=1+dv*2.4;o.connect(ws);ws.connect(mk);src=mk}
   q.type='lowpass';q.Q.value=Math.min(4,p.res||.7);q.frequency.value=Math.max(120,Math.min(8000,p.cut*Math.pow(2,2*mv("Bass cutoff",w))*(1+(p.envA||0)*.3)));
   src.connect(q);q.connect(g);send(g,A.dkb,0,0);B8.g=g;B8.f=f;B8.end=w+dec;window.BLF=f;window.BLFN=(window.BLFN||0)+1};
