@@ -324,6 +324,9 @@ const UI={fns:[],bfns:[],t0:0,t1:0,t2:0,tb:0,passes:0,
     over the next ~120 ms (running first would place additions before their anchors exist). late = one more pass after that many ms. */
  sync(late,settle){if(!settle&&!this.t0)this.t0=setTimeout(()=>{this.t0=0;this.flush()},0);if(!this.t1)this.t1=setTimeout(()=>{this.t1=0;this.flush()},180);
   if(late&&!this.t2)this.t2=setTimeout(()=>{this.t2=0;this.flush()},late)}};
+/* "is this element on screen?" without a layout read on every call: the answer (offsetParent) is cached per element and looked up again
+   only after a UI sync pass (any tap, tab switch, rebuild …) or after a second. Used by the per-step ring redraw and the diagnostics read-outs. */
+const VISC=new WeakMap();function isShown(el){if(!el)return false;const n=performance.now();let c=VISC.get(el);if(!c){c={p:-1,t:0,v:false};VISC.set(el,c)}if(c.p!==UI.passes||n-c.t>1000){c.p=UI.passes;c.t=n;c.v=el.offsetParent!==null}return c.v}
 ['click','change','pointerup','keyup'].forEach(ev=>document.addEventListener(ev,()=>UI.sync(),true));
 document.addEventListener('input',()=>{if(!UI.t1)UI.t1=setTimeout(()=>{UI.t1=0;UI.flush()},250)},true);   // while a slider moves: at most 4 passes a second
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)UI.sync()});
@@ -1114,20 +1117,30 @@ const _gen23=generate;generate=function(){_gen23();tame()};
 const VORD=[1,2,7,3,6,9,4,8,5];   // inside: rhythm -> outside: melodic
 const VA={waves:[],lastK:0};
 const poly=(x,cx,cy,r,n,rot)=>{x.beginPath();for(let i=0;i<=n;i++){const a=rot+i/n*6.2832;i?x.lineTo(cx+r*Math.cos(a),cy+r*Math.sin(a)):x.moveTo(cx+r*Math.cos(a),cy+r*Math.sin(a))}x.closePath()};
+/* perf: the planets' glow, the lit spheres and the sun are drawn once into small offscreen canvases (sprites) and blitted each frame —
+   no createRadialGradient() per planet per frame. A frame is three batches instead of ~20 blend-mode switches:
+   source-over (grid, orbits, steps, labels) → lighter (trails, glows, sun) → source-over (spheres, flares, sun corona, read-out). */
+const VSP={glow:{},ball:{},star:{}},vsC=n=>{const c=document.createElement('canvas');c.width=c.height=n;return c};
+function vsGlow(c,q){const key=c+'|'+q;let s=VSP.glow[key];if(!s){const N=128,R=64,outer=2.6+1.6*q/3;s=VSP.glow[key]=vsC(N);const g=s.getContext('2d'),gr=g.createRadialGradient(R,R,R*.5/outer,R,R,R);gr.addColorStop(0,c);gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.beginPath();g.arc(R,R,R,0,6.2832);g.fill()}return s}
+function vsBall(c,mu){const key=c+'|'+(mu?1:0);let s=VSP.ball[key];if(!s){const R=40;s=VSP.ball[key]=vsC(2*R);const g=s.getContext('2d'),gr=g.createRadialGradient(R+R*.5,R,R*.08,R,R,R*1.05);gr.addColorStop(0,mu?'#56635e':'#ffffff');gr.addColorStop(.32,c);gr.addColorStop(1,'#000');g.fillStyle=gr;g.beginPath();g.arc(R,R,R,0,6.2832);g.fill()}return s}   // highlight on the +x side; rotated towards the sun when drawn
+function vsStar(mu){const key=mu?1:0;let s=VSP.star[key];if(!s){const R=128;s=VSP.star[key]=vsC(2*R);const g=s.getContext('2d'),gr=g.createRadialGradient(R,R,0,R,R,R);gr.addColorStop(0,mu?'rgba(150,60,40,.9)':'rgba(255,252,230,1)');gr.addColorStop(.2,mu?'#6a2a20':'#ffe44d');gr.addColorStop(.45,mu?'rgba(80,30,20,.25)':'rgba(255,150,30,.3)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.beginPath();g.arc(R,R,R,0,6.2832);g.fill()}return s}
+const VPL=VORD.map(()=>({on:false,px:0,py:0,s:0,fl:0,c:'',mu:false,pad:false,P:null,u:0,n:0}));let VEL=null,VCX=null,VTAB=null,VMUTE=-1,VPASS=-1;
 viz=function(){const now=performance.now();
- TR.forEach((T,k)=>{pads[k].classList.toggle("off",!!T.m);T.mb&&T.mb.classList.toggle("m",!!T.m)});
- if(!$("#t-viz").hidden||document.fullscreenElement){const x=$("#viz").getContext("2d"),W=720,H=620,cx=360,cy=318,TAU=6.2832,top=-Math.PI/2;
+ /* mute pads / Mute buttons: written only when a mute changed (or after a UI sync pass), not on every frame */
+ {let m=0;for(let k=0;k<TR.length;k++)if(TR[k].m)m|=1<<k;if(m!==VMUTE||UI.passes!==VPASS){VMUTE=m;VPASS=UI.passes;TR.forEach((T,k)=>{pads[k].classList.toggle("off",!!T.m);T.mb&&T.mb.classList.toggle("m",!!T.m)})}}
+ if(!(VTAB||(VTAB=$("#t-viz"))).hidden||document.fullscreenElement){if(!VEL||!VEL.isConnected){VEL=$("#viz");VCX=VEL.getContext("2d")}const x=VCX,W=720,H=620,cx=360,cy=318,TAU=6.2832,top=-Math.PI/2;
+  /* ---- batch 1: source-over ---- */
   x.globalCompositeOperation='source-over';x.globalAlpha=1;x.fillStyle='#02060a';x.fillRect(0,0,W,H);
-  // faint angular grid
-  x.strokeStyle='rgba(0,255,156,.05)';x.lineWidth=1;for(let g=0;g<=W;g+=40){x.beginPath();x.moveTo(g,0);x.lineTo(g,H);x.stroke()}for(let g=0;g<=H;g+=40){x.beginPath();x.moveTo(0,g);x.lineTo(W,g);x.stroke()}
+  // faint angular grid (one path)
+  x.strokeStyle='rgba(0,255,156,.05)';x.lineWidth=1;x.beginPath();for(let g=0;g<=W;g+=40){x.moveTo(g,0);x.lineTo(g,H)}for(let g=0;g<=H;g+=40){x.moveTo(0,g);x.lineTo(W,g)}x.stroke();
   const sd=60/G.bpm/4,pos=ctx&&playing?tk-(nextT-ctx.currentTime)/sd:0,K=TR[0],kd=playing&&!K.m?Math.max(0,1-(now-(K.fl||0))/300):0;
   if(playing&&!K.m&&K.fl&&K.fl!==VA.lastK){VA.lastK=K.fl;VA.waves.push(now);if(VA.waves.length>5)VA.waves.shift()}
-  const R0=70,R1=292,rs=VORD.map((k,i)=>R0+(R1-R0)*i/(VORD.length-1));
+  const R0=70,R1=292,NR=VORD.length;
   // bar playhead (one turn per bar)
   if(playing){const a=top+TAU*(((pos%16)+16)%16)/16;x.strokeStyle='rgba(255,228,77,.35)';x.lineWidth=1.5;x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+(R1+18)*Math.cos(a),cy+(R1+18)*Math.sin(a));x.stroke()}
   // angular kick shockwaves
   VA.waves.forEach(b=>{const f=(now-b)/800;if(f>1)return;x.globalAlpha=.4*(1-f);x.strokeStyle='#ffe44d';x.lineWidth=2;poly(x,cx,cy,40+(R1-40)*f,8,top+Math.PI/8);x.stroke()});x.globalAlpha=1;
-  VORD.forEach((k,ri)=>{const T=TR[k],r=rs[ri],n=T.st,mu=!!T.m,c=mu?'#2f3d37':T.c,L=T.pad?16*(T.p.bars||1):1,cur=Math.floor((((pos/L)%n)+n)%n),fl=playing&&!mu?Math.max(0,1-(now-(T.fl||0))/260):0,V=i=>[cx+r*Math.cos(top+TAU*i/n),cy+r*Math.sin(top+TAU*i/n)];
+  VORD.forEach((k,ri)=>{const T=TR[k],r=R0+(R1-R0)*ri/(NR-1),n=T.st,mu=!!T.m,c=mu?'#2f3d37':T.c,L=T.pad?16*(T.p.bars||1):1,cur=Math.floor((((pos/L)%n)+n)%n),fl=playing&&!mu?Math.max(0,1-(now-(T.fl||0))/260):0,V=i=>[cx+r*Math.cos(top+TAU*i/n),cy+r*Math.sin(top+TAU*i/n)];
    // orbit polygon
    x.globalAlpha=mu?.25:.32+.3*fl;x.strokeStyle=c;x.lineWidth=1;x.setLineDash(mu?[4,6]:[]);poly(x,cx,cy,r,n<8?16:n,top);x.stroke();x.setLineDash([]);
    // rhythm shape: hits joined
@@ -1136,19 +1149,25 @@ viz=function(){const now=performance.now();
    for(let i=0;i<n;i++){const [px,py]=V(i),hit=T.pad||T.pt[i],on=i===cur&&playing;
     if(T.pad){x.globalAlpha=mu?.3:on?1:.35;x.strokeStyle=c;x.lineWidth=on?7:3;x.beginPath();for(let s=0;s<=10;s++){const a=top+TAU*(i+.04+.92*s/10)/n,qx=cx+r*Math.cos(a),qy=cy+r*Math.sin(a);s?x.lineTo(qx,qy):x.moveTo(qx,qy)}x.stroke();continue}
     if(hit){const s=on?6+6*fl:5;x.globalAlpha=mu?.35:on?1:.85;x.fillStyle=c;x.fillRect(px-s,py-s,2*s,2*s)}else{x.globalAlpha=mu?.25:.45;x.fillStyle=c;x.fillRect(px-2,py-2,4,4)}}
-   // planet: a lit sphere gliding along its orbit (continuous), glowing + flaring on hits, short trail
-   if(playing){const u=(((pos/L)%n)+n)%n,P=uu=>{if(n>=8&&!T.pad){const a0=Math.floor(uu),fr=uu-a0,[ax,ay]=V(a0),[bx,by]=V(a0+1);return[ax+(bx-ax)*fr,ay+(by-ay)*fr]}const a=top+TAU*uu/n;return[cx+r*Math.cos(a),cy+r*Math.sin(a)]},[px,py]=P(u),s=(PSZ[k]||7)*1.15*(1+.35*fl);
-    if(!mu&&QOS.lvl<2){x.globalCompositeOperation='lighter';for(let j=1;j<=8;j++){const [tx,ty]=P(u-j*.06*(n/16));x.globalAlpha=.22*(1-j/9);x.fillStyle=c;x.beginPath();x.arc(tx,ty,s*.45*(1-j/10),0,TAU);x.fill()}
-     const gl=x.createRadialGradient(px,py,s*.5,px,py,s*(2.6+1.6*fl));gl.addColorStop(0,c);gl.addColorStop(1,'rgba(0,0,0,0)');x.globalAlpha=.3+.5*fl;x.fillStyle=gl;x.beginPath();x.arc(px,py,s*(2.6+1.6*fl),0,TAU);x.fill();x.globalCompositeOperation='source-over'}
-    const dx=cx-px,dy=cy-py,dl=Math.hypot(dx,dy)||1,lx=px+dx/dl*s*.5,ly=py+dy/dl*s*.5,sg=x.createRadialGradient(lx,ly,s*.08,px,py,s*1.05);sg.addColorStop(0,mu?'#56635e':'#ffffff');sg.addColorStop(.32,c);sg.addColorStop(1,'#000');
-    x.globalAlpha=1;x.fillStyle=sg;x.beginPath();x.arc(px,py,s,0,TAU);x.fill();
-    if(T.pad){x.strokeStyle=c;x.globalAlpha=mu?.3:.7;x.lineWidth=2;x.beginPath();x.ellipse(px,py,s*1.9,s*.55,-.4,0,TAU);x.stroke()}
-    if(fl>0&&!mu){x.globalAlpha=.6*fl;x.strokeStyle=c;x.lineWidth=2;x.beginPath();x.arc(px,py,s+4+12*(1-fl),0,TAU);x.stroke()}}
+   // planet: position worked out here, drawn in batches 2 and 3
+   const o=VPL[ri];o.on=playing;if(playing){const u=(((pos/L)%n)+n)%n,P=uu=>{if(n>=8&&!T.pad){const a0=Math.floor(uu),fr=uu-a0,[ax,ay]=V(a0),[bx,by]=V(a0+1);return[ax+(bx-ax)*fr,ay+(by-ay)*fr]}const a=top+TAU*uu/n;return[cx+r*Math.cos(a),cy+r*Math.sin(a)]},[px,py]=P(u);
+    o.px=px;o.py=py;o.s=(PSZ[k]||7)*1.15*(1+.35*fl);o.fl=fl;o.c=c;o.mu=mu;o.pad=!!T.pad;o.P=P;o.u=u;o.n=n}
    // label at 12 o'clock
    x.globalAlpha=mu?.4:1;x.fillStyle=c;x.font='700 15px ui-monospace,monospace';x.textAlign=ri%2?'left':'right';x.fillText((T.n.split(/[ ·(]/)[0]+(mu?' ✕':'')).toUpperCase(),cx+(ri%2?10:-10),cy-r+5);x.textAlign='left'});
-  // the beat star: glowing sun, octagon corona, its kick steps as rays
-  {const r=30+10*kd,c=K.m?'#6a2a20':'#ffe44d';x.globalCompositeOperation='lighter';const sg=x.createRadialGradient(cx,cy,0,cx,cy,r*3);sg.addColorStop(0,K.m?'rgba(150,60,40,.9)':'rgba(255,252,230,1)');sg.addColorStop(.2,c);sg.addColorStop(.45,K.m?'rgba(80,30,20,.25)':'rgba(255,150,30,.3)');sg.addColorStop(1,'rgba(0,0,0,0)');x.globalAlpha=1;x.fillStyle=sg;x.beginPath();x.arc(cx,cy,r*3,0,TAU);x.fill();
-   x.globalCompositeOperation='source-over';x.globalAlpha=.7;x.strokeStyle=c;x.lineWidth=2;poly(x,cx,cy,r*1.25,8,top+Math.PI/8+now/6000);x.stroke();
+  /* ---- batch 2: lighter (short trails, planet glows, the sun) ---- */
+  const r=30+10*kd,sc=K.m?'#6a2a20':'#ffe44d';x.globalCompositeOperation='lighter';
+  if(QOS.lvl<2)for(let ri=0;ri<NR;ri++){const o=VPL[ri];if(!o.on||o.mu)continue;const s=o.s,fl=o.fl;x.fillStyle=o.c;
+   for(let j=1;j<=8;j++){const [tx,ty]=o.P(o.u-j*.06*(o.n/16));x.globalAlpha=.22*(1-j/9);x.beginPath();x.arc(tx,ty,s*.45*(1-j/10),0,TAU);x.fill()}
+   const gr=s*(2.6+1.6*fl);x.globalAlpha=.3+.5*fl;x.drawImage(vsGlow(o.c,Math.round(fl*3)),o.px-gr,o.py-gr,2*gr,2*gr)}
+  x.globalAlpha=1;x.drawImage(vsStar(!!K.m),cx-r*3,cy-r*3,r*6,r*6);
+  /* ---- batch 3: source-over (lit spheres, rings, flares, sun corona + rays, read-out) ---- */
+  x.globalCompositeOperation='source-over';
+  for(let ri=0;ri<NR;ri++){const o=VPL[ri];if(!o.on)continue;const s=o.s,px=o.px,py=o.py,k=s/40,dx=cx-px,dy=cy-py,dl=Math.hypot(dx,dy)||1,co=dx/dl*k,si=dy/dl*k;
+   x.globalAlpha=1;x.setTransform(co,si,-si,co,px,py);x.drawImage(vsBall(o.c,o.mu),-40,-40);x.setTransform(1,0,0,1,0,0);
+   if(o.pad){x.strokeStyle=o.c;x.globalAlpha=o.mu?.3:.7;x.lineWidth=2;x.beginPath();x.ellipse(px,py,s*1.9,s*.55,-.4,0,TAU);x.stroke()}
+   if(o.fl>0&&!o.mu){x.globalAlpha=.6*o.fl;x.strokeStyle=o.c;x.lineWidth=2;x.beginPath();x.arc(px,py,s+4+12*(1-o.fl),0,TAU);x.stroke()}}
+  // the beat star: octagon corona, its kick steps as rays
+  {const c=sc;x.globalAlpha=.7;x.strokeStyle=c;x.lineWidth=2;poly(x,cx,cy,r*1.25,8,top+Math.PI/8+now/6000);x.stroke();
    for(let i=0;i<16;i++){if(!K.pt[i%K.st])continue;const a=top+TAU*i/16,on=Math.floor(((pos%16)+16)%16)===i&&playing,l=on?14+18*kd:8;x.globalAlpha=K.m?.3:on?1:.55;x.strokeStyle=c;x.lineWidth=on?3:2;x.beginPath();x.moveTo(cx+r*1.35*Math.cos(a),cy+r*1.35*Math.sin(a));x.lineTo(cx+(r*1.35+l)*Math.cos(a),cy+(r*1.35+l)*Math.sin(a));x.stroke()}
    x.globalAlpha=1;x.fillStyle=K.m?'#c07060':'#3a2400';x.font='700 15px ui-monospace,monospace';x.textAlign='center';x.fillText(K.m?'KICK ✕':'KICK',cx,cy+5);x.textAlign='left'}
   // corner read-out
@@ -1318,7 +1337,7 @@ const _gen36=generate;generate=function(){G.shx=0;_gen36();if(curMood==='Deep Sp
  // capped visual frame rate (lower still under load)
  let lastF=0;const _vz38=viz;viz=function(){const n=performance.now();QOS.ft=QOS.ft*.9+Math.min(100,n-(QOS.lt||n))*.1;QOS.lt=n;const cap=QOS.lvl>=1?Math.min(QOS.fps,24):QOS.fps;if(n-lastF<1000/cap-2){requestAnimationFrame(viz);return}lastF=n;_vz38()};
  // pattern dials only redraw when visible
- const _dw38=draw;draw=function(t,s){if(s>=0){t.cs=s;if(!t.m&&t.pt[s])t.fl=performance.now()}if(s<0||(t.cv&&t.cv.offsetParent))_dw38(t,s)};
+ const _dw38=draw;draw=function(t,s){if(s>=0){t.cs=s;if(!t.m&&t.pt[s])t.fl=performance.now()}if(s<0||(t.cv&&isShown(t.cv)))_dw38(t,s)};
  // fewer grains per step
  const _gr38=grains;grains=function(w,sd){if(R()<.35)return;_gr38(w,sd)}}
 // pre-rendered metallic hat source (one buffer instead of six oscillators per hit)
@@ -1372,7 +1391,7 @@ const _gen39=generate;generate=function(){_gen39();const P=TR[4].p,ac=P.mode==='
  // flight diagnostics in Mission control
  const _mx40=mix;mix=function(){_mx40();const m=$('#mix'),d=document.createElement('div');d.id='diag';d.style.cssText='grid-column:1/-1;font:600 11px ui-monospace,monospace;color:#7fffc4;border:1px solid rgba(0,255,156,.25);padding:8px 10px;line-height:1.6;white-space:pre-wrap';m.appendChild(d)};
  let lt0=0,lastT=performance.now();
- setInterval(()=>{const d=$('#diag');if(!d||!d.offsetParent)return;const now=performance.now(),dt=(now-lastT)/1000;lastT=now;const late=QOS.lateTot-lt0;lt0=QOS.lateTot;
+ setInterval(()=>{const d=$('#diag');if(!d||!isShown(d))return;const now=performance.now(),dt=(now-lastT)/1000;lastT=now;const late=QOS.lateTot-lt0;lt0=QOS.lateTot;
   const lat=ctx?Math.round(((ctx.baseLatency||0)+(ctx.outputLatency||0))*1000):0,ps=ctx&&ctx.playbackStats;
   let tx=d.querySelector('.dtx');if(!tx){tx=document.createElement('div');tx.className='dtx';[...d.childNodes].forEach(n=>{if(n.nodeType===3)n.remove()});d.prepend(tx)}const dtxt='FLIGHT DIAGNOSTICS\n'+'core level   '+QOS.nm[QOS.lvl]+(QOS.floor?'  (floor '+QOS.nm[QOS.floor]+')':'')+'\n'+'voices       '+(QOS.eco2?QOS.voices()+' / 64':QOS.src.size)+'\n'+'audio load   '+(QOS.load?Math.round(QOS.load*100)+'%':'n/a on this browser')+'\n'+'late steps   '+late+' /s'+(late?'  ← sequencer can\'t keep up':'')+'\n'+'screen       '+Math.round(1000/Math.max(8,QOS.ft))+' fps'+'\n'+'latency      '+(lat?lat+' ms (actual)':'n/a')+(ps&&ps.underrunEvents!=null?'\nunderruns    '+ps.underrunEvents:'')+'\n'+'mode         '+qual()+(mob?' · phone':'')+(lean()?' · lean':'');if(tx.textContent!==dtxt)tx.textContent=dtxt},1000)}
 gb.onclick=()=>{generate();try{if(!playing)toggle()}catch(e){}};$("#rnd").before(gb);
@@ -2338,7 +2357,7 @@ setInterval(()=>{METER.n++;const J=METER.jobs;for(let i=0;i<J.length;i++)if(METE
  window.orbReset=()=>hardReset('manual');window.orbResetWhy=w=>hardReset(w);
  {const add=()=>{const g=document.querySelector('#t-mix .eng');if(!g||g.querySelector('.rst'))return;const b=document.createElement('button');b.className='pad rst';b.style.cssText='grid-column:1/-1;min-height:44px';b.textContent='Reset audio engine';b.onclick=()=>hardReset('manual');g.appendChild(b)};add();UI.on(add)}
  // show it in the diagnostics readout
- setInterval(()=>{const d=$('#diag');if(!d||!d.offsetParent)return;let x=d.querySelector('.stab');if(!x){x=document.createElement('div');x.className='stab';x.style.cssText='margin-top:6px;font-size:11px;opacity:.85';d.appendChild(x)}
+ setInterval(()=>{const d=$('#diag');if(!d||!isShown(d))return;let x=d.querySelector('.stab');if(!x){x=document.createElement('div');x.className='stab';x.style.cssText='margin-top:6px;font-size:11px;opacity:.85';d.appendChild(x)}
   const sx=`stability · errors ${ERR.n}${ERR.last?' ('+ERR.last.slice(0,60)+')':''} · resumes ${ERR.resumes||0} · catch-ups ${ERR.catchups||0} · NaN resets ${ERR.nanResets||0} · rebuilds ${ERR.rebuilds||0} · silences ${ERR.silences||0} · clock ${wk?'worker':'page'} · audio ${ctx?ctx.state:'-'}`;if(x.textContent!==sx)x.textContent=sx},1000)}
 /* ---- v91: 909-style ride as a Perc sound — Perc sound: Blip / Ride (six detuned square partials, high band-pass, bell ping, noise wash), pre-rendered per setting; moods sometimes switch perc to ride ---- */
 {const P0=TR[3].p;Object.assign(P0,{pv:P0.pv||'Blip',rtn:P0.rtn||1,rdc:P0.rdc||1.1,rbl:P0.rbl==null?.4:P0.rbl});
@@ -4658,7 +4677,7 @@ window.MOODX={
  /* a Launch can block the page for a few hundred ms on a phone: schedule 0.6 s of notes first, so nothing arrives late or in a burst */
  const _g=generate;generate=function(){clear();if(playing&&ctx&&!document.hidden&&!window.__inTime){const o=QOS.la;try{QOS.la=Math.max(o,.6);tick()}catch(e){}finally{QOS.la=o}}return _g.apply(this,arguments)};
  const _t=toggle;toggle=function(){const r=_t.apply(this,arguments);if(!playing)clear();else if(ctx){const o=QOS.la;try{QOS.la=Math.max(o,.8);tick()}catch(e){}finally{QOS.la=o}} /* starting: the engine finishes building right after this; have 0.8 s scheduled */return r};try{$('#play').onclick=toggle}catch(e){}
- setInterval(()=>{const d=document.querySelector('#diag');if(!d||!d.offsetParent)return;let x=d.querySelector('.ovl');if(!x){x=document.createElement('div');x.className='ovl';x.style.cssText='margin-top:4px;font-size:11px;opacity:.85';d.appendChild(x)}
+ setInterval(()=>{const d=document.querySelector('#diag');if(!d||!isShown(d))return;let x=d.querySelector('.ovl');if(!x){x=document.createElement('div');x.className='ovl';x.style.cssText='margin-top:4px;font-size:11px;opacity:.85';d.appendChild(x)}
   const t='overload guard · events '+OV.n+' · '+['full quality','visuals paused','effects lighter','fewest voices'][OV.stage];if(x.textContent!==t)x.textContent=t},1000);
  window.orbGuard={state:()=>OV,test:()=>esc('test'),clear}}
 </script>
@@ -4934,7 +4953,7 @@ window.MOODX={
   setTimeout(()=>{try{if(playing&&ctx&&ctx.state!=='running'){ctx.resume().catch(()=>{});window.orbOverlay&&orbOverlay('The audio output changed ('+why+'). Tap to start the sound again.')}}catch(e){}},900)};
  try{navigator.mediaDevices&&navigator.mediaDevices.addEventListener&&navigator.mediaDevices.addEventListener('devicechange',()=>setTimeout(()=>fix('device change'),300))}catch(e){}
  const hook=()=>{try{if(ctx&&!ctx.__sk&&'onsinkchange' in ctx){ctx.__sk=1;ctx.addEventListener('sinkchange',()=>setTimeout(()=>fix('output switched'),200))}}catch(e){}};setInterval(hook,2000);
- setInterval(()=>{const d=document.querySelector('#diag');if(!d||!d.offsetParent)return;let x=d.querySelector('.wkx');if(!x){x=document.createElement('div');x.className='wkx';x.style.cssText='margin-top:2px;font-size:11px;opacity:.85';d.appendChild(x)}
+ setInterval(()=>{const d=document.querySelector('#diag');if(!d||!isShown(d))return;let x=d.querySelector('.wkx');if(!x){x=document.createElement('div');x.className='wkx';x.style.cssText='margin-top:2px;font-size:11px;opacity:.85';d.appendChild(x)}
   const t='screen kept awake · '+(window.orbWakeState?orbWakeState():'?');if(x.textContent!==t)x.textContent=t},1000)}
 </script>
 <script>
@@ -5975,7 +5994,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const hit=e=>{const b=e.target&&e.target.closest&&e.target.closest('#t-perf button, #t-perf .rz');if(b&&HEAVY.test((b.textContent||'').trim()))preRoll(.32)};
  document.addEventListener('pointerdown',hit,true);document.addEventListener('click',hit,true);
  const idle=f=>window.requestIdleCallback?requestIdleCallback(f,{timeout:2000}):setTimeout(f,200);
- const flightOn=()=>{const t=document.querySelector('#t-perf');return !!(t&&t.offsetParent)};
+ const flightOn=()=>{const t=document.querySelector('#t-perf');return !!(t&&isShown(t))};
  const prepDrops=()=>{if(!ctx||!window.orbPrepDrops||!flightOn())return;window.orbPrepDrops.forEach((f,i)=>setTimeout(()=>idle(()=>orbHeavy(f)),i*700))};
  let lastBpm=0,lastCtx=null,wasOn=false,PDAT=0;
  setInterval(()=>{try{if(!ctx)return;
