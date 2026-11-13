@@ -151,7 +151,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
 <script>
 /* ---- perf 1: a finished sound source is disconnected right away, so the filters and gains behind it fall silent and drop out of the audio graph
    instead of being processed until garbage collection ---- */
-{const P=AudioScheduledSourceNode.prototype,st=P.start;P.start=function(){const r=st.apply(this,arguments);try{if(!(this.context instanceof OfflineAudioContext))this.addEventListener('ended',()=>{try{this.disconnect()}catch(e){}},{once:true})}catch(e){}return r}}
+{const P=AudioScheduledSourceNode.prototype,st=P.start,ONCE={once:true};
+ /* v0.8 quick win: one shared 'ended' handler (it was a new closure per sound); it also takes the source off the load guard's list (platform/0300) */
+ function ended(){try{this.disconnect()}catch(e){}if(this.__q)QOS.src.delete(this)}
+ P.start=function(){const r=st.apply(this,arguments);try{if(!(this.context instanceof OfflineAudioContext))this.addEventListener('ended',ended,ONCE)}catch(e){}return r}}
 </script>
 <script>
 /* v172: display names for moods (internal keys unchanged, so sectors, exports and settings keep working) */
@@ -235,7 +238,7 @@ function draw(t,s){const c=t.cv;if(!c)return;const x=c.getContext("2d"),tx=windo
 // ---------- Audio ----------
 function irM(b){const m=ctx.createBuffer(1,b.length,b.sampleRate);m.copyToChannel(b.getChannelData(0),0);return m} /* v0.22: mono impulse = half the convolution work */
 function ir(sec,dec,lp){const n=ctx.sampleRate*sec,b=ctx.createBuffer(2,n,ctx.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);let y=0;for(let i=0;i<n;i++){y+=((R()*2-1)-y)*lp;d[i]=y*Math.pow(1-i/n,dec)}}return b}
-function curve(k){const n=512,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/n*2-1;c[i]=Math.tanh(x*(1+k))}return c}
+let CURVEC={},CURVEN=0;function curve(k){k=Math.round(k*50)/50;if(CURVEC[k])return CURVEC[k];if(++CURVEN>200){CURVEC={};CURVEN=1}const key=k;const n=512,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/n*2-1;c[i]=Math.tanh(x*(1+k))}return CURVEC[key]=c}   /* v0.8: cached, in 0.02 steps of drive (the lead's Drive asked for a new table on every note) */
 function init(){if(ctx){ctx.resume();return}
  ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:window.orbBufHint?orbBufHint():'playback'});window.LAMIN=Math.max(0,(ctx.baseLatency||0)*1.6+.06);{const h=window.orbBufHint?orbBufHint():'playback';window.LASC=(h==='interactive'||(typeof h==='number'&&h<=.03))?.6:1}   /* v0.75: see the scheduler */
  const g=(v=1)=>{const n=ctx.createGain();n.gain.value=v;return n};
@@ -286,7 +289,9 @@ function leadNote(p){const n=SC[G.scale].length,top=p.range*n;
  const L=Math.round(p.len);bp=(bp+1)%L;if(buf[bp]===undefined||R()>p.dv){
   buf[bp]=p.mode==="Marbles"?Math.round(Math.max(0,Math.min(1,p.bias+gauss()*p.spread*.5))*(top-1)):Math.max(0,Math.min(top-1,prev+Math.round(gauss()*p.spread*4)))}
  prev=buf[bp];return buf[bp]}
-function grains(w,sd){OCT=G.oct||0;const T=TR[5];if(R()>G.dens*1.2)return;const n=1+Math.floor(R()*2);for(let i=0;i<n;i++){const t0=w+R()*sd,dur=.12+R()*.35,f=d2f(pick(cur.n),3)*pick([2,2,3,4]),o=osc("sine",f,t0,t0+dur+.02),g=ctx.createGain(),pn=ctx.createStereoPanner();o.detune.value=(R()-.5)*14;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(T.lv*.07,t0+dur/2);g.gain.linearRampToValueAtTime(0,t0+dur);pn.pan.value=R()*2-1;o.connect(g);g.connect(pn);routeTrack(pn,null,A.sh)}}
+function grains(w,sd){OCT=G.oct||0;const T=TR[5];if(R()>G.dens*1.2)return;const n=1+Math.floor(R()*2);for(let i=0;i<n;i++){const t0=w+R()*sd,dur=.12+R()*.35,f=d2f(pick(cur.n),3)*pick([2,2,3,4]),o=osc("sine",f,t0,t0+dur+.02),g=ctx.createGain();o.detune.value=(R()-.5)*14;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(T.lv*.07,t0+dur/2);g.gain.linearRampToValueAtTime(0,t0+dur);const pn=grainPan(R());o.connect(g);vconn(g,null,pn)}}
+/* v0.8 quick win: grains share five fixed stereo positions (they made a new panner per grain); the grain itself is still registered as a voice */
+let GPN=null;function grainPan(r){if(!GPN||GPN.ctx!==ctx||GPN.out!==A.sh){GPN={ctx,out:A.sh,p:[-.8,-.4,0,.4,.8].map(v=>{const n=ctx.createStereoPanner();n.pan.value=v;n.connect(A.sh);return n})}}return GPN.p[Math.min(4,Math.floor(r*5))]}
 function toggle(){init();UI.sync(600);playing=!playing;$("#play").classList.toggle("on",playing);$("#play").textContent=playing?"■ Stop":"▶ Play";
  if(playing){tk=0;buf=[];nextT=ctx.currentTime+.06;timer=setInterval(tick,25)}else{clearInterval(timer);TR.forEach(t=>draw(t,-1))}}
 function mix(){const f=[["Delay mix","dly",0,.8,.01,v=>A.dO&&(A.dO.gain.value=v)],["Delay feedback","fb",0,.85,.01,v=>A.dF&&(A.dF.gain.value=v)],["Reverb mix","rev",0,1,.01,v=>A.rO&&(A.rO.gain.value=v)],["Shimmer verb","shim",0,1.5,.01,v=>A.sh&&(A.sh.gain.value=v)],["Grain density","dens",0,1,.01,()=>0],["Sidechain depth","duck",0,.95,.01,()=>0],["Sidechain release","rel",.05,.5,.01,()=>0],["Rumble","rumble",0,1,.005,v=>A.rg&&(A.rg.gain.value=v)],["Rumble cutoff","rcut",60,260,1,v=>A.rl&&(A.rl.frequency.value=v)],["Bus grit","bgrit",0,1,.01,v=>A.gr&&(A.gr.gain.value=v*.3)]];const m=$("#mix");f.forEach(([l,k,a,b,s,fn])=>sl(m,l,a,b,G[k],s,v=>{G[k]=v;fn(v)}))}
@@ -323,7 +328,9 @@ const UI={fns:[],bfns:[],t0:0,t1:0,t2:0,tb:0,passes:0,
  on(fn){if(typeof fn==='function')this.fns.push(fn);return 0},
  onBeat(fn){this.bfns.push(fn)},   // small displays that follow the playhead: once per beat, driven by the sequencer
  beat(){if(this.tb||!this.bfns.length)return;this.tb=setTimeout(()=>{this.tb=0;if(document.hidden)return;const F=this.bfns;for(let i=0;i<F.length;i++)try{F[i]()}catch(e){}},0)},
- flush(){if(document.hidden)return;const F=this.fns;for(let i=0;i<F.length;i++)try{F[i]()}catch(e){}this.passes++},
+ flush(){if(document.hidden)return;this.lf=performance.now();const F=this.fns;for(let i=0;i<F.length;i++)try{F[i]()}catch(e){}this.passes++},
+ /* v0.8 quick win: the sequencer's once-per-bar refresh is ONE pass (it used sync(): two passes per bar), skipped if a pass ran in the last 150 ms */
+ bar(){if(this.tbar)return;this.tbar=setTimeout(()=>{this.tbar=0;if(performance.now()-(this.lf||0)>150)this.flush()},0)},
  /* sync(): one pass now + one at 180 ms. sync(late, true): skip the immediate pass — used around a card rebuild, whose own hooks add controls
     over the next ~120 ms (running first would place additions before their anchors exist). late = one more pass after that many ms. */
  sync(late,settle){if(!settle&&!this.t0)this.t0=setTimeout(()=>{this.t0=0;this.flush()},0);if(!this.t1)this.t1=setTimeout(()=>{this.t1=0;this.flush()},180);
@@ -393,7 +400,7 @@ function fire(k,w){OCT=(k===6||k===9)?0:(G.oct||0);FIX=0;if(k===3&&TR[3].p.mode=
 /* v0.75 latency: with the Minimum or Small audio buffer the notes are also scheduled less far ahead (60 % of the normal look-ahead, never
    less than the buffer needs). Before, those buffers only made the low-pass and FX faders quicker; LEAD, BASS, DRUMS, mutes and pattern edits
    act when a note is made and still waited the full 0.2–0.3 s. The longer safety cushions (Launch, hidden tab, overload) are not shortened. */
-function tick(){const sd=60/G.bpm/4;while(nextT<ctx.currentTime+Math.max(typeof QOS!=='undefined'?(QOS.la<=.4?QOS.la*(window.LASC||1):QOS.la):.12,window.LAMIN||0)){const w=nextT,dl=Math.max(0,(w-ctx.currentTime)*1e3);arrStep(w);if(tk%4===0)UI.beat();if(tk%16===0)UI.sync();   /* a new bar: queued switches (sectors, ride, kick pattern …) have just landed */
+function tick(){const sd=60/G.bpm/4;while(nextT<ctx.currentTime+Math.max(typeof QOS!=='undefined'?(QOS.la<=.4?QOS.la*(window.LASC||1):QOS.la):.12,window.LAMIN||0)){const w=nextT,dl=Math.max(0,(w-ctx.currentTime)*1e3);arrStep(w);if(tk%4===0)UI.beat();if(tk%16===0)UI.bar();   /* a new bar: queued switches (sectors, ride, kick pattern …) have just landed */
  TR.forEach((T,k)=>{if(T.pad){const L=16*T.p.bars;const hr=padSched(T,L);if(hr){const ci=hr[0];if(!T.m)pad(ci,w,hr[1]*sd);else padChord(ci,w);DQ.push([T,ci,w])}if(!T.m)grains(w,sd);return}
   const s=tk%T.st;if(T.pt[s]&&!T.m)fire(k,w);DQ.push([T,s,w])});
  gateStep(w,sd);nextT+=sd;tk++}};
@@ -735,7 +742,8 @@ const HH={g:null};
 const CLC={};function clipCurve(dr){const kk=Math.round(dr*1000);if(CLC[kk])return CLC[kk];return CLC[kk]=clipCurve0(dr)}
 function clipCurve0(dr){const n=2048,c=new Float32Array(n),k=.3+3*dr,nm=Math.tanh(k);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=Math.tanh(x*k)/nm}return c} /* v0.22: covers ±2 (input is padded by 6 dB) */
 function wsCurve2(){const n=2048,c=new Float32Array(n);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=Math.tanh(x)}return c}
-function satCurve(k){const n=1024,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*k)/k}return c}
+/* v0.8 quick win: curves are cached — a few voices asked for a fresh 1024-point table on every note (assigning .curve copies it, so sharing is safe) */
+let SATC={},SATN=0;function satCurve(k){const key=+k;if(SATC[key])return SATC[key];if(++SATN>200){SATC={};SATN=1}const n=1024,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*k)/k}return SATC[key]=c}
 /* damped stereo room/hall: pre-delay, sparse early reflections, exponential tail whose highs die faster */
 function ir2(sec,pre){const sr=ctx.sampleRate,n=Math.floor(sr*sec),b=ctx.createBuffer(2,n,sr),P=Math.floor(sr*pre);let ref=(window.__irRef&&__irRef.sr===sr)?__irRef.v:0;if(!ref){const o=ir(3.2,2.4,.3).getChannelData(0);for(let i=0;i<o.length;i++)ref+=o[i]*o[i];window.__irRef={sr,v:ref}} /* v0.34: computed once */
  let en=0;for(let c=0;c<2;c++){const d=b.getChannelData(c);let y=0;for(let i=P;i<n;i++){const t=(i-P)/(n-P),a=.85-.7*t;y+=((R()*2-1)-y)*a;d[i]=y*Math.exp(-6.2*t)}
@@ -1223,8 +1231,12 @@ const QOS={lvl:0,cool:0,src:new Set(),load:0,late:0,ft:16,f:0,lt:0,la:.12,hi:[17
 /* every sound source made for the live engine is registered here (start / stop times, pad chord, voice id) — the load guard, voice stealing,
    the lead voice limit and the Launch fade read this. Creation itself is native: mkOsc / mkBuf / mkConst create the node, then register it. */
 const LiveAC=window.AudioContext||window.webkitAudioContext;
-function qsrc(n){const st=n.start.bind(n),sp=n.stop.bind(n);
- n.start=(t=0,...r)=>{n.__s=t;n.__e=Infinity;n.__pc=window.__PADC||0;n.__v=VX.n;if(window.__LCOL)__LCOL.push(n);QOS.src.add(n);return st(t,...r)};n.stop=(t=0)=>{n.__e=t;return sp(t)};n.addEventListener('ended',()=>QOS.src.delete(n));return n}
+/* v0.8 quick win: the bookkeeping lives on the prototype (it was 4 new closures + a listener per sound); qsrc only marks the node.
+   The shared 'ended' handler in platform/0040 takes it off the list. */
+{const P=AudioScheduledSourceNode.prototype,st=P.start,sp=P.stop;
+ P.start=function(t){if(this.__q){this.__s=t||0;this.__e=Infinity;this.__pc=window.__PADC||0;this.__v=VX.n;if(window.__LCOL)__LCOL.push(this);QOS.src.add(this)}return st.apply(this,arguments)};
+ P.stop=function(t){if(this.__q)this.__e=t||0;return sp.apply(this,arguments)}}
+function qsrc(n){n.__q=1;return n}
 function mkOsc(c){c=c||ctx;const n=c['createOscillator']();return c instanceof LiveAC?qsrc(n):n}
 function mkBuf(c){c=c||ctx;const n=c['createBufferSource']();return c instanceof LiveAC?qsrc(n):n}
 function mkConst(c){c=c||ctx;const n=c['createConstantSource']();return c instanceof LiveAC?qsrc(n):n}
@@ -2071,28 +2083,41 @@ const _gen72=generate;generate=function(){_gen72();if(curMood!=='Power')return;c
   G.pgate=pick([{len:2,on:[1]},{len:4,on:[3]},{len:8,on:[3,7]}]);G.pstyle='blip'}
  G.ldMul=.75;G.pedal=true;buf=[];mot=[];mp=-1;if(typeof lfoUI==='function')lfoUI();build()};
 /* ---- v73: CPU easy wins — pre-rendered hi-hats (2 nodes per hit instead of 8, one shared panner), ladder filter swapped for the cheap version under load, lower visual frame caps ---- */
-{const HC={},HV=3;let busy=0;
+{const HC=new Map(),HV=3,CAP=12,ST={hit:0,near:0,live:0};let busy=0,next=null;window.orbHatCache=ST;
  /* perf 10: the hat cache key used the exact tone, which the analog drift moves all the time, so the cache kept missing and re-rendering.
     Keys now use 1 % tone steps, 2 ms decay steps and 5 % metal steps (far below hearing), and the hits are rendered at exactly those values.
-    Only LFOs that move the hat SOUND (tone, decay) bypass the cache; a Hat hits LFO no longer does. */
- const qv=p=>({tone:Math.pow(1.01,Math.round(Math.log(Math.max(500,+p.tone||7500))/Math.log(1.01))),dec:Math.round((+p.dec||.05)*500)/500,metal:Math.round((p.metal==null?.6:p.metal)*20)/20});
- const hkey=p=>{const q=qv(p);return [Math.round(q.tone),Math.round(q.dec*1000),Math.round(q.metal*100),ctx.sampleRate,A.hm2?(A.hm2.__id||(A.hm2.__id=++HID)):0].join('|')};let HID=0;
- const lfoOnHat=()=>LFOS.some(L=>L.d>0&&/^Hat (tone|decay)/.test(L.tg));
- function render(key,P){if(busy||!window.OfflineAudioContext)return;busy=1;const jobs=[];
-  for(const op of[0,1])for(let v=0;v<HV;v++)jobs.push([op,v]);const out={c:[],o:[]};
-  const one=([op])=>{const d=op?.32:P.dec,sr=ctx.sampleRate,oc=new OfflineAudioContext(2,Math.ceil(sr*(d+.08)),sr),T=TR[1],sv={ctx,m:A.m,dI:A.dI,rI:A.rI,hg:HH.g,lv:T.lv,open:T.p.open,acc:T.p.acc};
-   const q=qv(P),kp={tone:T.p.tone,dec:T.p.dec,metal:T.p.metal};
-   try{ctx=oc;A.m=oc.destination;A.dI=oc.createGain();A.rI=oc.createGain();HH.g=null;T.lv=1;T.p.open=op;T.p.acc=0;Object.assign(T.p,q);_fv73(1,0)}catch(e){console.warn(e)}
-   finally{ctx=sv.ctx;A.m=sv.m;A.dI=sv.dI;A.rI=sv.rI;HH.g=sv.hg;T.lv=sv.lv;T.p.open=sv.open;T.p.acc=sv.acc;Object.assign(T.p,kp)}return oc.startRendering()};
-  (async()=>{try{for(const j of jobs){const b=await one(j);(j[0]?out.o:out.c).push(b)}HC[key]=out;const ks=Object.keys(HC);if(ks.length>6)delete HC[ks[0]]}catch(e){}busy=0})()}
+    v0.8 quick win: 20–48 % of hats were still built live (8 nodes instead of 2), and every hat in moods with a Hat tone / Hat decay LFO.
+    Now: tone in 2 % steps and decay in 4 % steps, the hit is played back at the exact tone (playback rate, ≤ 1 % off: inaudible);
+    a Hat tone LFO is followed the same way (prepared in 8 % steps, re-pitched to the exact tone) and a Hat decay LFO was already part of the settings; while a new hat is being prepared,
+    the nearest prepared one stands in (re-pitched); 12 hats are kept instead of 6, the least recently used goes first. */
+ const LT=Math.log(1.02),LD=Math.log(1.04);
+ const qv=p=>({tone:Math.pow(1.02,Math.round(Math.log(Math.max(500,+p.tone||7500))/LT)),dec:Math.pow(1.04,Math.round(Math.log(Math.max(.01,+p.dec||.05))/LD)),metal:Math.round((p.metal==null?.6:p.metal)*20)/20});
+ let HID=0;const hm=()=>A.hm2?(A.hm2.__id||(A.hm2.__id=++HID)):0;
+ const kq=q=>[Math.round(q.tone),Math.round(q.dec*1e4),Math.round(q.metal*100),ctx.sampleRate,hm()].join('|');
+ const hkey=p=>kq(qv(p));
+ const tone=(p,w)=>(+p.tone||7500)*Math.pow(2,1.2*mv('Hat tone',w));
+ function render(key,P){if(!window.OfflineAudioContext)return;if(busy){next=[key,P];return}busy=1;const jobs=[];
+  for(const op of[0,1])for(let v=0;v<HV;v++)jobs.push([op,v]);const out={c:[],o:[],q:qv(P)};
+  const one=([op])=>{const d=op?.32:out.q.dec,sr=ctx.sampleRate,oc=new OfflineAudioContext(2,Math.ceil(sr*(d+.08)),sr),T=TR[1],sv={ctx,m:A.m,dI:A.dI,rI:A.rI,hg:HH.g,lv:T.lv,open:T.p.open,acc:T.p.acc,mv};
+   const kp={tone:T.p.tone,dec:T.p.dec,metal:T.p.metal};
+   try{ctx=oc;A.m=oc.destination;A.dI=oc.createGain();A.rI=oc.createGain();HH.g=null;T.lv=1;T.p.open=op;T.p.acc=0;Object.assign(T.p,out.q);
+    mv=(tg,t)=>tg==='Hat tone'||tg==='Hat pan'?0:sv.mv(tg,t);_fv73(1,0)}catch(e){console.warn(e)}
+   finally{mv=sv.mv;ctx=sv.ctx;A.m=sv.m;A.dI=sv.dI;A.rI=sv.rI;HH.g=sv.hg;T.lv=sv.lv;T.p.open=sv.open;T.p.acc=sv.acc;Object.assign(T.p,kp)}return oc.startRendering()};
+  (async()=>{try{for(const j of jobs){const b=await one(j);(j[0]?out.o:out.c).push(b)}HC.set(key,out);if(HC.size>CAP)HC.delete(HC.keys().next().value)}catch(e){}busy=0;
+   if(next){const[k2,P2]=next;next=null;if(!HC.has(k2)&&ctx)render(k2,P2)}})()}
+ /* the prepared hat closest to q (same metal, decay within 25 %, tone within 15 %), or null */
+ const near=q=>{let best=null,bd=1e9;for(const c of HC.values()){if(c.q.metal!==q.metal)continue;const dd=Math.abs(Math.log(c.q.dec/q.dec)),dt=Math.abs(Math.log(c.q.tone/q.tone));if(dd>.22||dt>.14)continue;const d=dt+dd;if(d<bd){bd=d;best=c}}return best};
  let pan=null;const hatBus=()=>{if(pan&&pan.context===ctx)return pan;pan=vtag(ctx.createGain());send(pan,A.m,0,.05);return pan};
- const _fv73=fireVoice;fireVoice=function(k,w){if(k!==1||!ctx||ctx instanceof OfflineAudioContext||lfoOnHat()||(TR[1].pan||0)!==0)return _fv73(k,w);
-  const T=TR[1],p=T.p,key=hkey(p),c=HC[key];if(!c){render(key,p);return _fv73(k,w)}
+ const _fv73=fireVoice;fireVoice=function(k,w){if(k!==1||!ctx||ctx instanceof OfflineAudioContext)return _fv73(k,w);if((TR[1].pan||0)!==0){ST.live++;return _fv73(k,w)}
+  const T=TR[1],p=T.p,tn=tone(p,w),q=qv({tone:tn,dec:p.dec,metal:p.metal});if(tn!==(+p.tone||7500))q.tone=Math.pow(1.08,Math.round(Math.log(tn)/Math.log(1.08)));   /* a moving tone: 8 % steps, so the sweep needs only a few prepared hats */
+  const key=kq(q);let c=HC.get(key);
+  if(c){HC.delete(key);HC.set(key,c);ST.hit++}else{render(key,Object.assign({},p,{tone:q.tone}));c=near(q);if(!c){ST.live++;return _fv73(k,w)}ST.near++}
   const op=R()<p.open,bs=op?c.o:c.c;if(!bs.length)return _fv73(k,w);const v=T.lv,pk=(1-p.acc*R()*.8)*(op?1:1);
   if(HH.g){const cg=HH.g;HH.g=null;try{cg.gain.cancelScheduledValues(w);cg.gain.setTargetAtTime(.0001,w,.005)}catch(e){}}
-  const s=mkBuf(),g=ctx.createGain();s.buffer=bs[Math.floor(R()*bs.length)];g.gain.value=v*pk;s.connect(g);{const sp=mv('Hat pan',w);if(sp){const q=ctx.createStereoPanner();q.pan.value=Math.max(-1,Math.min(1,.18+.8*sp));g.connect(q);routeTrack(q,null,hatBus())}else routeTrack(g,null,hatBus())}s.start(w);if(op)HH.g=g};
- /* v0.8: a Launch while playing prepares the new hat sound before its first bar (launch/1690) */
- window.orbHatWarm=()=>{if(!ctx||lfoOnHat()||(TR[1].pan||0)!==0)return;const p=TR[1].p,key=hkey(p);if(!HC[key])render(key,p)};
+  const s=mkBuf(),g=ctx.createGain();s.buffer=bs[Math.floor(R()*bs.length)];const r=tn/c.q.tone;if(r<.999||r>1.001)s.playbackRate.value=r;
+  g.gain.value=v*pk*Math.pow(c.q.tone/tn,.25);s.connect(g);{const sp=mv('Hat pan',w);if(sp){const q2=ctx.createStereoPanner();q2.pan.value=Math.max(-1,Math.min(1,.18+.8*sp));g.connect(q2);routeTrack(q2,null,hatBus())}else routeTrack(g,null,hatBus())}s.start(w);if(op)HH.g=g};
+ /* v0.8: a Launch while playing prepares the new hat sound before its first bar (launch/1690); Play does too (platform/1700 calls it) */
+ window.orbHatWarm=()=>{if(!ctx||(TR[1].pan||0)!==0)return;const p=TR[1].p,key=hkey(p);if(!HC.has(key))render(key,p)};
  // Mini ladder: under load use the two-biquad version (no worklet node per note)
  const _mv73=miniVoice;miniVoice=function(w){const l=A.ladder;if((QOS.ml||0)>=2)A.ladder=false;try{_mv73(w)}finally{A.ladder=l}};
  // visuals: lower frame caps (the star map still reads smoothly)
@@ -3116,7 +3141,8 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const soon=()=>{setTimeout(syncAll,0);setTimeout(syncAll,80)};
  ['#t-drums','#t-synth'].forEach(id=>{const c=document.querySelector(id);if(c){c.addEventListener('change',soon,true);c.addEventListener('click',e=>{if(e.target.closest('button'))soon()},true)}});
  const _gs=generate;generate=function(){const r=_gs.apply(this,arguments);soon();return r};
- UI.on(()=>{if(!document.hidden)try{TR.forEach(T=>{const c=T.mb&&T.mb.closest('.card');if(c&&c.offsetParent)syncCard(T)})}catch(e){}})} /* v0.23: only cards on screen */
+ UI.on(()=>{if(document.hidden)return;try{const d=$('#t-drums'),y=$('#t-synth');if(!isShown(d)&&!isShown(y))return;   /* v0.8: no card on screen (Flight, Mix …): nothing to do, no layout read */
+  TR.forEach(T=>{const c=T.mb&&T.mb.closest('.card');if(c&&isShown(c))syncCard(T)})}catch(e){}})} /* v0.23: only cards on screen */
 
 /* ---- v139: new arp modes (Turing loop, Converge, Diverge, Pedal arp) + Cycle, Note repeat and Reset on bar for the lead ---- */
 {const NEWM=['Turing loop','Converge','Diverge','Pedal arp'];NEWM.forEach(m=>{if(!MODES.includes(m))MODES.push(m)});
@@ -7343,5 +7369,21 @@ window.orbExoProg=function(kind){try{let P,sh;
  const tidy=()=>{TR.forEach(T=>{if(T.pad)return;while(T.st>64){T.st=Math.round(T.st/2);T.h=Math.max(1,Math.round(T.h/2));T.r=(T.r||0)%T.st;T.pt=pat(T)}   /* a ring is never longer than 64 steps */if(T.pt.length!==T.st)T.pt=pat(T)});const P=TR[5];if(P&&prog.length>P.st&&P.st>=1){prog.length=P.st;if(pshape.length>P.st)pshape.length=P.st;if(PX&&PX.length>P.st)PX.length=P.st;pmean=null}else if(P&&prog.length>=1&&prog.length<P.st){P.st=prog.length;P.h=P.st;P.pt=pat(P)}};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{arrange();tidy();try{if(window.orbGroove&&orbGroove.run)orbGroove.run()}catch(e){}G.pwMode=TR[4].p.mode;build();setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync()}catch(e){}},0)}catch(e){console.warn('[orbitron] arranger',e)}return r};
  window.orbArrange=arrange;if(window.orbGroove)orbGroove.late=true}
+</script>
+<script>/* ---- v0.8: OVERSAMPLING FOLLOWS THE LOAD — the clippers and saturators on the master and buses (final clipper 4x; mix clip, drum bus,
+   lead bus and 303 bus 2x) cost a lot of processing because they oversample. At full quality nothing changes. When the device struggles
+   they step down: at SAVING the 4x ones run at 2x, at OVERLOAD all of them run plain. When the load is gone again they step back up.
+   Only the edge of very loud peaks sounds a touch rougher, and only while the device is overloaded. ---- */
+{const OS={nodes:new Set(),lvl:0},D=Object.getOwnPropertyDescriptor(WaveShaperNode.prototype,'oversample');
+ if(D&&D.set){
+  // remember the setting each live shaper asked for (per-note shapers are short-lived; they drop out of the list when garbage collected)
+  Object.defineProperty(WaveShaperNode.prototype,'oversample',{configurable:true,enumerable:D.enumerable,get:D.get,
+   set(v){if(!(this.context instanceof OfflineAudioContext)&&!this.__osApply){this.__os=v;if(v!=='none'&&window.WeakRef){OS.nodes.add(new WeakRef(this));v=OS.pick(v)}}D.set.call(this,v)}});
+  OS.pick=v=>OS.lvl>=3?'none':OS.lvl>=2&&v==='4x'?'2x':v;
+  const apply=()=>{for(const r of OS.nodes){const n=r.deref();if(!n||n.context.state==='closed'){OS.nodes.delete(r);continue}const want=OS.pick(n.__os);
+   if(D.get.call(n)!==want){n.__osApply=1;try{D.set.call(n,want)}catch(e){}n.__osApply=0}}};
+  setInterval(()=>{if(typeof QOS==='undefined')return;const l=typeof ctx!=='undefined'&&ctx&&playing?Math.max(QOS.lvl||0,QOS.ml||0):0;
+   if(l!==OS.lvl){OS.lvl=l;apply()}else if(OS.nodes.size>400)apply()},500);
+  window.orbOversample={state:()=>({lvl:OS.lvl,nodes:OS.nodes.size})}}}
 </script>
 </body></html>

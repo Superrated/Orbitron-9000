@@ -3,8 +3,12 @@ const QOS={lvl:0,cool:0,src:new Set(),load:0,late:0,ft:16,f:0,lt:0,la:.12,hi:[17
 /* every sound source made for the live engine is registered here (start / stop times, pad chord, voice id) — the load guard, voice stealing,
    the lead voice limit and the Launch fade read this. Creation itself is native: mkOsc / mkBuf / mkConst create the node, then register it. */
 const LiveAC=window.AudioContext||window.webkitAudioContext;
-function qsrc(n){const st=n.start.bind(n),sp=n.stop.bind(n);
- n.start=(t=0,...r)=>{n.__s=t;n.__e=Infinity;n.__pc=window.__PADC||0;n.__v=VX.n;if(window.__LCOL)__LCOL.push(n);QOS.src.add(n);return st(t,...r)};n.stop=(t=0)=>{n.__e=t;return sp(t)};n.addEventListener('ended',()=>QOS.src.delete(n));return n}
+/* v0.8 quick win: the bookkeeping lives on the prototype (it was 4 new closures + a listener per sound); qsrc only marks the node.
+   The shared 'ended' handler in platform/0040 takes it off the list. */
+{const P=AudioScheduledSourceNode.prototype,st=P.start,sp=P.stop;
+ P.start=function(t){if(this.__q){this.__s=t||0;this.__e=Infinity;this.__pc=window.__PADC||0;this.__v=VX.n;if(window.__LCOL)__LCOL.push(this);QOS.src.add(this)}return st.apply(this,arguments)};
+ P.stop=function(t){if(this.__q)this.__e=t||0;return sp.apply(this,arguments)}}
+function qsrc(n){n.__q=1;return n}
 function mkOsc(c){c=c||ctx;const n=c['createOscillator']();return c instanceof LiveAC?qsrc(n):n}
 function mkBuf(c){c=c||ctx;const n=c['createBufferSource']();return c instanceof LiveAC?qsrc(n):n}
 function mkConst(c){c=c||ctx;const n=c['createConstantSource']();return c instanceof LiveAC?qsrc(n):n}

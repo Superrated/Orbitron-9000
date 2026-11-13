@@ -49,6 +49,9 @@ launch/0190-mood-track-trims.js → platform/0300-load-guard.js → platform/035
 ## draw — 5 wraps, defined in js/core/0050-base-state-engine-ui.js
 core/0090-track-params-voices-tick.js → platform/0350-perf-prerender-hat-fps.js → platform/1490-audio-buffer.js → platform/1580-overload-guard.js → ui/2380-euclid-redraw.js
 
+## mv — 3 wraps, defined in js/sequencer/0140-lfos.js
+platform/0620-cpu-easy-wins.js → flight/1470-faders-over-lfos.js → sequencer/1570-lfo-targets-polymeters.js
+
 ## tick — 3 wraps, defined in js/core/0090-track-params-voices-tick.js
 platform/0300-load-guard.js → platform/0370-lean-engine.js → platform/0740-stability-guards-worker-clock.js
 
@@ -72,9 +75,6 @@ ui/0920-lead-pattern-page.js → ui/1440-lead-sound-pages.js
 
 ## leadPoly — 2 wraps, defined in js/instruments/0160-lead-engine.js
 instruments/1200-contemporary-leads.js → instruments/1910-new-sounds-patterns.js
-
-## mv — 2 wraps, defined in js/sequencer/0140-lfos.js
-flight/1470-faders-over-lfos.js → sequencer/1570-lfo-targets-polymeters.js
 
 ## mvd — 2 wraps, defined in js/sequencer/0140-lfos.js
 flight/1470-faders-over-lfos.js → sequencer/1570-lfo-targets-polymeters.js
