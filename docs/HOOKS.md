@@ -19,11 +19,11 @@ launch/0190-mood-track-trims.js → platform/0300-load-guard.js → platform/046
 ## init — 11 wraps, defined in js/core/0050-base-state-engine-ui.js
 launch/0180-mood-production-profiles.js → platform/0300-load-guard.js → platform/0350-perf-prerender-hat-fps.js → instruments/0360-lead-bus-taming.js → platform/0370-lean-engine.js → instruments/0480-mini-lead-engine.js → engine/0820-mood-finish-mastering.js → flight/0870-lowpass-fader.js → state/0990-wav-recorder.js → engine/1040-master-plus-multiband.js → engine/1880-perf-shimmer-lazy.js
 
+## leadNote — 10 wraps, defined in js/core/0050-base-state-engine-ui.js
+core/0110-generate-builder-tracks-ui.js → core/0120-moods-pad-motif-generator.js → core/0130-drone-gate-arp-lead-presets.js → launch/0450-power-lead-variants.js → launch/0630-power-lead-cells-then-none.js → sequencer/0940-arp-modes.js → instruments/1200-contemporary-leads.js → launch/1750-modern-sound-pass.js → instruments/1910-new-sounds-patterns.js → flight/2410-tension-pulse-faders.js
+
 ## fireVoice — 9 wraps, defined in js/core/0090-track-params-voices-tick.js
 launch/0190-mood-track-trims.js → launch/0240-moods-italo-touch-breaks.js → platform/0620-cpu-easy-wins.js → instruments/0750-ride-perc.js → instruments/1160-kick-key-tuned.js → platform/1620-lead-osc-collect.js → launch/1630-sound-variety.js → platform/1920-prerender-perc.js → launch/2460-level-balance.js
-
-## leadNote — 9 wraps, defined in js/core/0050-base-state-engine-ui.js
-core/0110-generate-builder-tracks-ui.js → core/0120-moods-pad-motif-generator.js → core/0130-drone-gate-arp-lead-presets.js → launch/0450-power-lead-variants.js → launch/0630-power-lead-cells-then-none.js → sequencer/0940-arp-modes.js → instruments/1200-contemporary-leads.js → launch/1750-modern-sound-pass.js → instruments/1910-new-sounds-patterns.js
 
 ## mix — 9 wraps, defined in js/core/0050-base-state-engine-ui.js
 engine/0150-production-master-glue.js → engine/0340-shimmer-reverb.js → platform/0350-perf-prerender-hat-fps.js → platform/0370-lean-engine.js → instruments/1050-kick-rumble.js → engine/1450-master-air.js → platform/1490-audio-buffer.js → engine/1640-pump-fader.js → ui/1650-interface-cleanup.js
