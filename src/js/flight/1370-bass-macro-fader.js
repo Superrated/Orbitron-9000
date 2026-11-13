@@ -1,8 +1,14 @@
 
 /* ---- v0.22: BASS macro fader on Flight, under LEAD. Centre = the bass exactly as set (manual edits included). Left = tight: shorter, darker, less resonance.
    Right = squelch: longer notes, brighter cutoff, more filter envelope, more resonance (capped so it stays round), a hint of slide; level compensated.
-   Springs back to the centre when released; a tap glides to the spot in about 250 ms. Only bends existing bass parameters while a note is made. ---- */
+   Springs back to the centre when released; a tap glides to the spot in about 250 ms. Only bends existing bass parameters while a note is made.
+   v0.8: WOBBLE zone — the last 20 % of the right side makes the bass filter wobble in time: 1/8 notes, 1/16 in the last 7 %, deeper
+   towards the end. The wobble is locked to the bar and drawn as automation on each note's own filter, so it costs no extra sound nodes.
+   (The 808 bass has no filter, so it does not wobble.) ---- */
 {const BM={x:0,raf:0};let dep=0;
+ window.BWOB=function(fp,w,e,c){const x=BM.x;if(x<.8||!(e>w))return;const d=(x-.8)/.2,sd=sdur(),ps=x>.93?1:2,P=ps*sd,lo=Math.max(60,c*(.4-.2*d)),hi=Math.min(9000,Math.max(lo*2,c*(1.6+2.4*d))),r=hi/lo;
+  const cs=w-(((tk%ps)+ps)%ps)*sd,u=Math.max(0,Math.min(1,(w-cs)/P)),v0=u<.5?lo*Math.pow(r,u*2):hi*Math.pow(1/r,(u-.5)*2);
+  try{fp.cancelScheduledValues(w);fp.setValueAtTime(v0,w);for(let k=1,n=0;n<64;k++){const t=cs+k*P/2;if(t<=w+.001)continue;if(t>e+P/2)break;fp.exponentialRampToValueAtTime(k%2?hi:lo,t);n++}}catch(_){}};
  const bend=fn=>function(){if(dep||Math.abs(BM.x)<.01)return fn.apply(this,arguments);const B=TR[6],P=B.p,x=BM.x,
    o={dec:P.dec,bgt:P.bgt,bsus:P.bsus,cut:P.cut,envA:P.envA,res:P.res,bsl:P.bsl,lv:B.lv};dep=1;const n={};
   try{const lf=x<0?Math.pow(2,1.3*x):Math.pow(2,1.7*x);P.dec=Math.max(.04,Math.min(1.8,(P.dec||.13)*lf));
@@ -38,7 +44,7 @@
   .mxrow .lmh span{opacity:.8}.mxrow .lmt i{display:none}}`;document.head.appendChild(st)}
  let el=null,lastX=null;const show=()=>{if(!el)return;const x=BM.x;if(lastX!==null&&Math.abs(x-lastX)<.002)return;lastX=x;const k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
    k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';
-   b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'TIGHT ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};
+   b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'TIGHT ':x>=.8?'WOBBLE ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};
  const glideBack=()=>{cancelAnimationFrame(BM.raf);const x0=BM.x,t0=performance.now(),D=2500;const step=t=>{const p=Math.min(1,(t-t0)/D),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;BM.x=x0*(1-e);show();if(p<1)BM.raf=requestAnimationFrame(step);else{BM.x=0;show()}};BM.raf=requestAnimationFrame(step)};
  const add=()=>{if(document.querySelector('.bmx'))return;const lm=document.querySelector('.lmx');if(!lm)return;
   el=document.createElement('div');el.className='bmx';
