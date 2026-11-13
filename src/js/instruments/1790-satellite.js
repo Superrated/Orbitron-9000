@@ -66,7 +66,7 @@
    for(const o of[-n,0,n])for(const t of tgt){const v=t+o;if(v<-3||v>n+5)continue;const sc=Math.abs(v-c0)+(v>c0?.01:0);if(sc<bs){bs=sc;best=v}}SST.cp=best;d=best}
   let f=xm?SST.dF:d2f(d,regOct(p)+(G.ldUp||0)),f2=d2!=null?d2f(d2,regOct(p)+(G.ldUp||0)):0;while(f>(sp||xm?2000:1000)){f/=2;f2/=2}const FQ=f2?[f,f2]:[f];
   const tone=p.tone==null?.5:p.tone,space=p.space==null?.4:p.space,trim=(typeof dbg==='function'&&typeof TRIM!=='undefined')?dbg(TRIM[9]||0):1,
-   g=ctx.createGain(),out=A.ld||A.dk;g.__k=9;let e;orb=Math.max(0,Math.min(1,p.orb||0)),oph=tk*Math.PI/32,lv=T.lv*trim*(xm?(mot==='Double bass'?.16:.22):sp?.24:mot==='Arp'?(f2?.2:.25):mot==='Phase'?.26:.3)/Math.sqrt(FQ.length)*(orb&&mot!=='Long'?(s%4===2?1+.3*orb:1-.12*orb):1),
+   g=ctx.createGain(),out=A.ld||A.dk;g.__k=9;let e;orb=Math.max(0,Math.min(1,p.orb||0)),oph=tk*Math.PI/32,lv=T.lv*trim*(xm?(mot==='Double bass'?.16:.22):sp?.24:mot==='Arp'?(f2?.2:.25):mot==='Phase'?.26:.3)*.3/Math.sqrt(FQ.length)   /* v0.77: ×0.3 — the Satellite plays through the lead bus, whose compressor (now connected) lifts quiet parts; without this it came out about 9 dB louder than in v0.7 */*(orb&&mot!=='Long'?(s%4===2?1+.3*orb:1-.12*orb):1),
    AT=.003+Math.pow(p.att==null?.2:p.att,2)*.6,RL=.08+Math.pow(p.rel==null?.32:p.rel,2)*2.4;
   const env=(a,hold,rl)=>{g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(lv,w+a);g.gain.setValueAtTime(lv,w+Math.max(a,hold));g.gain.setTargetAtTime(.0001,w+Math.max(a,hold),rl/3);e=w+Math.max(a,hold)+rl+.1};
   const cap=600*Math.pow(2,tone*3+orb*.9*Math.sin(oph/2));
