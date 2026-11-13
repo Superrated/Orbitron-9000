@@ -233,7 +233,7 @@ function irM(b){const m=ctx.createBuffer(1,b.length,b.sampleRate);m.copyToChanne
 function ir(sec,dec,lp){const n=ctx.sampleRate*sec,b=ctx.createBuffer(2,n,ctx.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);let y=0;for(let i=0;i<n;i++){y+=((R()*2-1)-y)*lp;d[i]=y*Math.pow(1-i/n,dec)}}return b}
 function curve(k){const n=512,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/n*2-1;c[i]=Math.tanh(x*(1+k))}return c}
 function init(){if(ctx){ctx.resume();return}
- ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:window.orbBufHint?orbBufHint():'playback'});window.LAMIN=Math.max(0,(ctx.baseLatency||0)*1.6+.06);
+ ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:window.orbBufHint?orbBufHint():'playback'});window.LAMIN=Math.max(0,(ctx.baseLatency||0)*1.6+.06);{const h=window.orbBufHint?orbBufHint():'playback';window.LASC=(h==='interactive'||(typeof h==='number'&&h<=.03))?.6:1}   /* v0.75: see the scheduler */
  const g=(v=1)=>{const n=ctx.createGain();n.gain.value=v;return n};
  A.m=g(.8);{const ws=ctx.createWaveShaper(),c=ctx.createDynamicsCompressor();ws.curve=wsCurve2();ws.oversample="none";A.hp=ctx.createBiquadFilter();A.hp.type="highpass";A.hp.frequency.value=10;A.lp=ctx.createBiquadFilter();A.lp.type="lowpass";A.lp.frequency.value=20000;A.lp.Q.value=.7;A.sg=ctx.createGain();c.threshold.value=-14;c.ratio.value=3;c.knee.value=12;c.attack.value=.01;c.release.value=.2;{const wi=g(.5);A.m.connect(wi);wi.connect(ws)}ws.connect(A.hp); /* v0.22 gain staging: 6 dB headroom into the master shaper (same curve below 0 dBFS, no hard clip above) */A.hp.connect(A.lp);A.arh=ctx.createBiquadFilter();A.arh.type='highpass';A.arh.frequency.value=10;A.arh.Q.value=.9;A.arf=ctx.createBiquadFilter();A.arf.type='lowpass';A.arf.frequency.value=20000;A.arf.Q.value=.9;A.lp.connect(A.arh);A.arh.connect(A.sg); /* perf 9: 20 kHz safety low-pass (A.arf) removed */A.glue=c;c.attack.value=.025;c.release.value=.15;c.ratio.value=2.5;c.knee.value=8;c.threshold.value=-3-12*G.glue;A.sg.connect(c);const ls=ctx.createBiquadFilter(),hs=ctx.createBiquadFilter();ls.type='lowshelf';ls.frequency.value=90;ls.gain.value=1.5;hs.type='highshelf';hs.frequency.value=9500;hs.gain.value=2;A.clip=ctx.createWaveShaper();A.clip.curve=clipCurve(G.clip);A.clip.oversample='2x';const lim=ctx.createGain(); /* perf 9: old limiter removed — the master's own limiter catches the peaks */A.lim=lim;A.out=g(.84);c.connect(ls);A.tls=ls;A.ths=hs;A.tmid=ctx.createBiquadFilter();A.tmid.type='peaking';A.tmid.frequency.value=700;A.tmid.Q.value=.8;A.tmid.gain.value=0;A.tpre=ctx.createBiquadFilter();A.tpre.type='highshelf';A.tpre.frequency.value=4500;A.tpre.gain.value=0;ls.connect(A.tmid);A.tmid.connect(A.tpre);A.tpre.connect(hs); /* v0.3: per-mood tonal balance (see TONE) */{const ci=g(.5);hs.connect(ci);ci.connect(A.clip)} /* v0.22: same headroom into the Loudness clipper */A.clip.connect(lim);lim.connect(A.out);A.out.connect(ctx.destination)}
  {const hh=ctx.createBiquadFilter(),gw=ctx.createWaveShaper();hh.type='highpass';hh.frequency.value=250;gw.curve=curve(14);gw.oversample='none';A.gr=g(G.bgrit*.3);A.m.connect(hh);hh.connect(gw);gw.connect(A.gr);A.gr.connect(A.hp)}
@@ -386,7 +386,10 @@ function fireVoice(k,w){const T=TR[k],p=T.p,v=T.lv;if(window.DR&&DR.on(k,w,v,p))
 const BDC={};
 function fire(k,w){OCT=(k===6||k===9)?0:(G.oct||0);FIX=0;if(k===3&&TR[3].p.mode==="Fixed")FIX=440*Math.pow(2,(TR[3].p.tune-69)/12);if(tk%2)w+=G.swing*sdur();
  if(k===7)snare(w);else if(k===8)stab(w);else if(k===9)subDrone(w);else fireVoice(k,w);FIX=0}
-function tick(){const sd=60/G.bpm/4;while(nextT<ctx.currentTime+Math.max(typeof QOS!=='undefined'?QOS.la:.12,window.LAMIN||0)){const w=nextT,dl=Math.max(0,(w-ctx.currentTime)*1e3);arrStep(w);if(tk%4===0)UI.beat();if(tk%16===0)UI.sync();   /* a new bar: queued switches (sectors, ride, kick pattern …) have just landed */
+/* v0.75 latency: with the Minimum or Small audio buffer the notes are also scheduled less far ahead (60 % of the normal look-ahead, never
+   less than the buffer needs). Before, those buffers only made the low-pass and FX faders quicker; LEAD, BASS, DRUMS, mutes and pattern edits
+   act when a note is made and still waited the full 0.2–0.3 s. The longer safety cushions (Launch, hidden tab, overload) are not shortened. */
+function tick(){const sd=60/G.bpm/4;while(nextT<ctx.currentTime+Math.max(typeof QOS!=='undefined'?(QOS.la<=.4?QOS.la*(window.LASC||1):QOS.la):.12,window.LAMIN||0)){const w=nextT,dl=Math.max(0,(w-ctx.currentTime)*1e3);arrStep(w);if(tk%4===0)UI.beat();if(tk%16===0)UI.sync();   /* a new bar: queued switches (sectors, ride, kick pattern …) have just landed */
  TR.forEach((T,k)=>{if(T.pad){const L=16*T.p.bars;const hr=padSched(T,L);if(hr){const ci=hr[0];if(!T.m)pad(ci,w,hr[1]*sd);else padChord(ci,w);DQ.push([T,ci,w])}if(!T.m)grains(w,sd);return}
   const s=tk%T.st;if(T.pt[s]&&!T.m)fire(k,w);DQ.push([T,s,w])});
  gateStep(w,sd);nextT+=sd;tk++}};
@@ -3610,7 +3613,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  UI.on(()=>{if(!document.hidden&&['#t-drums','#t-synth'].some(q=>{const e=document.querySelector(q);return e&&!e.hidden}))sync()})}  /* perf 3: only while the cards are on screen */
 </script>
 <script>
-/* v163: "Temporal" mood — Neapolitan loop techno after Gaetano Parisio / Conform: stripped-back, loop-driven, gritty but funky.
+/* v163: "Temporal" mood — Neapolitan loop techno: stripped-back, loop-driven, gritty but funky.
    Hats and claps carry the groove, almost no melody, at most a dark one-chord stab loop. Three flavours per Launch:
    Pummel (early, hard, fast), Shifting hats (polymetric hat + ride layers, subtle bass), Tribal (tom/conga loop leads, ride on top). */
 {const NM='Temporal';
@@ -4511,7 +4514,7 @@ window.MOODX={
  const ui=()=>{const q=[...document.querySelectorAll('#t-mix label.sl')].find(l=>l.firstChild&&l.firstChild.textContent.trim()==='Engine quality');const m=q?q.parentElement:null; /* Engine panel (Mix → Engine) */
   if(!m)return;if(m.querySelector('.bufsel'))return;document.querySelectorAll('#t-mix .bufsel,#t-mix .vissel').forEach(e=>e.remove());
   const mk=(lab,opts,val,fn,cls,tip)=>{const l=document.createElement('label');l.className='sl '+cls;l.title=tip;l.appendChild(document.createTextNode(lab));const se=document.createElement('select');opts.forEach(o=>se.add(new Option(o,o)));se.value=val;se.onchange=()=>fn(se.value);l.appendChild(se);return l};
-  const b=mk('Audio buffer',Object.keys(BUF),buf,v=>{buf=v;put('orb-buf2',v);if(ctx&&window.hardReset)hardReset('audio buffer '+v)},'bufsel','Bigger buffer = fewer dropouts/underruns, but pads and faders respond later. auto = the browser picks the size (Minimum: its lowest, Standard: its normal). The real total is under Flight diagnostics → latency. Changing it restarts the audio for a moment; the groove keeps playing.');
+  const b=mk('Audio buffer',Object.keys(BUF),buf,v=>{buf=v;put('orb-buf2',v);if(ctx&&window.hardReset)hardReset('audio buffer '+v)},'bufsel','Bigger buffer = fewer dropouts/underruns, but pads and faders respond later. auto = the browser picks the size (Minimum: its lowest, Standard: its normal). Minimum and Small also schedule notes less far ahead, so faders, mutes and edits land sooner. The real total is under Flight diagnostics → latency. Changing it restarts the audio for a moment; the groove keeps playing.');
   const v=mk('Visuals',VIS,vis,x=>{vis=x;visSet=x;put('orb-vis',x);if(x!=='Off')requestAnimationFrame(()=>{})},'vissel','Low = about 15 frames per second, Off = no live animation. Frees the main thread so notes stay on time on busy devices.');
   if(q){q.after(b);b.after(v)}else{m.prepend(v);m.prepend(b)}};
  const _mx=mix;mix=function(){const r=_mx.apply(this,arguments);try{ui()}catch(e){}return r};try{ui()}catch(e){}UI.on(()=>{try{ui()}catch(e){}});
@@ -6451,7 +6454,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13-v0.75';
+window.ORB_BUILD='2026-11-13-v0.75b';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -6902,7 +6905,7 @@ window.orbExoProg=function(kind){try{let P,sh;
    const want=String(own+(snd?1000:0));if(e.style.order!==want)e.style.order=want;e._co=want}
   // ---- Hits and Rotate follow Steps
   if(!T.pad){const fit=(n,mx)=>{const e=by(n);if(!e)return;const i=e.querySelector('input[type=range]');if(!i)return;e._max=mx;if(+i.max!==mx)i.max=mx};fit('Hits',T.st);fit('Rotate',Math.max(0,T.st-1))}}
- const run=()=>{const d=document.querySelector('#t-drums'),y=document.querySelector('#t-synth');if(!((d&&!d.hidden)||(y&&!y.hidden)))return;document.querySelectorAll('#t-drums .card,#t-synth .card').forEach(c=>{try{card(c)}catch(e){console.warn('[orbitron] layout',e)}})};
+ const run=()=>{const d=document.querySelector('#t-drums'),y=document.querySelector('#t-synth');if(!((d&&!d.hidden)||(y&&!y.hidden)))return;document.querySelectorAll('#t-drums .card,#t-synth .card').forEach(c=>{try{if(isShown(c))card(c)}catch(e){console.warn('[orbitron] layout',e)}})};   /* only the cards on screen (one at a time on a phone) */
  UI.on(run);window.orbCohere=run}
 </script>
 <script>
@@ -7036,31 +7039,30 @@ window.orbExoProg=function(kind){try{let P,sh;
    Rule 4  the bass, by chance    → its Ending is set to "Turnaround every 4th bar" (only when no Ending was chosen already).
 
    Left alone: Acid 303 lines and Riff-mode leads (they have their own written rhythm), the ride, kick, clap, snare and bass.
-   To make a mood busier or emptier, change its numbers. A mood without a line is not arranged at all.
-   The numbers come from how records in each subgenre are built (from memory, not from audio) — the reference is noted per line. ---- */
+   To make a mood busier or emptier, change its numbers. A mood without a line is not arranged at all. ---- */
 {const ARR={
-  Dark:[2,4,4,0.35],               // Ben Klock – Subzero · Marcel Dettmann – Let's Do It
-  Tense:[1,5,4,0.3],              // Nitzer Ebb – Join in the Chant · Front 242 – Headhunter
-  Acid:[1,4,4,0],               // Hardfloor – Acperience 1 · Phuture – Acid Tracks
-  Power:[2,4,4,0.35],              // Jeff Mills – The Bells · Joey Beltram – Energy Flash
-  'Groove Techno':[1,6,4,0.2],    // Surgeon – Magneze · Ben Sims, Mark Broom
-  Temporal:[2,5,8,0.15],           // Gaetano Parisio, Marco Carola
-  Bleep:[1,5,4,0.35],              // LFO – LFO · Sweet Exorcist – Testone
-  'Distorted Electro':[1,4,4,0.3],// Kraftwerk – Numbers · Helena Hauff, The Hacker
-  Drone:[2,6,4,0.15],              // Robert Hood – Minus · Plastikman – Spastik
-  Polymeter:[2,6,8,0.15],          // Rrose – Waterfall · Donato Dozzy
-  Chug:[2,4,4,0.3],               // Andrew Weatherall, Red Axes
-  Melancholic:[3,8,4,0.4],        // Stephan Bodzin – Singularity · Tale Of Us & Vaal – Monument
-  'Melodic House':[2,6,4,0.4],    // Âme – Rej
-  Hopeful:[3,8,4,0.45],            // Sasha – Xpander · Eric Prydz – Opus
-  Italo:[2,7,4,0.45],              // Giorgio Moroder – Chase · Alexander Robotnick – Problèmes d'Amour
-  Vector:[2,5,4,0.4],             // Legowelt, KiNK
-  Breaks:[2,5,5,0.3],             // LTJ Bukem – Horizons · Photek – Ni-Ten-Ichi-Ryu
-  Dreamy:[3,5,5,0.35],             // Mr. Fingers – Can You Feel It · Kerri Chandler – Rain
-  Ethereal:[2,4,5,0.2],           // Aphex Twin – Xtal · Biosphere – Novelty Waves
-  'Deep Space':[2,3,5,0.1],       // Global Communication – 14:31 · Gas – Pop
-  Ambient:[2,3,5,0.1],            // Brian Eno – An Ending (Ascent) · Stars of the Lid
-  Noir:[2,3,8,0.2]};              // Basic Channel – Phylyps Trak II · Maurizio – M6
+  Dark:[2,4,4,0.35],
+  Tense:[1,5,4,0.3],
+  Acid:[1,4,4,0],
+  Power:[2,4,4,0.35],
+  'Groove Techno':[1,6,4,0.2],
+  Temporal:[2,5,8,0.15],
+  Bleep:[1,5,4,0.35],
+  'Distorted Electro':[1,4,4,0.3],
+  Drone:[2,6,4,0.15],
+  Polymeter:[2,6,8,0.15],
+  Chug:[2,4,4,0.3],
+  Melancholic:[3,8,4,0.4],
+  'Melodic House':[2,6,4,0.4],
+  Hopeful:[3,8,4,0.45],
+  Italo:[2,7,4,0.45],
+  Vector:[2,5,4,0.4],
+  Breaks:[2,5,5,0.3],
+  Dreamy:[3,5,5,0.35],
+  Ethereal:[2,4,5,0.2],
+  'Deep Space':[2,3,5,0.1],
+  Ambient:[2,3,5,0.1],
+  Noir:[2,3,8,0.2]};
  window.orbArr=ARR;
  const on=k=>!TR[k].m,cap=(k,c)=>{const T=TR[k];if(!on(k))return;const h=Math.max(1,Math.round(c*T.st/16));if(T.h>h){T.h=h;T.pt=pat(T)}};
  function arrange(){const a=ARR[curMood];if(!a)return;const [parts,notes,first,turn]=a,mode=TR[4].p.mode;
