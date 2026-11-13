@@ -188,7 +188,7 @@ const pat=t=>{const a=Array(t.st).fill(0);if(t.pad)return a.fill(1);const on=[];
  on.forEach(i=>a[(i+t.r)%t.st]=1);return a};
 TR.forEach(t=>t.pt=pat(t));
 // ---------- UI ----------
-function sl(par,lab,min,max,val,step,fn){if(lab==='Chords')min=1;if(!isFinite(+val))val=min;   /* v0.71: a setting without a value showed "NaN" */const LG=/(cutoff|filter|tone)$/i.test(lab)&&!/tune/i.test(lab)&&min>0&&max/min>=2.5,lr=Math.log(max/min),U=v=>Math.log(Math.max(min,Math.min(max,v))/min)/lr,F=u=>min*Math.exp(lr*Math.max(0,Math.min(1,u))),dec=LG?0:(String(step).split('.')[1]||'').length,d=document.createElement('div');d.className='sl';d.innerHTML='<span>'+lab+'<b>'+(+val).toFixed(dec)+'</b></span>';
+function sl(par,lab,min,max,val,step,fn){if(lab==='Chords')min=1;if(!isFinite(+val))val=min;   /* v0.75: a setting without a value showed "NaN" */const LG=/(cutoff|filter|tone)$/i.test(lab)&&!/tune/i.test(lab)&&min>0&&max/min>=2.5,lr=Math.log(max/min),U=v=>Math.log(Math.max(min,Math.min(max,v))/min)/lr,F=u=>min*Math.exp(lr*Math.max(0,Math.min(1,u))),dec=LG?0:(String(step).split('.')[1]||'').length,d=document.createElement('div');d.className='sl';d.innerHTML='<span>'+lab+'<b>'+(+val).toFixed(dec)+'</b></span>';
  const row=document.createElement('div'),i=document.createElement('input');row.className='sr';i.type='range';if(LG){i.min=0;i.max=1;i.step=.001;i.value=U(val);d.dataset.lmin=min;d.dataset.lmax=max}else{i.min=min;i.max=max;i.step=step;i.value=val}
  const cur=()=>LG?F(+i.value):+i.value,nx=k=>LG?cur()*Math.pow(1.02,k):+i.value+k*step;
  const set=v=>{v=Math.max(min,Math.min(d._max!=null?d._max:max,v));if(LG){i.value=U(v);v=Math.round(v);d.querySelector('b').textContent=v;fn(v);return}i.value=v;d.querySelector('b').textContent=(+i.value).toFixed(dec);fn(+i.value)};
@@ -216,7 +216,7 @@ function buildCards(){const root=$("#tracks");root.innerHTML="";TR.forEach((t,k)
  const b=document.createElement("div");b.className="body";const cv=document.createElement("canvas");cv.width=cv.height=208;t.cv=cv;b.appendChild(cv);
  const g=document.createElement("div");g.className="grid";
  const upd=()=>{if(t.pad){while(prog.length<t.st)prog.push(pick([3,4,5,0]));prog.length=t.st}t.pt=pat(t);draw(t,-1)};
- sl(g,t.pad?"Chords":"Steps",t.pad?3:2,t.pad?8:64,t.st,1,v=>{t.st=v;if(!t.pad){t.h=Math.min(t.h,v);t.r=Math.min(t.r||0,v-1)}upd()});   /* v0.71: Rotate stays inside a shortened ring */
+ sl(g,t.pad?"Chords":"Steps",t.pad?3:2,t.pad?8:k===4?128:64,t.st,1,v=>{t.st=v;if(!t.pad){t.h=Math.min(t.h,v);t.r=Math.min(t.r||0,v-1)}upd()});   /* v0.75: Rotate stays inside a shortened ring */
  if(!t.pad){sl(g,"Hits",0,32,t.h,1,v=>{t.h=Math.min(v,t.st);upd()});sl(g,"Rotate",0,31,t.r,1,v=>{t.r=v;upd()});sl(g,"Tension",0,1,t.ten||0,.01,v=>{t.ten=v;upd()});if(k===6){const sep=document.createElement("div");sep.className="bksep";sep.textContent="Bassline";g.appendChild(sep);const P=t.p;g.appendChild(mkSel("Lock",["Free","Kick lock","Around kick","Offbeats","Rolling"],P.blk||"Free",v=>P.blk=v));g.appendChild(mkSel("Phrase",["1 bar","2 bars","4 bars"],(P.bph||1)+(P.bph>1?" bars":" bar"),v=>P.bph=parseInt(v)));sl(g,"Gate (0 = Decay)",0,1,P.bgt||0,.01,v=>P.bgt=v);sl(g,"Slide",0,1,P.bsl||0,.01,v=>P.bsl=v);sl(g,"Ghost notes",0,1,P.bgh||0,.01,v=>P.bgh=v);try{window.bassUI&&bassUI(g,t)}catch(e){}}
  if([0,1,2,3,7].includes(k)){const sep=document.createElement("div");sep.className="bksep";sep.textContent="Break feel";g.appendChild(sep);sl(g,"Accent",0,1,t.acc||0,.01,v=>t.acc=v);sl(g,"Ghosts",0,1,t.gho||0,.01,v=>t.gho=v);sl(g,"Variation",0,1,t.vari||0,.01,v=>t.vari=v)}}
  sl(g,"Level",0,t===TR[4]?1.4:1,t.lv,.01,v=>t.lv=v);
@@ -471,7 +471,7 @@ Object.assign(TR[3].p,{mode:"Fixed",tune:57});TR[3].x.push(["Tune (MIDI note, 57
 BUILD.sync.push(function(){const g=TR[3].mb.closest(".card").querySelector(".grid"),l=document.createElement("label");l.className="sl";l.innerHTML="Tuning";const s=document.createElement("select");["Fixed","Follow scale"].forEach(x=>s.add(new Option(x)));s.value=TR[3].p.mode==="Fixed"?"Fixed":"Follow scale";s.onchange=()=>TR[3].p.mode=s.value;l.appendChild(s);g.insertBefore(l,g.children[3])});
 /* v4: Generate (musical pattern builder), chord-tone lock, swing, smoother master */
 TR[4].p.lock=.6;TR[4].x.push(["Chord lock","lock",0,1,.01]);Object.assign(TR[4].p,{res:3.5,envA:2400,det:7,fold:0,fenv:.4,fsym:0,glide:.3,gt:70,seed:1});TR[4].x.push(["Fold","fold",0,1,.01],["Fold env","fenv",0,1,.01],["Fold bias","fsym",0,1,.01],["Glide chance","glide",0,1,.01],["Glide time ms","gt",10,300,5]);
-/* v0.71 lead arps: the chord tones the lead's chord arps and Chord lock work with. A pad chord of only one or two notes (Chord notes 1–2,
+/* v0.75 lead arps: the chord tones the lead's chord arps and Chord lock work with. A pad chord of only one or two notes (Chord notes 1–2,
    One note) left Chord arp, Converge, Diverge and Pedal arp on a single repeated note; such a chord is now filled up to a triad from the
    scale (root, third, fifth). An empty chord (nothing played yet) gives the scale's own triad instead of no note at all. */
 function leadCT(){const n=SC[G.scale].length,src=cur&&cur.n&&cur.n.length?cur.n:[0],a=[...new Set(src.map(x=>((x%n)+n)%n))];
@@ -544,8 +544,8 @@ function chordSpec(e){if(typeof e==='number')return{d:e,x:0};const m=/^([b#]?)([
  const want=up?4:3;let best=null;for(let d=0;d<n;d++){const[t3,t5]=q(d);if(t3!==want||t5!==7)continue;let x=((root-s[d])%12+12)%12;if(x>6)x-=12;if(!best||Math.abs(x)<Math.abs(best.x))best={d,x}}
  return best||{d:0,x:0}}
 // harmonic rhythm patterns (in units of the pad's Bars setting), per chord count
-const HRP={4:[[1,1,1,1],[1,1,1,1],[2,1,1,2],[2,2,3,1],[3,1,3,1],[1.5,.5,1.5,.5],[2,1,1,4],[1,1,.5,.5],[1,.5,.5,1]],3:[[2,1,1],[1,1,2],[2,2,4],[1,.5,.5]], /* v0.71: + shapes with half-length chords */2:[[1,1],[3,1],[2,1]],1:[[1]]};
-function padSched(T,L){const n=T.st;if(PD&&PD.length!==n)PD=G.prhN&&window.padRh?padRh(G.prhN,n):null;   /* v0.71: the chord rhythm follows a changed number of chords */
+const HRP={4:[[1,1,1,1],[1,1,1,1],[2,1,1,2],[2,2,3,1],[3,1,3,1],[1.5,.5,1.5,.5],[2,1,1,4],[1,1,.5,.5],[1,.5,.5,1]],3:[[2,1,1],[1,1,2],[2,2,4],[1,.5,.5]], /* v0.75: + shapes with half-length chords */2:[[1,1],[3,1],[2,1]],1:[[1]]};
+function padSched(T,L){const n=T.st;if(PD&&PD.length!==n)PD=G.prhN&&window.padRh?padRh(G.prhN,n):null;   /* v0.75: the chord rhythm follows a changed number of chords */
  if(!PD||PD.length!==n)return tk%L===0?[Math.floor(tk/L)%n,L]:null;const u=L,st=[];let a=0;PD.forEach(d=>{st.push(a);a+=Math.round(d*u)});const C=a,q=((tk%C)+C)%C;
  for(let i=0;i<n;i++){const s0=(st[i]-(PPUSH&&i>0?1:0)+C)%C;if(q===s0){const nx=(i+1<n?st[i+1]-(PPUSH?1:0):C)-(st[i]-(PPUSH&&i>0?1:0));return[i,nx]}}return null}
 function topLead(ds,n){if(PTOP==null){PTOP=Math.max(...ds);return ds}let best=ds,bc=1e9;const L=ds.length;
@@ -624,7 +624,7 @@ const _ln2=leadNote;leadNote=function(p){if(p.mode!=='Motif')return _ln2(p);cons
  let d=mot[mp];if(mp%4===0&&R()<p.lock)d=snapCT(d,p);return d};
 /* mood-driven generator */
 function generate(){UI.sync(1600,true);const set=(k,st,h,r,lv)=>{const T=TR[k];Object.assign(T,{st,h,r,lv});T.pt=pat(T)};
- const sel=$('#mood').value;curMood=sel==='Auto'||!MOODS[sel]?pick([...$('#mood').options].map(o=>o.value).filter(v=>v!=='Auto'&&MOODS[v])):sel;if(window.MOODMERGE&&MOODMERGE[curMood])curMood=pick(MOODMERGE[curMood]);   /* v0.71: a merged mood launches one of its flavours */const M=MOODS[curMood];$('#mood').options[0].textContent='Auto ('+MN(curMood)+')';
+ const sel=$('#mood').value;curMood=sel==='Auto'||!MOODS[sel]?pick([...$('#mood').options].map(o=>o.value).filter(v=>v!=='Auto'&&MOODS[v])):sel;if(window.MOODMERGE&&MOODMERGE[curMood])curMood=pick(MOODMERGE[curMood]);   /* v0.75: a merged mood launches one of its flavours */const M=MOODS[curMood];$('#mood').options[0].textContent='Auto ('+MN(curMood)+')';
  G.scale=pick(M.sc);G.root=Math.floor(R()*12);G.bpm=M.b[0]+Math.floor(R()*(M.b[1]-M.b[0]+1));
  set(0,16,4,0,.9);set(1,...pick(M.hat||[[16,4,2],[16,7,2],[16,9,1],[16,11,0]]),.5);set(2,16,2,4,.75);set(7,16,pick([2,3,5]),Math.floor(R()*16),.5);
  set(3,pick([12,13,15]),3+Math.floor(R()*3),Math.floor(R()*12),.55);set(4,16,pick(M.lh),M.acid?0:Math.floor(R()*16),M.acid?.7:.6);set(6,16,pick([4,5]),2,.55);set(5,4,4,0,M.padlv||.5);
@@ -673,10 +673,10 @@ BUILD.sync.push(function(){const g=TR[4].mb.closest('.card').querySelector('.gri
 /* ---- 2 assignable LFOs ---- */
 const LF_V=["Lead cutoff","Lead decay","Bass cutoff","Stab cutoff","Hat tone","Perc FM","Sidechain depth"];
 const LF_P=["Master low-pass","Master high-pass","Master pump","Delay mix","Delay feedback","Reverb mix","Rumble","Bus grit"];
-const LF_SH=["Sine","Triangle","Saw up","Saw down","Square","Sample & hold","Smooth random","Stairs (4 steps)","Spike"];   /* v0.71: three more shapes — a wandering random, a 4-step staircase, and a spike that jumps up and falls away each cycle */
+const LF_SH=["Sine","Triangle","Saw up","Saw down","Square","Sample & hold","Smooth random","Stairs (4 steps)","Spike"];   /* v0.75: three more shapes — a wandering random, a 4-step staircase, and a spike that jumps up and falls away each cycle */
 const LF_DV=[["64 bars",256],["32 bars",128],["16 bars",64],["8 bars",32],["4 bars",16],["2 bars",8],["1 bar",4],["1/2 bar",2],["1 beat",1],["1/8",.5],["1/16",.25]];
-const LFOS=[{tg:"Lead cutoff",sh:0,sync:1,div:4,hz:.5,d:0,ph:0,seed:1},{tg:"Master low-pass",sh:1,sync:1,div:16,hz:.2,d:0,ph:0,seed:2},{tg:"Master low-pass",sh:0,sync:1,div:64,hz:.05,d:0,ph:0,seed:3,slow:1},{tg:"Hat decay",sh:7,sync:1,div:16,hz:.25,d:0,ph:0,seed:4}];   /* v0.71: a fourth LFO */
-const LF_SLOW=[["4 bars",16],["8 bars",32],["16 bars",64],["32 bars",128],["64 bars",256]];
+const LFOS=[{tg:"Lead cutoff",sh:0,sync:1,div:4,hz:.5,d:0,ph:0,seed:1},{tg:"Master low-pass",sh:1,sync:1,div:16,hz:.2,d:0,ph:0,seed:2},{tg:"Master low-pass",sh:0,sync:1,div:64,hz:.05,d:0,ph:0,seed:3,slow:1},{tg:"Hat decay",sh:7,sync:1,div:16,hz:.25,d:0,ph:0,seed:4}];   /* v0.75: a fourth LFO */
+const LF_SLOW=[["2 bars",8],["4 bars",16],["8 bars",32],["16 bars",64],["32 bars",128],["64 bars",256]];
 const lfShape=(s,c,seed)=>{const f=c-Math.floor(c);switch(s){case 0:return Math.sin(6.2831853*f);case 1:return f<.5?4*f-1:3-4*f;case 2:return 2*f-1;case 3:return 1-2*f;case 4:return f<.5?1:-1;case 6:{const i=Math.floor(c),r=j=>{const x=Math.sin(j*12.9898+seed*78.233)*43758.5453;return 2*(x-Math.floor(x))-1},u=f*f*(3-2*f);return r(i)*(1-u)+r(i+1)*u}case 7:return Math.floor(f*4)/1.5-1;case 8:return 2*Math.exp(-5*f)-1;default:{const x=Math.sin(Math.floor(c)*12.9898+seed*78.233)*43758.5453;return 2*(x-Math.floor(x))-1}}};
 const lfCyc=(L,t)=>L.sync?(playing?(tk>=(window.LF0||0)?tk-(window.LF0||0):tk)+(t-nextT)/(60/G.bpm/4):0)/(L.div*4)+L.ph:t*L.hz+L.ph; /* v0.35: synced cycles count from the bar of the last Launch */
 const lfV=(L,t)=>lfShape(L.sh,lfCyc(L,t),L.seed);
@@ -1362,10 +1362,10 @@ const _init39=init;init=function(){const nw=!ctx;_init39();if(!nw)return;const p
   ft.type='lowpass';ft.frequency.value=5200;ft.Q.value=.5;A.ld.connect(fd);fd.connect(pk);A.ld.connect(fi);{const fh=ctx.createBiquadFilter(),pe=ctx.createBiquadFilter(),de=ctx.createBiquadFilter();fh.type='highpass';fh.frequency.value=180;fh.Q.value=.6;pe.type=de.type='highshelf';pe.frequency.value=de.frequency.value=1500;pe.gain.value=6;de.gain.value=-6;
    fi.connect(fh);fh.connect(pe);pe.connect(fz);fz.connect(de);de.connect(ft)} /* brighter notes drive the overdrive harder, like a filter into a pedal */ft.connect(fw);fw.connect(pk);A.fz={fd,fi,fw}} // v0.22 lead bus fuzz (LEAD fader)
  pk.connect(hs);hs.connect(o);o.connect(A.dk);
- /* v0.71: the automatic level control on the lead bus is gone (it read the bus ten times a second and kept moving the gain). The lead bus
+ /* v0.75: the automatic level control on the lead bus is gone (it read the bus ten times a second and kept moving the gain). The lead bus
     gain is now fixed per lead patch — see LK below. */
  ldSet()};
-/* v0.71 lead bus level per patch (dB): the gain the old automatic control settled on, measured per patch over many Launches. Applied together
+/* v0.75 lead bus level per patch (dB): the gain the old automatic control settled on, measured per patch over many Launches. Applied together
    with the mood's lead level (G.ldMul); set when the patch or mood changes, checked as a note starts (two compares, nothing else). */
 const LK={'Acid 303':-9,'Aggro':-4.5,'Bleep':-3,'Bright pluck':2,'Chorus pulse':-1.5,'Cinematic arp':-1.5,'Clean':2,'Dense':-4,'Donk':-3.5,'EP stab':-2,'FM bell':2.5,'FM keys':-8,'Formant wave':-2,'Glass':-0.5,'Hard sync':-0.5,'Hollow BP':-2.5,'Hoover':0.5,'House piano':1.5,'Hypno stab':-0.5,'Metal FM':-2.5,'Mini acid':-0.5,'Mini bass':4,'Mini brass':-1,'Mini drone':1,'Mini edge':6,'Mini fifths':6,'Mini lead':-1.5,'Mini sparkle':-0.5,'Mini wobble':-1,'Mist':-6,'Organ':-4,'Organ stab':-5.5,'Pluck':2,'Rave stab':-7,'Reese':-1,'Rubber blip':0.5,'Soft keys':-3.5,'Soft sine':-0.5,'Space blip':4,'Square chip':-3.5,'String pluck':-4.5,'Sunny keys':-4.5,'Talkbox':-4.5,'Techno stab':-2,'Vowel':-0.5,'Weird drone':-3.5,'West Coast fold':-6,'Wide saw':1};for(const k in LK)LK[k]=Math.pow(10,LK[k]/20);let _ldV=-1,_ldO=null;
 function ldSet(){const o=A.ldo;if(!o||!ctx||o.context!==ctx)return;const P=TR[4].p,v=G.ldOut*(G.ldMul||1)*(LK[P.mode==='Acid 303'?'Acid 303':P.patch]||1);if(v===_ldV&&o===_ldO)return;
@@ -1548,7 +1548,7 @@ const _gen47=generate;generate=function(){_gen47();if(curMood!=='Power')return;c
  else G.pstyle='stabs';buf=[];mot=[];mp=-1;build()};
 /* ---- v48: Power lead = one fixed pitch, no melody ---- */
 G.pnote=0;
-const _ln48=leadNote;leadNote=function(p){const d=_ln48(p);return curMood==='Power'&&p.mode===G.pwMode?G.pnote:d};   /* v0.71: once you pick another Arp mode yourself, that mode plays */
+const _ln48=leadNote;leadNote=function(p){const d=_ln48(p);return curMood==='Power'&&p.mode===G.pwMode?G.pnote:d};   /* v0.75: once you pick another Arp mode yourself, that mode plays */
 const _gen48=generate;generate=function(){_gen48();if(curMood!=='Power')return;G.pnote=R()<.75?0:4;Object.assign(TR[4].p,{glide:0,penv:0,vib:G.pstyle==='drone'?TR[4].p.vib:0})};
 /* ---- v49: Power techno-stab variations (some with wild filtering) ---- */
 const STABV={
@@ -1886,7 +1886,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  // octave up / 2 octaves up live in the thrusters now; the key readout moves with them
  [...PH.children].forEach((b,i)=>{b.classList.remove('act');b.style.setProperty('--col',i?'#ff8cf0':'#c9a2ff');b.innerHTML=i?'+2 octaves':'+1 octave';g.appendChild(b)});KL.style.cssText='font-size:11px;color:var(--muted);margin-top:10px';arm.after(KL);QP.style.display='none'}
 /* ---- v63: LFO targets reworked — drop the less musical ones (sidechain depth, perc FM, master pump, delay mix, bus grit), add per-note sound targets and continuous tape wobble / shimmer ---- */
-{const NEWV=["Lead cutoff","Lead resonance","Lead decay","Lead detune","Lead glide","Bass cutoff","Bass resonance","Bass decay","Pad cutoff","Stab cutoff","Stab decay","Stab echo","Hat tone","Hat decay","Lead drive","Bass drive","Perc decay","Perc octave","Clap tone","Hat accent","Perc accent","Lead accent","Hat pan","Perc pan","Lead pan","Perc pitch","Perc FM","Hat open","Perc bend","Lead fold","Stab detune"],   /* v0.71: + open hat amount, perc pitch bend, lead wavefolder, stab detune */
+{const NEWV=["Lead cutoff","Lead resonance","Lead decay","Lead detune","Lead glide","Bass cutoff","Bass resonance","Bass decay","Pad cutoff","Stab cutoff","Stab decay","Stab echo","Hat tone","Hat decay","Lead drive","Bass drive","Perc decay","Perc octave","Clap tone","Hat accent","Perc accent","Lead accent","Hat pan","Perc pan","Lead pan","Perc pitch","Perc FM","Hat open","Perc bend","Lead fold","Stab detune"],   /* v0.75: + open hat amount, perc pitch bend, lead wavefolder, stab detune */
   NEWR=["Perc hits","Hat hits","Lead hits","Stab hits"],NEWP=["Master low-pass","Master high-pass","Delay feedback","Tape wobble","Reverb mix","Shimmer","Rumble"];
  const OLD=new Set(["Sidechain depth","Perc FM","Perc filter","Perc decay","Master pump","Delay mix","Bus grit"]);
  LF_V.splice(0,LF_V.length,...NEWV);LF_P.splice(0,LF_P.length,...NEWP);
@@ -1949,7 +1949,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.7 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.7';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.75 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.75';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -2260,7 +2260,7 @@ TR[5].p.mov=TR[5].p.mov||'Classic';
 {PATL.push('Progression','Chord type','Chord rhythm','Push','Gate rhythm','Inversions');G.pvoice=G.pvoice||'Smooth top';
  const RN=['1','2','3','4','5','6','7'],lab=a=>a.map(x=>typeof x==='number'?RN[((x%7)+7)%7]:x).join('–');
  const CT={Auto:null,Triad:'tri','7th':'7','9th':'9',add9:'add9',sus2:'sus2',sus4:'sus4',Quartal:'quart'};
- /* v0.71 chord rhythm: every rhythm now works with any number of chords. Before, a rhythm only did something when it had exactly as many
+ /* v0.75 chord rhythm: every rhythm now works with any number of chords. Before, a rhythm only did something when it had exactly as many
     parts as there were chords (the 3-part ones did nothing on 4 chords, none worked on 3 or 5) and the menu still showed it as chosen.
     New shapes with half-length chords: long long … half half, half half long …, long half alternating, a short last chord, a held last chord.
     Lengths are in "Chord length" units; the numbered ones repeat their figure over the chords. */
@@ -2423,7 +2423,7 @@ setInterval(()=>{METER.n++;const J=METER.jobs;for(let i=0;i<J.length;i++)if(METE
  window.setPercSound=setPv;
  const _g91=generate;generate=function(){_g91();const T=TR[3],P=T.p;P.pv='Blip';BLIP=null;const m=RM[curMood]||[0,['o']];
   P.rtn=+(.9+R()*.25).toFixed(2);P.rdc=+(.8+R()*.8).toFixed(2);P.rbl=+(R()*.5).toFixed(2);const ty=pick(m[1]);
-  RIDE={st:16,r:ty==='o'?2:0,h:ty==='e'?8:ty==='j'?pick([6,7]):4,ten:ty==='j'?.25:0,acc:ty==='q'?.2:.5,gho:ty==='j'?.25:0,vari:.2,lv:Math.min(T.lv||.5,.75)}   /* v0.71: was .45 — the ride sat about 12 dB under the hats until the balance lifted it */;RIDE.pt=pat(Object.assign({n:'Ride'},RIDE));if(R()<m[0])setPv('Ride');else build()};
+  RIDE={st:16,r:ty==='o'?2:0,h:ty==='e'?8:ty==='j'?pick([6,7]):4,ten:ty==='j'?.25:0,acc:ty==='q'?.2:.5,gho:ty==='j'?.25:0,vari:.2,lv:Math.min(T.lv||.5,.75)}   /* v0.75: was .45 — the ride sat about 12 dB under the hats until the balance lifted it */;RIDE.pt=pat(Object.assign({n:'Ride'},RIDE));if(R()<m[0])setPv('Ride');else build()};
  build()}
 /* ---- v92: audio engine reset button in the header ---- */
 {const top=document.querySelector('.panel.top'),stg=top&&top.querySelector('.stg');if(top){const b=document.createElement('button');b.className='stg rstb';b.textContent='↻ RESET';b.title='Restart the audio engine (keeps your groove)';
@@ -2765,7 +2765,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  window.__bgPause={leave,ret,state:()=>bgPaused}}
 
 /* ---- v129: Solo — next to each Mute on the instrument pages (Kick, Hi-hat, … / Lead, Pad, …). Solo mutes every other track.
-   v0.71: Solo latches. It stays on when you leave the page and through a Launch (the new pattern arrives soloed), until you tap it off —
+   v0.75: Solo latches. It stays on when you leave the page and through a Launch (the new pattern arrives soloed), until you tap it off —
    on the card, or on the SOLO note that shows above the status line while a solo is on. A sector load still ends it. Your own mutes come
    back as they were; a mute you change by hand during solo is kept. ---- */
 {const SO={set:new Set(),tab:null,saved:{},forced:{}};
@@ -2781,7 +2781,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  UI.on(add);add();
  // leaving the tab clears the solo
  const shown=k=>{const c=TR[k]&&TR[k].mb&&TR[k].mb.closest('.card');return !!(c&&c.offsetParent&&getComputedStyle(c).display!=='none'&&(!SO.tab||getComputedStyle(SO.tab).display!=='none'))};
- const chk=()=>{};   /* v0.71: leaving the page no longer ends the solo */document.addEventListener('click',()=>setTimeout(chk,0),true);
+ const chk=()=>{};   /* v0.75: leaving the page no longer ends the solo */document.addEventListener('click',()=>setTimeout(chk,0),true);
  const tb=$('#tabs');if(tb){new MutationObserver(chk).observe(tb,{attributes:true,subtree:true,attributeFilter:['class']});tb.addEventListener('click',()=>setTimeout(chk,0))}
  UI.on(chk);
  // Launch / sector load end the solo first, so their mutes stand
@@ -3087,7 +3087,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   if(m==='Turing loop'){const L=Math.max(2,Math.round(p.len||8));if(TU.length!==L){TU=[];for(let i=0;i<L;i++)TU.push(R())}ti=(ti+1)%L;
    if(R()<(1-(p.dv==null?.9:p.dv))*.5)TU[ti]=R();let d=Math.round(TU[ti]*(top-1));if(hh(ti,p.seed)<(p.lock||0))d=snap(d,p);prev=d;return d}
   const a=chordArr(p),L=a.length;if(L<2)return a[0]||0;
-  if(m==='Pedal arp'){const root=leadCT()[0],up=a.filter(x=>x!==root);const k=pc++;if(k%2===0||!up.length)return root;return up[Math.floor(k/2)%up.length]}   /* v0.71: was "tones above the root" — none when the root is the chord's top note, so the arp sat on one note */
+  if(m==='Pedal arp'){const root=leadCT()[0],up=a.filter(x=>x!==root);const k=pc++;if(k%2===0||!up.length)return root;return up[Math.floor(k/2)%up.length]}   /* v0.75: was "tones above the root" — none when the root is the chord's top note, so the arp sat on one note */
   const ord=[];let lo=0,hi=L-1;while(lo<=hi){ord.push(lo);if(hi!==lo)ord.push(hi);lo++;hi--}if(m==='Diverge')ord.reverse();const d=a[ord[cv%ord.length]];cv++;return d};
  function resetPos(m){bp=-1;mp=-1;ca=0;ti=-1;cv=0;pc=0;if(m==='Up/Down'){ar=1;ad=-1}else{ar=-1;ad=1}}
  window.leadResetPos=()=>{resetPos(TR[4].p.mode)};
@@ -3375,7 +3375,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
 {let on=true;try{const v=localStorage.getItem('orb-mst');if(v!=null)on=v==='1'}catch(e){}
  const DRV=Math.pow(10,-1.5/20),TARGET=-9, /* v0.4 master: was -9; the final clipper (end of file) catches the extra peaks */AMBT=new Set(['Ambient','Deep Space','Ethereal','Drone','Dreamy']),AMT={Ambient:.35,'Deep Space':.4,Ethereal:.5,Dreamy:.6,Drone:.7,Noir:.65,Melancholic:.65,Hopeful:.7,'Melodic House':.65,Vector:.65,Bleep:.6,Italo:.7};
  let M=null,agDb=0,hist=[],stv=-70,pk=-70,pkT=0;
- /* v0.71 gain structure: the master gain is a fixed value per mood (dB, measured over many Launches so every mood lands on the same loudness:
+ /* v0.75 gain structure: the master gain is a fixed value per mood (dB, measured over many Launches so every mood lands on the same loudness:
     about −9 LUFS, the ambient moods about −10.5). It replaces the gain that was learned during the first 9 s of every Launch and remembered per
     mood: that one faded up after each Launch, froze wherever it happened to be, and was then thrown off by the 4-bar balance. Nothing listens
     and adjusts any more — the loudness loop below only feeds the meter. */
@@ -3985,7 +3985,7 @@ window.MOODX={
 /* v178: low-end/balance recheck trims (dB): Deep Space sub drone was level with the kick, Vector and Dreamy pads still loud, Melodic House clave perc */
 {const T={'Deep Space':{9:-4},Vector:{5:-4},Dreamy:{5:-3},'Melodic House':{3:-3}};for(const m in T){if(!MTRIM[m])continue;for(const k in T[m])MTRIM[m][+k]=(MTRIM[m][+k]||0)+T[m][k]}}
 </script><script>
-/* v0.71 gain structure: the corrections the 4-bar balance used to make a few bars after (nearly) every Launch are now part of the mood presets
+/* v0.75 gain structure: the corrections the 4-bar balance used to make a few bars after (nearly) every Launch are now part of the mood presets
    (dB, added to MTRIM; measured over 6 Launches per mood against the kick). 1 hi-hat · 2 clap · 3 perc · 5 pad · 6 bass · 9 Satellite.
    Only parts that sat outside their range Launch after Launch are touched, and only part of the way, so each mood keeps its own balance. */
 {const T={Ethereal:{1:3,2:2,9:3},Ambient:{1:3,2:4},Dreamy:{1:2,6:4},'Deep Space':{5:5},Breaks:{5:6,6:3},Power:{5:3},'Groove Techno':{5:2},
@@ -4070,7 +4070,7 @@ window.MOODX={
   try{const lf=x<0?Math.pow(2,1.5*x):Math.pow(2,1.25*Math.min(x,.8)); /* v0.22 Radian: full length (legato, filling the bar) is reached at 80 % */P.dec=Math.max(.03,Math.min(3,(P.dec||.25)*lf));if(P.hold)P.hold=Math.max(.2,P.hold*lf);if(P.rel!=null)P.rel=Math.max(.01,Math.min(3,P.rel*lf));
    if(x>0){const wl=Math.max(0,(x-.8)/.2),hv=wl,ad=.35*Math.min(x,.8)/.8+1.0*wl+.8*wl*wl,gr=0; /* Radian: warm, steady drive up to 80 %, then wild */ /* no grit: it adds a noise voice per note */ /* warm up to 60 %, then heavy drive + grit to the end */
     P.drv=Math.min(2.2,(P.drv||0)+ad);if(hv>0&&P.res!=null)P.res=Math.min(Math.max(P.res,11),P.res+4.5*hv); /* resonance screams into the overdrive */if(gr>0)P.grit=Math.min(1,(P.grit||0)+gr);{const hasD=P.eng!=='Mini',ac=Math.min(ad,1.35);P.pg=(P.pg||1)/(1+ad*.4)/(hasD?1+ac*.75:1)/(1+.4*wl)} /* Mini has no drive stage, so only the level term is undone there */}
-   if(x<0)P.pg=(P.pg||1)*(1-.3*x);   /* v0.71: short plucks lost about 4 dB; most of it is given back */
+   if(x<0)P.pg=(P.pg||1)*(1-.3*x);   /* v0.75: short plucks lost about 4 dB; most of it is given back */
    if(P.cut!=null)P.cut=Math.max(60,Math.min(12000,P.cut*Math.pow(2,x<0?1.2*x:.5*Math.max(0,(x-.8)/.2))));if(P.envA!=null)P.envA=Math.max(0,P.envA*(1+(x<0?.6*x:.4*Math.max(0,(x-.8)/.2))));
    if(x>0){const T=TR[4],n=T.st||16,d=Math.max(1,n/Math.max(1,T.h||1)),gap=d*sdur(); /* every note gets the same length limit (from the average spacing), so all notes lengthen alike */
     P.dec=Math.min(P.dec,Math.max(o.dec||.1,gap*2));if(P.hold)P.hold=Math.min(P.hold,Math.max(o.hold||1,d*2));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(o.rel||.05,gap))}
@@ -4083,7 +4083,7 @@ window.MOODX={
   .lmx .lmk{position:absolute;top:2px;bottom:2px;width:14px;margin-left:-7px;background:var(--acc)}.lmx .lmt i{position:absolute;bottom:2px;font-size:9px;color:var(--muted);font-style:normal}`;document.head.appendChild(st);
  let el=null,lastX=null;const show=()=>{if(!el)return;const x=LM.x;if(lastX!==null&&Math.abs(x-lastX)<.002)return;lastX=x;const k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
    k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';
-   b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'SHORT ':x>.8?'WILD ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};   /* v0.71: the last 20 % reads WILD (drive + fuzz) */
+   b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'SHORT ':x>.8?'WILD ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};   /* v0.75: the last 20 % reads WILD (drive + fuzz) */
  const glideBack=()=>{cancelAnimationFrame(LM.raf);const x0=LM.x,t0=performance.now(),D=2500;const step=t=>{const p=Math.min(1,(t-t0)/D),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;LM.x=x0*(1-e);show();if(p<1)LM.raf=requestAnimationFrame(step);else{LM.x=0;show()}};LM.raf=requestAnimationFrame(step)};
  const add=()=>{if(document.querySelector('.lmx'))return;const lp=document.querySelector('#t-perf .lpt');if(!lp)return;const host=lp.parentElement;
   el=document.createElement('div');el.className='lmx';
@@ -4091,7 +4091,7 @@ window.MOODX={
   host.appendChild(el);const tr=el.querySelector('.lmt');let on=0;
   let tg=0,lt=0;const sm=t=>{const dt=Math.min(50,t-(lt||t));lt=t;LM.x+=(tg-LM.x)*(1-Math.exp(-dt/70));if(Math.abs(tg-LM.x)<.002)LM.x=tg;show();
     if(on||LM.x!==tg)LM.raf=requestAnimationFrame(sm);else LM.raf=0};
-  const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));if(Math.abs(tg)<.06)tg=0};   /* v0.71: the centre catches, so AS SET is easy to find */
+  const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));if(Math.abs(tg)<.06)tg=0};   /* v0.75: the centre catches, so AS SET is easy to find */
   tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(LM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;LM.raf=requestAnimationFrame(sm)});
   tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{if(!on)return;on=0}));
   let lt2=0;tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(LM.raf);LM.raf=requestAnimationFrame(sm)}lt2=n});show()}; // v0.22: LEAD holds where you leave it; double-tap = back to AS SET
@@ -4126,7 +4126,7 @@ window.MOODX={
  const bend=fn=>function(){if(dep||Math.abs(BM.x)<.01)return fn.apply(this,arguments);const B=TR[6],P=B.p,x=BM.x,
    o={dec:P.dec,bgt:P.bgt,bsus:P.bsus,cut:P.cut,envA:P.envA,res:P.res,bsl:P.bsl,lv:B.lv};dep=1;const n={};
   try{const lf=x<0?Math.pow(2,1.3*x):Math.pow(2,1.7*x);P.dec=Math.max(.04,Math.min(1.8,(P.dec||.13)*lf));
-   if(x<0){if(P.bgt>0)P.bgt=Math.max(.08,P.bgt*lf)}else{if(P.bgt>0)P.bgt=Math.min(1,P.bgt+(1-P.bgt)*x);const s0=P.bsus||0,s1=Math.max(s0,.8*x);P.bsus=s1;if(s1>s0&&P.beng!=='808'){const lv=v=>v<.05?1:Math.max(.25,.7-.5*v);B.lv=B.lv*lv(s1)/lv(s0)}}   /* v0.71: the 808 does not sustain, so it only got quieter (−13 dB at LONG); it keeps its level now */ // long side: Sustain + legato
+   if(x<0){if(P.bgt>0)P.bgt=Math.max(.08,P.bgt*lf)}else{if(P.bgt>0)P.bgt=Math.min(1,P.bgt+(1-P.bgt)*x);const s0=P.bsus||0,s1=Math.max(s0,.8*x);P.bsus=s1;if(s1>s0&&P.beng!=='808'){const lv=v=>v<.05?1:Math.max(.25,.7-.5*v);B.lv=B.lv*lv(s1)/lv(s0)}}   /* v0.75: the 808 does not sustain, so it only got quieter (−13 dB at LONG); it keeps its level now */ // long side: Sustain + legato
    const q=x<0?x:x*x; /* squelch comes in late: a quarter at half-way, full at the end */
    P.cut=Math.max(60,Math.min(6000,(P.cut||500)*Math.pow(2,q)));P.envA=Math.max(0,(P.envA||0)*(1+.5*q));
    const r0=P.res||1;if(x<0)P.res=Math.max(.5,r0*(1+.5*x));else{const top=Math.max(r0,9);P.res=Math.min(top,r0+5*q)}
@@ -4169,7 +4169,7 @@ window.MOODX={
   row.appendChild(el);const tr=el.querySelector('.lmt');let on=0,tg=0,lt=0;
   const sm=t=>{const dt=Math.min(50,t-(lt||t));lt=t;BM.x+=(tg-BM.x)*(1-Math.exp(-dt/70));if(Math.abs(tg-BM.x)<.002)BM.x=tg;show();
     if(on||BM.x!==tg)BM.raf=requestAnimationFrame(sm);else BM.raf=0};
-  const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));if(Math.abs(tg)<.06)tg=0};   /* v0.71: the centre catches, so AS SET is easy to find */
+  const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));if(Math.abs(tg)<.06)tg=0};   /* v0.75: the centre catches, so AS SET is easy to find */
   tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(BM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;BM.raf=requestAnimationFrame(sm)});
   tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{if(!on)return;on=0}));
   let lt2=0;tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(BM.raf);BM.raf=requestAnimationFrame(sm)}lt2=n});show()}; // v0.22: BASS holds where you leave it; double-tap = back to AS SET
@@ -4410,7 +4410,7 @@ window.MOODX={
 <script>
 /* ---- v0.22: PRO POLISH — make every Launch and every edit sound more finished. CPU-light by design.
    1. Auto mix balance: listens to every track for 4 bars, then nudges each track's Level (the normal Level fader) into a target range
-      against the kick. Runs on "⚖ Balance mix" (Mix → Channels) after your own edits (v0.71: no longer after each Launch). Beatless moods are skipped.
+      against the kick. Runs on "⚖ Balance mix" (Mix → Channels) after your own edits (v0.75: no longer after each Launch). Beatless moods are skipped.
    2. Clean-up EQ: one shared low-cut per track (not per note) where a sound has no business: clap 180 Hz, perc 120, lead 140, pad 110
       (+ a −2 dB dip at 300 Hz against mud), snare 110. Hats and the dub stab have their own filter stages; kick, bass, sub and the Acid 303 line are untouched.
       While the Flight low-pass is engaged it steps aside (that fader already shapes the sound).
@@ -4455,8 +4455,8 @@ window.MOODX={
    const mx=k===4?1.4:1,nv=Math.max(.02,Math.min(mx,T.lv*Math.pow(10,d/20)));const real=20*Math.log10(nv/T.lv);if(Math.abs(real)<.3)return;T.lv=nv;ch.push(NM[k]+' '+(real>0?'+':'')+real.toFixed(1))});
   syncCh();status(ch.length?'⚖ balanced: '+ch.join(', ')+' dB':'⚖ mix already in range — nothing changed');setTimeout(()=>{if(BAL.state==='idle')status('')},9000)}
  const syncCh=()=>{document.querySelectorAll('#t-mix .cs').forEach(c=>{const n=(c.querySelector('h3')||{}).textContent,k=NM.indexOf((n||'').trim());if(k<0)return;const r=c.querySelector('input[type=range]'),b=c.querySelector('b');if(r){r.value=TR[k].lv;if(b)b.textContent=Math.round(TR[k].lv*100)}});try{window.syncFaders&&syncFaders()}catch(e){}};
- /* v0.71: the balance no longer runs by itself after a Launch (it stepped track levels by up to 5 dB a few bars in, right after the master
-    gain had settled). The mood presets carry those corrections now (see MTRIM v0.71); "⚖ Balance mix" is still there for your own edits. */
+ /* v0.75: the balance no longer runs by itself after a Launch (it stepped track levels by up to 5 dB a few bars in, right after the master
+    gain had settled). The mood presets carry those corrections now (see MTRIM v0.75); "⚖ Balance mix" is still there for your own edits. */
  // ---- UI: Balance button (Mix → Channels), Pro polish switch (Mix → Bus & FX, next to Air) ----
  const st=document.createElement('style');st.textContent=`.balbx{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 8px}.balbx button{min-height:38px;padding:0 14px;border:1px solid var(--acc,#ffe44d);border-radius:10px;background:rgba(255,228,77,.08);color:var(--acc,#ffe44d);font:inherit;font-weight:700;letter-spacing:.06em;cursor:pointer}
  .balbx .balst{font-size:11px;opacity:.8;flex:1 1 160px}.prosw{grid-column:1/-1;display:flex;gap:8px;align-items:center;font-size:12px}.prosw button{min-height:34px;padding:0 12px;border-radius:9px;border:1px solid rgba(0,255,156,.4);background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer}.prosw button.on{background:var(--acc,#ffe44d);color:#0a0f0c;border-color:var(--acc,#ffe44d)}.prosw small{opacity:.65}`;document.head.appendChild(st);
@@ -4523,7 +4523,7 @@ window.MOODX={
    Level-matched; works on every lead patch, including Mini (which has no drive of its own). ---- */
 {let last=null;setInterval(()=>{try{if(!ctx||!A.fz)return;const x=(window.leadMacro&&leadMacro.x)||0;if(last!==null&&Math.abs(x-last)<.003)return;last=x;
   const a=Math.max(0,Math.min(1,(x-.5)/.5)),t=ctx.currentTime,F=A.fz;
-  const wl=Math.max(0,(x-.8)/.2),w0=Math.min(1,a/.6),dr=1+3*w0+9*wl+16*wl*wl;F.fi.gain.setTargetAtTime(dr,t,.03);F.fw.gain.setTargetAtTime(.12*w0,t,.03);   /* v0.71: the fuzz no longer gets louder in the last 20 % — the lead used to jump 6–17 dB there once its automatic level control was gone */F.fd.gain.setTargetAtTime(1-.25*w0-.55*wl,t,.03); /* v0.22 Radian: light warm overdrive 50–80 %, the wild fuzz only in the last 20 % */
+  const wl=Math.max(0,(x-.8)/.2),w0=Math.min(1,a/.6),dr=1+3*w0+9*wl+16*wl*wl;F.fi.gain.setTargetAtTime(dr,t,.03);F.fw.gain.setTargetAtTime(.12*w0,t,.03);   /* v0.75: the fuzz no longer gets louder in the last 20 % — the lead used to jump 6–17 dB there once its automatic level control was gone */F.fd.gain.setTargetAtTime(1-.25*w0-.55*wl,t,.03); /* v0.22 Radian: light warm overdrive 50–80 %, the wild fuzz only in the last 20 % */
   const L=window.LEX;if(L&&L.ctx===ctx){if(L.fb0==null||a===0)L.fb0=L.fb0==null?L.fb.gain.value:L.fb0;const e=wl;L.fb.gain.setTargetAtTime(Math.min(.72,L.fb0+.3*e),t,.15)}}catch(e){}},40)}
 </script>
 <script>
@@ -5432,7 +5432,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
     Richer sounds: Super saw (5 detuned saws, wide), Poly pulse (two pulses + sub), Keys, FM pluck, Strings, Mallet, Glass bell, Music box. */
  const _=null,SPK=[[_,_,10,_,_,_,12,_,_,_,14,_,_,_,_,_],[_,_,_,_,_,_,14,_,12,_,_,_,10,_,_,_],[_,_,4,_,10,_,_,_,_,_,12,_,_,_,_,_],[_,_,_,10,_,_,_,_,_,_,12,_,_,14,_,_]],
   ARPT=[[0,_,4,_,10,_,4,_,0,_,4,_,12,_,10,_],[2,_,_,2,_,_,4,_,_,_,2,_,_,4,_,_],[0,10,_,0,10,_,0,_,0,10,_,0,10,_,4,_],[_,_,4,_,_,_,4,_,_,_,4,_,_,2,_,_]];
- /* v0.71: the Satellite moves.
+ /* v0.75: the Satellite moves.
     Phase    · a new Motion: a short cell of chord tones (3–5 notes) over a 5-, 6- or 7-hit ring. Cell and ring have different lengths, so the
                figure shifts against the bar and keeps recombining instead of looping every bar (Amount above 0.6: every other pass an octave up;
                below 0.35 it leaves the lead's steps free).
@@ -5705,7 +5705,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   /* bassFit finds the closest ring; if it is not exact, use the pattern as is */if(T.pt.join('')!==pt.join(''))T.pt=pt;try{draw(T,-1)}catch(e){}};
  const cur16=()=>{const T=TR[0];let s='';for(let i=0;i<16;i++)s+=T.pt[i%T.st]?'x':'.';return s};
  const HALF='x.......x.......'; /* v0.35: the switch now goes 4/4 ↔ HALF (kick on beats 1 and 3) — the lower-energy partner */
- /* v0.71: the switch acted up after some Launches. Two causes, both fixed here:
+ /* v0.75: the switch acted up after some Launches. Two causes, both fixed here:
     · a Launch can give the kick Variation and Ghosts (skipped / extra kicks); the switch kept them, so "4 / 4" and "HALF" came out broken.
       HALF is now clean, and switching back returns the kick exactly as it was (ring, tension, accents, ghosts, variation).
     · a switch that was still waiting for the next bar survived a Launch or a Sector change and then flipped the new kick. It is dropped now.
@@ -5818,7 +5818,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
   if(from){o.frequency.setValueAtTime(from,w);o.frequency.exponentialRampToValueAtTime(f,w+.09)}
   else{const pp=p.bpp||0;o.frequency.setValueAtTime(f*Math.pow(2,.25+pp*1.2),w);o.frequency.exponentialRampToValueAtTime(f,w+.03+pp*.05)}
   o.start(w);o.stop(e);
-  const pk=v*.36;   /* v0.71: was .12 (+9.5 dB). On the bass bus the 808 peaked about 20 dB under the other bass sounds, and a near-pure low sine sounds quieter still */g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(pk,w+.004);g.gain.setValueAtTime(pk,w+Math.min(.08,dec*.25));g.gain.exponentialRampToValueAtTime(.0001,w+dec);
+  const pk=v*.36;   /* v0.75: was .12 (+9.5 dB). On the bass bus the 808 peaked about 20 dB under the other bass sounds, and a near-pure low sine sounds quieter still */g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(pk,w+.004);g.gain.setValueAtTime(pk,w+Math.min(.08,dec*.25));g.gain.exponentialRampToValueAtTime(.0001,w+dec);
   let src=o;const dv=p.bdrv||0;if(dv>.02){const k=Math.round((1+dv*6)*10)/10,ws=ctx.createWaveShaper(),mk=ctx.createGain();ws.curve=BDC[k]||(BDC[k]=satCurve(k));mk.gain.value=1+dv*2.4;o.connect(ws);ws.connect(mk);src=mk}
   q.type='lowpass';q.Q.value=Math.min(4,p.res||.7);q.frequency.value=Math.max(120,Math.min(8000,p.cut*Math.pow(2,2*mv("Bass cutoff",w))*(1+(p.envA||0)*.3)));
   src.connect(q);q.connect(g);send(g,A.dkb,0,0);B8.g=g;B8.f=f;B8.end=w+dec;window.BLF=f;window.BLFN=(window.BLFN||0)+1};
@@ -6451,7 +6451,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13g';
+window.ORB_BUILD='2026-11-13-v0.75';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -6851,7 +6851,7 @@ window.orbExoProg=function(kind){try{let P,sh;
  const _dr=draw;draw=function(T,s){if(!RV&&s>=0&&playing)return;return _dr.apply(this,arguments)}}
 </script>
 <script>
-/* ---- v0.71: PATTERN and SOUND pages are laid out the same way on every instrument.
+/* ---- v0.75: PATTERN and SOUND pages are laid out the same way on every instrument.
    Pattern · every card opens with a "Rhythm" section (the ring), then its own sections, each with the same kind of heading: a name and a short
              hint. Drums: Rhythm · Feel. Stab: Rhythm · Notes. Satellite: Rhythm · Part. Pad's headings use the same style. The dice row
              ("New bassline") sits at the top, as on Lead and Pad.
@@ -6859,8 +6859,8 @@ window.orbExoProg=function(kind){try{let P,sh;
              The kick's Techno rumble is a sound setting: on a phone it now shows on the Sound page only.
    Wide screens (pattern and sound side by side): the sound controls always follow the pattern controls (Pad had them in front), and the lead's
    Osc / Filter / Amp / Mod / FX pages work there too (every page used to show at once, with unused controls greyed).
-   Faders: Hits and Rotate never run past the number of Steps (half their travel used to do nothing on a 16-step ring); Steps goes to 64, the
-   length some Launches already use (touching the fader used to snap those rings to 32); a setting without a value shows its minimum, not "NaN";
+   Faders: Hits and Rotate never run past the number of Steps (half their travel used to do nothing on a 16-step ring); Steps goes to 64 (128 on the lead), the
+   lengths some Launches already use (touching the fader used to snap those rings to 32); a setting without a value shows its minimum, not "NaN";
    longer Decay on Perc (1 s), Bass (1.2 s) and Stab (1.5 s).
    Nothing is moved in the page itself — only headings are added and the display order is set — so every older layer keeps finding its controls. ---- */
 {const st=document.createElement('style');st.textContent=`
@@ -6906,7 +6906,7 @@ window.orbExoProg=function(kind){try{let P,sh;
  UI.on(run);window.orbCohere=run}
 </script>
 <script>
-/* ---- v0.71: MOODS AND MODULATION
+/* ---- v0.75: MOODS AND MODULATION
    Merged   · Aurora now holds Aurora and Outer Rim; Lost Signal holds Lost Signal and Afterglow. One menu entry each; a Launch picks one of
               the two flavours (the status line names it), so nothing either of them could do is lost. Saved Sectors keep working.
    New      · Tidal Lock — polymetric hypnotic techno: every ring has its own length (kick 16, hats 10–14, toms 7–13, stab 5–14, a two-note
@@ -6966,7 +6966,7 @@ window.orbExoProg=function(kind){try{let P,sh;
    if(typeof lfoUI==='function')lfoUI()}catch(e){console.warn('[orbitron] moods',e)}return r}}
 </script>
 <script>
-/* ---- v0.71: two more Flight faders, in a row under LEAD and BASS. Both stay where you leave them; double-tap or a Launch = back to AS SET.
+/* ---- v0.75: two more Flight faders, in a row under LEAD and BASS. Both stay where you leave them; double-tap or a Launch = back to AS SET.
    DRUMS · TIGHT ↔ WILD. Left: shorter, closed hats and shorter toms, ghosts and bar-to-bar variation fade out. Right: longer, opening hats,
            longer toms with more pitch bend, ghost notes and variation come in on hats, perc, snare and clap, accents deepen. The kick is
            never touched. Only bends the settings while a hit is made — your own values stay as they are.
@@ -7006,7 +7006,7 @@ window.orbExoProg=function(kind){try{let P,sh;
   const pn=document.createElement('div');pn.className='panel mxp xmp';const row=document.createElement('div');row.className='mxrow';pn.appendChild(row);pn0.after(pn);DR.build(row);FX.build(row)};
  add();UI.on(()=>{try{add()}catch(e){}});window.orbFlightFx=FX;window.orbFlightDrums=DR;
  {const _g=generate;generate=function(){try{if(DR.x)DR.set(0);if(FX.x)FX.set(0)}catch(e){}return _g.apply(this,arguments)}}   /* a Launch puts them back to AS SET, like LOW-PASS, LEAD and BASS */}
-/* ---- v0.71: the Mix page in four parts. MIXER is the mixer and nothing else: Balance and one strip per track (level, pan).
+/* ---- v0.75: the Mix page in four parts. MIXER is the mixer and nothing else: Balance and one strip per track (level, pan).
    SHAPE holds the big movers that used to sit on top of the strips — Space, Air, Pump, Feel, Drum bus — and the Texture bed.
    BUS & FX and ENGINE are as before. Nothing was rebuilt: the same controls are shown on a different sub-page. ---- */
 {const M=document.querySelector('#t-mix'),bar=M&&M.querySelector('.mxs');if(bar&&bar.children.length>=3){const [bCh,bBus,bEng]=bar.children,bSh=document.createElement('button');bSh.type='button';bSh.textContent='Shape';bCh.textContent='Mixer';bCh.after(bSh);
@@ -7020,7 +7020,7 @@ window.orbExoProg=function(kind){try{let P,sh;
 #t-mix[data-mx=shape] .mxcp .spc:last-of-type{border-bottom:0}#t-mix .mxs button{padding-left:2px;padding-right:2px;letter-spacing:.1em}`;document.head.appendChild(st)}}
 </script>
 <script>
-/* ---- v0.71: ARRANGER — four rules, one line per mood. Runs last on every Launch; it only presses Mute, lowers Hits, sets Answer and the
+/* ---- v0.75: ARRANGER — four rules, one line per mood. Runs last on every Launch; it only presses Mute, lowers Hits, sets Answer and the
    bass Ending, all things you can do by hand. No new controls.
 
      ARR[mood] = [ parts , notes , first , turn ]
