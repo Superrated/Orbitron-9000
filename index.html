@@ -7395,15 +7395,12 @@ window.orbExoProg=function(kind){try{let P,sh;
  const TE=mk({cls:'tnm',name:'TENSION',hint:'harmony · resonance',l:'CALM',r:'TENSE',title:'Drag right to pull the harmony tight: thirds hang on fourths, then fifths rise, then the root gives way, with rising resonance and a high suspended tone. Drag left and everything settles on root and fifth. Lead and stab also wash out into more reverb and echo. Always in the key. It stays where you leave it; double-tap to go back to AS SET.',on:tens});
  UI.onBeat(()=>{try{if(TN.tone&&TE.x>.01)tone(TE.x)}catch(e){}});   /* the tone follows a key change (Lift, a new root) */
  // ---- PULSE: half ↔ double
- const PU=mk({cls:'plm',name:'PULSE',hint:'lead · stab',l:'HALF',r:'DOUBLE',title:'Drag right for double-time: lead and stab get an extra sparkle half a step later (an octave up, growing into a quick rising run of up to 4 notes), first before each beat, then on every off-step, then on every note. Drag left for half-time: fewer lead and stab notes, each at its own length. Drums and bass are never touched. It stays where you leave it; double-tap to go back to AS SET.'});
- const cnt=new Int32Array(10),bar=new Int32Array(10),RUN=[0,2,4,7],ONE=[0];
+ const PU=mk({cls:'plm',name:'PULSE',hint:'lead · stab',l:'SPARKLE',r:'DOUBLE',title:'Drag right for double-time: lead and stab get an extra sparkle half a step later (an octave up, growing into a quick rising run of up to 4 notes), first before each beat, then on every off-step, then on every note. Drag left for a continuous sparkle: a steady shimmer of quiet lead sparkles walks up and down the chord between your notes, from 8ths to every 16th. Drums and bass are never touched. It stays where you leave it; double-tap to go back to AS SET.'});
+ const RUN=[0,2,4,7],ONE=[0],SPK=[0,2,4,7,4,2];let SPD=0,spn=0;const spLN=function(){return SPD};
  {const _f=fire;fire=function(k,w){const tx=TE.x,px=PU.x,mel=k===4||k===8||k===9;
-   if(!((tx>.01||tx<-.01)&&(mel||k===6))&&!((px>.01||px<-.01)&&(k===4||k===8)))return _f.apply(this,arguments);
+   if(!((tx>.01||tx<-.01)&&(mel||k===6))&&!(px>.01&&(k===4||k===8)))return _f.apply(this,arguments);
    const T=TR[k],P=T.p,s=((tk%16)+16)%16,a=px<0?-px:px;let two=0,o1,o2,o3,o0=TN.on;
-   if(px<-.01&&(k===4||k===8)){
-    const b=Math.floor(tk/(T.st||16));if(bar[k]!==b){bar[k]=b;cnt[k]=0}const c=cnt[k]++;   /* counted per track and bar, so off-beat patterns keep their place */
-    if((a>.5&&c%2===1)||(a>.25&&c%4===3))return}   /* v0.86: notes keep their own length (no longer held longer) */
-   else if(px>.01&&(k===4||k===8)&&!(typeof QOS!=='undefined'&&QOS.lvl>=3))two=px>.8||(px>.5&&s%2===1)||(px>.2&&s%4===3);
+   if(px>.01&&(k===4||k===8)&&!(typeof QOS!=='undefined'&&QOS.lvl>=3))two=px>.8||(px>.5&&s%2===1)||(px>.2&&s%4===3);
    o1=P.res;o2=P.dec;o3=P.hold;const o4=P.rs,o5=P.ds,o6=P.cut,oc=G.oct,lv=T.lv;
    try{if((k===4||k===6||k===8)&&P.res!=null&&(tx>.01||tx<-.01))P.res=tx>0?P.res+(k===4?10:k===8?8:6)*tx*tx:P.res*(1+.6*tx);
     if(tx>.01&&(k===4||k===8)){if(P.rs!=null)P.rs=cl(P.rs+.35*tx*tx,0,1);if(P.ds!=null)P.ds=cl(P.ds+.3*tx*tx,0,1)}
@@ -7414,11 +7411,26 @@ window.orbExoProg=function(kind){try{let P,sh;
      const sd=sdur(),n=(typeof QOS!=='undefined'&&QOS.lvl>=2)?1:a>.8?4:a>.55?3:a>.3?2:1,d=lastDeg,ln=leadNote,cn=cur.n,nl=cn.length||1,sn=(SC[G.scale]||[0]).length;
      if(P.cut!=null)P.cut=cl(P.cut*1.5,40,16000);if(P.rs!=null)P.rs=cl(P.rs+.25*a,0,1);if(P.ds!=null)P.ds=cl(P.ds+.2*a,0,1);G.oct=(oc||0)+1;
      try{for(let i=0;i<n;i++){T.lv=lv*(.6-.08*i);
-       if(k===4){const st=RUN[i];leadNote=function(){return d+st}}else{ONE[0]=cn[i%nl]+sn*Math.floor(i/nl);cur.n=ONE}
+       if(k===4){SPD=d+RUN[i];leadNote=spLN}else{ONE[0]=cn[i%nl]+sn*Math.floor(i/nl);cur.n=ONE}
        _f.call(this,k,w+sd/2+i*sd/4)}}
      finally{leadNote=ln;lastDeg=d;cur.n=cn}}
     return r}
-   finally{TN.on=o0;T.lv=lv;if(o1===undefined)delete P.res;else P.res=o1;if(o2===undefined)delete P.dec;else P.dec=o2;if(o3===undefined)delete P.hold;else P.hold=o3;if(o4===undefined)delete P.rs;else P.rs=o4;if(o5===undefined)delete P.ds;else P.ds=o5;if(o6===undefined)delete P.cut;else P.cut=o6;G.oct=oc}}}
+   finally{TN.on=o0;T.lv=lv;if(o1===undefined)delete P.res;else P.res=o1;if(o2===undefined)delete P.dec;else P.dec=o2;if(o3===undefined)delete P.hold;else P.hold=o3;if(o4===undefined)delete P.rs;else P.rs=o4;if(o5===undefined)delete P.ds;else P.ds=o5;if(o6===undefined)delete P.cut;else P.cut=o6;G.oct=oc}}
+  /* v0.86: PULSE left = continuous sparkle. Between the normal notes a steady shimmer of quiet lead sparkles (an octave up, brighter,
+     a little more reverb and echo) walks up and down the chord: 8ths, then every other 16th, then every 16th at full; at full the stab adds a
+     sparkle on the last 16th of each beat. CPU: one lead voice per step at most, no sparkle where the lead already plays, 8ths at most
+     when the device is busy (QOS 2), none under overload (QOS 3). */
+  const spark=(k,w,deg,lvm)=>{const T=TR[k],P=T.p,lv=T.lv,oc=G.oct,c0=P.cut,r0=P.rs,d0=P.ds,ln=leadNote,d=lastDeg,cn=cur.n;
+   try{T.lv=lv*lvm;if(c0!=null)P.cut=cl(c0*1.5,40,16000);if(r0!=null)P.rs=cl(r0+.25,0,1);if(d0!=null)P.ds=cl(d0+.2,0,1);G.oct=(oc||0)+1;
+    if(k===4){SPD=d+deg;leadNote=spLN}else{ONE[0]=cn[deg%(cn.length||1)];cur.n=ONE}
+    _f.call(null,k,w)}
+   finally{T.lv=lv;G.oct=oc;if(c0===undefined)delete P.cut;else P.cut=c0;if(r0===undefined)delete P.rs;else P.rs=r0;if(d0===undefined)delete P.ds;else P.ds=d0;leadNote=ln;lastDeg=d;cur.n=cn}};
+  const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);const px=PU.x;
+   if(px<-.1){try{const a=-px,q=typeof QOS!=='undefined'?QOS.lvl:0,s=((tk%16)+16)%16;
+    if(q<3){const ev=(a>.75&&q<2)?1:a>.4?s%2===1:s%4===2,L=TR[4],S=TR[8];
+     if(ev&&!L.m&&!(L.pt&&L.pt[tk%L.st]))spark(4,w,SPK[spn++%6],.45);
+     if(a>.75&&q<2&&s%4===3&&!S.m&&!(S.pt&&S.pt[tk%S.st]))spark(8,w,spn,.4)}}catch(e){}}
+   return r}}
  const add=()=>{if(document.querySelector('#t-perf .xmx'))return;const b=document.querySelector('#t-perf .bmx:not(.tha)'),pn0=b&&b.closest('.panel');if(!pn0)return;
   const pn=document.createElement('div');pn.className='panel mxp xmp';const row=document.createElement('div');row.className='mxrow';pn.appendChild(row);pn0.after(pn);TE.build(row);PU.build(row)};
  add();UI.on(()=>{try{add()}catch(e){}});window.orbFlightTension=TE;window.orbFlightPulse=PU;
