@@ -118,9 +118,6 @@ instruments/1910-new-sounds-patterns.js
 ## miniVoice — 1 wrap, defined in js/instruments/0480-mini-lead-engine.js
 platform/0620-cpu-easy-wins.js
 
-## ms — 1 wrap, defined in js/core/0120-moods-pad-motif-generator.js
-platform/2520-performance-test.js
-
 ## PX — 1 wrap, defined in js/core/0050-base-state-engine-ui.js
 ui/0220-viz-cinematic.js
 
