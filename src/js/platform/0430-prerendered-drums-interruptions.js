@@ -17,8 +17,8 @@ window.DR={cache:new Map(),pend:new Set(),rendering:false,vr:1,hits:0,live:0,
   try{this._render(k,key,fx,!!snap)}finally{if(keep){for(const q in p)if(!(q in keep))delete p[q];Object.assign(p,keep)}}},
  _render(k,key,fx,snapped){const T=TR[k],p=T.p,sr=ctx.sampleRate,len=k===0||k===7?p.dec+.08:k===2?3*p.spread/1e3+p.tail+.08:p.dec+.08,oc=new OfflineAudioContext(1,Math.ceil(sr*Math.min(1.5,len)),sr);
   const sink=oc.createGain(),nul=oc.createGain();sink.connect(oc.destination);
-  const sv={ctx,ks:A.ks,m:A.m,ru:A.ru,dI:A.dI,rI:A.rI,duck,FIX,lv:T.lv,OCT};FIX=fx;const keyNow=this.key(k,p);FIX=sv.FIX;if(keyNow!==key&&!snapped){this.pend.delete(key);return}
+  const sv={ctx,ks:A.ks,ksd:A.ksd,m:A.m,ru:A.ru,dI:A.dI,rI:A.rI,duck,FIX,lv:T.lv,OCT};FIX=fx;const keyNow=this.key(k,p);FIX=sv.FIX;if(keyNow!==key&&!snapped){this.pend.delete(key);return}
   try{ctx=oc;A.ks=sink;A.m=sink;A.ru=nul;A.dI=nul;A.rI=nul;duck=()=>{};FIX=fx;OCT=0;this.rendering=true;
    if(k===7)snare(0,1);else fireVoice(k,0)}
-  catch(e){}finally{this.rendering=false;ctx=sv.ctx;A.ks=sv.ks;A.m=sv.m;A.ru=sv.ru;A.dI=sv.dI;A.rI=sv.rI;duck=sv.duck;FIX=sv.FIX;T.lv=sv.lv;OCT=sv.OCT}
+  catch(e){}finally{this.rendering=false;ctx=sv.ctx;A.ks=sv.ks;A.ksd=sv.ksd /* v0.8: the render must not mark the live kick shaper as up to date */;A.m=sv.m;A.ru=sv.ru;A.dI=sv.dI;A.rI=sv.rI;duck=sv.duck;FIX=sv.FIX;T.lv=sv.lv;OCT=sv.OCT}
   const vr=this.vr;oc.startRendering().then(b=>{if(this.cache.size>40)this.cache.delete(this.cache.keys().next().value);this.cache.set(key,{b,vr});this.pend.delete(key)}).catch(()=>this.pend.delete(key))}};

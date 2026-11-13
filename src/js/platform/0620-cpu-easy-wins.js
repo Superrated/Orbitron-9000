@@ -19,6 +19,8 @@
   const op=R()<p.open,bs=op?c.o:c.c;if(!bs.length)return _fv73(k,w);const v=T.lv,pk=(1-p.acc*R()*.8)*(op?1:1);
   if(HH.g){const cg=HH.g;HH.g=null;try{cg.gain.cancelScheduledValues(w);cg.gain.setTargetAtTime(.0001,w,.005)}catch(e){}}
   const s=mkBuf(),g=ctx.createGain();s.buffer=bs[Math.floor(R()*bs.length)];g.gain.value=v*pk;s.connect(g);{const sp=mv('Hat pan',w);if(sp){const q=ctx.createStereoPanner();q.pan.value=Math.max(-1,Math.min(1,.18+.8*sp));g.connect(q);routeTrack(q,null,hatBus())}else routeTrack(g,null,hatBus())}s.start(w);if(op)HH.g=g};
+ /* v0.8: a Launch while playing prepares the new hat sound before its first bar (launch/1690) */
+ window.orbHatWarm=()=>{if(!ctx||lfoOnHat()||(TR[1].pan||0)!==0)return;const p=TR[1].p,key=hkey(p);if(!HC[key])render(key,p)};
  // Mini ladder: under load use the two-biquad version (no worklet node per note)
  const _mv73=miniVoice;miniVoice=function(w){const l=A.ladder;if((QOS.ml||0)>=2)A.ladder=false;try{_mv73(w)}finally{A.ladder=l}};
  // visuals: lower frame caps (the star map still reads smoothly)

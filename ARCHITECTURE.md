@@ -40,11 +40,13 @@ reverb / delay / shimmer: sends from routeTrack, returns into the bus; sidechain
 - Timing: every sound is scheduled on the audio clock (`w` = ctx time), never on `setTimeout`. Swing and micro-timing shift `w` inside `fire`/feel files. Tests assert notes are never scheduled in the past and the step grid stays exact.
 - AudioWorklet: only the Mini lead's ladder filter (`instruments/0480`, a fixed pool of nodes) and the WAV recorder (`state/0990`). Everything else is native nodes.
 - Pre-rendering: drum, hat and perc hits are rendered once per variant in `OfflineAudioContext` (queued one at a time by `platform/0010-render-queue`) and replayed as buffers — CPU per hit stays tiny. Caches are capped (`platform/2160`).
-- Load management: `platform/0300-load-guard` measures voices, lateness and frame time and sets `QOS` level; `1580-overload-guard` compares audio clock with real time; higher levels shed visuals, then effects, then voices. `1700-safety-loop` resets the engine if the output goes bad (NaN, dropouts, silence).
+- Launch handover: `launch/0660` crossfades ringing old notes over ~1 beat at the bar line (`window.__launchAt`) and only dips the effect returns.
+- Load management: `platform/0300-load-guard` measures voices, lateness and frame time and sets `QOS` level; `1580-overload-guard` compares audio clock with real time; higher levels shed visuals, then effects, then voices. `1700-safety-loop` is the lifeboat: at the first warning signs (2 dropouts in 3 s, late notes, overload stage 3) a pre-rendered kick+hat loop on a second AudioContext takes over on the beat while the engine rests, then hands back on a bar; it rebuilds the engine only if trouble goes on (or NaN, silence).
 
 ## 4. Launch flow
 ```
-🚀 Launch / Random warp ─► (playing? wait for next downbeat: launch/1690) ─► generate()
+🚀 Launch / Random warp ─► (playing? launch/1690: book the old groove up to the next bar line, then run generate()
+                            a moment BEFORE it — 1.5x this device's measured Launch time — and pre-render the new drums) ─► generate()
 generate() core (core/0120): pick mood → key, scale, bpm, base patterns, base params from MOODS[mood]
           wrappers (launch/*, plus some sequencer/instruments/engine files): flavours, riffs, progressions, basslines,
           sound choices, per-mood trims, polish, groove score … → build() + UI.sync() redraw once

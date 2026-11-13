@@ -12,7 +12,7 @@ function steal(nx){ /* v0.23: the pad chord that is sounding now is never stolen
  const now=ctx.currentTime,cur=window.__PADL||0,c=[...QOS.src].filter(n=>n.__e!==Infinity&&n.__e-now>.35&&!(n.__pc&&n.__pc===cur)).sort((a,b)=>(a.__pc?1:0)-(b.__pc?1:0)||a.__s-b.__s).slice(0,Math.ceil(nx));
  QOS.stolen=(QOS.stolen||0)+c.length;QOS.stolenPad=(QOS.stolenPad||0)+c.filter(n=>n.__pc).length;c.forEach(n=>{try{n.stop(now+.02)}catch(e){}})}
 const _init30=init;init=function(){const nw=!ctx;_init30();if(nw&&ctx.renderCapacity){try{ctx.renderCapacity.start({updateInterval:1});ctx.renderCapacity.addEventListener('update',e=>QOS.load=Math.max(e.averageLoad||0,(e.peakLoad||0)*.8))}catch(e){}}};
-const _tick30=tick;tick=function(){if(!ctx)return;const sd=60/G.bpm/4,now=ctx.currentTime;if(nextT<now-.025){const miss=Math.ceil((now-nextT)/sd);nextT+=miss*sd;tk+=miss;QOS.late++}else if(nextT<now)QOS.late++;_tick30()};
+const _tick30=tick;tick=function(){if(!ctx)return;const sd=60/G.bpm/4,now=ctx.currentTime;if(nextT<now-.025){const miss=Math.ceil((now-nextT)/sd);nextT+=miss*sd;tk+=miss;QOS.late++;QOS.skips=(QOS.skips||0)+1 /* v0.8: counted for the safety lifeboat (platform/1700) */}else if(nextT<now)QOS.late++;_tick30()};
 document.addEventListener('visibilitychange',()=>{QOS.la=document.hidden?1.2:.12});
 // shedding hooks
 const _fire30=fire;fire=function(k,w){const L=QOS.ml||0;if(L>=2){if(k===3&&(L>=3||R()<.5))return;if(L>=3&&(k===8||k===9))return}_fire30(k,w)};

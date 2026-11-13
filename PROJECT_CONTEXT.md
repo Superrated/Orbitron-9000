@@ -50,7 +50,7 @@ tests/                   build.test.mjs (static), browser.test.mjs (runtime), sn
 | what Launch does | `generate()` chain in `docs/HOOKS.md` — the last files run first; `launch/1530-launch-polish`, `1660-launch-quality`, `1690-in-time-launch` |
 | Flight page | `flight/INDEX.md`; layout `flight/2090-thruster-order` |
 | a UI page or control | `ui/INDEX.md`; faders/menus sync: `ui/0930-faders-show-value`, `ui/0080-event-driven-sync` |
-| stutters, CPU, recovery | `platform/INDEX.md`: `0300-load-guard`, `1580-overload-guard`, `1700-safety-loop`, `1490-audio-buffer` |
+| stutters, CPU, recovery | `platform/INDEX.md`: `0300-load-guard`, `1580-overload-guard`, `1700-safety-loop` (lifeboat), `1490-audio-buffer`; Launch while playing: `launch/1690`, `0660` |
 | saving, sectors, export | `state/0830-sectors`, `state/0060-saving-share-download` |
 
 ## Conventions
