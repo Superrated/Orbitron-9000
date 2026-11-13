@@ -56,55 +56,47 @@
  const TE=mk({cls:'tnm',name:'TENSION',hint:'harmony · resonance',l:'CALM',r:'TENSE',title:'Drag right to pull the harmony tight: thirds hang on fourths, then fifths rise, then the root gives way, with rising resonance and a high suspended tone. Drag left and everything settles on root and fifth. Lead and stab also wash out into more reverb and echo. Always in the key. It stays where you leave it; double-tap to go back to AS SET.',on:tens});
  UI.onBeat(()=>{try{if(TN.tone&&TE.x>.01)tone(TE.x)}catch(e){}});   /* the tone follows a key change (Lift, a new root) */
  // ---- PULSE: half ↔ double
- const PU=mk({cls:'plm',name:'PULSE',hint:'lead · stab',l:'SPARKLE',r:'FULL TILT',lab:x=>x<0?'SPARKLE '+Math.round(-x*100)+'%':x>.875?'FULL TILT':x>.05?(['DOUBLE','TRIP','QUAD'][sN(x)-2]||sN(x)+'×'):'AS SET',title:'Drag right to ratchet lead and stab: every note is struck 2×, 3×, 4× … up to 8× inside its step; at FULL TILT the last note keeps rolling between notes. Drag left for a continuous sparkle: a steady shimmer of quiet lead sparkles walks up and down the chord between your notes, from 8ths to every 16th. Drums and bass are never touched. It stays where you leave it; double-tap to go back to AS SET.'});
+ const PU=mk({cls:'plm',name:'PULSE',hint:'lead · stab',l:'SPARKLE',r:'FULL TILT',lab:x=>x<0?'SPARKLE '+Math.round(-x*100)+'%':x>.875?'FULL TILT':x>.05?'RUN '+Math.round(x/.875*100)+'%':'AS SET',title:'Drag right for a run: the gaps between your lead notes fill with extra notes that climb the chord and come back down, more of them and higher the further you go; at FULL TILT the run doubles its speed and never stops, and the stab joins in. Drag left for a continuous sparkle: a steady shimmer of quiet lead sparkles walks up and down the chord between your notes, from 8ths to every 16th. Drums and bass are never touched. It stays where you leave it; double-tap to go back to AS SET.'});
  const ONE=[0],SPK=[0,2,4,7,4,2];let SPD=0,spn=0;const spLN=function(){return SPD};
- /* v0.87: PULSE right = ratchets. How many strikes per step: DOUBLE 2 · TRIP 3 · QUAD 4 · FULL TILT 4 plus a non-stop roll between notes.
-    v0.88: QUAD → FULL TILT was too abrupt: now 5, 6, 7, 8 strikes in between, then FULL TILT (8 + the roll). Repeats fade to half level.
-    CPU: lead 8 / stab 4 at most; 4 when the device is a bit busy (QOS 1), 2 when busy (QOS 2), none under overload (QOS 3). */
- const sN=a=>Math.min(8,2+Math.floor((a-.05)/.825*7)),   /* DOUBLE 2 · TRIP 3 · QUAD 4 · 5 · 6 · 7 · 8 · FULL TILT (8 + roll), evenly along the fader */
-  rN=(a,q,k)=>q>=3?1:Math.min(q>=2?2:q>=1?4:k===8?4:8,sN(a));   /* the stab is a heavier voice: 4 at most */
+ /* v1.0: PULSE right = RUN (the ratchets are gone). Double time and arp in one: steps where the lead has no note get an extra note, and those
+    notes climb the chord from the last note played (third, fifth, octave …) and come back down. Further right: more of the gaps are filled
+    (8ths → every other 16th → every 16th) and the run climbs higher (a fifth at first, two octaves at the end). FULL TILT: twice as fast
+    (32nds), with a run note after every played note too, so it never stops. The stab joins from halfway with single chord notes off the beat.
+    The played notes themselves are never touched. CPU: one extra lead voice per step at most (two light ones at FULL TILT); 8ths only when the
+    device is busy (QOS 2), none under overload (QOS 3). */
+ const CL=[2,4,7,9,11,14,16];let RUNI=0;   /* the climb, in scale steps above the last note · position in the run (a played lead note restarts it) */
+ const runDeg=a=>{const m=Math.min(CL.length,2+Math.round(a*4)),per=2*m-2,j=RUNI++%per;return CL[j<m?j:per-j]};
  {const _f=fire;
-  /* the same note struck again: the lead keeps its last note (normal and acid engines), the stab its chord; a little softer each time */
-  /* v0.98: the repeats are LIGHT voices — one oscillator (no unison stack, sub or octave layer), and a tail no longer than the gap to the
-     next strike, so they do not pile up. The first strike of a note stays the full sound. At Full quality FULL TILT asked for 8 complete
-     stacked lead voices on every step: engine load 30 % → 70 % with peaks over 100 % (stutter). Fader-only: nothing is stored in the groove. */
-  const RK=['uni','subosc','oct2','dec','rel','hold','air'],RS=new Array(RK.length);
-  /* v0.99: on a note the repeats keep the FULL TILT spacing at every fader position (lead 1/8 step, stab 1/4 step): moving the fader up
-     adds repeats after the note (DOUBLE = the note + 1 … 8 fill the step), it does not change their speed. dv = strikes per step that set the spacing. */
-  const rat=(k,w,n,i0,dv)=>{const T=TR[k],P=T.p,lv=T.lv,d=lastDeg,ln=leadNote,an=acidNote,sd=sdur(),gap=sd/dv;
-   for(let j=0;j<RK.length;j++)RS[j]=P[RK[j]];
-   try{if(k===4){SPD=d;leadNote=spLN;acidNote=spLN;P.uni=1;P.subosc=0;P.oct2=0}else P.air=0;
-    P.dec=Math.min(P.dec==null?.25:P.dec,Math.max(.05,gap*1.5));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(.03,gap));P.hold=Math.min(P.hold||1,1/dv);
-    for(let i=i0;i<n;i++){T.lv=lv*(1-.5*i/n);_f.call(null,k,w+i*gap)}}
-   finally{T.lv=lv;leadNote=ln;acidNote=an;lastDeg=d;for(let j=0;j<RK.length;j++){if(RS[j]===undefined)delete P[RK[j]];else P[RK[j]]=RS[j]}}};
-  fire=function(k,w){const tx=TE.x,px=PU.x,mel=k===4||k===8||k===9;
+  fire=function(k,w){const tx=TE.x,px=PU.x,mel=k===4||k===8||k===9;if(k===4)RUNI=0;
    if(!((tx>.01||tx<-.01)&&(mel||k===6))&&!(px>.01&&(k===4||k===8)))return _f.apply(this,arguments);
-   const T=TR[k],P=T.p,s=((tk%16)+16)%16,a=px<0?-px:px;let rc=1,o1,o2,o3,o0=TN.on;
-   if(px>.05&&(k===4||k===8))rc=rN(px,typeof QOS!=='undefined'?QOS.lvl:0,k);
+   const T=TR[k],P=T.p,s=((tk%16)+16)%16,a=px<0?-px:px;let o1,o2,o3,o0=TN.on;
    o1=P.res;o2=P.dec;o3=P.hold;const o4=P.rs,o5=P.ds,o6=P.cut,oc=G.oct,lv=T.lv;
    try{if((k===4||k===6||k===8)&&P.res!=null&&(tx>.01||tx<-.01))P.res=tx>0?P.res+(k===4?10:k===8?8:6)*tx*tx:P.res*(1+.6*tx);
     if(tx>.01&&(k===4||k===8)){if(P.rs!=null)P.rs=cl(P.rs+.35*tx*tx,0,1);if(P.ds!=null)P.ds=cl(P.ds+.3*tx*tx,0,1)}
     if(mel)TN.on=1;
     const r=_f.apply(this,arguments);
-    if(rc>1)rat(k,w,rc,1,k===8?4:8);
+    if(k===4&&px>.875&&(typeof QOS==='undefined'||QOS.lvl<2))spark(4,w+sdur()/2,runDeg(px),.6,0,1.15,1);   /* FULL TILT: the run goes on right after a played note */
     return r}
    finally{TN.on=o0;T.lv=lv;if(o1===undefined)delete P.res;else P.res=o1;if(o2===undefined)delete P.dec;else P.dec=o2;if(o3===undefined)delete P.hold;else P.hold=o3;if(o4===undefined)delete P.rs;else P.rs=o4;if(o5===undefined)delete P.ds;else P.ds=o5;if(o6===undefined)delete P.cut;else P.cut=o6;G.oct=oc}}
   /* v0.86: PULSE left = continuous sparkle. Between the normal notes a steady shimmer of quiet lead sparkles (an octave up, brighter,
      a little more reverb and echo) walks up and down the chord: 8ths, then every other 16th, then every 16th at full; at full the stab adds a
      sparkle on the last 16th of each beat. CPU: one lead voice per step at most, no sparkle where the lead already plays, 8ths at most
      when the device is busy (QOS 2), none under overload (QOS 3). */
-  const spark=(k,w,deg,lvm)=>{const T=TR[k],P=T.p,lv=T.lv,oc=G.oct,c0=P.cut,r0=P.rs,d0=P.ds,ln=leadNote,d=lastDeg,cn=cur.n;
-   try{T.lv=lv*lvm;if(c0!=null)P.cut=cl(c0*1.5,40,16000);if(r0!=null)P.rs=cl(r0+.25,0,1);if(d0!=null)P.ds=cl(d0+.2,0,1);G.oct=(oc||0)+1;
-    if(k===4){SPD=d+deg;leadNote=spLN}else{ONE[0]=cn[deg%(cn.length||1)];cur.n=ONE}
+  /* v1.0: also plays the RUN notes of the right side — up = octaves up (sparkle 1, run 0), cm = how much brighter, light = one oscillator only */
+  const spark=(k,w,deg,lvm,up,cm,light)=>{const T=TR[k],P=T.p,lv=T.lv,oc=G.oct,c0=P.cut,r0=P.rs,d0=P.ds,u0=P.uni,s0=P.subosc,t0=P.oct2,ln=leadNote,an=acidNote,d=lastDeg,cn=cur.n,run=up===0;
+   try{T.lv=lv*lvm;if(c0!=null)P.cut=cl(c0*(cm||1.5),40,16000);if(r0!=null)P.rs=cl(r0+(run?.1:.25),0,1);if(d0!=null)P.ds=cl(d0+(run?.05:.2),0,1);G.oct=(oc||0)+(run?0:1);if(light&&k===4){P.uni=1;P.subosc=0;P.oct2=0}
+    if(k===4){SPD=d+deg;leadNote=spLN;if(run)acidNote=spLN}else{ONE[0]=cn[deg%(cn.length||1)];cur.n=ONE}
     _f.call(null,k,w)}
-   finally{T.lv=lv;G.oct=oc;if(c0===undefined)delete P.cut;else P.cut=c0;if(r0===undefined)delete P.rs;else P.rs=r0;if(d0===undefined)delete P.ds;else P.ds=d0;leadNote=ln;lastDeg=d;cur.n=cn}};
+   finally{T.lv=lv;G.oct=oc;acidNote=an;if(light&&k===4){if(u0===undefined)delete P.uni;else P.uni=u0;if(s0===undefined)delete P.subosc;else P.subosc=s0;if(t0===undefined)delete P.oct2;else P.oct2=t0}if(c0===undefined)delete P.cut;else P.cut=c0;if(r0===undefined)delete P.rs;else P.rs=r0;if(d0===undefined)delete P.ds;else P.ds=d0;leadNote=ln;lastDeg=d;cur.n=cn}};
   const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);const px=PU.x;
-   if(px>.875){try{const q=typeof QOS!=='undefined'?QOS.lvl:0;   /* v0.87 FULL: a non-stop roll of the last note on steps without a note (lead 4×, stab 2×; busy: lead 2×, no stab) */
-    if(q<3){const L=TR[4],S=TR[8];if(!L.m&&!(L.pt&&L.pt[tk%L.st])){const n=rN(1,q,4);rat(4,w,n,0,n)}if(q<2&&!S.m&&!(S.pt&&S.pt[tk%S.st]))rat(8,w,2,0,2)}}catch(e){}}
+   if(px>.05){try{const q=typeof QOS!=='undefined'?QOS.lvl:0,s=((tk%16)+16)%16,ft=px>.875&&q<2;   /* v1.0 RUN: extra notes on the steps without a note, climbing the chord */
+    if(q<3){const L=TR[4],S=TR[8],ev=q>=2?s%4===2:px>.6?1:px>.3?s%2===1:s%4===2;
+     if(ev&&!L.m&&!(L.pt&&L.pt[tk%L.st])){spark(4,w,runDeg(px),.7,0,1.15,ft);if(ft)spark(4,w+sdur()/2,runDeg(px),.6,0,1.15,1)}
+     if(px>.5&&q<2&&(ft?s%2===1:s%4===3)&&!S.m&&!(S.pt&&S.pt[tk%S.st]))spark(8,w,RUNI,.55,0,1.15)}}catch(e){}}
    else if(px<-.1){try{const a=-px,q=typeof QOS!=='undefined'?QOS.lvl:0,s=((tk%16)+16)%16;
     if(q<3){const ev=(a>.75&&q<2)?1:a>.4?s%2===1:s%4===2,L=TR[4],S=TR[8];
-     if(ev&&!L.m&&!(L.pt&&L.pt[tk%L.st]))spark(4,w,SPK[spn++%6],.45);
-     if(a>.75&&q<2&&s%4===3&&!S.m&&!(S.pt&&S.pt[tk%S.st]))spark(8,w,spn,.4)}}catch(e){}}
+     if(ev&&!L.m&&!(L.pt&&L.pt[tk%L.st]))spark(4,w,SPK[spn++%6],.45,1);
+     if(a>.75&&q<2&&s%4===3&&!S.m&&!(S.pt&&S.pt[tk%S.st]))spark(8,w,spn,.4,1)}}catch(e){}}
    return r}}
  const add=()=>{if(document.querySelector('#t-perf .xmx'))return;const b=document.querySelector('#t-perf .bmx:not(.tha)'),pn0=b&&b.closest('.panel');if(!pn0)return;
   const pn=document.createElement('div');pn.className='panel mxp xmp';const row=document.createElement('div');row.className='mxrow';pn.appendChild(row);pn0.after(pn);TE.build(row);PU.build(row)};

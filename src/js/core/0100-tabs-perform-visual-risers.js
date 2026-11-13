@@ -29,7 +29,7 @@ function setP(p){rs.p=p;$("#rfill").style.height=p*100+"%";if(!ctx)return;const 
  gs(A.rO,G.rev+(1.3-G.rev)*q);gs(A.sh,G.shim+(1.5-G.shim)*q);gs(A.dO,G.dly+(.85-G.dly)*q);gs(A.dF,G.fb+(.88-G.fb)*q);
  TR[4].p.dec=rs.ld0+(1.2-rs.ld0)*q}
 RZ.addEventListener("pointerdown",e=>{e.preventDefault();init();RZ.setPointerCapture(e.pointerId);rs.on=1;rs.y0=e.clientY;rs.ld0=TR[4].p.dec;setP(0)});
-RZ.addEventListener("pointermove",e=>{if(!rs.on)return;setP(Math.max(0,Math.min(1,(rs.y0-e.clientY)/(Math.max(150,RZ.getBoundingClientRect().height)*.85))))});
+RZ.addEventListener("pointermove",e=>{if(!rs.on)return;setP(Math.max(0,Math.min(1,(rs.y0-e.clientY)/dragTravel(RZ,rs.y0))))});
 const drop=()=>{if(!rs.on)return;rs.on=0;const dT=window.__dropT,t=dT&&dT>ctx.currentTime?dT-.02:ctx.currentTime;if(dT&&dT>ctx.currentTime)window.__kickHold=dT; /* no kick before the drop beat */TR[4].p.dec=rs.ld0;if(rs.kd){rs.kd=0;TR[0].m=rs.km;if(playing&&!rs.km)fire(0,t+.02)}
  $("#rfill").style.height="0";rs.p=0;A.hp.frequency.setTargetAtTime(10,t,.02);gs(A.rO,G.rev);gs(A.sh,G.shim);gs(A.dO,G.dly);gs(A.dF,G.fb)};
 ["pointerup","pointercancel"].forEach(ev=>RZ.addEventListener(ev,drop));
@@ -40,7 +40,7 @@ const align=D=>{const a=anchor(),n=ctx.currentTime;return a+Math.ceil((n-a+.005)
 function mkPad(h,t,dn,mv,up){const d=document.createElement("div");d.className="panel";d.innerHTML='<h2>'+h+'</h2><div style="position:relative;height:200px;border-radius:14px;background:var(--c1);overflow:hidden;touch-action:none;user-select:none"><div style="position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(to top,#4dd4ac,#6aa7ff);opacity:.85"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:700;pointer-events:none;padding:12px;line-height:1.5">Hold and drag up<br><span style="font-weight:400;font-size:12px">'+t+'</span></div></div>';
  const z=d.children[1],f=z.firstChild;let on=0,y0=0;
  z.addEventListener("pointerdown",e=>{e.preventDefault();ensure();z.setPointerCapture(e.pointerId);on=1;y0=e.clientY;dn();mv(0)});
- z.addEventListener("pointermove",e=>{if(!on)return;const p=Math.max(0,Math.min(1,(y0-e.clientY)/(Math.max(150,z.getBoundingClientRect().height)*.85)));f.style.height=p*100+"%";mv(p)});
+ z.addEventListener("pointermove",e=>{if(!on)return;const p=Math.max(0,Math.min(1,(y0-e.clientY)/dragTravel(z,y0)));f.style.height=p*100+"%";mv(p)});
  ["pointerup","pointercancel"].forEach(ev=>z.addEventListener(ev,()=>{if(!on)return;on=0;f.style.height="0";up()}));return d}
 /* v3: snare track, new stutter (beat-repeat), noise riser with ordered drops; other perform buttons removed */
 TR.push({n:"Snare",c:"#e8a0ff",st:16,h:2,r:4,lv:.7,p:{tone:190,snap:.8,dec:.22,rv:.2},x:[["Body tone","tone",110,320,1],["Snap","snap",0,1.5,.01],["Decay","dec",.06,.6,.01],["Reverb","rv",0,.6,.01]]});TR[7].pt=pat(TR[7]);
@@ -75,3 +75,6 @@ QS.after(QP);
 /* perc synth: constant tuning option (ignores key, scale and octave buttons) */
 Object.assign(TR[3].p,{mode:"Fixed",tune:57});TR[3].x.push(["Tune (MIDI note, 57 = A3)","tune",36,96,1]);
 BUILD.sync.push(function(){const g=TR[3].mb.closest(".card").querySelector(".grid"),l=document.createElement("label");l.className="sl";l.innerHTML="Tuning";const s=document.createElement("select");["Fixed","Follow scale"].forEach(x=>s.add(new Option(x)));s.value=TR[3].p.mode==="Fixed"?"Fixed":"Follow scale";s.onchange=()=>TR[3].p.mode=s.value;l.appendChild(s);g.insertBefore(l,g.children[3])});
+/* v1.0: how far a riser / breakdown pad must be dragged up for 100 % — as before (85 % of the pad height, at least 127 px), but never further
+   than the room above the finger: a pad near the top of the screen reaches full just before the finger gets to the screen edge. */
+function dragTravel(z,y0){return Math.max(40,Math.min(Math.max(150,z.getBoundingClientRect().height)*.85,y0-14))}
