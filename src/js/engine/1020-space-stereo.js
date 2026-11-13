@@ -12,7 +12,7 @@
   try{const base=+TR[k].pan||0,o0=off(k,tk),lim=v=>Math.max(-1,Math.min(1,base+v))-base,pn=ctx.createStereoPanner(),w=CW||ctx.currentTime;
    pn.pan.setValueAtTime(lim(o0),w);
    if(k===5&&CD>0){const sd=60/G.bpm/4,o1=off(k,tk+CD/sd);pn.pan.linearRampToValueAtTime(lim(o1),w+CD)}
-   n.connect(pn);return _s.call(this,pn,out,dly,rev?rev*(1+.6*G.space*Math.abs(o0)):rev)}catch(e){return _s.apply(this,arguments)}};
+   if(n.__keep||n.__n!==undefined)pn.__keep=1; /* v0.89: behind a shared stage → shared too (platform/0040) */n.connect(pn);return _s.call(this,pn,out,dly,rev?rev*(1+.6*G.space*Math.abs(o0)):rev)}catch(e){return _s.apply(this,arguments)}};
  // UI: one fader at the top of Mix → Channels
  const add=()=>{const ch=document.querySelector('#t-mix .ch');if(!ch||ch.parentElement.querySelector('.spc'))return;const w=document.createElement('div');w.className='spc';
   w.innerHTML='<div class="spt"><b>SPACE</b><span>auto stereo depth + movement on perc, lead, pad and stab</span></div><div class="spr"><input type="range" min="0" max="1" step=".01"><b class="spv"></b></div>';

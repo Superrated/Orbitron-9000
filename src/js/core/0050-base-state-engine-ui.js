@@ -106,14 +106,14 @@ function vtag(x){if(VX.k!=null&&vlive()){x.__k=VX.k;x.__n=VX.n}return x}
 function padGain(g){if(PADGRAB&&!PADGRAB.g)PADGRAB.g=g;return g}
 function vconn(n,k,d,nolp){if(d instanceof AudioNode&&vlive()&&n.context===ctx){const e=k!=null&&RT.pro?RT.pro(n,k,d):null;
   if(e)d=e;else{if(RT.drum)d=RT.drum(d);if(RT.lp&&!nolp)d=RT.lp(d)}
-  VOn[VOi]=n;VOd[VOi]=d;VOv[VOi]=VX.n;VOt[VOi]=ctx.currentTime;VOi=(VOi+1)%VON}
+  VOn[VOi]=n;VOd[VOi]=d;VOv[VOi]=VX.n;VOt[VOi]=ctx.currentTime;VOi=(VOi+1)%VON;if(VX.k!=null)orbVEX(n,VX.n)} /* v0.89: unplugged once the voice has finished (platform/0040) */
  n.connect(d);return d}
 function routeTrack(n,k,dest,dlySend,revSend){if(k==null)k=n.__k!=null?n.__k:VX.k;vconn(n,k,dest);if(dlySend)sendTo(n,A.dI,dlySend,k);if(revSend)sendTo(n,A.rI,revSend,k);return n}
 function send(n,out,dly,rev){routeTrack(n,null,out,dly,rev)}
 /* v0.23 perf: one send gain per track and level (made outside the note) instead of two new nodes per note */
 function sendTo(n,dst,v,k){if(k===undefined)k=n.__k!=null?n.__k:VX.k;const key=(k==null?'x':k)+'|'+Math.round(v*1000);let m=dst.__sg||(dst.__sg=new Map()),s=m.get(key);
  if(s&&s!=='pending'){vconn(n,k,s);return}
- const t=ctx.createGain();t.gain.value=v;n.connect(t);vconn(t,VX.k,dst);
+ const t=ctx.createGain();t.gain.value=v;if(n.__keep||n.__n!==undefined)t.__keep=1;n.connect(t);vconn(t,VX.k,dst);
  if(!s&&m.size<160&&!(ctx instanceof OfflineAudioContext)){m.set(key,'pending');const c=ctx;queueMicrotask(()=>{try{if(c!==ctx)return;const g=c.createGain();g.gain.value=Math.round(v*1000)/1000;g.__an=1;if(k!=null)g.__k=k;vconn(g,k,dst);m.set(key,g)}catch(e){m.delete(key)}})}}
 function env(g,t,pk,dur,att=.003){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(pk,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+dur)}
 function nz(t,type,f,dur,pk,out,rev){const s=mkBuf();s.buffer=A.nb;const q=ctx.createBiquadFilter();q.type=type;q.frequency.value=f;const g=ctx.createGain();env(g,t,pk,dur);s.connect(q);q.connect(g);send(g,out,0,rev||0);s.start(t,R()*.5);s.stop(t+dur+.02)}

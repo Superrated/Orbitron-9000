@@ -6,7 +6,7 @@ TR[8].x=[['Decay','dec',.05,.8,.01],['Cutoff','cut',100,4000,10],['Resonance','r
  ['Dub echo','eko',0,1,.01],['Echo 16ths','etm',1,8,1],['Echo feedback','efb',0,.9,.01],['Echo tone','etn',400,8000,50],['Delay send','ds',0,1,.01],['Reverb send','rs',0,1,.01]];
 function stabEcho(){if(A.se)return A.se;const i=vtag(ctx.createGain()),L=ctx.createDelay(2),Rr=ctx.createDelay(2),lp=ctx.createBiquadFilter(),hp=ctx.createBiquadFilter(),ws=ctx.createWaveShaper(),fb=ctx.createGain(),x=ctx.createGain(),pl=ctx.createStereoPanner(),pr=ctx.createStereoPanner(),o=ctx.createGain();
  lp.type='lowpass';lp.frequency.value=2200;lp.Q.value=.9;hp.type='highpass';hp.frequency.value=280;ws.curve=satCurve(1.4);fb.gain.value=.55;x.gain.value=1;pl.pan.value=-.75;pr.pan.value=.75;o.gain.value=.4;
- i.connect(L);L.connect(lp);lp.connect(hp);hp.connect(ws);ws.connect(x);x.connect(Rr);Rr.connect(fb);fb.connect(L);L.connect(pl);Rr.connect(pr);pl.connect(o);pr.connect(o);send(o,A.dk,0,.25);
+ i.connect(L);L.connect(lp);lp.connect(hp);hp.connect(ws);ws.connect(x);x.connect(Rr);Rr.connect(fb);fb.connect(L);L.connect(pl);Rr.connect(pr);pl.connect(o);pr.connect(o);o.__keep=1;send(o,A.dk,0,.25); /* v0.89: shared echo, not unplugged with the voice that built it (platform/0040) */
  return A.se={i,L,R:Rr,lp,fb}}
 function stabSweep(p,w){const d=p.swd||0;if(d<.01)return 1;const len=Math.max(1,Math.round(p.swb||4))*16*sdur(),a=anchor(),ph=(((w-a)/len)%1+1)%1,sh=Math.round(p.sws||0);let u;
  if(sh===0)u=-Math.cos(ph*2*Math.PI);else if(sh===1)u=ph*2-1;else if(sh===2)u=1-ph*2;else{const k=Math.floor((w-a)/(len/4));u=Math.sin(k*12.9898+(p.swb||4)*78.233)*2;u=u-Math.floor(u)*1;u=Math.sin(k*91.7)}

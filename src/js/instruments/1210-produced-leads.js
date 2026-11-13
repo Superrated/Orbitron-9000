@@ -15,7 +15,7 @@
   LE.out.gain.setTargetAtTime(Math.min(1.2,(G.dly==null?.25:G.dly)*1.6),now,.1)};
  setInterval(()=>{try{if(LE&&LE.ctx===ctx)retime()}catch(e){}},500);
  // lead delay sends go to the lead echo
- const _s=send;send=function(n,out,dly,rev){if(inLead&&dly>0&&ensureLE()){_s.call(this,n,out,0,rev);const s=ctx.createGain();s.gain.value=dly*1.1*((window.MOODX&&MOODX[curMood]||{}).echo!=null?(window.MOODX&&MOODX[curMood]||{}).echo:1);n.connect(s);routeTrack(s,null,LE.inp);return}return _s.apply(this,arguments)};
+ const _s=send;send=function(n,out,dly,rev){if(inLead&&dly>0&&ensureLE()){_s.call(this,n,out,0,rev);const s=ctx.createGain();s.gain.value=dly*1.1*((window.MOODX&&MOODX[curMood]||{}).echo!=null?(window.MOODX&&MOODX[curMood]||{}).echo:1);n.connect(s);if(n.__keep||n.__n!==undefined)s.__keep=1;routeTrack(s,null,LE.inp);return}return _s.apply(this,arguments)};
  const hs=(a,b)=>{const x=Math.sin(a*12.9898+b*78.233)*43758.5453;return x-Math.floor(x)};
  const _f=fire;fire=function(k,w){if(k!==4)return _f.apply(this,arguments);const T=TR[4],P=T.p;
   if(P.mode==='Acid 303'||P.dyn===0){inLead=1;try{return _f.apply(this,arguments)}finally{inLead=0}}

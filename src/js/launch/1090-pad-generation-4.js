@@ -29,7 +29,7 @@
    if(padStyle==='Chord memory')G.ptl=0;if(padStyle==='Vamp')G.ptl=1;
    return _pd.apply(this,arguments)}finally{PADON--;P.oct=keep.oct;P.sub=keep.sub;P.open=keep.open;G.ptl=ptl}};
  const _sd=send;send=function(n,out,dly,rev){if(!PADON||!ctx||(typeof DR!=='undefined'&&DR.rendering)||ctx instanceof OfflineAudioContext)return _sd.apply(this,arguments);
-  try{const dg=ctx.createGain(),pk=ctx.createBiquadFilter();pk.type='peaking';pk.Q.value=1.2;pk.gain.value=0;pk.frequency.value=1200;n.connect(dg);dg.connect(pk);
+  try{const dg=ctx.createGain(),pk=ctx.createBiquadFilter();pk.type='peaking';pk.Q.value=1.2;pk.gain.value=0;pk.frequency.value=1200;n.connect(dg);dg.connect(pk);if(n.__keep||n.__n!==undefined)pk.__keep=1;
    ACT.push({dg,pk,end:ctx.currentTime+12});while(ACT.length>24||(ACT.length&&ACT[0].end<ctx.currentTime))ACT.shift();return _sd.call(this,pk,out,dly,rev)}catch(e){return _sd.apply(this,arguments)}};
  const _fl=fire;fire=function(k,w){const r=_fl.apply(this,arguments);try{if(k===4&&!TR[4].m&&ctx&&ACT.length&&!(TR[5].m)){const P=TR[4].p,hold=Math.min(.6,Math.max(.12,(P.dec||.25)*.8)),lf=Math.max(300,Math.min(5000,(LF||600)*2)),t=w||ctx.currentTime;
    ACT.forEach(a=>{if(a.end<t)return;a.dg.gain.cancelScheduledValues(t);a.dg.gain.setTargetAtTime(.79,t,.02);a.dg.gain.setTargetAtTime(1,t+hold,.18);

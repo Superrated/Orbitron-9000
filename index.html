@@ -151,10 +151,25 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
 <script>
 /* ---- perf 1: a finished sound source is disconnected right away, so the filters and gains behind it fall silent and drop out of the audio graph
    instead of being processed until garbage collection ---- */
+/* ---- v0.89: a finished VOICE is unplugged too. Unplugging only the source was not enough: Chrome kept processing the voice's filters, gains and
+   panners (still wired to the track bus and the meters) until JavaScript garbage collection, so the engine load crept up for as long as a groove
+   played (Dreamy 27 % → 74 % in 40 s) and fell back only when the browser happened to clean up. Now every source started inside a voice
+   (VX, set by the voice entry points) is counted; ¾ s after the voice's last source has ended, its exits (the nodes routeTrack/vconn wired into
+   the mix, registered with orbVEX) are disconnected. Long-lived stages built inside a voice (vtag) are never registered. ---- */
 {const P=AudioScheduledSourceNode.prototype,st=P.start,ONCE={once:true};
+ const LIVE=new Map(),EXIT=new Map(),DUE=[],TAIL=.75,KEEP=60; /* KEEP s: a voice that never finishes (e.g. it started a shared LFO) is just forgotten, as before */
  /* v0.8 quick win: one shared 'ended' handler (it was a new closure per sound); it also takes the source off the load guard's list (platform/0300) */
- function ended(){try{this.disconnect()}catch(e){}if(this.__q)QOS.src.delete(this)}
- P.start=function(){const r=st.apply(this,arguments);try{if(!(this.context instanceof OfflineAudioContext))this.addEventListener('ended',ended,ONCE)}catch(e){}return r}}
+ function ended(){try{this.disconnect()}catch(e){}if(this.__q)QOS.src.delete(this);
+  const v=this.__vv;if(!v)return;const n=(LIVE.get(v)||1)-1;if(n>0){LIVE.set(v,n);return}LIVE.delete(v);if(EXIT.has(v)&&this.context===ctx)DUE.push(v,ctx.currentTime+TAIL)}
+ P.start=function(){const r=st.apply(this,arguments);try{const c=this.context;if(!(c instanceof OfflineAudioContext)){this.addEventListener('ended',ended,ONCE);
+   if(c===ctx&&VX.k!=null&&VX.n){const v=VX.n;this.__vv=v;LIVE.set(v,(LIVE.get(v)||0)+1)}}}catch(e){}return r};
+ /* called by vconn (core/0050) for every exit of a voice, and by the Launch fade (launch/0660) for the fade gain it puts behind one */
+ window.orbVEX=(n,v)=>{if(!v||n.__n!==undefined||n.__an||n.__keep)return;let e=EXIT.get(v);if(!e){e={t:n.context.currentTime,n:[]};EXIT.set(v,e)}e.n.push(n)};
+ let sc=null;
+ setInterval(()=>{let c=null;try{c=ctx}catch(e){return}if(c!==sc){if(sc){LIVE.clear();EXIT.clear();DUE.length=0}sc=c}if(!c)return;const now=c.currentTime;
+  let i=0;for(;i<DUE.length;i+=2){if(DUE[i+1]>now)break;const v=DUE[i];if(LIVE.has(v))continue;const e=EXIT.get(v);EXIT.delete(v);if(e)for(const n of e.n)try{n.disconnect()}catch(x){}}
+  if(i)DUE.splice(0,i);
+  for(const [v,e] of EXIT){if(now-e.t<KEEP)break;EXIT.delete(v);LIVE.delete(v)}},250)}
 </script>
 <script>
 /* v172: display names for moods (internal keys unchanged, so sectors, exports and settings keep working) */
@@ -264,14 +279,14 @@ function vtag(x){if(VX.k!=null&&vlive()){x.__k=VX.k;x.__n=VX.n}return x}
 function padGain(g){if(PADGRAB&&!PADGRAB.g)PADGRAB.g=g;return g}
 function vconn(n,k,d,nolp){if(d instanceof AudioNode&&vlive()&&n.context===ctx){const e=k!=null&&RT.pro?RT.pro(n,k,d):null;
   if(e)d=e;else{if(RT.drum)d=RT.drum(d);if(RT.lp&&!nolp)d=RT.lp(d)}
-  VOn[VOi]=n;VOd[VOi]=d;VOv[VOi]=VX.n;VOt[VOi]=ctx.currentTime;VOi=(VOi+1)%VON}
+  VOn[VOi]=n;VOd[VOi]=d;VOv[VOi]=VX.n;VOt[VOi]=ctx.currentTime;VOi=(VOi+1)%VON;if(VX.k!=null)orbVEX(n,VX.n)} /* v0.89: unplugged once the voice has finished (platform/0040) */
  n.connect(d);return d}
 function routeTrack(n,k,dest,dlySend,revSend){if(k==null)k=n.__k!=null?n.__k:VX.k;vconn(n,k,dest);if(dlySend)sendTo(n,A.dI,dlySend,k);if(revSend)sendTo(n,A.rI,revSend,k);return n}
 function send(n,out,dly,rev){routeTrack(n,null,out,dly,rev)}
 /* v0.23 perf: one send gain per track and level (made outside the note) instead of two new nodes per note */
 function sendTo(n,dst,v,k){if(k===undefined)k=n.__k!=null?n.__k:VX.k;const key=(k==null?'x':k)+'|'+Math.round(v*1000);let m=dst.__sg||(dst.__sg=new Map()),s=m.get(key);
  if(s&&s!=='pending'){vconn(n,k,s);return}
- const t=ctx.createGain();t.gain.value=v;n.connect(t);vconn(t,VX.k,dst);
+ const t=ctx.createGain();t.gain.value=v;if(n.__keep||n.__n!==undefined)t.__keep=1;n.connect(t);vconn(t,VX.k,dst);
  if(!s&&m.size<160&&!(ctx instanceof OfflineAudioContext)){m.set(key,'pending');const c=ctx;queueMicrotask(()=>{try{if(c!==ctx)return;const g=c.createGain();g.gain.value=Math.round(v*1000)/1000;g.__an=1;if(k!=null)g.__k=k;vconn(g,k,dst);m.set(key,g)}catch(e){m.delete(key)}})}}
 function env(g,t,pk,dur,att=.003){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(pk,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+dur)}
 function nz(t,type,f,dur,pk,out,rev){const s=mkBuf();s.buffer=A.nb;const q=ctx.createBiquadFilter();q.type=type;q.frequency.value=f;const g=ctx.createGain();env(g,t,pk,dur);s.connect(q);q.connect(g);send(g,out,0,rev||0);s.start(t,R()*.5);s.stop(t+dur+.02)}
@@ -1698,7 +1713,7 @@ TR[8].x=[['Decay','dec',.05,.8,.01],['Cutoff','cut',100,4000,10],['Resonance','r
  ['Dub echo','eko',0,1,.01],['Echo 16ths','etm',1,8,1],['Echo feedback','efb',0,.9,.01],['Echo tone','etn',400,8000,50],['Delay send','ds',0,1,.01],['Reverb send','rs',0,1,.01]];
 function stabEcho(){if(A.se)return A.se;const i=vtag(ctx.createGain()),L=ctx.createDelay(2),Rr=ctx.createDelay(2),lp=ctx.createBiquadFilter(),hp=ctx.createBiquadFilter(),ws=ctx.createWaveShaper(),fb=ctx.createGain(),x=ctx.createGain(),pl=ctx.createStereoPanner(),pr=ctx.createStereoPanner(),o=ctx.createGain();
  lp.type='lowpass';lp.frequency.value=2200;lp.Q.value=.9;hp.type='highpass';hp.frequency.value=280;ws.curve=satCurve(1.4);fb.gain.value=.55;x.gain.value=1;pl.pan.value=-.75;pr.pan.value=.75;o.gain.value=.4;
- i.connect(L);L.connect(lp);lp.connect(hp);hp.connect(ws);ws.connect(x);x.connect(Rr);Rr.connect(fb);fb.connect(L);L.connect(pl);Rr.connect(pr);pl.connect(o);pr.connect(o);send(o,A.dk,0,.25);
+ i.connect(L);L.connect(lp);lp.connect(hp);hp.connect(ws);ws.connect(x);x.connect(Rr);Rr.connect(fb);fb.connect(L);L.connect(pl);Rr.connect(pr);pl.connect(o);pr.connect(o);o.__keep=1;send(o,A.dk,0,.25); /* v0.89: shared echo, not unplugged with the voice that built it (platform/0040) */
  return A.se={i,L,R:Rr,lp,fb}}
 function stabSweep(p,w){const d=p.swd||0;if(d<.01)return 1;const len=Math.max(1,Math.round(p.swb||4))*16*sdur(),a=anchor(),ph=(((w-a)/len)%1+1)%1,sh=Math.round(p.sws||0);let u;
  if(sh===0)u=-Math.cos(ph*2*Math.PI);else if(sh===1)u=ph*2-1;else if(sh===2)u=1-ph*2;else{const k=Math.floor((w-a)/(len/4));u=Math.sin(k*12.9898+(p.swb||4)*78.233)*2;u=u-Math.floor(u)*1;u=Math.sin(k*91.7)}
@@ -2197,7 +2212,7 @@ $('#mood').add(new Option('Bleep','Bleep'));
   for(const s of QOS.src)if(ring(s)){if(s.__v)alive.add(s.__v);else loose=true}
   // each ringing voice fades at the point where it enters the mix (its routeTrack connection), then its sources stop
   for(let i=0;i<VON;i++){const n=VOn[i];if(!n||n.context!==ctx)continue;const v=VOv[i];if(!(v?alive.has(v):loose&&VOt[i]>now-8))continue;const dd=VOd[i];VOn[i]=VOd[i]=null;
-   try{n.disconnect(dd)}catch(e){continue}try{const fg=ctx.createGain();fg.gain.setValueAtTime(1,at);fg.gain.setValueCurveAtTime(FADE,at,T);n.connect(fg);fg.connect(dd)}catch(e){try{n.connect(dd)}catch(x){}}}
+   try{n.disconnect(dd)}catch(e){continue}try{const fg=ctx.createGain();fg.gain.setValueAtTime(1,at);fg.gain.setValueCurveAtTime(FADE,at,T);n.connect(fg);fg.connect(dd);if(v)orbVEX(fg,v)}catch(e){try{n.connect(dd)}catch(x){}}}
   for(const s of QOS.src)if(ring(s)&&s.__v&&alive.has(s.__v))try{s.stop(at+T+.02)}catch(e){}
   // effect returns: remember where they are now; after the new groove is built, dip them gently at the bar line
   const P=[[A.dF&&A.dF.gain,.2,()=>G.fb],[A.rO&&A.rO.gain,.55,()=>G.rev],[A.sh&&A.sh.gain,.5,()=>G.shim||0],[SHM.fb&&SHM.fb.gain,.5,null]].filter(x=>x[0]).map(x=>[x[0],x[1],x[2],x[0].value]);
@@ -3398,7 +3413,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   try{const base=+TR[k].pan||0,o0=off(k,tk),lim=v=>Math.max(-1,Math.min(1,base+v))-base,pn=ctx.createStereoPanner(),w=CW||ctx.currentTime;
    pn.pan.setValueAtTime(lim(o0),w);
    if(k===5&&CD>0){const sd=60/G.bpm/4,o1=off(k,tk+CD/sd);pn.pan.linearRampToValueAtTime(lim(o1),w+CD)}
-   n.connect(pn);return _s.call(this,pn,out,dly,rev?rev*(1+.6*G.space*Math.abs(o0)):rev)}catch(e){return _s.apply(this,arguments)}};
+   if(n.__keep||n.__n!==undefined)pn.__keep=1; /* v0.89: behind a shared stage → shared too (platform/0040) */n.connect(pn);return _s.call(this,pn,out,dly,rev?rev*(1+.6*G.space*Math.abs(o0)):rev)}catch(e){return _s.apply(this,arguments)}};
  // UI: one fader at the top of Mix → Channels
  const add=()=>{const ch=document.querySelector('#t-mix .ch');if(!ch||ch.parentElement.querySelector('.spc'))return;const w=document.createElement('div');w.className='spc';
   w.innerHTML='<div class="spt"><b>SPACE</b><span>auto stereo depth + movement on perc, lead, pad and stab</span></div><div class="spr"><input type="range" min="0" max="1" step=".01"><b class="spv"></b></div>';
@@ -3573,7 +3588,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
    if(padStyle==='Chord memory')G.ptl=0;if(padStyle==='Vamp')G.ptl=1;
    return _pd.apply(this,arguments)}finally{PADON--;P.oct=keep.oct;P.sub=keep.sub;P.open=keep.open;G.ptl=ptl}};
  const _sd=send;send=function(n,out,dly,rev){if(!PADON||!ctx||(typeof DR!=='undefined'&&DR.rendering)||ctx instanceof OfflineAudioContext)return _sd.apply(this,arguments);
-  try{const dg=ctx.createGain(),pk=ctx.createBiquadFilter();pk.type='peaking';pk.Q.value=1.2;pk.gain.value=0;pk.frequency.value=1200;n.connect(dg);dg.connect(pk);
+  try{const dg=ctx.createGain(),pk=ctx.createBiquadFilter();pk.type='peaking';pk.Q.value=1.2;pk.gain.value=0;pk.frequency.value=1200;n.connect(dg);dg.connect(pk);if(n.__keep||n.__n!==undefined)pk.__keep=1;
    ACT.push({dg,pk,end:ctx.currentTime+12});while(ACT.length>24||(ACT.length&&ACT[0].end<ctx.currentTime))ACT.shift();return _sd.call(this,pk,out,dly,rev)}catch(e){return _sd.apply(this,arguments)}};
  const _fl=fire;fire=function(k,w){const r=_fl.apply(this,arguments);try{if(k===4&&!TR[4].m&&ctx&&ACT.length&&!(TR[5].m)){const P=TR[4].p,hold=Math.min(.6,Math.max(.12,(P.dec||.25)*.8)),lf=Math.max(300,Math.min(5000,(LF||600)*2)),t=w||ctx.currentTime;
    ACT.forEach(a=>{if(a.end<t)return;a.dg.gain.cancelScheduledValues(t);a.dg.gain.setTargetAtTime(.79,t,.02);a.dg.gain.setTargetAtTime(1,t+hold,.18);
@@ -3894,7 +3909,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   LE.out.gain.setTargetAtTime(Math.min(1.2,(G.dly==null?.25:G.dly)*1.6),now,.1)};
  setInterval(()=>{try{if(LE&&LE.ctx===ctx)retime()}catch(e){}},500);
  // lead delay sends go to the lead echo
- const _s=send;send=function(n,out,dly,rev){if(inLead&&dly>0&&ensureLE()){_s.call(this,n,out,0,rev);const s=ctx.createGain();s.gain.value=dly*1.1*((window.MOODX&&MOODX[curMood]||{}).echo!=null?(window.MOODX&&MOODX[curMood]||{}).echo:1);n.connect(s);routeTrack(s,null,LE.inp);return}return _s.apply(this,arguments)};
+ const _s=send;send=function(n,out,dly,rev){if(inLead&&dly>0&&ensureLE()){_s.call(this,n,out,0,rev);const s=ctx.createGain();s.gain.value=dly*1.1*((window.MOODX&&MOODX[curMood]||{}).echo!=null?(window.MOODX&&MOODX[curMood]||{}).echo:1);n.connect(s);if(n.__keep||n.__n!==undefined)s.__keep=1;routeTrack(s,null,LE.inp);return}return _s.apply(this,arguments)};
  const hs=(a,b)=>{const x=Math.sin(a*12.9898+b*78.233)*43758.5453;return x-Math.floor(x)};
  const _f=fire;fire=function(k,w){if(k!==4)return _f.apply(this,arguments);const T=TR[4],P=T.p;
   if(P.mode==='Acid 303'||P.dyn===0){inLead=1;try{return _f.apply(this,arguments)}finally{inLead=0}}
@@ -6987,7 +7002,7 @@ var __AB=null;function acidBus(){try{if(!ctx||ctx instanceof OfflineAudioContext
  sat.curve=acidWarm(.25);sat.oversample='2x';body.type='peaking';body.frequency.value=220;body.Q.value=.8;body.gain.value=2;
  top.type='highshelf';top.frequency.value=6000;top.gain.value=-1.5;   /* v0.76: 303 more forward — half the top cut (was −3 dB above 6 kHz) and a touch less low-mid body (was +2.5 dB) */
  cmp.threshold.value=-18;cmp.ratio.value=3;cmp.knee.value=8;cmp.attack.value=.005;cmp.release.value=.12;mk.gain.value=.56; /* level-matched to the old acid voice */
- const trim=ctx.createGain();   /* v0.76: the level meter that sat here is gone with the 4-bar measurement */inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(trim);vconn(trim,VX.k,out);vtag(inp);inp.__k=4;
+ const trim=ctx.createGain();trim.__keep=1; /* v0.89: shared stage, never unplugged with a voice (platform/0040) */   /* v0.76: the level meter that sat here is gone with the 4-bar measurement */inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(trim);vconn(trim,VX.k,out);vtag(inp);inp.__k=4;
  trim.gain.value=(window.orbAcidLvl&&orbAcidLvl.trim)||1;__AB={ctx,out,inp,trim};return inp}catch(e){return null}}
 </script>
 <script>

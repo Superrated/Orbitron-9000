@@ -9,7 +9,7 @@
   for(const s of QOS.src)if(ring(s)){if(s.__v)alive.add(s.__v);else loose=true}
   // each ringing voice fades at the point where it enters the mix (its routeTrack connection), then its sources stop
   for(let i=0;i<VON;i++){const n=VOn[i];if(!n||n.context!==ctx)continue;const v=VOv[i];if(!(v?alive.has(v):loose&&VOt[i]>now-8))continue;const dd=VOd[i];VOn[i]=VOd[i]=null;
-   try{n.disconnect(dd)}catch(e){continue}try{const fg=ctx.createGain();fg.gain.setValueAtTime(1,at);fg.gain.setValueCurveAtTime(FADE,at,T);n.connect(fg);fg.connect(dd)}catch(e){try{n.connect(dd)}catch(x){}}}
+   try{n.disconnect(dd)}catch(e){continue}try{const fg=ctx.createGain();fg.gain.setValueAtTime(1,at);fg.gain.setValueCurveAtTime(FADE,at,T);n.connect(fg);fg.connect(dd);if(v)orbVEX(fg,v)}catch(e){try{n.connect(dd)}catch(x){}}}
   for(const s of QOS.src)if(ring(s)&&s.__v&&alive.has(s.__v))try{s.stop(at+T+.02)}catch(e){}
   // effect returns: remember where they are now; after the new groove is built, dip them gently at the bar line
   const P=[[A.dF&&A.dF.gain,.2,()=>G.fb],[A.rO&&A.rO.gain,.55,()=>G.rev],[A.sh&&A.sh.gain,.5,()=>G.shim||0],[SHM.fb&&SHM.fb.gain,.5,null]].filter(x=>x[0]).map(x=>[x[0],x[1],x[2],x[0].value]);
