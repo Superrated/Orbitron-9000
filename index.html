@@ -188,10 +188,10 @@ const pat=t=>{const a=Array(t.st).fill(0);if(t.pad)return a.fill(1);const on=[];
  on.forEach(i=>a[(i+t.r)%t.st]=1);return a};
 TR.forEach(t=>t.pt=pat(t));
 // ---------- UI ----------
-function sl(par,lab,min,max,val,step,fn){if(lab==='Chords')min=1;const LG=/(cutoff|filter|tone)$/i.test(lab)&&!/tune/i.test(lab)&&min>0&&max/min>=2.5,lr=Math.log(max/min),U=v=>Math.log(Math.max(min,Math.min(max,v))/min)/lr,F=u=>min*Math.exp(lr*Math.max(0,Math.min(1,u))),dec=LG?0:(String(step).split('.')[1]||'').length,d=document.createElement('div');d.className='sl';d.innerHTML='<span>'+lab+'<b>'+(+val).toFixed(dec)+'</b></span>';
+function sl(par,lab,min,max,val,step,fn){if(lab==='Chords')min=1;if(!isFinite(+val))val=min;   /* v0.71: a setting without a value showed "NaN" */const LG=/(cutoff|filter|tone)$/i.test(lab)&&!/tune/i.test(lab)&&min>0&&max/min>=2.5,lr=Math.log(max/min),U=v=>Math.log(Math.max(min,Math.min(max,v))/min)/lr,F=u=>min*Math.exp(lr*Math.max(0,Math.min(1,u))),dec=LG?0:(String(step).split('.')[1]||'').length,d=document.createElement('div');d.className='sl';d.innerHTML='<span>'+lab+'<b>'+(+val).toFixed(dec)+'</b></span>';
  const row=document.createElement('div'),i=document.createElement('input');row.className='sr';i.type='range';if(LG){i.min=0;i.max=1;i.step=.001;i.value=U(val);d.dataset.lmin=min;d.dataset.lmax=max}else{i.min=min;i.max=max;i.step=step;i.value=val}
  const cur=()=>LG?F(+i.value):+i.value,nx=k=>LG?cur()*Math.pow(1.02,k):+i.value+k*step;
- const set=v=>{v=Math.max(min,Math.min(max,v));if(LG){i.value=U(v);v=Math.round(v);d.querySelector('b').textContent=v;fn(v);return}i.value=v;d.querySelector('b').textContent=(+i.value).toFixed(dec);fn(+i.value)};
+ const set=v=>{v=Math.max(min,Math.min(d._max!=null?d._max:max,v));if(LG){i.value=U(v);v=Math.round(v);d.querySelector('b').textContent=v;fn(v);return}i.value=v;d.querySelector('b').textContent=(+i.value).toFixed(dec);fn(+i.value)};
  i.oninput=()=>set(cur());d.firstChild.ondblclick=()=>set(val);
  const mk=(t,dl)=>{const b=document.createElement('button');b.type='button';b.className='st';b.textContent=t;let to,iv,c=0;const stop=()=>{clearTimeout(to);clearInterval(iv)};
   b.addEventListener('pointerdown',e=>{e.preventDefault();c=0;set(nx(dl));to=setTimeout(()=>{iv=setInterval(()=>{c++;set(nx(dl*(1+Math.floor(c/6))))},70)},380)});
@@ -216,7 +216,7 @@ function buildCards(){const root=$("#tracks");root.innerHTML="";TR.forEach((t,k)
  const b=document.createElement("div");b.className="body";const cv=document.createElement("canvas");cv.width=cv.height=208;t.cv=cv;b.appendChild(cv);
  const g=document.createElement("div");g.className="grid";
  const upd=()=>{if(t.pad){while(prog.length<t.st)prog.push(pick([3,4,5,0]));prog.length=t.st}t.pt=pat(t);draw(t,-1)};
- sl(g,t.pad?"Chords":"Steps",t.pad?3:2,t.pad?8:32,t.st,1,v=>{t.st=v;if(!t.pad)t.h=Math.min(t.h,v);upd()});
+ sl(g,t.pad?"Chords":"Steps",t.pad?3:2,t.pad?8:64,t.st,1,v=>{t.st=v;if(!t.pad)t.h=Math.min(t.h,v);upd()});
  if(!t.pad){sl(g,"Hits",0,32,t.h,1,v=>{t.h=Math.min(v,t.st);upd()});sl(g,"Rotate",0,31,t.r,1,v=>{t.r=v;upd()});sl(g,"Tension",0,1,t.ten||0,.01,v=>{t.ten=v;upd()});if(k===6){const sep=document.createElement("div");sep.className="bksep";sep.textContent="Bassline";g.appendChild(sep);const P=t.p;g.appendChild(mkSel("Lock",["Free","Kick lock","Around kick","Offbeats","Rolling"],P.blk||"Free",v=>P.blk=v));g.appendChild(mkSel("Phrase",["1 bar","2 bars","4 bars"],(P.bph||1)+(P.bph>1?" bars":" bar"),v=>P.bph=parseInt(v)));sl(g,"Gate (0 = Decay)",0,1,P.bgt||0,.01,v=>P.bgt=v);sl(g,"Slide",0,1,P.bsl||0,.01,v=>P.bsl=v);sl(g,"Ghost notes",0,1,P.bgh||0,.01,v=>P.bgh=v);try{window.bassUI&&bassUI(g,t)}catch(e){}}
  if([0,1,2,3,7].includes(k)){const sep=document.createElement("div");sep.className="bksep";sep.textContent="Break feel";g.appendChild(sep);sl(g,"Accent",0,1,t.acc||0,.01,v=>t.acc=v);sl(g,"Ghosts",0,1,t.gho||0,.01,v=>t.gho=v);sl(g,"Variation",0,1,t.vari||0,.01,v=>t.vari=v)}}
  sl(g,"Level",0,t===TR[4]?1.4:1,t.lv,.01,v=>t.lv=v);
@@ -6444,7 +6444,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-12d';
+window.ORB_BUILD='2026-11-13a';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -6842,5 +6842,53 @@ window.orbExoProg=function(kind){try{let P,sh;
 {let RV=true;const chk=()=>{const d=document.querySelector('#t-drums'),y=document.querySelector('#t-synth');const was=RV;RV=!!((d&&!d.hidden)||(y&&!y.hidden));if(RV&&!was)TR.forEach(T=>{try{draw(T,-1)}catch(e){}})};
  UI.on(chk);document.addEventListener('click',()=>setTimeout(chk,30),true);
  const _dr=draw;draw=function(T,s){if(!RV&&s>=0&&playing)return;return _dr.apply(this,arguments)}}
+</script>
+<script>
+/* ---- v0.71: PATTERN and SOUND pages are laid out the same way on every instrument.
+   Pattern · every card opens with a "Rhythm" section (the ring), then its own sections, each with the same kind of heading: a name and a short
+             hint. Drums: Rhythm · Feel. Stab: Rhythm · Notes. Satellite: Rhythm · Part. Pad's headings use the same style. The dice row
+             ("New bassline") sits at the top, as on Lead and Pad.
+   Sound   · every card opens with a "Sound" heading, the sound menu (where there is one) and Level; echo / reverb sends come last under "Space".
+             The kick's Techno rumble is a sound setting: on a phone it now shows on the Sound page only.
+   Wide screens (pattern and sound side by side): the sound controls always follow the pattern controls (Pad had them in front), and the lead's
+   Osc / Filter / Amp / Mod / FX pages work there too (every page used to show at once, with unused controls greyed).
+   Faders: Hits and Rotate never run past the number of Steps (half their travel used to do nothing on a 16-step ring); Steps goes to 64, the
+   length some Launches already use (touching the fader used to snap those rings to 32); a setting without a value shows its minimum, not "NaN";
+   longer Decay on Perc (1 s), Bass (1.2 s) and Stab (1.5 s).
+   Nothing is moved in the page itself — only headings are added and the display order is set — so every older layer keeps finding its controls. ---- */
+{const st=document.createElement('style');st.textContent=`
+.coh-s{color:var(--acc,#ffe44d)!important;border-top-color:rgba(255,228,77,.3)!important}
+[data-mode=pat] .rumbx{display:none}
+.rumbx{border-top:1px dashed rgba(255,228,77,.3)!important}.rumbx .rumh{font:700 10px ui-monospace,monospace!important;letter-spacing:.16em!important;color:var(--acc,#ffe44d);opacity:1!important}
+@media (min-width:1000px){#t-drums [data-mode=pat] .rumbx,#t-drums[data-mode=pat] .rumbx{display:block}
+ #t-synth .card[data-k="4"] .grid>.ctloff:not([data-g="pat"]),#t-synth .card .grid>[data-g=snd][style*="display: none"],#t-drums .card .grid>[data-g=snd][style*="display: none"],#t-drums .card .grid>.pvx.ctloff{display:none!important}}`;document.head.appendChild(st);
+ try{[[3,1],[6,1.2],[8,1.5]].forEach(([k,mx])=>{const e=(TR[k].x||[]).find(e=>e[1]==='dec');if(e&&e[3]<mx)e[3]=mx})}catch(e){}
+ const NAME={0:'kick',1:'hi-hat',2:'clap',3:'perc',7:'snare',8:'stab',9:'Satellite'},SENDS={'Delay send':1,'Reverb send':1,'Reverb':1},SNDSEL={'Sound':1,'Pad sound':1,'Movement':1,'Perc sound':1},PART={'Role':1,'Motion':1,'Register':1,'Amount':1};
+ const lab=el=>{if(el._cl!=null)return el._cl;const f=el.firstChild;let t='';if(f)t=f.nodeType===3?f.textContent:(f.firstChild&&f.firstChild.nodeType===3?f.firstChild.textContent:'');return el._cl=(t||'').trim()};
+ const hdr=(t,h,g,cls)=>{const d=document.createElement('div');d.className='bksep bhd coh '+cls;d.innerHTML=t+'<small>'+h+'</small>';d.dataset.g=g;d.dataset.keep=g;d._cl='';return d};
+ const restyle=(e,t,h)=>{e.classList.add('bksep','bhd');e.innerHTML=t+'<small>'+h+'</small>'};
+ function card(c){const k=+c.dataset.k,g=c.querySelector('.grid'),T=TR[k];if(!g||!T)return;let kids=[...g.children];const by=n=>kids.find(e=>lab(e)===n);
+  // ---- headings
+  if(NAME[k]!=null&&!g.querySelector(':scope>.coh-r')){const s=by('Steps');if(s){g.insertBefore(hdr('Rhythm','the Euclid ring · when the '+NAME[k]+' plays','pat','coh-r'),s)}}
+  if(k===8&&!g.querySelector(':scope>.coh-n')){const s=by('Chord notes');if(s)g.insertBefore(hdr('Notes','how many chord tones','pat','coh-n'),s)}
+  if(!g.querySelector(':scope>.coh-s0'))g.appendChild(hdr('Sound',k===4?'patch · engine · pages':'level · tone · character','snd','coh-s coh-s0'));
+  kids=[...g.children];const hasSend=k!==4&&kids.some(e=>SENDS[lab(e)]&&e.dataset.g==='snd');
+  if(hasSend&&!g.querySelector(':scope>.coh-s1'))g.appendChild(hdr('Space','echo and reverb','snd','coh-s coh-s1'));
+  kids=[...g.children];
+  for(const e of kids){const cl=e.classList;
+   if(cl.contains('bksep')&&!cl.contains('bhd')){const t=e.textContent.trim();if(t==='Break feel')restyle(e,'Feel','accents · ghosts · variation from bar to bar');
+    else if(cl.contains('satc')){restyle(e,'Part','role · motion · how much');e.dataset.g='pat';e.dataset.keep='pat'}else restyle(e,t,'')}
+   else if(cl.contains('pph')&&!cl.contains('bhd')){const p=e.textContent.split('·');restyle(e,p[0].trim(),(p[1]||'').trim())}
+   // ---- display order: pattern first, sound after; inside sound: heading, sound menu, Level … sends last
+   const snd=e.dataset.g==='snd',l=lab(e);let own=null;
+   if(cl.contains('coh-s0'))own=-200;else if(cl.contains('coh-s1'))own=49;
+   else if(snd&&k!==4){if(l==='Level')own=k===3?-45:-5;else if(SENDS[l])own=50;else if(SNDSEL[l]&&k!==3&&e.tagName==='LABEL')own=-10}
+   else if(!snd){if(k===9&&(cl.contains('satc')||PART[l]))own=5;else if(k===6&&cl.contains('bassroll'))own=-100}
+   if(own==null){if(e.style.order!==e._co)e._cb=parseInt(e.style.order)||0;own=e._cb||0}
+   const want=String(own+(snd?1000:0));if(e.style.order!==want)e.style.order=want;e._co=want}
+  // ---- Hits and Rotate follow Steps
+  if(!T.pad){const fit=(n,mx)=>{const e=by(n);if(!e)return;const i=e.querySelector('input[type=range]');if(!i)return;e._max=mx;if(+i.max!==mx)i.max=mx};fit('Hits',T.st);fit('Rotate',Math.max(0,T.st-1))}}
+ const run=()=>{const d=document.querySelector('#t-drums'),y=document.querySelector('#t-synth');if(!((d&&!d.hidden)||(y&&!y.hidden)))return;document.querySelectorAll('#t-drums .card,#t-synth .card').forEach(c=>{try{card(c)}catch(e){console.warn('[orbitron] layout',e)}})};
+ UI.on(run);window.orbCohere=run}
 </script>
 </body></html>
