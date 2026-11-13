@@ -152,7 +152,8 @@ Per file: what it does · **defines** new globals · **wraps** globals defined b
   wraps: generate
 - **1970-character.js** (1.4 KB) — v0.33: CHARACTER on Launch — fitting moods get more of their bus colour. Values only go up (never lower than the Launch set them), with a little …
   wraps: generate
-- **1990-perc-brightness.js** (1.0 KB) — v0.34: the newer perc sounds (Conga, Cowbell/rim, Marimba) are kept from getting too bright on Launch: the Perc filter (low-pass) is capped per …
+- **1990-perc-brightness.js** (1.9 KB) — v0.34: the newer perc sounds (Conga, Cowbell/rim, Marimba) are kept from getting too bright on Launch: the Perc filter (low-pass) is capped per …
+  defines: orbDarkCow
   wraps: generate
 - **2060-launch-timestamp.js** (0.1 KB) — {const _g=generate;generate=function(){window.__launchT=performance.now();return _g.apply(this,arguments)}}
   defines: __launchT
