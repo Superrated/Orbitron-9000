@@ -274,4 +274,5 @@ js   js/launch/2480-darker-lead.js
 js   js/launch/2490-bass-always-on.js
 js   js/launch/2500-hat-density-level.js
 js   js/launch/2510-lead-taste.js  -
+js   js/platform/2520-performance-test.js  -
 raw  html/end.html
