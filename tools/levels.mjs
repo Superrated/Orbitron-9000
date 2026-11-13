@@ -3,7 +3,7 @@
 // reads its loudness (K-weighted, like LUFS without gating) where the buses meet (A.m, before the master chain).
 // So bus gains, the lead compressor and the echo/reverb returns are all included; the master's automatic loudness is not.
 //
-//   node tools/levels.mjs                         every mood, seeds 1-4, 4 browsers  -> JSON on stdout
+//   node tools/levels.mjs                         every mood, seeds 1-6, 8 browsers in parallel  -> JSON on stdout
 //   node tools/levels.mjs --moods Acid,Noir --seeds 1,2,3 --workers 2 --out levels.json
 //   node tools/levels.mjs --report levels.json    table: per mood and part, median dB against the kick / against the full mix
 //
@@ -47,9 +47,9 @@ function report(rows) {
 
 const why = unavailable();
 if (why) { console.error(why); process.exit(2); }
-const seeds = (val('--seeds') || '1,2,3,4').split(',').map(Number), nW = +(val('--workers') || 4), outF = val('--out'), moodArg = val('--moods');
+const seeds = (val('--seeds') || '1,2,3,4,5,6').split(',').map(Number), nW = +(val('--workers') || 8), outF = val('--out'), moodArg = val('--moods');
 
-/** In the page: one Launch of `mood` with `seed`, then solo every unmuted track. */
+/** In the page, with the Launch playing: solo every unmuted track in turn. */
 const pageMeasure = async ({ mood, seed }) => {
   const c = window.__ctx;
   if (!window.__lv) {
@@ -62,20 +62,20 @@ const pageMeasure = async ({ mood, seed }) => {
   const meas = async ms => { let ss = 0, n = 0; const t0 = performance.now();
     while (performance.now() - t0 < ms) { an.getFloatTimeDomainData(buf); for (let i = 0; i < buf.length; i++) ss += buf[i] * buf[i]; n += buf.length; await wait(20); }
     return 10 * Math.log10(ss / Math.max(1, n) + 1e-12); };
-  __seed(seed); document.querySelector('#mood').value = mood; generate(); await wait(1500);
+  await wait(1500);
   const bar = 16 * 60 / G.bpm / 4 * 1000, M0 = TR.map(T => !!T.m), res = { mood, seed, bpm: G.bpm, tracks: {}, qos: 0 };
   const txt = p => { const o = {}; for (const k in p) if (typeof p[k] === 'string') o[k] = p[k]; return o; };
   try {
-    res.mix = +(await meas(4 * bar)).toFixed(2);
+    res.mix = +(await meas(2 * bar)).toFixed(2);
     for (const k of [0, 1, 2, 7, 3, 6, 4, 8, 9, 5]) {
       if (M0[k]) continue;
-      TR.forEach((T, j) => { T.m = j !== k; }); await wait(1300);
+      TR.forEach((T, j) => { T.m = j !== k; }); await wait(1000);
       res.qos = Math.max(res.qos, QOS.lvl || 0);
       const db = await meas((k < 4 || k === 7 ? 2 : 4) * bar);
       if (db > -90) res.tracks[k] = { db: +db.toFixed(2), lv: +(+TR[k].lv).toFixed(3), trim: (window.TRIM || TRIM)[k], s: txt(TR[k].p) };
     }
   } finally { TR.forEach((T, j) => { T.m = M0[j]; }); }
-  await wait(2500);
+  await wait(1200);
   return res;
 };
 
@@ -84,12 +84,24 @@ await first.page.evaluate(PAGE_HELPERS);
 const moods = moodArg ? moodArg.split(',') : await first.page.evaluate(() => __moods());
 const jobs = []; for (const mood of moods) for (const seed of seeds) jobs.push({ mood, seed });
 const rows = []; let done = 0;
+const prep = async page => {
+  await page.evaluate(PAGE_HELPERS);
+  await page.evaluate(() => {
+    viz = function () {};                                       // no visuals: more browsers fit on the machine
+    for (const k of ['lvl', 'ml']) Object.defineProperty(QOS, k, { get: () => 0, set() {} });   // a busy test machine must not make the app shed voices and effects
+  });
+};
 const worker = async app => {
   try {
     const { page } = app;
-    await page.evaluate(PAGE_HELPERS); await page.click('#play'); await page.waitForFunction(() => window.__ctx && playing);
     for (let j; (j = jobs.shift());) {
-      try { rows.push(await page.evaluate(pageMeasure, j)); } catch (e) { console.error(`failed ${j.mood} #${j.seed}: ${e.message}`); }
+      try {
+        await page.reload(); await page.waitForFunction(() => typeof generate === 'function' && document.querySelector('#mood'));
+        await prep(page);   // a fresh page per Launch, launched while stopped: the same mood + seed is the same groove in every run, so before / after can be compared
+        await page.evaluate(({ mood, seed }) => { __seed(seed); document.querySelector('#mood').value = mood; generate(); }, j);
+        await page.waitForTimeout(300); await page.click('#play'); await page.waitForFunction(() => window.__ctx && playing);
+        rows.push(await page.evaluate(pageMeasure, j));
+      } catch (e) { console.error(`failed ${j.mood} #${j.seed}: ${e.message}`); }
       console.error(`${++done} ${j.mood} #${j.seed}`);
     }
   } finally { await app.close(); }
