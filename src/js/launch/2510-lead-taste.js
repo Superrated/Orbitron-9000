@@ -1,19 +1,15 @@
-/* ---- v0.83: LEAD TASTE — per mood, lead sounds that came out cheesy are swapped for one that suits the mood, and the lead's cutoff
-   can be capped so it doesn't get too bright. One line per mood:  ban · sounds swapped out · swap · what they become · cut · highest cutoff (Hz).
-   Acid 303 lines are left alone. Notes by ear (Nov 2026): Lost Signal · Afterglow and Ion Storm too cheesy and bright, Gravity Assist cheesy;
-   Organ stab, Rave stab and Donk are fine everywhere but filtered mellow (presets darker + a cutoff ceiling). ---- */
-{const CHEESE=['House piano','Bright pluck','Chorus pulse','EP stab','Hoover'];
- /* every mood: these sounds are welcome but must stay mellow — their cutoff never goes above this after a Launch (by ear, Nov 2026) */
- const MELLOW={'Organ stab':2000,'Rave stab':1100,'Donk':1500};
- const LT={
-  Melancholic:      {ban:CHEESE, swap:['Soft keys','String pluck','FM keys','Pluck'], cut:1500},
-  'Melodic House':  {ban:CHEESE, swap:['Soft keys','String pluck','FM keys','Pluck'], cut:1500},
-  'Groove Techno':  {ban:[...CHEESE,'FM keys'], swap:['Hypno stab','Techno stab','Hard sync','FM stab','Rubber blip']},
-  'Distorted Electro':{ban:CHEESE, swap:['Hard sync','Techno stab','Hypno stab','FM stab','Metal FM','Mini edge','Aggro','Vowel'], cut:1800}};
- window.orbLeadTaste=LT;
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const t=LT[curMood]||{ban:[],swap:[]},P=TR[4].p;if(P.mode==='Acid 303')return r;
-  if(t.ban.includes(P.patch)&&typeof applyLP==='function'&&typeof LPRE!=='undefined'){const ok=t.swap.filter(n=>LPRE[n]);if(ok.length)applyLP(pick(ok),1)}
-  if(t.cut&&P.cut>t.cut)P.cut=t.cut;
-  if(MELLOW[P.patch]&&P.cut>MELLOW[P.patch])P.cut=MELLOW[P.patch];
+/* ---- v0.83: LEAD TASTE — some lead sounds are lovely but came out too bright and on top of the mix (by ear, Nov 2026).
+   SOUND · in every mood, after a Launch: highest cutoff (Hz) · highest filter sweep (envA, Hz) · at least this much reverb send (rs),
+           so they sit darker and further back.  Acid 303 lines are left alone.
+   MOOD  · some moods also cap every lead's cutoff (Lost Signal · Afterglow 1500 Hz, Ion Storm 1800 Hz). ---- */
+{const SOUND={
+  'House piano':{cut:1500,env:2000,rs:.4}, 'Bright pluck':{cut:800,env:2200,rs:.4}, 'Chorus pulse':{cut:1100,env:1600,rs:.4},
+  'EP stab':{cut:1300,env:1400,rs:.4},     'Hoover':{cut:1000,env:1100,rs:.35},     'FM keys':{cut:1400,rs:.4},
+  'Organ stab':{cut:2000,rs:.35},          'Rave stab':{cut:1100,env:2000,rs:.35},  'Donk':{cut:1500,env:1000,rs:.2}};
+ const MOOD={Melancholic:1500,'Melodic House':1500,'Distorted Electro':1800};
+ window.orbLeadTaste={SOUND,MOOD};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const P=TR[4].p;if(P.mode==='Acid 303')return r;const s=SOUND[P.patch],mc=MOOD[curMood];
+  if(s){if(P.cut>s.cut)P.cut=s.cut;if(s.env!=null&&P.envA>s.env)P.envA=s.env;if(!(P.rs>=s.rs))P.rs=s.rs}
+  if(mc&&P.cut>mc)P.cut=mc;
   setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){console.warn('[orbitron] lead-taste sync',e)}},0)}
  catch(e){console.warn('[orbitron] lead taste',e)}return r}}

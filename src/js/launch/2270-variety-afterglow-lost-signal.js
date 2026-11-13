@@ -6,8 +6,8 @@
 {const VAR={'Melodic House':{riff:.3,prog:.45,snd:.4},Melancholic:{riff:.35,prog:.5,snd:.45}};
  const PROGS=[[0,5,3,4],[0,3,6,4],[0,5,6,4],[0,2,3,4],[5,3,0,4],[0,4,5,3],[0,6,3,5],[3,5,0,4],[0,3,4,6],[0,5,1,4],[0,2,5,4],[5,6,0,0],[0,6,5,4],[3,6,0,5],[0,5,2,6],[0,3,5,4]];
  const MODES=[['Chord arp',[8,12,16],[1,2]],['Pedal arp',[6,8,12],[1,2]],['Converge',[5,6,8],[2]],['Diverge',[5,6,8],[2]],['Motif',[3,4,5,6,7],[1,2,3]],['Up/Down',[6,8],[1,2]]];
- const SNDS={'Melodic House':['String pluck','Soft keys','Cinematic arp','Pluck','FM keys','Wide saw'],   /* v0.83: no House piano / Bright pluck / Chorus pulse (cheesy, too bright) */
-  Melancholic:['String pluck','Soft keys','Cinematic arp','Pluck','FM keys','Wide saw','Mini lead']};
+ const SNDS={'Melodic House':['Bright pluck','String pluck','Chorus pulse','Soft keys','Cinematic arp','Pluck','FM keys','House piano','Wide saw'],
+  Melancholic:['Bright pluck','String pluck','Chorus pulse','Soft keys','Cinematic arp','Pluck','FM keys','Wide saw','Mini lead']};
  const fillT=t=>{let l=t.find(x=>x!=null);if(l==null)l=0;return t.map(x=>x==null?l:(l=x))};
  const UP={0:2,1:2,2:4,3:4,4:10,10:12,11:12,12:14,14:14},INV={0:10,10:0,2:4,4:2,12:4,14:2};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(window.orbRiff)orbRiff.base=null;const v=VAR[curMood],L=TR[4],P=L.p;if(!v||L.m||P.mode==='Acid 303')return r;const RF=window.orbRiff;
