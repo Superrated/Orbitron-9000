@@ -1,7 +1,7 @@
 
 /* ---- v0.26: THIN fader on Flight, under the low-pass — fewer notes (drums, lead, bass, stab), the kick never thins. Double-tap = off. Resets on Launch. ---- */
 {const lp=document.querySelector('#t-perf .lpf');if(lp&&window.THIN){const TH=window.THIN;const row=document.createElement('div');row.className='thr';
-  row.innerHTML='<span>THIN</span><div class="tht" title="Drag right for fewer notes. Double-tap to switch off."><div class="thfill"></div><div class="thk"></div></div><b class="thv">OFF</b>';lp.appendChild(row);
+  row.innerHTML='<span>BEAT MORPH</span><div class="tht" title="Drag right for fewer notes. Double-tap to switch off."><div class="thfill"></div><div class="thk"></div></div><b class="thv">OFF</b>';lp.appendChild(row);
   const tr=row.querySelector('.tht'),kn=row.querySelector('.thk'),fl=row.querySelector('.thfill'),val=row.querySelector('.thv');
   const st=()=>{const t=TH.v;return t>=.9?4:t>=.65?3:t>=.4?2:t>=.12?1:0};
   const show=()=>{kn.style.left=(TH.v*100)+'%';fl.style.width=(TH.v*100)+'%';const n=st(),t=n?['','LIGHT','HALF','SPARSE','BONES'][n]:'OFF';if(val.textContent!==t)val.textContent=t;row.classList.toggle('on',n>0)};
