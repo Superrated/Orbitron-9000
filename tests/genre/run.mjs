@@ -5,9 +5,10 @@
 //   node tests/genre/run.mjs --n 20 --mood Acid   20 Launches of one mood
 //   node tests/genre/run.mjs --seed 4242          repeat an earlier run exactly (the seed is printed every run)
 //   node tests/genre/run.mjs --bars 4 --workers 2 longer audio per Launch / parallel browser tabs
-//   node tests/genre/run.mjs --no-audio           patterns + arrangement only (seconds instead of minutes)
+//   node tests/genre/run.mjs --no-audio           patterns + arrangement only (a few seconds)
+//   node tests/genre/run.mjs --fresh              reload the app before every Launch (slower; no memory of earlier Launches)
 //
-// How it works, fast: each Launch runs in a fresh headless-Chrome tab, but the app's AudioContext is swapped for an
+// How it works, fast: Launches run in headless-Chrome tabs that stay open (the app is reloaded every 25 Launches), and the app's AudioContext is swapped for an
 // OfflineAudioContext, so the groove is rendered faster than real time (no speakers, no waiting). The sequencer is stepped
 // by hand every 50 ms of audio. After 1 warm-up bar the next bars are measured (loudness, tone, stereo, glitches) inside the
 // page, and the digest of what Launch decided (tempo, scale, every track's pattern) is checked against tests/genre/profiles.mjs.
@@ -26,7 +27,7 @@ import { check } from './rules.mjs';
 const argv = process.argv.slice(2), arg = (k, d) => { const i = argv.indexOf(k); return i < 0 ? d : (argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : true); };
 const N = +arg('--n', 100), BARS = +arg('--bars', 2), WARM = 1, ONLY = arg('--mood', null), AUDIO = !argv.includes('--no-audio');
 const SEED = +arg('--seed', Date.now() % 1e6), WORKERS = +arg('--workers', Math.max(1, Math.min(4, os.cpus().length)));
-const VERBOSE = argv.includes('--verbose');
+const VERBOSE = argv.includes('--verbose'), FRESH = argv.includes('--fresh'), RELOAD = 25;
 
 // ---------- browser + server ----------
 const require = createRequire(import.meta.url);
@@ -111,9 +112,15 @@ function initScript() {
 
 /** One Launch inside a fresh page: generate, play offline, measure. */
 async function launchOnce(page, job) {
-  await page.goto(URL0);
-  await page.waitForFunction(() => typeof generate === 'function' && document.querySelector('#mood'));
+  // one page serves many Launches (like a real session: Launch remembers earlier Launches); reloaded every RELOAD Launches, or always with --fresh
+  if (FRESH || !page.__n || page.__n >= RELOAD) {
+    await page.goto(URL0); page.__n = 0;
+    await page.waitForFunction(() => typeof generate === 'function' && document.querySelector('#mood'));
+  }
+  page.__n++;
   return page.evaluate(async ({ mood, seed, warm, bars, audio }) => {
+    __errors.length = 0;
+    if (window.__oc && playing) toggle(); // stop the previous Launch's engine (its render is finished)
     const sel = document.querySelector('#mood'); sel.value = mood; __seed(seed);
     const t0 = performance.now(); let genErr = null;
     try { generate(); } catch (e) { genErr = String(e && e.stack || e); }
@@ -121,6 +128,7 @@ async function launchOnce(page, job) {
     let a = null;
     if (audio && !genErr) {
       const barS = 240 / G.bpm; window.__SEC = (warm + bars) * barS + .1;
+      if (window.__oc) { window.__oc = null; hardReset('genre test'); } // the app's own engine rebuild (↻ RESET) → a fresh offline engine
       toggle(); // ▶ Ignite
       const oc = window.__oc;
       if (!oc) throw new Error('engine did not start');
