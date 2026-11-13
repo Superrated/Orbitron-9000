@@ -1938,7 +1938,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.61 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.61';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.7 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.7';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -4675,7 +4675,14 @@ window.MOODX={
  const _vz=viz;viz=function(){if(OV.stage>=1&&playing){setTimeout(()=>requestAnimationFrame(viz),400);return}return _vz()};
  const _dr=draw;draw=function(T,s){if(OV.stage>=1&&playing&&s>=0)return;return _dr.apply(this,arguments)};
  /* a Launch can block the page for a few hundred ms on a phone: schedule 0.6 s of notes first, so nothing arrives late or in a burst */
- const _g=generate;generate=function(){clear();if(playing&&ctx&&!document.hidden&&!window.__inTime){const o=QOS.la;try{QOS.la=Math.max(o,.6);tick()}catch(e){}finally{QOS.la=o}}return _g.apply(this,arguments)};
+ /* v0.7: the cushion adapts to the device. Each Launch is timed (the whole busy stretch: building the groove, rebuilding the cards, the first
+    follow-up jobs); the next Launch schedules about 1.3x that far ahead — never less than the old 0.6 s, never more than 1.2 s — so a slow phone
+    that needs longer than 0.6 s no longer runs out of scheduled notes. Fast devices measure well under 0.46 s and behave exactly as before. */
+ let LBLK=0;window.orbLaunchBlock=()=>LBLK;
+ const _g=generate;generate=function(){clear();const live=playing&&ctx&&!document.hidden&&!window.__inTime,t0=performance.now();
+  if(live){const o=QOS.la;try{QOS.la=Math.max(o,Math.min(1.2,Math.max(.6,LBLK*1.3/1000)));tick()}catch(e){}finally{QOS.la=o}
+   setTimeout(()=>{if(document.hidden)return;const dt=Math.min(2000,performance.now()-t0);LBLK=Math.max(dt,LBLK*.7)},0)}   // the slowest recent Launch counts; it eases off again over a few quicker ones
+  return _g.apply(this,arguments)};
  const _t=toggle;toggle=function(){const r=_t.apply(this,arguments);if(!playing)clear();else if(ctx){const o=QOS.la;try{QOS.la=Math.max(o,.8);tick()}catch(e){}finally{QOS.la=o}} /* starting: the engine finishes building right after this; have 0.8 s scheduled */return r};try{$('#play').onclick=toggle}catch(e){}
  setInterval(()=>{const d=document.querySelector('#diag');if(!d||!isShown(d))return;let x=d.querySelector('.ovl');if(!x){x=document.createElement('div');x.className='ovl';x.style.cssText='margin-top:4px;font-size:11px;opacity:.85';d.appendChild(x)}
   const t='overload guard · events '+OV.n+' · '+['full quality','visuals paused','effects lighter','fewest voices'][OV.stage];if(x.textContent!==t)x.textContent=t},1000);
