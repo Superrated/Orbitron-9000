@@ -141,7 +141,7 @@ async function launchOnce(page, job) {
     }
     const r4 = v => Math.round(v * 1e4) / 1e4;
     const d = { mood: curMood, bpm: G.bpm, swing: r4(G.swing || 0), scale: G.scale, root: G.root,
-      TR: TR.map(T => ({ n: T.n, st: T.st, h: T.h, m: !!T.m, pt: (T.pt || []).map(x => x ? 1 : 0).join(''), mode: T.p && (T.p.mode || T.p.pv) || '' })) };
+      TR: TR.map(T => ({ n: T.n, st: T.st, h: T.h, m: !!T.m, pt: (T.pt || []).map(x => x ? 1 : 0).join(''), mode: T.p && T.p.mode || '', snd: T.p && T.p.pv || '' })) };
     const errors = [...__errors]; if (genErr) errors.unshift('generate: ' + genErr);
     return { d, a, genMs, errors };
   }, { ...job, warm: WARM, bars: BARS, audio: AUDIO });
