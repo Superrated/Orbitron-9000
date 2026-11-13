@@ -20,7 +20,7 @@ Per file: what it does · **defines** new globals · **wraps** globals defined b
 - **0430-prerendered-drums-interruptions.js** (3.2 KB) — v45: live stability — pre-rendered drum hits (kick/snare/clap/fixed perc), Stage mode, audio interruption recovery
   defines: DR
   wraps: duck
-- **0440-stage-mode.js** (3.0 KB) — Stage mode
+- **0440-stage-mode.js** (3.2 KB) — Stage mode — keeps the screen awake, turns off decorative animation, plans audio further ahead and asks before leaving the page. v1.0: Stage no …
 - **0460-survival-voice-cap.js** (1.3 KB) — v51: Survival — hard cap of 64 sounding voices + lightest settings
   wraps: fire pad grains applyFX
 - **0620-cpu-easy-wins.js** (5.1 KB) — v73: CPU easy wins — pre-rendered hi-hats (2 nodes per hit instead of 8, one shared panner), ladder filter swapped for the cheap version under load, …
