@@ -6,7 +6,7 @@
   "instruments": "how each track sounds: kick, hats, clap, snare, perc, bass, lead (Stack/Mini/303), pad, stab, satellite; patches",
   "sequencer": "what plays when: Euclid rings, groove/feel, bassline and arp tools, LFOs, evolve/rotate drift",
   "launch": "the generator (Launch = generate()): moods, flavours, riffs, progressions, per-mood tables and trims, dice buttons",
-  "flight": "the Flight (perform) page: risers, breakdowns, thrusters, drop hits, LOW-PASS / THIN / LEAD / BASS / DRUMS / FX faders",
+  "flight": "the Flight (perform) page: risers, breakdowns, thrusters, drop hits, LOW-PASS / THIN / LEAD / BASS / TENSION / PULSE faders",
   "ui": "screens and controls: tabs, cards, faders, menus, Mix/LFO pages, visuals (solar system), CSS injected from JS",
   "platform": "runtime and robustness: timers, render queue, load/overload guards, recovery, audio buffer, PWA install, pre-render caches",
   "state": "persistence: saving/export, sectors (16 memory slots), WAV recorder, settings migrations"

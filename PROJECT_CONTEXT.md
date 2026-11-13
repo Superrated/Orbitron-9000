@@ -27,7 +27,7 @@ tests/                   build.test.mjs (static), browser.test.mjs (runtime), sn
 | `instruments` | how tracks sound: lead engines (Stack/FM/…, Mini, Acid 303), pad types, stab, bass, perc sounds, satellite, patches |
 | `sequencer` | what plays when: Euclid tools, bassline/arp tools, LFOs, feel/micro-timing, evolve, rotate drift |
 | `launch` | Launch = `generate()` and its ~125 wrappers: moods, flavours, riffs, progressions, per-mood trims, dice buttons |
-| `flight` | the performance page: risers, breakdowns, thrusters, drop hits, LOW-PASS / THIN / LEAD / BASS / DRUMS / FX faders |
+| `flight` | the performance page: risers, breakdowns, thrusters, drop hits, LOW-PASS / THIN / LEAD / BASS / TENSION / PULSE faders |
 | `ui` | tabs, cards, faders, menus, Mix/LFO pages, the solar-system visuals, CSS injected from JS |
 | `platform` | robustness + speed: timer heartbeat, render queue, load/overload guards, recovery, audio buffer, PWA install, caches |
 | `state` | persistence: export/save, sectors (16 memory slots), WAV recorder, renamed-setting migrations |
