@@ -8,7 +8,7 @@
    audio engine starts — the level is right from bar 1 and nothing new moves while you play. */
 {const HS={Dark:-3.5,Melancholic:-3,'Melodic House':-3,Dreamy:-2.5,Tense:-4.5,'Deep Space':-1.5,Ethereal:-3.5,Hopeful:-4.5,Noir:-4,Drone:-3,Acid:-2.5,Power:-3.5,Italo:-4.5,Breaks:-3.5,Bleep:-3,'Distorted Electro':-3,Ambient:-3.5,'Groove Techno':-4.5,Vector:-2.5,Temporal:-4,Polymeter:-4.5,Chug:-5},H={ctx:null,hist:[],db:0};window.orbHeadroom=H;
  const start=()=>{H.db=HS[curMood]!=null?HS[curMood]:-3.5;H.hist=[];try{if(ctx&&A.m&&A.m.context===ctx){const v=.8*Math.pow(10,H.db/20),t=ctx.currentTime;
-   if(ctx.state!=='running'||!playing)A.m.gain.value=v;else if(A.m.gain.value>=.4)A.m.gain.setTargetAtTime(v,t,.08)}}catch(e){}};   /* a start or safety fade in progress is left alone; the keeper takes over after it */
+   if(ctx.state!=='running'||!playing)A.m.gain.value=v;else if(A.m.gain.value>=.4)A.m.gain.setTargetAtTime(v,t,.08)}}catch(e){}};H.start=start;   /* a start or safety fade in progress is left alone; the keeper takes over after it. v1.0: H.start lets a Sector load of another mood start where that mood settles */
  {const _g=generate;generate=function(){const r=_g.apply(this,arguments);start();return r}}
  METER.every(1,()=>{try{if(!ctx||ctx.state!=='running'||!playing||!A.m||A.m.context!==ctx||(window.DR&&DR.rendering))return;
   if(H.ctx!==ctx){H.ctx=ctx;start()}

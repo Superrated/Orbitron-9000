@@ -4,7 +4,10 @@
    v1.0 CRATE: every filled slot shows its key and tempo ("Am · 128"), and the slots that make a good next groove light up, like a DJ's
    crate. Strong glow = key fits (same, relative major/minor or one step round the circle of fifths) AND tempo within 6 BPM AND energy
    within 1 level; soft glow = energy within 1 and key OR tempo fits. Energy is a hidden 1–9 rating per mood (ENERGY below). A locked key
-   or tempo always counts as fitting (the slot will keep it anyway). A dot on a bank button = that bank holds a strong fit. ---- */
+   or tempo always counts as fitting (the slot will keep it anyway). A dot on a bank button = that bank holds a strong fit.
+   v1.0 FULL RECALL: a sector also keeps the Satellite's note pattern (Sparkle/Arp template, Phase cell) and the 303 template, so the
+   groove comes back exactly and later 303 edits rebuild from the same template; loading a sector of another mood resets the mix level
+   keeper to that mood's start level, as a Launch does (it used to start 1–3 dB off and slide). Older saves load as before. ---- */
 {const KEY='orb-sectors',N=16,EXG=new Set(['bpmLock','keyLock','fin','oct','master','pro']),SKIPT=new Set(['x','mb','cs','fl','el']);
  const msg=t=>{try{if(typeof say==='function')say(t)}catch(e){}};let SL=[];try{SL=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){SL=[]}if(!Array.isArray(SL))SL=[];while(SL.length<N)SL.push(null);SL.length=N;
  const PC_=['Kep','Zer','Vel','Orn','Thal','Nyx','Cael','Ur','Xan','Vesp','Lyr','Quor','Sol','Drav','Myr','Gal','Kor','Tor','Ard','Zeph','Ob','Phor','Ix','Ner','Alt','Glyn','Hesp','Jov','Rhed','Sar','Tes','Vor','Cor','Mar','Brin','Cass','Dex','Fen'],
@@ -25,15 +28,17 @@
  function snap(){/* v0.5: a 303 lead that hasn't played yet gets its line now (as its first note would), so the saved ring and line match */try{const p=TR[4].p;if(p.mode==='Acid 303'&&!AC.keep&&AC.key!==G.scale+'|'+p.seed+'|'+(+p.glide||0).toFixed(2)+'|'+(+p.accp||0).toFixed(2))acidGen(p)}catch(e){}
  const g={};for(const k in G){if(EXG.has(k))continue;const c=cl(G[k]);if(c!==undefined)g[k]=c}
   return{v:1,v4:1,mood:curMood,sel:$('#mood').value,padStyle,G:g,TR:TR.map(T=>{const o={};for(const k of Object.keys(T)){if(SKIPT.has(k))continue;const c=cl(T[k]);if(c!==undefined)o[k]=c}return o}),
-   LF:cl(LFOS),TRIM:TRIM.slice(),prog:prog.slice(),pshape:pshape.slice(),PX:PX.slice(),PD:PD?PD.slice():null,PPUSH,mot:mot.slice(),buf:cl(buf),BPH:cl(window.BPH||null),RIFF:window.orbRiff&&orbRiff.t?{t:cl(orbRiff.t),f:cl(orbRiff.f)}:null,TU:window.TURING?TURING.get():[],FEEL:window.orbFeel?orbFeel.get():null,ACID:(typeof AC!=='undefined'&&AC.n&&AC.n.length)?{n:cl(AC.n),a:cl(AC.a),s:cl(AC.s),cell:AC.cell||8}:null}}
+   LF:cl(LFOS),TRIM:TRIM.slice(),prog:prog.slice(),pshape:pshape.slice(),PX:PX.slice(),PD:PD?PD.slice():null,PPUSH,mot:mot.slice(),buf:cl(buf),BPH:cl(window.BPH||null),RIFF:window.orbRiff&&orbRiff.t?{t:cl(orbRiff.t),f:cl(orbRiff.f)}:null,TU:window.TURING?TURING.get():[],FEEL:window.orbFeel?orbFeel.get():null,ACID:(typeof AC!=='undefined'&&AC.n&&AC.n.length)?{n:cl(AC.n),a:cl(AC.a),s:cl(AC.s),cell:AC.cell||8}:null,ATPL:window.orbAcid?cl(orbAcid.tpl):null,
+   SAT:window.orbSatState?{tpl:cl(orbSatState.tpl),cell:cl(orbSatState.cell),ci:orbSatState.ci}:null}}
  const persist=()=>{try{localStorage.setItem(KEY+(bank?'-b'+bank:''),JSON.stringify(SL))}catch(e){msg('▲ SECTOR MEMORY FULL · could not store on this device')}};
  // pre-render the sector's drum hits while it waits, staggered, so the boundary itself costs nothing
  function prewarm(S){if(!ctx||!window.DR||!window.OfflineAudioContext)return;[0,7,2].forEach((k,j)=>setTimeout(()=>{try{const o=S.TR[k];if(!o||!o.p)return;const T=TR[k],sv=T.p,p=Object.assign({},sv,o.p);T.p=p;
    try{const key=DR.key(k,p);if(key&&!DR.cache.has(key)&&!DR.pend.has(key)){DR.pend.add(key);DR.render(k,key,FIX)}}finally{T.p=sv}}catch(e){}},60+j*90));
   try{if(S.G&&S.G.shx>0&&typeof shimmerInit==='function')setTimeout(()=>{try{shimmerInit()}catch(e){}},400)}catch(e){}}
- function apply(S,w){window.__orbFromLaunch=0;const mm=TR.map(T=>T.m),kb=G.bpm,kr=G.root,ksc=G.scale;
+ function apply(S,w){window.__orbFromLaunch=0;const mm=TR.map(T=>T.m),kb=G.bpm,kr=G.root,ksc=G.scale,km=curMood;
   TR.forEach((T,k)=>{const o=S.TR[k];if(!o)return;const old=k===9&&!S.v4&&!(o.p&&o.p.role);for(const key in o){if(key==='n'||key==='c')continue;if(key==='p'&&T.p&&o.p){if(!old){if(S.v4)for(const pk in T.p){const v=T.p[pk];if(!(pk in o.p)&&(v==null||typeof v!=='object'&&typeof v!=='function'))delete T.p[pk]} /* v0.4 saves are complete: recall exactly what was saved */Object.assign(T.p,o.p);if(k===4&&!('chd' in o.p))T.p.chd='';if(k===6&&!('beng' in o.p))T.p.beng=''}}else T[key]=o[key]}if(old)T.m=true;if(!('tsd' in o))delete T.tsd});
-  ['bchar','flav','bed','bedLv','brole','padAuto'].forEach(k=>{if(S.G&&!(k in S.G))delete G[k]});if(S.v4&&S.G)for(const k in G){const v=G[k];if(!(k in S.G)&&!EXG.has(k)&&typeof v!=='function'&&!(v instanceof AudioNode))delete G[k]} /* v0.4 saves: no leftovers from a later Launch */window.BPH=S.BPH||null;try{if(S.FEEL&&S.FEEL.m&&window.orbFeel)orbFeel.set(S.FEEL.m,S.FEEL.a)}catch(e){}try{if(S.ACID&&typeof AC!=='undefined'){const P=TR[4].p;AC.n=cl(S.ACID.n);AC.a=cl(S.ACID.a);AC.s=cl(S.ACID.s);AC.cell=S.ACID.cell;AC.keep=1}}catch(e){} /* v0.5: the 303 line travels with the pattern */ /* v0.4: FEEL travels with the pattern */if(window.orbRiff){orbRiff.t=S.RIFF?S.RIFF.t:null;orbRiff.f=S.RIFF?S.RIFF.f:null}try{if(window.TURING){if(S.TU&&S.TU.length)TURING.set(S.TU);else TURING.reset()}}catch(e){}
+  ['bchar','flav','bed','bedLv','brole','padAuto'].forEach(k=>{if(S.G&&!(k in S.G))delete G[k]});if(S.v4&&S.G)for(const k in G){const v=G[k];if(!(k in S.G)&&!EXG.has(k)&&typeof v!=='function'&&!(v instanceof AudioNode))delete G[k]} /* v0.4 saves: no leftovers from a later Launch */window.BPH=S.BPH||null;try{if(S.FEEL&&S.FEEL.m&&window.orbFeel)orbFeel.set(S.FEEL.m,S.FEEL.a)}catch(e){}try{if(S.ACID&&typeof AC!=='undefined'){const P=TR[4].p;AC.n=cl(S.ACID.n);AC.a=cl(S.ACID.a);AC.s=cl(S.ACID.s);AC.cell=S.ACID.cell;AC.keep=1}}catch(e){}try{if('ATPL' in S&&window.orbAcid)orbAcid.tpl=cl(S.ATPL)}catch(e){}
+  try{if(S.SAT&&window.orbSatState){const T=orbSatState;T.tpl=S.SAT.tpl?cl(S.SAT.tpl):null;T.cell=cl(S.SAT.cell);T.ci=S.SAT.ci}}catch(e){}   /* v1.0: the Satellite's notes travel with the pattern */ /* v0.5: the 303 line travels with the pattern */ /* v0.4: FEEL travels with the pattern */if(window.orbRiff){orbRiff.t=S.RIFF?S.RIFF.t:null;orbRiff.f=S.RIFF?S.RIFF.f:null}try{if(window.TURING){if(S.TU&&S.TU.length)TURING.set(S.TU);else TURING.reset()}}catch(e){}
   if(SS.keepM)TR.forEach((T,k)=>T.m=mm[k]);
   for(const k in S.G)if(!EXG.has(k))G[k]=S.G[k];if(G.bpmLock)G.bpm=kb;if(G.keyLock){G.root=kr;G.scale=ksc}
   if(Array.isArray(S.LF)){S.LF.forEach((L,i)=>{if(LFOS[i]&&L)Object.assign(LFOS[i],L)});if(S.LF.length<4&&LFOS[3])LFOS[3].d=0}   /* Sectors saved before LFO 4 existed leave it off */if(Array.isArray(S.TRIM))S.TRIM.forEach((v,i)=>TRIM[i]=v||0);
@@ -44,7 +49,7 @@
   try{const T=TR[5],hr=padSched(T,16*T.p.bars);if(hr)padChord(hr[0],w)}catch(e){}
   if(ctx&&A.dl){const dt=(G.dt||.75)*60/G.bpm;[A.dl,A.dl2].forEach(d=>{if(d){d.delayTime.cancelScheduledValues(w);d.delayTime.setValueAtTime(d.delayTime.value,Math.max(ctx.currentTime,w-.01));d.delayTime.linearRampToValueAtTime(dt,w+.05)}})}
   const lead=ctx?Math.max(0,(w-ctx.currentTime)*1000):0;
-  setTimeout(()=>{try{applyFX()}catch(e){}try{window.moodFinish&&moodFinish.apply()}catch(e){}},lead);
+  setTimeout(()=>{try{applyFX()}catch(e){}try{window.moodFinish&&moodFinish.apply()}catch(e){}try{if(curMood!==km&&window.orbHeadroom&&orbHeadroom.start)orbHeadroom.start()}catch(e){}},lead);   /* v1.0: another mood = that mood's start level, like a Launch */
   setTimeout(()=>refreshUI(S),lead+120)}
  function refreshUI(S){try{const ms=$('#mood');if(ms){const has=[...ms.options].some(o=>o.value===S.sel);ms.value=has?S.sel:(MOODS[curMood]?((window.MOODHOME&&MOODHOME[curMood])||curMood):'Auto');ms.options[0].textContent='Auto ('+MN(curMood)+')'}
   $('#root').value=G.root;$('#scale').value=G.scale;$('#bpm').value=G.bpm;$('#bv').textContent=G.bpm}catch(e){}
