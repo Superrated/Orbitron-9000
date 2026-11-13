@@ -35,4 +35,8 @@
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.81 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.81';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v'+orbVer()+' · designed by superrated and claude · yours truly';window.ORB_VERSION=orbVer();const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+/* v0.93: the version label follows the code by itself — it is the highest 'vX.Y' named in the app's own change notes (the header comments,
+   which ship inside the page), so the label can no longer fall behind (it said v0.81 until v0.92). */
+function orbVer(){if(orbVer.v&&orbVer.done)return orbVer.v;let m=0,s='0';for(const sc of document.scripts){const re=/\bv(0\.\d{1,2})\b/g,t=sc.textContent;let x;while((x=re.exec(t))){const n=+x[1];if(n>m){m=n;s=x[1]}}}orbVer.v=s;orbVer.done=document.readyState==='complete';return s}
+addEventListener('load',()=>{try{orbVer.done=false;const v=orbVer();window.ORB_VERSION=v;const c=document.querySelector('.credit');if(c)c.textContent=c.textContent.replace(/v0\.\d+/,'v'+v)}catch(e){console.warn('[orbitron] version label',e)}}); /* all scripts are in by now */

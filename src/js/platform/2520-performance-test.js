@@ -6,7 +6,7 @@
    v0.92: FULL TEST runs three of them in a row by itself on the same groove — Light with the 52 ms buffer, then Survival with the
    Minimum buffer with visuals Full and with visuals Off — keeps the screen awake, puts your own settings back and gives one result.
    Nothing here touches the audio path: it only reads counters, four times a second. ---- */
-{const SECS=60,BUILD='0.92';let run=null,series=null,pre='';
+{const SECS=60;let run=null,series=null,pre='';
  const ls=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},ms=x=>Math.round(x*1000),pct=x=>Math.round(x*100)+'%';
  const stats=()=>{try{return ctx&&ctx.playbackStats||null}catch(e){return null}};
  const device=()=>{const u=navigator.userAgent,m=/\(([^)]+)\)/.exec(u),b=/(Edg|OPR|SamsungBrowser|Firefox|CriOS|Chrome|Version)\/([\d.]+)/.exec(u);
@@ -27,7 +27,7 @@
   /* the audio clock moves in buffer-sized steps: compare the lowest reading of the first and of the last 2 s, so those steps do not count */
   const mn=a=>a.length?Math.min.apply(null,a):0,lost=r.dr.length>=16?mn(r.dr.slice(-8))-mn(r.dr.slice(0,8)):0;
   const u=r.u0!=null&&ps?ps.underrunEvents-r.u0:null,ud=r.d0!=null&&ps?ps.underrunDuration-r.d0:null,late=(QOS.lateTot||0)-r.late0;
-  const L=['ORBITRON PERFORMANCE TEST · build '+BUILD+' · '+Math.round(el)+' s'+(el<SECS-1?' (stopped early)':''),
+  const L=['ORBITRON PERFORMANCE TEST · build '+(typeof orbVer==='function'?orbVer():'?')+' · '+Math.round(el)+' s'+(el<SECS-1?' (stopped early)':''),
    'device      '+device(),
    'settings    quality '+ls('orb-q','Eco')+' · buffer '+((window.orbPerf&&orbPerf.buf())||'?')+' · visuals '+((window.orbPerf&&orbPerf.vis())||'?'),
    'groove      '+(typeof MN==='function'?MN(curMood):curMood)+' · '+Math.round(G.bpm)+' bpm · most voices '+r.vo,

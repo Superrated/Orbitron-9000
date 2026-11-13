@@ -1990,7 +1990,11 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.81 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.81';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v'+orbVer()+' · designed by superrated and claude · yours truly';window.ORB_VERSION=orbVer();const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+/* v0.93: the version label follows the code by itself — it is the highest 'vX.Y' named in the app's own change notes (the header comments,
+   which ship inside the page), so the label can no longer fall behind (it said v0.81 until v0.92). */
+function orbVer(){if(orbVer.v&&orbVer.done)return orbVer.v;let m=0,s='0';for(const sc of document.scripts){const re=/\bv(0\.\d{1,2})\b/g,t=sc.textContent;let x;while((x=re.exec(t))){const n=+x[1];if(n>m){m=n;s=x[1]}}}orbVer.v=s;orbVer.done=document.readyState==='complete';return s}
+addEventListener('load',()=>{try{orbVer.done=false;const v=orbVer();window.ORB_VERSION=v;const c=document.querySelector('.credit');if(c)c.textContent=c.textContent.replace(/v0\.\d+/,'v'+v)}catch(e){console.warn('[orbitron] version label',e)}}); /* all scripts are in by now */
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -7662,7 +7666,7 @@ window.orbExoProg=function(kind){try{let P,sh;
    v0.92: FULL TEST runs three of them in a row by itself on the same groove — Light with the 52 ms buffer, then Survival with the
    Minimum buffer with visuals Full and with visuals Off — keeps the screen awake, puts your own settings back and gives one result.
    Nothing here touches the audio path: it only reads counters, four times a second. ---- */
-{const SECS=60,BUILD='0.92';let run=null,series=null,pre='';
+{const SECS=60;let run=null,series=null,pre='';
  const ls=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},ms=x=>Math.round(x*1000),pct=x=>Math.round(x*100)+'%';
  const stats=()=>{try{return ctx&&ctx.playbackStats||null}catch(e){return null}};
  const device=()=>{const u=navigator.userAgent,m=/\(([^)]+)\)/.exec(u),b=/(Edg|OPR|SamsungBrowser|Firefox|CriOS|Chrome|Version)\/([\d.]+)/.exec(u);
@@ -7683,7 +7687,7 @@ window.orbExoProg=function(kind){try{let P,sh;
   /* the audio clock moves in buffer-sized steps: compare the lowest reading of the first and of the last 2 s, so those steps do not count */
   const mn=a=>a.length?Math.min.apply(null,a):0,lost=r.dr.length>=16?mn(r.dr.slice(-8))-mn(r.dr.slice(0,8)):0;
   const u=r.u0!=null&&ps?ps.underrunEvents-r.u0:null,ud=r.d0!=null&&ps?ps.underrunDuration-r.d0:null,late=(QOS.lateTot||0)-r.late0;
-  const L=['ORBITRON PERFORMANCE TEST · build '+BUILD+' · '+Math.round(el)+' s'+(el<SECS-1?' (stopped early)':''),
+  const L=['ORBITRON PERFORMANCE TEST · build '+(typeof orbVer==='function'?orbVer():'?')+' · '+Math.round(el)+' s'+(el<SECS-1?' (stopped early)':''),
    'device      '+device(),
    'settings    quality '+ls('orb-q','Eco')+' · buffer '+((window.orbPerf&&orbPerf.buf())||'?')+' · visuals '+((window.orbPerf&&orbPerf.vis())||'?'),
    'groove      '+(typeof MN==='function'?MN(curMood):curMood)+' · '+Math.round(G.bpm)+' bpm · most voices '+r.vo,

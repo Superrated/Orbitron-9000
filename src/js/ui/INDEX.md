@@ -19,8 +19,8 @@ Per file: what it does · **defines** new globals · **wraps** globals defined b
   defines: __orbSnap1
   wraps: generate
 - **0390-space-naming.js** (2.0 KB) — v37: space-themed naming across the UI (clear names kept alongside)
-- **0550-mix-tab-channels.js** (5.2 KB) — v64: Mix tab split into "Bus & FX" (everything as before) and "Channels" (per-track level, pan, pan movement); credits
-  defines: ORB_VERSION
+- **0550-mix-tab-channels.js** (6.0 KB) — v64: Mix tab split into "Bus & FX" (everything as before) and "Channels" (per-track level, pan, pan movement); credits
+  defines: orbVer ORB_VERSION
   wraps: send fire pad generate
 - **0570-engine-subtab.js** (2.9 KB) — v68: Mix gets an "Engine" sub-tab (engine quality + diagnostics); swing moves to the header next to tempo
 - **0580-compact-header.js** (1.1 KB) — v69: compact header panel
