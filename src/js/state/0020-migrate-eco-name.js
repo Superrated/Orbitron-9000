@@ -1,0 +1,1 @@
+try{if(localStorage.getItem('orb-q')==='Eco eco')localStorage.setItem('orb-q','Survival')}catch(e){} /* v0.34: Eco eco is now called Survival */

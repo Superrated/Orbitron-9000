@@ -1,0 +1,22 @@
+{
+ "_": "Area descriptions and summary overrides for the generated INDEX.md files (tools/index.mjs).",
+ "areas": {
+  "core": "the foundation: global state (G, TR, SC), audio graph A, voices fire/fireVoice, scheduler tick(), build(), generate()",
+  "engine": "mix bus, master chain, effects (reverb, shimmer, delay, sidechain), mastering, metering",
+  "instruments": "how each track sounds: kick, hats, clap, snare, perc, bass, lead (Stack/Mini/303), pad, stab, satellite; patches",
+  "sequencer": "what plays when: Euclid rings, groove/feel, bassline and arp tools, LFOs, evolve/rotate drift",
+  "launch": "the generator (Launch = generate()): moods, flavours, riffs, progressions, per-mood tables and trims, dice buttons",
+  "flight": "the Flight (perform) page: risers, breakdowns, thrusters, drop hits, LOW-PASS / THIN / LEAD / BASS faders",
+  "ui": "screens and controls: tabs, cards, faders, menus, Mix/LFO pages, visuals (solar system), CSS injected from JS",
+  "platform": "runtime and robustness: timers, render queue, load/overload guards, recovery, audio buffer, PWA install, pre-render caches",
+  "state": "persistence: saving/export, sectors (16 memory slots), WAV recorder, settings migrations"
+ },
+ "notes": {
+  "js/core/0050-base-state-engine-ui.js": "FOUNDATION: mood display names (MOODNAME), scales SC, note names, global settings G, the 10 tracks TR (params + slider specs), audio graph setup A/init(), helpers (osc, env, d2f, R), build() hook queue, routeTrack() voice routing, UI helpers",
+  "js/core/0090-track-params-voices-tick.js": "FOUNDATION: per-track param defaults add(), Acid 303 voice, fireVoice() (kick/hat/clap/perc/bass synthesis), fire() dispatcher, the step scheduler tick() (look-ahead loop)",
+  "js/core/0100-tabs-perform-visual-risers.js": "FOUNDATION: tab bar, perform page, visual canvas loop viz(), riser build/drop, timing helpers, snare fill, pitch performance",
+  "js/core/0110-generate-builder-tracks-ui.js": "FOUNDATION v4: pattern builder, chord-tone lock, swing, stab track, PATTERN/SOUND control tags, FX morph pad",
+  "js/core/0120-moods-pad-motif-generator.js": "FOUNDATION v6: MOODS table, pad synthesis pad() (all pad sound types), progressions/harmonic rhythm, motif melodies, the generator generate() = Launch",
+  "js/core/0130-drone-gate-arp-lead-presets.js": "FOUNDATION v8–v9: drone pads, sub drone, rhythmic gate on the synth bus, chord arp, lead presets LPRE"
+ }
+}

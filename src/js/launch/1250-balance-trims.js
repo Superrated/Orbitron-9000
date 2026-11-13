@@ -1,0 +1,4 @@
+
+/* v173: balance pass from per-part measurements in every mood (dB added to the mood's track trims; index = track:
+   0 kick 1 hat 2 clap 3 perc 4 lead 5 pad 6 bass 7 snare 8 stab 9 sub). Pads come down most. */
+{const T={"Dark": {"5": -5.6}, "Melancholic": {"5": -6}, "Dreamy": {"5": -3.5}, "Tense": {"5": -4.2, "2": -2.8, "3": -3.5}, "Ethereal": {"2": 3, "3": 3, "6": 3, "8": 2.8}, "Hopeful": {"5": -4.9, "6": -3.5}, "Noir": {"2": 3, "8": -2.8}, "Drone": {"2": 3}, "Acid": {"3": 3}, "Power": {"1": 3}, "Breaks": {"5": -4.9, "6": -5.6, "7": -4.9}, "Deep Space": {"5": -4.9}, "Bleep": {"2": 3}, "Melodic House": {"3": -6}, "Distorted Electro": {"2": -4.2}, "Groove Techno": {"3": 3}, "Vector": {"3": -4.2}, "Temporal": {"2": -6, "7": 3, "1": -3}};for(const m in T){if(!MTRIM[m])continue;for(const k in T[m])MTRIM[m][+k]=(MTRIM[m][+k]||0)+T[m][k]}}
