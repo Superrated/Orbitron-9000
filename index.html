@@ -7543,4 +7543,8 @@ window.orbExoProg=function(kind){try{let P,sh;
   Object.defineProperty(b,'gain',{value:d.gain,configurable:true})};                       // duck() keeps writing A.dkb.gain: it now reaches the control signal
  const _d=duck;duck=function(t){const b=A.dkb;if(b&&!b.__sub&&ctx&&b.context===ctx&&!(ctx instanceof OfflineAudioContext))try{build(b)}catch(e){b.__sub=1;console.warn('[orbitron] bass sub sidechain',e)}return _d.apply(this,arguments)}}
 </script>
+<script>/* ---- v0.82: every Launch sets the lead's filter Cutoff about 10 % lower (all moods) — the lead came out a tad too bright.
+   Only the base cutoff; the per-note brightness sweep (Env amount) is left alone. The new value shows on the lead's Cutoff knob. ---- */
+{const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{const P=TR[4].p;if(P.cut>0)P.cut=Math.max(150,Math.round(P.cut*.9/10)*10)}catch(e){console.warn('[orbitron] darker lead',e)}return r}}
+</script>
 </body></html>

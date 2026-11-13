@@ -269,5 +269,6 @@ js+  js/ui/2420-mix-four-tabs.js
 js   js/launch/2430-arranger.js
 js   js/platform/2440-oversample-under-load.js
 js   js/launch/2460-level-balance.js
-js   js/engine/2470-bass-sub-sidechain.js  -
+js   js/engine/2470-bass-sub-sidechain.js
+js   js/launch/2480-darker-lead.js  -
 raw  html/end.html
