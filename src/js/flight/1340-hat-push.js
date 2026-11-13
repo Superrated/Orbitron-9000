@@ -12,7 +12,8 @@
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);if(ON){try{save();rigid()}catch(e){}}return r};
 
  const add=()=>{if(document.querySelector('#t-perf .rgx'))return;const ps=[...document.querySelectorAll('#t-perf .pad')].find(x=>/^Planet song/.test(x.textContent.trim()));if(!ps)return;
-  const b=document.createElement('button');b.className='pad rgx';b.style.setProperty('--col',TR[1].c);b.innerHTML='Hat push<span> (toggle)</span>';b.title='Straight, machine-tight 16th hats (no swing, humanize, ghosts or open hats) · tap again for your pattern';
+  const b=document.createElement('button');b.className='pad rgx latch';b.style.setProperty('--col',TR[1].c);b.innerHTML='Hat push<i class="hst">'+(0?'● ON':'○ OFF')+'</i>';b.title='Straight, machine-tight 16th hats (no swing, humanize, ghosts or open hats) · tap again for your pattern';
   b.onclick=()=>set(!ON);ps.replaceWith(b);paint()};
- const paint=()=>{const b=document.querySelector('#t-perf .rgx');if(!b)return;b.classList.toggle('on',!!ON);const h='Hat push'+(ON?' ●':'')+'<span> (toggle)</span>';if(b.innerHTML!==h)b.innerHTML=h};
+ const paint=()=>{const b=document.querySelector('#t-perf .rgx');if(!b)return;b.classList.toggle('on',!!ON);const h='Hat push<i class="hst">'+(ON?'● ON':'○ OFF')+'</i>';   /* v0.85: ○ OFF / ● ON, latch style (flight/2080) */
+ if(b.innerHTML!==h)b.innerHTML=h};
  add();UI.on(()=>{try{add();paint()}catch(e){}});window.rigidHats={set,on:()=>!!ON}}

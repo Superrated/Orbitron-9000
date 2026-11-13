@@ -2514,10 +2514,11 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  window.orbWakeState=()=>!('wakeLock' in navigator)?'not supported':wl?'on':want()?'requested':'off';
  setInterval(sync,1500);document.addEventListener('visibilitychange',sync);document.addEventListener('pointerup',()=>setTimeout(sync,50))}
 {const _g120=generate;generate=function(){const r=_g120.apply(this,arguments);if(curMood==='Power'){TR[4].m=true;TR[8].m=true;G.ptl=0;build()}return r}}
-{const g=document.querySelector('#t-perf .thr');if(g){let sv=null,P=null;const rb=document.createElement('button');rb.className='pad';rb.innerHTML='Ride push<span> (toggle)</span>';g.appendChild(rb);
+{const g=document.querySelector('#t-perf .thr');if(g){let sv=null,P=null;const rb=document.createElement('button');rb.className='pad latch';rb.innerHTML='Ride push<i class="hst">'+(0?'● ON':'○ OFF')+'</i>';   /* v0.85: ○ OFF / ● ON, latch style (flight/2080) */
+ g.appendChild(rb);
  const hit=(t,sd)=>{const ai=Math.round((t-anchor())/sd);if(((ai%4)+4)%4!==2)return;const T=TR[3],o=T.lv,bar=Math.floor(ai/16);T.lv=Math.max(.42,o||0)*(1.12+.06*Math.sin(bar*2.1))*(ai%16===14?1.1:1);try{if(typeof ride==='function'){window.lpRun?lpRun('drm',()=>ride(t)):ride(t)}}catch(e){}finally{T.lv=o}};
- const off=()=>{if(!P)return;clearInterval(P.iv);P=null;rb.classList.remove('on');rb.innerHTML='Ride push<span> (toggle)</span>';if(sv!==null)TR[3].m=sv;sv=null};
- const on=w=>{ensure();if(!playing||P)return;rb.classList.add('on');rb.innerHTML='Ride push ●<span> (toggle)</span>';sv=TR[3].p.pv==='Ride'?TR[3].m:null;if(sv!==null)TR[3].m=true;
+ const off=()=>{if(!P)return;clearInterval(P.iv);P=null;rb.classList.remove('on');rb.innerHTML='Ride push<i class="hst">'+(0?'● ON':'○ OFF')+'</i>';if(sv!==null)TR[3].m=sv;sv=null};
+ const on=w=>{ensure();if(!playing||P)return;rb.classList.add('on');rb.innerHTML='Ride push<i class="hst">'+(1?'● ON':'○ OFF')+'</i>';sv=TR[3].p.pv==='Ride'?TR[3].m:null;if(sv!==null)TR[3].m=true;
   P={t:w&&w>ctx.currentTime?w:align(sdur())};P.iv=setInterval(()=>{if(!P||!ctx)return;if(!playing){off();return}const sd=sdur();if(P.t<ctx.currentTime-.05)P.t=align(sd);while(P.t<ctx.currentTime+.15){hit(P.t,sd);P.t+=sd}},25)};
  rb.addEventListener('click',()=>{P?off():on()});window.ridePush={on,off,is:()=>!!P};
  rb.style.setProperty('--col','#ffd36b');const o1=[...g.children].find(x=>/^\+1 octave/.test(x.textContent));if(o1)g.insertBefore(rb,o1)}}
@@ -2554,7 +2555,8 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
  const bar=fill=>{if(!sv)return;const sn=!TR[7].m||TR[2].m?7:2,set=(k,pt)=>{const T=TR[k];T.st=16;T.pt=pt.slice()};
   set(0,fill?KF:pk(KICK));set(sn,fill?SF:pk(SNR));set(1,pk(HAT));set(3,pk(PRC));if(sn!==2)set(2,R()<.5?CLP:Array(16).fill(0))};
  // toggle: tap on, tap off. Bar changes come from the step scheduler itself, so they land exactly on the downbeat.
- const ps=document.createElement('button');ps.className='pad';let on=0;const lab=()=>{ps.innerHTML='Break!'+(on?' ●':'')+'<span> (toggle)</span>';ps.classList.toggle('on',!!on)};
+ const ps=document.createElement('button');ps.className='pad latch';let on=0;const lab=()=>{ps.innerHTML='Break!<i class="hst">'+(on?'● ON':'○ OFF')+'</i>';   /* v0.85: ○ OFF / ● ON, latch style (flight/2080) */
+ ps.classList.toggle('on',!!on)};
  const start=()=>{try{ensure()}catch(e){}if(!playing||on)return;sv={};K.forEach(k=>{const T=TR[k];sv[k]={st:T.st,pt:T.pt.slice()}});on=1;bar(((Math.floor(tk/16)%4)+4)%4===3);lab()};
  const stop=()=>{if(!on)return;on=0;if(sv)K.forEach(k=>{if(sv[k]){TR[k].st=sv[k].st;TR[k].pt=sv[k].pt}});sv=null;lab()};
  ps.addEventListener('click',()=>{on?stop():start()});lab();
@@ -4131,9 +4133,10 @@ window.MOODX={
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);if(ON){try{save();rigid()}catch(e){}}return r};
 
  const add=()=>{if(document.querySelector('#t-perf .rgx'))return;const ps=[...document.querySelectorAll('#t-perf .pad')].find(x=>/^Planet song/.test(x.textContent.trim()));if(!ps)return;
-  const b=document.createElement('button');b.className='pad rgx';b.style.setProperty('--col',TR[1].c);b.innerHTML='Hat push<span> (toggle)</span>';b.title='Straight, machine-tight 16th hats (no swing, humanize, ghosts or open hats) · tap again for your pattern';
+  const b=document.createElement('button');b.className='pad rgx latch';b.style.setProperty('--col',TR[1].c);b.innerHTML='Hat push<i class="hst">'+(0?'● ON':'○ OFF')+'</i>';b.title='Straight, machine-tight 16th hats (no swing, humanize, ghosts or open hats) · tap again for your pattern';
   b.onclick=()=>set(!ON);ps.replaceWith(b);paint()};
- const paint=()=>{const b=document.querySelector('#t-perf .rgx');if(!b)return;b.classList.toggle('on',!!ON);const h='Hat push'+(ON?' ●':'')+'<span> (toggle)</span>';if(b.innerHTML!==h)b.innerHTML=h};
+ const paint=()=>{const b=document.querySelector('#t-perf .rgx');if(!b)return;b.classList.toggle('on',!!ON);const h='Hat push<i class="hst">'+(ON?'● ON':'○ OFF')+'</i>';   /* v0.85: ○ OFF / ● ON, latch style (flight/2080) */
+ if(b.innerHTML!==h)b.innerHTML=h};
  add();UI.on(()=>{try{add();paint()}catch(e){}});window.rigidHats={set,on:()=>!!ON}}
 </script>
 <script>
@@ -4264,7 +4267,8 @@ window.MOODX={
 /* ---- v0.22: Flight uses the full screen width on large screens (not phones). Only while Flight is open: the page widens and the deck becomes
    risers | breakdowns side by side, thrusters | planet mutes side by side, low-pass | LEAD + BASS side by side. Phones and tablets in portrait are unchanged.
    v0.84: the six faders share one row in three equal panels — FILTER + THIN | LEAD + BASS | TENSION + PULSE (the filter panel also carries
-   .mxp, so the LEAD rule used to stack it underneath LEAD + BASS and hide it). ---- */
+   .mxp, so the LEAD rule used to stack it underneath LEAD + BASS and hide it).
+   v0.86: on desktop and tablet (wider than a phone) the faders are 3 columns × 2 rows: FILTER over THIN | LEAD over BASS | TENSION over PULSE. ---- */
 {const st=document.createElement('style');st.textContent=`@media (min-width:900px){
  body.flw{max-width:none!important;padding-left:20px!important;padding-right:20px!important}
  body.flw #t-perf{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px!important;align-items:stretch}
@@ -4282,7 +4286,13 @@ window.MOODX={
  body.flw #t-perf>.flw-mut>:last-child{grid-auto-rows:1fr}
  body.flw #t-perf>.flw-mut>:last-child>button{height:auto!important;min-height:44px;align-self:stretch;font-size:14px}
  body.flw #t-perf>.rz>div{height:clamp(90px,calc(100vh - 770px),200px)!important}
-}`;document.head.appendChild(st);
+}
+@media (min-width:641px) and (max-width:899px){
+ body #t-perf>.panel.mxp.lpf{grid-column:1/2!important}
+ body #t-perf>.panel.mxp:not(.lpf):not(.xmp){grid-column:2/3!important}
+ body #t-perf>.panel.mxp.xmp{grid-column:3/4!important}
+}
+@media (min-width:641px){body #t-perf>.panel.mxp>.mxrow{grid-template-columns:minmax(0,1fr)!important;row-gap:8px!important}}`;document.head.appendChild(st);
  const tag=()=>{const T=document.getElementById('t-perf');if(!T)return;[...T.querySelectorAll(':scope>.sec')].forEach((c,i)=>{c.classList.toggle('flw-s1',i===0);c.classList.toggle('flw-s2',i===1)});[...T.children].forEach(c=>{if(!c.classList.contains('panel')||c.classList.contains('rz')||c.classList.contains('lpf')||c.classList.contains('mxp'))return;
    const tx=(c.textContent||'').toUpperCase();c.classList.toggle('flw-thr',/THRUSTERS/.test(tx));c.classList.toggle('flw-mut',/PLANET MUTES/.test(tx));c.classList.toggle('flw-x',!c.offsetHeight&&!tx.trim())})};
  const chk=()=>{const T=document.getElementById('t-perf');const on=!!T&&!T.hidden;if(on)tag();document.body.classList.toggle('flw',on)};
@@ -6537,7 +6547,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    CHORD HOLD: the harmony stays on the chord that is playing — pad, bass and lead keep to it — until you tap again; then the progression moves on.
    LIFT: on the next bar the whole tune moves up a whole tone (pad, bass, lead, stab, satellite, tuned perc); tap again to come back down on the next bar.
    A Launch clears both.
-   v0.85: on and off look clearly different (like FILL): dark + dashed outline + "○ OFF" when off, lit + glow + white ring + "● ON" when on. ---- */
+   v0.85: on and off look clearly different (like FILL); the style (.latch) is shared by every tap-on / tap-off thruster (Break!, Hat push, Ride push): dark + dashed outline + "○ OFF" when off, lit + glow + white ring + "● ON" when on. ---- */
 {const H={hold:false,idx:null,last:0,lift:false,pend:null,base:null},bt={};window.orbHarm=H;
  const wrap=fn=>function(t){const a=[...arguments];if(H.hold){if(H.idx==null)H.idx=H.last;a[0]=H.idx}else{H.idx=null;H.last=t}return fn.apply(this,a)};
  pad=wrap(pad);padChord=wrap(padChord);
@@ -6547,16 +6557,16 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  window.orbHarmReset=()=>{if(H.lift&&H.base!=null)setRoot(H.base);H.hold=false;H.idx=null;H.lift=false;H.pend=null;H.base=null;paint()};
  const paint=()=>{const c=bt.c,l=bt.l;if(c){c.classList.toggle('on',H.hold);const t='Chord hold<i class="hst">'+(H.hold?'● ON':'○ OFF')+'</i>';if(c._h!==t){c._h=t;c.innerHTML=t}}
   if(l){l.classList.toggle('on',H.lift&&H.pend==null);l.classList.toggle('hpend',H.pend!=null);const t='Lift<i class="hst">'+(H.pend!=null?(H.pend?'→ UP · next bar':'→ HOME · next bar'):H.lift?'● ON · +2':'○ OFF')+'</i>';if(l._h!==t){l._h=t;l.innerHTML=t}}};
- const mk=(cls,col,title,fn)=>{const b=document.createElement('button');b.className='pad '+cls;b.style.setProperty('--col',col);b.title=title;b.addEventListener('click',e=>{e.preventDefault();try{ensure()}catch(x){}fn();paint()});return b};
+ const mk=(cls,col,title,fn)=>{const b=document.createElement('button');b.className='pad latch '+cls;b.style.setProperty('--col',col);b.title=title;b.addEventListener('click',e=>{e.preventDefault();try{ensure()}catch(x){}fn();paint()});return b};
  const make=()=>{const g=document.querySelector('#t-perf .thr');if(!g||g.querySelector('.chdb'))return;
   bt.c=mk('chdb','#b8a6ff','Tap: the harmony stays on the current chord · tap again: the progression moves on',()=>{H.hold=!H.hold;if(!H.hold)H.idx=null;try{say&&say(H.hold?'◉ CHORD HOLD':'◉ CHORD HOLD · off')}catch(e){}});
   bt.l=mk('lftb','#7dffb5','Tap: the whole tune moves up a whole tone on the next bar · tap again: back home on the next bar',()=>{if(H.pend!=null){H.pend=null;return}if(!playing){H.pend=null;if(!H.lift){H.base=G.root;setRoot(G.root+2);H.lift=true}else{if(H.base!=null)setRoot(H.base);H.lift=false;H.base=null}return}H.pend=!H.lift});
   g.appendChild(bt.c);g.appendChild(bt.l);paint()};
  const st=document.createElement('style');st.textContent='#t-perf .pad.hpend{animation:kspulse .45s ease-in-out infinite alternate}'
   /* v0.85: on and off clearly different, like FILL — off: dark with a dashed outline in the pad's colour; on: lit in its colour with a glow and a white ring */
-  +'#t-perf .pad.chdb,#t-perf .pad.lftb{transition:background .15s,box-shadow .15s}'
-  +'#t-perf .pad.chdb:not(.on):not(.hpend),#t-perf .pad.lftb:not(.on):not(.hpend){background:var(--c1)!important;color:var(--muted)!important;outline:1px dashed var(--col);outline-offset:-3px;box-shadow:none}'
-  +'#t-perf .pad.chdb.on,#t-perf .pad.lftb.on,#t-perf .pad.lftb.hpend{background:var(--col)!important;color:#04100a!important;outline:0;box-shadow:0 0 14px var(--col),inset 0 0 0 2px #fff}'
+  +'#t-perf .pad.latch{transition:background .15s,box-shadow .15s}'
+  +'#t-perf .pad.latch:not(.on):not(.hpend){background:var(--c1)!important;color:var(--muted)!important;outline:1px dashed var(--col);outline-offset:-3px;box-shadow:none}'
+  +'#t-perf .pad.latch.on,#t-perf .pad.latch.hpend{background:var(--col)!important;color:#04100a!important;outline:0;box-shadow:0 0 14px var(--col),inset 0 0 0 2px #fff}'
   +'#t-perf .pad .hst{display:block;font-style:normal;font-size:9px;font-weight:600;letter-spacing:-.02em;text-transform:none;margin-top:2px;white-space:nowrap;font-family:ui-monospace,Menlo,monospace}';document.head.appendChild(st);
  make();setTimeout(make,700);setTimeout(make,2600);UI.on(()=>{make();paint()})}
 </script>

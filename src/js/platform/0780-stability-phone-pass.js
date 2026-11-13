@@ -12,10 +12,11 @@
  window.orbWakeState=()=>!('wakeLock' in navigator)?'not supported':wl?'on':want()?'requested':'off';
  setInterval(sync,1500);document.addEventListener('visibilitychange',sync);document.addEventListener('pointerup',()=>setTimeout(sync,50))}
 {const _g120=generate;generate=function(){const r=_g120.apply(this,arguments);if(curMood==='Power'){TR[4].m=true;TR[8].m=true;G.ptl=0;build()}return r}}
-{const g=document.querySelector('#t-perf .thr');if(g){let sv=null,P=null;const rb=document.createElement('button');rb.className='pad';rb.innerHTML='Ride push<span> (toggle)</span>';g.appendChild(rb);
+{const g=document.querySelector('#t-perf .thr');if(g){let sv=null,P=null;const rb=document.createElement('button');rb.className='pad latch';rb.innerHTML='Ride push<i class="hst">'+(0?'● ON':'○ OFF')+'</i>';   /* v0.85: ○ OFF / ● ON, latch style (flight/2080) */
+ g.appendChild(rb);
  const hit=(t,sd)=>{const ai=Math.round((t-anchor())/sd);if(((ai%4)+4)%4!==2)return;const T=TR[3],o=T.lv,bar=Math.floor(ai/16);T.lv=Math.max(.42,o||0)*(1.12+.06*Math.sin(bar*2.1))*(ai%16===14?1.1:1);try{if(typeof ride==='function'){window.lpRun?lpRun('drm',()=>ride(t)):ride(t)}}catch(e){}finally{T.lv=o}};
- const off=()=>{if(!P)return;clearInterval(P.iv);P=null;rb.classList.remove('on');rb.innerHTML='Ride push<span> (toggle)</span>';if(sv!==null)TR[3].m=sv;sv=null};
- const on=w=>{ensure();if(!playing||P)return;rb.classList.add('on');rb.innerHTML='Ride push ●<span> (toggle)</span>';sv=TR[3].p.pv==='Ride'?TR[3].m:null;if(sv!==null)TR[3].m=true;
+ const off=()=>{if(!P)return;clearInterval(P.iv);P=null;rb.classList.remove('on');rb.innerHTML='Ride push<i class="hst">'+(0?'● ON':'○ OFF')+'</i>';if(sv!==null)TR[3].m=sv;sv=null};
+ const on=w=>{ensure();if(!playing||P)return;rb.classList.add('on');rb.innerHTML='Ride push<i class="hst">'+(1?'● ON':'○ OFF')+'</i>';sv=TR[3].p.pv==='Ride'?TR[3].m:null;if(sv!==null)TR[3].m=true;
   P={t:w&&w>ctx.currentTime?w:align(sdur())};P.iv=setInterval(()=>{if(!P||!ctx)return;if(!playing){off();return}const sd=sdur();if(P.t<ctx.currentTime-.05)P.t=align(sd);while(P.t<ctx.currentTime+.15){hit(P.t,sd);P.t+=sd}},25)};
  rb.addEventListener('click',()=>{P?off():on()});window.ridePush={on,off,is:()=>!!P};
  rb.style.setProperty('--col','#ffd36b');const o1=[...g.children].find(x=>/^\+1 octave/.test(x.textContent));if(o1)g.insertBefore(rb,o1)}}

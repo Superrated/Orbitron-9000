@@ -11,7 +11,8 @@
  const bar=fill=>{if(!sv)return;const sn=!TR[7].m||TR[2].m?7:2,set=(k,pt)=>{const T=TR[k];T.st=16;T.pt=pt.slice()};
   set(0,fill?KF:pk(KICK));set(sn,fill?SF:pk(SNR));set(1,pk(HAT));set(3,pk(PRC));if(sn!==2)set(2,R()<.5?CLP:Array(16).fill(0))};
  // toggle: tap on, tap off. Bar changes come from the step scheduler itself, so they land exactly on the downbeat.
- const ps=document.createElement('button');ps.className='pad';let on=0;const lab=()=>{ps.innerHTML='Break!'+(on?' ●':'')+'<span> (toggle)</span>';ps.classList.toggle('on',!!on)};
+ const ps=document.createElement('button');ps.className='pad latch';let on=0;const lab=()=>{ps.innerHTML='Break!<i class="hst">'+(on?'● ON':'○ OFF')+'</i>';   /* v0.85: ○ OFF / ● ON, latch style (flight/2080) */
+ ps.classList.toggle('on',!!on)};
  const start=()=>{try{ensure()}catch(e){}if(!playing||on)return;sv={};K.forEach(k=>{const T=TR[k];sv[k]={st:T.st,pt:T.pt.slice()}});on=1;bar(((Math.floor(tk/16)%4)+4)%4===3);lab()};
  const stop=()=>{if(!on)return;on=0;if(sv)K.forEach(k=>{if(sv[k]){TR[k].st=sv[k].st;TR[k].pt=sv[k].pt}});sv=null;lab()};
  ps.addEventListener('click',()=>{on?stop():start()});lab();
