@@ -4,6 +4,7 @@
 //   node tools/perf.mjs --ls orb-mst=0 --eval "G.rev=0"       try an idea: extra localStorage settings, JS run right after Launch
 //   node tools/perf.mjs --quality Eco --buffer "Extra large · 102 ms" --moods Acid --secs 60
 // Per mood:  start = mean load over the first 10 s · end = mean over the last 10 s (should be ≈ start: no creep) ·
+//            buffer = the real buffer the browser gave · worstBuf = busiest stretch as long as that buffer (over 100 % = a dropout) ·
 //            worst52 = busiest 52 ms stretch of the run (must stay well under 100 % for a 52 ms buffer; 102 ms buffer → see worst102).
 // Load = time the audio thread spent rendering ÷ real time (100 % = it cannot keep up → dropouts). Measured on THIS machine:
 // a phone is slower, so compare runs (before/after a change) rather than reading the numbers as absolute.
@@ -26,16 +27,16 @@ async function run(mood) {
     await browser.startTracing(page, { categories: ['webaudio'] });
     await page.waitForTimeout(SECS * 1000);
     const trace = JSON.parse((await browser.stopTracing()).toString());
-    const sr = await page.evaluate(() => __ctx.sampleRate);
+    const [sr, base] = await page.evaluate(() => [__ctx.sampleRate, __ctx.baseLatency]);
     const R = (trace.traceEvents || trace).filter(e => e.ph === 'X' && e.name === 'RealtimeAudioDestinationHandler::Render').map(e => [e.ts, e.dur]).sort((x, y) => x[0] - y[0]);
     const q = 128 / sr * 1e6, t0 = R[0][0];
     const mean = (from, to) => { let s = 0, n = 0; for (const [t, d] of R) if (t - t0 >= from * 1e6 && t - t0 < to * 1e6) { s += d; n++; } return n ? 100 * s / (n * q) : 0; };
     const worst = ms => { const W = Math.max(1, Math.round(ms * 1000 / q)); let s = 0, m = 0; for (let i = 0; i < R.length; i++) { s += R[i][1]; if (i >= W) s -= R[i - W][1]; if (i >= W - 1) m = Math.max(m, s); } return 100 * m / (W * q); };
-    return { mood, start: mean(0, 10), end: mean(SECS - 10, SECS), worst52: worst(52), worst102: worst(102) };
+    return { mood, base: base * 1000, start: mean(0, 10), end: mean(SECS - 10, SECS), worstBuf: worst(base * 1000), worst52: worst(52), worst102: worst(102) };
   } finally { await app.close(); }
 }
 
 console.log(`quality ${Q} · buffer ${BUF} · ${SECS} s per mood`);
-console.log('mood'.padEnd(16) + 'start'.padStart(7) + 'end'.padStart(7) + 'worst52'.padStart(9) + 'worst102'.padStart(10));
+console.log('mood'.padEnd(16) + 'buffer'.padStart(8) + 'start'.padStart(7) + 'end'.padStart(7) + 'worstBuf'.padStart(10) + 'worst52'.padStart(9) + 'worst102'.padStart(10));
 const p = x => (x.toFixed(0) + '%');
-for (const m of MOODS) { const r = await run(m); console.log(r.mood.padEnd(16) + p(r.start).padStart(7) + p(r.end).padStart(7) + p(r.worst52).padStart(9) + p(r.worst102).padStart(10)); }
+for (const m of MOODS) { const r = await run(m); console.log(r.mood.padEnd(16) + (r.base.toFixed(0) + 'ms').padStart(8) + p(r.start).padStart(7) + p(r.end).padStart(7) + p(r.worstBuf).padStart(10) + p(r.worst52).padStart(9) + p(r.worst102).padStart(10)); }
