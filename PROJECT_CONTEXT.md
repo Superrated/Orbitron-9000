@@ -43,7 +43,7 @@ tests/                   build.test.mjs (static), browser.test.mjs (runtime), sn
 | task | look at |
 |---|---|
 | tune a mood (tempo, sounds, levels) | `docs/MOODS.md` → the mood's own file(s) in `launch/`; per-mood tables: `launch/1220-mood-settings-row`, `1680-mood-flavours` (5 per mood), trims `0190`, `1250`, `1300`, `1930` |
-| a part too loud / quiet after Launch | `launch/2440-level-balance` (dB per mood and per sound, runs last); measure with `node tools/levels.mjs --moods <m> --out x.json` |
+| a part too loud / quiet after Launch | `launch/2460-level-balance` (dB per mood and per sound, runs last); measure with `node tools/levels.mjs --moods <m> --out x.json` |
 | add a mood | copy the pattern of `launch/1150-temporal-mood.js` (newest complete mood), add `MOODNAME` entry (`core/0050`), check `docs/MOODS.md` "all-mood tables" for tables that need a row |
 | change a drum or bass sound | `fireVoice()` in `core/0090` (k: 0 kick, 1 hat, 2 clap, 3 perc, 6 bass) + `instruments/` files named after it; drum hits are pre-rendered (`platform/0430`, `1920`, `2160`) |
 | change a lead / pad / stab / satellite sound | `instruments/0160-lead-engine`, `0480-mini-lead-engine`, acid in `core/0090` + `instruments/2200`, `2220`; `pad()` in `core/0120` + `instruments/0670`, `0690`; stab `instruments/0490`; satellite `1790` |
@@ -52,7 +52,7 @@ tests/                   build.test.mjs (static), browser.test.mjs (runtime), sn
 | what Launch does | `generate()` chain in `docs/HOOKS.md` — the last files run first; `launch/1530-launch-polish`, `1660-launch-quality`, `1690-in-time-launch` |
 | Flight page | `flight/INDEX.md`; layout `flight/2090-thruster-order` |
 | a UI page or control | `ui/INDEX.md`; faders/menus sync: `ui/0930-faders-show-value`, `ui/0080-event-driven-sync` |
-| stutters, CPU, recovery | `platform/INDEX.md`: `0300-load-guard`, `1580-overload-guard`, `1700-safety-loop`, `1490-audio-buffer` |
+| stutters, CPU, recovery | `platform/INDEX.md`: `0300-load-guard`, `1580-overload-guard`, `1700-safety-loop` (lifeboat), `1490-audio-buffer`; Launch while playing: `launch/1690`, `0660` |
 | saving, sectors, export | `state/0830-sectors`, `state/0060-saving-share-download` |
 
 ## Conventions

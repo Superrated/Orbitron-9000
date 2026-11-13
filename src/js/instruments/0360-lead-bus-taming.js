@@ -7,7 +7,7 @@ const _init39=init;init=function(){const nw=!ctx;_init39();if(!nw)return;const p
   const n=2048,c=new Float32Array(n),k=2.2,b=.1,o0=Math.atan(k*b),nm=Math.atan(k*(1+b))-o0;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=(Math.atan(k*(x+b))-o0)/nm}fz.curve=c;fz.oversample='2x'; /* warm overdrive */
   ft.type='lowpass';ft.frequency.value=5200;ft.Q.value=.5;A.ld.connect(fd);fd.connect(pk);A.ld.connect(fi);{const fh=ctx.createBiquadFilter(),pe=ctx.createBiquadFilter(),de=ctx.createBiquadFilter();fh.type='highpass';fh.frequency.value=180;fh.Q.value=.6;pe.type=de.type='highshelf';pe.frequency.value=de.frequency.value=1500;pe.gain.value=6;de.gain.value=-6;
    fi.connect(fh);fh.connect(pe);pe.connect(fz);fz.connect(de);de.connect(ft)} /* brighter notes drive the overdrive harder, like a filter into a pedal */ft.connect(fw);fw.connect(pk);A.fz={fd,fi,fw}} // v0.22 lead bus fuzz (LEAD fader)
- pk.connect(hs);hs.connect(c);c.connect(o);o.connect(A.dk);
+ pk.connect(hs);hs.connect(c);{const lf=ctx.createBiquadFilter();lf.type='lowpass';lf.frequency.value=20000;lf.Q.value=.7;c.connect(lf);lf.connect(o);A.ldlp=lf}o.connect(A.dk);   /* v0.8: one open low-pass at the end of the lead bus — the LEAD fader sweeps it closed (1500) */
  /* v0.77: leads were barely audible in many Launches. Measured against the kick over 60 Launches the lead sat at −20 dB in the middle and
     down to −31 dB; v0.7 was −19 / −27. The fixed per-patch gain of v0.75 could not follow how much a patch's level changes with the cutoff,
     drive and register a Launch picks. Three changes, nothing that listens over time:

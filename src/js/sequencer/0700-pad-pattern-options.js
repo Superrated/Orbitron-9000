@@ -22,8 +22,8 @@
   sel(g,'Chord type',Object.keys(CT),ctNow,v=>{pshape=prog.map(()=>CT[v]||pick(M.sh||['7']));pmean=null});
   if(PD&&PD.length!==T.st)PD=G.prhN?rhFit(G.prhN,T.st):null;
   const rhNow=PD?((G.prhN&&(rhFit(G.prhN,T.st)||[]).join()===PD.join()?G.prhN:Object.keys(RHS).find(k=>(rhFit(k,T.st)||[]).join()===PD.join()))||'(custom)'):'Even';
-  sel(g,'Chord rhythm',rhNow==='(custom)'?['(custom)',...Object.keys(RH)]:Object.keys(RH),rhNow,v=>{if(v==='(custom)')return;PD=rhFit(v,T.st);G.prhN=PD?v:''});
-  sel(g,'Push',['Off','On'],PPUSH?'On':'Off',v=>PPUSH=v==='On'?1:0);
+  sel(g,'Chord rhythm',rhNow==='(custom)'?['(custom)',...Object.keys(RH)]:Object.keys(RH),rhNow,v=>{if(v==='(custom)')return;PD=rhFit(v,T.st);G.prhN=PD?v:'';draw(T,-1)});
+  sel(g,'Push',['Off','On'],PPUSH?'On':'Off',v=>{PPUSH=v==='On'?1:0});
   const grNow=(P.pgate||0)>.01?(Object.keys(GR).find(k=>GR[k]&&P.pgpat&&GR[k]===P.pgpat.join(''))||'Disco'):'Off';
   sel(g,'Gate rhythm',Object.keys(GR),grNow,v=>{if(!GR[v]){P.pgate=0;return}P.pgpat=GR[v].split('').map(Number);if((P.pgate||0)<.3)P.pgate=.8});
   sel(g,'Inversions',['Smooth top','Close'],G.pvoice,v=>{G.pvoice=v;PTOP=null})}
