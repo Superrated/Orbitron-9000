@@ -6451,7 +6451,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13e';
+window.ORB_BUILD='2026-11-13f';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -7019,52 +7019,55 @@ window.orbExoProg=function(kind){try{let P,sh;
 #t-mix[data-mx=shape] .mxcp .spc:last-of-type{border-bottom:0}#t-mix .mxs button{padding-left:2px;padding-right:2px;letter-spacing:.1em}`;document.head.appendChild(st)}}
 </script>
 <script>
-/* ---- v0.71: ARRANGER — three rules, one line per mood. Runs last on every Launch; it only presses Mute, lowers Hits and sets Answer,
-   all things you can do by hand. No new controls.
+/* ---- v0.71: ARRANGER — four rules, one line per mood. Runs last on every Launch; it only presses Mute, lowers Hits, sets Answer and the
+   bass Ending, all things you can do by hand. No new controls.
 
-     ARR[mood] = [ parts , notes , first ]
+     ARR[mood] = [ parts , notes , first , turn ]
 
      parts · how many melodic parts may play at once (lead, pad, stab, Satellite). The bass does not count.
      notes · the most hits per bar for lead, stab and perc. Hats may play twice that plus two.
      first · the part that always stays (4 lead · 5 pad · 8 stab · 9 Satellite); after it: lead, pad, stab, Satellite.
+     turn  · the chance (0–1) that the bass gets a turnaround in every 4th bar.
 
    Rule 1  too many melodic parts → the last ones in that order are muted.
    Rule 2  too many hits          → Hits comes down to the ceiling (the ring keeps its rotation and tension).
    Rule 3  a lead and a stab      → the stab answers: it plays in bars 2 & 4 only. With notes at 4 or less, the perc answers too.
+   Rule 4  the bass, by chance    → its Ending is set to "Turnaround every 4th bar" (only when no Ending was chosen already).
 
    Left alone: Acid 303 lines and Riff-mode leads (they have their own written rhythm), the ride, kick, clap, snare and bass.
-   To make a mood busier or emptier, change its two numbers. A mood without a line is not arranged at all.
+   To make a mood busier or emptier, change its numbers. A mood without a line is not arranged at all.
    The numbers come from how records in each subgenre are built (from memory, not from audio) — the reference is noted per line. ---- */
 {const ARR={
-  Dark:[2,4,4],               // Ben Klock – Subzero · Marcel Dettmann – Let's Do It
-  Tense:[1,5,4],              // Nitzer Ebb – Join in the Chant · Front 242 – Headhunter
-  Acid:[1,4,4],               // Hardfloor – Acperience 1 · Phuture – Acid Tracks
-  Power:[2,4,4],              // Jeff Mills – The Bells · Joey Beltram – Energy Flash
-  'Groove Techno':[1,6,4],    // Surgeon – Magneze · Ben Sims, Mark Broom
-  Temporal:[2,5,8],           // Gaetano Parisio, Marco Carola
-  Bleep:[1,5,4],              // LFO – LFO · Sweet Exorcist – Testone
-  'Distorted Electro':[1,4,4],// Kraftwerk – Numbers · Helena Hauff, The Hacker
-  Drone:[2,6,4],              // Robert Hood – Minus · Plastikman – Spastik
-  Polymeter:[2,6,8],          // Rrose – Waterfall · Donato Dozzy
-  Chug:[2,4,4],               // Andrew Weatherall, Red Axes
-  Melancholic:[3,8,4],        // Stephan Bodzin – Singularity · Tale Of Us & Vaal – Monument
-  'Melodic House':[2,6,4],    // Âme – Rej
-  Hopeful:[3,8,4],            // Sasha – Xpander · Eric Prydz – Opus
-  Italo:[2,7,4],              // Giorgio Moroder – Chase · Alexander Robotnick – Problèmes d'Amour
-  Vector:[2,5,4],             // Legowelt, KiNK
-  Breaks:[2,5,5],             // LTJ Bukem – Horizons · Photek – Ni-Ten-Ichi-Ryu
-  Dreamy:[3,5,5],             // Mr. Fingers – Can You Feel It · Kerri Chandler – Rain
-  Ethereal:[2,4,5],           // Aphex Twin – Xtal · Biosphere – Novelty Waves
-  'Deep Space':[2,3,5],       // Global Communication – 14:31 · Gas – Pop
-  Ambient:[2,3,5],            // Brian Eno – An Ending (Ascent) · Stars of the Lid
-  Noir:[2,3,8]};              // Basic Channel – Phylyps Trak II · Maurizio – M6
+  Dark:[2,4,4,0.35],               // Ben Klock – Subzero · Marcel Dettmann – Let's Do It
+  Tense:[1,5,4,0.3],              // Nitzer Ebb – Join in the Chant · Front 242 – Headhunter
+  Acid:[1,4,4,0],               // Hardfloor – Acperience 1 · Phuture – Acid Tracks
+  Power:[2,4,4,0.35],              // Jeff Mills – The Bells · Joey Beltram – Energy Flash
+  'Groove Techno':[1,6,4,0.2],    // Surgeon – Magneze · Ben Sims, Mark Broom
+  Temporal:[2,5,8,0.15],           // Gaetano Parisio, Marco Carola
+  Bleep:[1,5,4,0.35],              // LFO – LFO · Sweet Exorcist – Testone
+  'Distorted Electro':[1,4,4,0.3],// Kraftwerk – Numbers · Helena Hauff, The Hacker
+  Drone:[2,6,4,0.15],              // Robert Hood – Minus · Plastikman – Spastik
+  Polymeter:[2,6,8,0.15],          // Rrose – Waterfall · Donato Dozzy
+  Chug:[2,4,4,0.3],               // Andrew Weatherall, Red Axes
+  Melancholic:[3,8,4,0.4],        // Stephan Bodzin – Singularity · Tale Of Us & Vaal – Monument
+  'Melodic House':[2,6,4,0.4],    // Âme – Rej
+  Hopeful:[3,8,4,0.45],            // Sasha – Xpander · Eric Prydz – Opus
+  Italo:[2,7,4,0.45],              // Giorgio Moroder – Chase · Alexander Robotnick – Problèmes d'Amour
+  Vector:[2,5,4,0.4],             // Legowelt, KiNK
+  Breaks:[2,5,5,0.3],             // LTJ Bukem – Horizons · Photek – Ni-Ten-Ichi-Ryu
+  Dreamy:[3,5,5,0.35],             // Mr. Fingers – Can You Feel It · Kerri Chandler – Rain
+  Ethereal:[2,4,5,0.2],           // Aphex Twin – Xtal · Biosphere – Novelty Waves
+  'Deep Space':[2,3,5,0.1],       // Global Communication – 14:31 · Gas – Pop
+  Ambient:[2,3,5,0.1],            // Brian Eno – An Ending (Ascent) · Stars of the Lid
+  Noir:[2,3,8,0.2]};              // Basic Channel – Phylyps Trak II · Maurizio – M6
  window.orbArr=ARR;
  const on=k=>!TR[k].m,cap=(k,c)=>{const T=TR[k];if(!on(k))return;const h=Math.max(1,Math.round(c*T.st/16));if(T.h>h){T.h=h;T.pt=pat(T)}};
- function arrange(){const a=ARR[curMood];if(!a)return;const [parts,notes,first]=a,mode=TR[4].p.mode;
+ function arrange(){const a=ARR[curMood];if(!a)return;const [parts,notes,first,turn]=a,mode=TR[4].p.mode;
   [first,4,5,8,9].filter((k,i,o)=>o.indexOf(k)===i).filter(on).slice(parts).forEach(k=>{TR[k].m=true});             // rule 1
   if(mode!=='Acid 303'&&mode!=='Riff')cap(4,notes);cap(8,notes);if(TR[3].p.pv!=='Ride')cap(3,notes);cap(1,notes*2+2);   // rule 2
-  if(on(4)){if(on(8))TR[8].p.ans=1;if(on(3)&&notes<=4&&TR[3].p.pv!=='Ride')TR[3].p.ans=1}}                                // rule 3
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{arrange();G.pwMode=TR[4].p.mode;build();setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){console.warn('[orbitron] arranger',e)}return r};
+  if(on(4)){if(on(8))TR[8].p.ans=1;if(on(3)&&notes<=4&&TR[3].p.pv!=='Ride')TR[3].p.ans=1}                                 // rule 3
+  {const B=TR[6].p;if(on(6)&&!G.acidGuest&&!B.btn&&(B.bph||1)===1&&R()<(turn||0))B.btn=true}}                            // rule 4
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{arrange();G.pwMode=TR[4].p.mode;build();setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync()}catch(e){}},0)}catch(e){console.warn('[orbitron] arranger',e)}return r};
  window.orbArrange=arrange}
 </script>
 </body></html>
