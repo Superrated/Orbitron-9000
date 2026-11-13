@@ -6,7 +6,8 @@
 //   node tools/levels.mjs                         every mood, seeds 1-6, 8 browsers in parallel  -> JSON on stdout
 //   node tools/levels.mjs --moods Acid,Noir --seeds 1,2,3 --workers 2 --out levels.json
 //   node tools/levels.mjs --kits  --moods Dark,Italo --seeds 1,2   the kick alone with each drum kit (same groove): dB per kit
-//   node tools/levels.mjs --loud                              what leaves the master per mood after 14 s: loudness, peak, headroom keeper
+//   node tools/levels.mjs --loud                              what leaves the master per mood, first 3 s and 7-12 s in: loudness, peak, headroom keeper (3 Launches each, ~2 min)
+//   node tools/levels.mjs --loudreport new.json [old.json]    table of a --loud run, next to an earlier one
 //   node tools/levels.mjs --report levels.json    table: per mood and part, median dB against the kick / against the full mix
 //
 // Per Launch: tracks[k] = { db (absolute), lv, trim, s (the sound's text settings) }, mix = the full groove.
@@ -20,6 +21,16 @@ const med = v => { const s = [...v].sort((x, y) => x - y); return s.length ? (s[
 
 const rep = val('--report');
 if (rep) { report(JSON.parse(readFileSync(rep, 'utf8'))); process.exit(0); }
+const lrep = val('--loudreport');
+if (lrep) { loudReport(JSON.parse(readFileSync(lrep, 'utf8')), a[0] ? JSON.parse(readFileSync(a[0], 'utf8')) : null); process.exit(0); }
+function loudReport(rows, old) {
+  const grp = rs => { const by = {}; for (const r of rs) (by[r.cur] || (by[r.cur] = [])).push(r); return by; }, B = grp(rows), A = old ? grp(old) : {}, f = v => v.toFixed(1).padStart(7);
+  const line = v => f(med(v.map(x => x.first[0]))) + f(med(v.map(x => x.settled[0]))) + f(med(v.map(x => x.first[0])) - med(v.map(x => x.settled[0]))) + f(med(v.map(x => x.settled[1])));
+  console.log('loudness (K-weighted dB) — start = first 3 s, settled = later, slide = start - settled, peak dBFS\n' + 'mood'.padEnd(19) + '  start settled  slide   peak' + (old ? '   | before:  start settled  slide   peak' : ''));
+  for (const m in B) console.log(m.padEnd(19) + line(B[m]) + (A[m] ? '   |        ' + line(A[m]) : ''));
+  const sl = Object.values(B).map(v => med(v.map(x => x.first[0])) - med(v.map(x => x.settled[0]))), st = Object.values(B).map(v => med(v.map(x => x.settled[0])));
+  console.log(`median slide ${med(sl).toFixed(1)} dB · settled loudness from ${Math.min(...st).toFixed(1)} to ${Math.max(...st).toFixed(1)}`);
+}
 
 export function summarize(rows) {
   const by = {};
@@ -51,7 +62,7 @@ const why = unavailable();
 if (why) { console.error(why); process.exit(2); }
 const opt = k => { const i = a.indexOf(k); if (i < 0) return false; a.splice(i, 1); return true; };
 const KITMODE = opt('--kits'), LOUDMODE = opt('--loud');
-const seeds = (val('--seeds') || '1,2,3,4,5,6').split(',').map(Number), nW = +(val('--workers') || 8), outF = val('--out'), moodArg = val('--moods');
+const seeds = (val('--seeds') || (LOUDMODE ? '1,2,3' : '1,2,3,4,5,6')).split(',').map(Number), nW = +(val('--workers') || 8), outF = val('--out'), moodArg = val('--moods');
 
 /** In the page, with the Launch playing: solo every unmuted track in turn. */
 const pageMeasure = async ({ mood, seed }) => {
@@ -109,8 +120,8 @@ const pageLoud = async ({ mood, seed }) => {
     return [+(10 * Math.log10(ss / Math.max(1, n) + 1e-12)).toFixed(2), +(20 * Math.log10(pk + 1e-9)).toFixed(2)]; };
   const res = { mood, cur: curMood, flav: G.flav || '', seed, kick: !TR[0].m };
   res.first = await meas(3000); res.hr0 = +(orbHeadroom.db || 0).toFixed(2);     // the first 3 s after Play
-  await wait(11000);
-  res.settled = await meas(8000); res.hr = +(orbHeadroom.db || 0).toFixed(2);     // 14-22 s in
+  await wait(4000);
+  res.settled = await meas(5000); res.hr = +(orbHeadroom.db || 0).toFixed(2);     // 7-12 s in (the keeper starts at the mood's level, so it has settled by then)
   return res;
 };
 
@@ -147,4 +158,4 @@ const apps = [first]; for (let i = 1; i < Math.min(nW, jobs.length); i++) apps.p
 await Promise.all(apps.map(worker));
 rows.sort((x, y) => moods.indexOf(x.mood) - moods.indexOf(y.mood) || (x.cur < y.cur ? -1 : x.cur > y.cur ? 1 : 0) || x.seed - y.seed);
 const json = JSON.stringify(rows);
-if (outF) { writeFileSync(outF, json); if (!KITMODE && !LOUDMODE) report(rows); } else console.log(json);
+if (outF) { writeFileSync(outF, json); if (LOUDMODE) loudReport(rows, null); else if (!KITMODE) report(rows); } else console.log(json);
