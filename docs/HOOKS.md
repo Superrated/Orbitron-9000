@@ -22,6 +22,9 @@ launch/0180-mood-production-profiles.js → platform/0300-load-guard.js → plat
 ## mix — 10 wraps, defined in js/core/0050-base-state-engine-ui.js
 engine/0150-production-master-glue.js → engine/0340-shimmer-reverb.js → platform/0350-perf-prerender-hat-fps.js → platform/0370-lean-engine.js → instruments/1050-kick-rumble.js → engine/1450-master-air.js → platform/1490-audio-buffer.js → engine/1640-pump-fader.js → ui/1650-interface-cleanup.js → platform/2520-performance-test.js
 
+## duck — 9 wraps, defined in js/core/0050-base-state-engine-ui.js
+platform/0430-prerendered-drums-interruptions.js → flight/0520-thrusters-drop-hits.js → launch/1280-tight-low-end.js → engine/1330-ducked-reverb.js → launch/1690-in-time-launch.js → platform/1700-safety-loop.js → engine/2010-tempo-synced-tails.js → flight/2410-tension-pulse-faders.js → engine/2470-bass-sub-sidechain.js
+
 ## fireVoice — 9 wraps, defined in js/core/0090-track-params-voices-tick.js
 launch/0190-mood-track-trims.js → launch/0240-moods-italo-touch-breaks.js → platform/0620-cpu-easy-wins.js → instruments/0750-ride-perc.js → instruments/1160-kick-key-tuned.js → platform/1620-lead-osc-collect.js → launch/1630-sound-variety.js → platform/1920-prerender-perc.js → launch/2460-level-balance.js
 
@@ -30,9 +33,6 @@ core/0110-generate-builder-tracks-ui.js → core/0120-moods-pad-motif-generator.
 
 ## viz — 9 wraps, defined in js/core/0100-tabs-perform-visual-risers.js
 ui/0210-viz-solar-system.js → ui/0220-viz-cinematic.js → ui/0270-viz-orbit-map.js → platform/0300-load-guard.js → platform/0350-perf-prerender-hat-fps.js → platform/1480-viz-half-rate-on-fader.js → platform/1490-audio-buffer.js → platform/1580-overload-guard.js → ui/1900-perf-viz-load.js
-
-## duck — 8 wraps, defined in js/core/0050-base-state-engine-ui.js
-platform/0430-prerendered-drums-interruptions.js → flight/0520-thrusters-drop-hits.js → launch/1280-tight-low-end.js → engine/1330-ducked-reverb.js → launch/1690-in-time-launch.js → platform/1700-safety-loop.js → engine/2010-tempo-synced-tails.js → engine/2470-bass-sub-sidechain.js
 
 ## toggle — 8 wraps, defined in js/core/0050-base-state-engine-ui.js
 platform/0740-stability-guards-worker-clock.js → platform/0960-engine-sleep.js → platform/1580-overload-guard.js → platform/1600-pad-chord-ids.js → platform/1700-safety-loop.js → instruments/1780-sub-hold.js → sequencer/2040-lfo-bar-sync.js → flight/2130-clean-start.js
