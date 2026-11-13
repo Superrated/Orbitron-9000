@@ -18,6 +18,7 @@ tools/index.mjs          regenerates the INDEX.md / HOOKS.md / MOODS.md maps
 tools/probe.mjs          run the app headless and inspect state, audio level and swallowed errors
 tools/levels.mjs         measure how loud every part is after a Launch, per mood (solo per track, 8 browsers in parallel)
 tests/                   build.test.mjs (static), browser.test.mjs (runtime), snapshots/launch.json
+tests/genre/             genre suite: random Launches vs real-track profiles per mood (`node tests/genre/run.mjs`, ~2.5 min, offline render)
 ```
 
 ## Areas (folders) — open the folder's INDEX.md, then 1–3 files
