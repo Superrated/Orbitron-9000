@@ -21,7 +21,7 @@ if (rep) { report(JSON.parse(readFileSync(rep, 'utf8'))); process.exit(0); }
 
 export function summarize(rows) {
   const by = {};
-  for (const r of rows) (by[r.mood] || (by[r.mood] = [])).push(r);
+  for (const r of rows) (by[r.cur || r.mood] || (by[r.cur || r.mood] = [])).push(r);
   const out = {};
   for (const m in by) {
     out[m] = {};
@@ -63,7 +63,7 @@ const pageMeasure = async ({ mood, seed }) => {
     while (performance.now() - t0 < ms) { an.getFloatTimeDomainData(buf); for (let i = 0; i < buf.length; i++) ss += buf[i] * buf[i]; n += buf.length; await wait(20); }
     return 10 * Math.log10(ss / Math.max(1, n) + 1e-12); };
   await wait(1500);
-  const bar = 16 * 60 / G.bpm / 4 * 1000, M0 = TR.map(T => !!T.m), res = { mood, seed, bpm: G.bpm, tracks: {}, qos: 0 };
+  const bar = 16 * 60 / G.bpm / 4 * 1000, M0 = TR.map(T => !!T.m), res = { mood, cur: curMood, flav: G.flav || '', seed, bpm: G.bpm, tracks: {}, qos: 0 };
   const txt = p => { const o = {}; for (const k in p) if (typeof p[k] === 'string') o[k] = p[k]; return o; };
   try {
     res.mix = +(await meas(2 * bar)).toFixed(2);

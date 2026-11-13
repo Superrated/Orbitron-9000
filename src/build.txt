@@ -266,5 +266,6 @@ js   js/ui/2390-pattern-sound-layout.js
 js   js/launch/2400-moods-merged-tidal-lock-red-giant.js
 js   js/flight/2410-tension-pulse-faders.js
 js+  js/ui/2420-mix-four-tabs.js
-js   js/launch/2430-arranger.js  -
+js   js/launch/2430-arranger.js
+js   js/launch/2440-level-balance.js  -
 raw  html/end.html
