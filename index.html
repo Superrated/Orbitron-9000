@@ -4070,6 +4070,7 @@ window.MOODX={
   try{const lf=x<0?Math.pow(2,1.5*x):Math.pow(2,1.25*Math.min(x,.8)); /* v0.22 Radian: full length (legato, filling the bar) is reached at 80 % */P.dec=Math.max(.03,Math.min(3,(P.dec||.25)*lf));if(P.hold)P.hold=Math.max(.2,P.hold*lf);if(P.rel!=null)P.rel=Math.max(.01,Math.min(3,P.rel*lf));
    if(x>0){const wl=Math.max(0,(x-.8)/.2),hv=wl,ad=.35*Math.min(x,.8)/.8+1.0*wl+.8*wl*wl,gr=0; /* Radian: warm, steady drive up to 80 %, then wild */ /* no grit: it adds a noise voice per note */ /* warm up to 60 %, then heavy drive + grit to the end */
     P.drv=Math.min(2.2,(P.drv||0)+ad);if(hv>0&&P.res!=null)P.res=Math.min(Math.max(P.res,11),P.res+4.5*hv); /* resonance screams into the overdrive */if(gr>0)P.grit=Math.min(1,(P.grit||0)+gr);{const hasD=P.eng!=='Mini',ac=Math.min(ad,1.35);P.pg=(P.pg||1)/(1+ad*.4)/(hasD?1+ac*.75:1)/(1+.4*wl)} /* Mini has no drive stage, so only the level term is undone there */}
+   if(x<0)P.pg=(P.pg||1)*(1-.3*x);   /* v0.71: short plucks lost about 4 dB; most of it is given back */
    if(P.cut!=null)P.cut=Math.max(60,Math.min(12000,P.cut*Math.pow(2,x<0?1.2*x:.5*Math.max(0,(x-.8)/.2))));if(P.envA!=null)P.envA=Math.max(0,P.envA*(1+(x<0?.6*x:.4*Math.max(0,(x-.8)/.2))));
    if(x>0){const T=TR[4],n=T.st||16,d=Math.max(1,n/Math.max(1,T.h||1)),gap=d*sdur(); /* every note gets the same length limit (from the average spacing), so all notes lengthen alike */
     P.dec=Math.min(P.dec,Math.max(o.dec||.1,gap*2));if(P.hold)P.hold=Math.min(P.hold,Math.max(o.hold||1,d*2));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(o.rel||.05,gap))}
@@ -4082,15 +4083,15 @@ window.MOODX={
   .lmx .lmk{position:absolute;top:2px;bottom:2px;width:14px;margin-left:-7px;background:var(--acc)}.lmx .lmt i{position:absolute;bottom:2px;font-size:9px;color:var(--muted);font-style:normal}`;document.head.appendChild(st);
  let el=null,lastX=null;const show=()=>{if(!el)return;const x=LM.x;if(lastX!==null&&Math.abs(x-lastX)<.002)return;lastX=x;const k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
    k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';
-   b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'SHORT ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};
+   b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'SHORT ':x>.8?'WILD ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};   /* v0.71: the last 20 % reads WILD (drive + fuzz) */
  const glideBack=()=>{cancelAnimationFrame(LM.raf);const x0=LM.x,t0=performance.now(),D=2500;const step=t=>{const p=Math.min(1,(t-t0)/D),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;LM.x=x0*(1-e);show();if(p<1)LM.raf=requestAnimationFrame(step);else{LM.x=0;show()}};LM.raf=requestAnimationFrame(step)};
  const add=()=>{if(document.querySelector('.lmx'))return;const lp=document.querySelector('#t-perf .lpt');if(!lp)return;const host=lp.parentElement;
   el=document.createElement('div');el.className='lmx';
-  el.innerHTML='<div class="lmh"><span>LEAD</span><small>decay · filter · echo</small><b>AS SET</b></div><div class="lmt" title="Drag left for short, dry, dark plucks; right for long, bright notes with more echo and reverb. It stays where you leave it; double-tap to go back to AS SET."><div class="lmc"></div><div class="lmf"></div><div class="lmk"></div><i style="left:4px">SHORT</i><i style="right:4px">LONG</i></div>';
+  el.innerHTML='<div class="lmh"><span>LEAD</span><small>decay · filter · echo</small><b>AS SET</b></div><div class="lmt" title="Drag left for short, dry, dark plucks; right for long, bright notes with more echo and reverb. It stays where you leave it; double-tap to go back to AS SET."><div class="lmc"></div><div class="lmc" style="left:90%;opacity:.5" title="from here on: wild"></div><div class="lmf"></div><div class="lmk"></div><i style="left:4px">SHORT</i><i style="right:4px">LONG</i></div>';
   host.appendChild(el);const tr=el.querySelector('.lmt');let on=0;
   let tg=0,lt=0;const sm=t=>{const dt=Math.min(50,t-(lt||t));lt=t;LM.x+=(tg-LM.x)*(1-Math.exp(-dt/70));if(Math.abs(tg-LM.x)<.002)LM.x=tg;show();
     if(on||LM.x!==tg)LM.raf=requestAnimationFrame(sm);else LM.raf=0};
-  const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1))};
+  const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));if(Math.abs(tg)<.06)tg=0};   /* v0.71: the centre catches, so AS SET is easy to find */
   tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(LM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;LM.raf=requestAnimationFrame(sm)});
   tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{if(!on)return;on=0}));
   let lt2=0;tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(LM.raf);LM.raf=requestAnimationFrame(sm)}lt2=n});show()}; // v0.22: LEAD holds where you leave it; double-tap = back to AS SET
@@ -4125,7 +4126,7 @@ window.MOODX={
  const bend=fn=>function(){if(dep||Math.abs(BM.x)<.01)return fn.apply(this,arguments);const B=TR[6],P=B.p,x=BM.x,
    o={dec:P.dec,bgt:P.bgt,bsus:P.bsus,cut:P.cut,envA:P.envA,res:P.res,bsl:P.bsl,lv:B.lv};dep=1;const n={};
   try{const lf=x<0?Math.pow(2,1.3*x):Math.pow(2,1.7*x);P.dec=Math.max(.04,Math.min(1.8,(P.dec||.13)*lf));
-   if(x<0){if(P.bgt>0)P.bgt=Math.max(.08,P.bgt*lf)}else{if(P.bgt>0)P.bgt=Math.min(1,P.bgt+(1-P.bgt)*x);const s0=P.bsus||0,s1=Math.max(s0,.8*x);P.bsus=s1;if(s1>s0){const lv=v=>v<.05?1:Math.max(.25,.7-.5*v);B.lv=B.lv*lv(s1)/lv(s0)}} // long side: Sustain + legato
+   if(x<0){if(P.bgt>0)P.bgt=Math.max(.08,P.bgt*lf)}else{if(P.bgt>0)P.bgt=Math.min(1,P.bgt+(1-P.bgt)*x);const s0=P.bsus||0,s1=Math.max(s0,.8*x);P.bsus=s1;if(s1>s0&&P.beng!=='808'){const lv=v=>v<.05?1:Math.max(.25,.7-.5*v);B.lv=B.lv*lv(s1)/lv(s0)}}   /* v0.71: the 808 does not sustain, so it only got quieter (−13 dB at LONG); it keeps its level now */ // long side: Sustain + legato
    const q=x<0?x:x*x; /* squelch comes in late: a quarter at half-way, full at the end */
    P.cut=Math.max(60,Math.min(6000,(P.cut||500)*Math.pow(2,q)));P.envA=Math.max(0,(P.envA||0)*(1+.5*q));
    const r0=P.res||1;if(x<0)P.res=Math.max(.5,r0*(1+.5*x));else{const top=Math.max(r0,9);P.res=Math.min(top,r0+5*q)}
@@ -4168,7 +4169,7 @@ window.MOODX={
   row.appendChild(el);const tr=el.querySelector('.lmt');let on=0,tg=0,lt=0;
   const sm=t=>{const dt=Math.min(50,t-(lt||t));lt=t;BM.x+=(tg-BM.x)*(1-Math.exp(-dt/70));if(Math.abs(tg-BM.x)<.002)BM.x=tg;show();
     if(on||BM.x!==tg)BM.raf=requestAnimationFrame(sm);else BM.raf=0};
-  const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1))};
+  const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));if(Math.abs(tg)<.06)tg=0};   /* v0.71: the centre catches, so AS SET is easy to find */
   tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(BM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;BM.raf=requestAnimationFrame(sm)});
   tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{if(!on)return;on=0}));
   let lt2=0;tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(BM.raf);BM.raf=requestAnimationFrame(sm)}lt2=n});show()}; // v0.22: BASS holds where you leave it; double-tap = back to AS SET
@@ -4522,7 +4523,7 @@ window.MOODX={
    Level-matched; works on every lead patch, including Mini (which has no drive of its own). ---- */
 {let last=null;setInterval(()=>{try{if(!ctx||!A.fz)return;const x=(window.leadMacro&&leadMacro.x)||0;if(last!==null&&Math.abs(x-last)<.003)return;last=x;
   const a=Math.max(0,Math.min(1,(x-.5)/.5)),t=ctx.currentTime,F=A.fz;
-  const wl=Math.max(0,(x-.8)/.2),w0=Math.min(1,a/.6),dr=1+3*w0+9*wl+16*wl*wl;F.fi.gain.setTargetAtTime(dr,t,.03);F.fw.gain.setTargetAtTime(.12*w0+.18*wl,t,.03);F.fd.gain.setTargetAtTime(1-.25*w0-.55*wl,t,.03); /* v0.22 Radian: light warm overdrive 50–80 %, the wild fuzz only in the last 20 % */
+  const wl=Math.max(0,(x-.8)/.2),w0=Math.min(1,a/.6),dr=1+3*w0+9*wl+16*wl*wl;F.fi.gain.setTargetAtTime(dr,t,.03);F.fw.gain.setTargetAtTime(.12*w0,t,.03);   /* v0.71: the fuzz no longer gets louder in the last 20 % — the lead used to jump 6–17 dB there once its automatic level control was gone */F.fd.gain.setTargetAtTime(1-.25*w0-.55*wl,t,.03); /* v0.22 Radian: light warm overdrive 50–80 %, the wild fuzz only in the last 20 % */
   const L=window.LEX;if(L&&L.ctx===ctx){if(L.fb0==null||a===0)L.fb0=L.fb0==null?L.fb.gain.value:L.fb0;const e=wl;L.fb.gain.setTargetAtTime(Math.min(.72,L.fb0+.3*e),t,.15)}}catch(e){}},40)}
 </script>
 <script>
@@ -6450,7 +6451,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13b';
+window.ORB_BUILD='2026-11-13c';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -6958,7 +6959,7 @@ window.orbExoProg=function(kind){try{let P,sh;
    if(typeof lfoUI==='function')lfoUI()}catch(e){console.warn('[orbitron] moods',e)}return r}}
 </script>
 <script>
-/* ---- v0.71: two more Flight faders, in a row under LEAD and BASS. Both stay where you leave them; double-tap = back to AS SET.
+/* ---- v0.71: two more Flight faders, in a row under LEAD and BASS. Both stay where you leave them; double-tap or a Launch = back to AS SET.
    DRUMS · TIGHT ↔ WILD. Left: shorter, closed hats and shorter toms, ghosts and bar-to-bar variation fade out. Right: longer, opening hats,
            longer toms with more pitch bend, ghost notes and variation come in on hats, perc, snare and clap, accents deepen. The kick is
            never touched. Only bends the settings while a hit is made — your own values stay as they are.
@@ -6996,7 +6997,8 @@ window.orbExoProg=function(kind){try{let P,sh;
  {const _f=fire;fire=wrap(_f,1)}{const _a=arrStep;arrStep=wrap(_a,0)}
  const add=()=>{if(document.querySelector('#t-perf .xmx'))return;const b=document.querySelector('#t-perf .bmx:not(.tha)'),pn0=b&&b.closest('.panel');if(!pn0)return;
   const pn=document.createElement('div');pn.className='panel mxp xmp';const row=document.createElement('div');row.className='mxrow';pn.appendChild(row);pn0.after(pn);DR.build(row);FX.build(row)};
- add();UI.on(()=>{try{add()}catch(e){}});window.orbFlightFx=FX;window.orbFlightDrums=DR}
+ add();UI.on(()=>{try{add()}catch(e){}});window.orbFlightFx=FX;window.orbFlightDrums=DR;
+ {const _g=generate;generate=function(){try{if(DR.x)DR.set(0);if(FX.x)FX.set(0)}catch(e){}return _g.apply(this,arguments)}}   /* a Launch puts them back to AS SET, like LOW-PASS, LEAD and BASS */}
 /* ---- v0.71: the Mix page in four parts. MIXER is the mixer and nothing else: Balance and one strip per track (level, pan).
    SHAPE holds the big movers that used to sit on top of the strips — Space, Air, Pump, Feel, Drum bus — and the Texture bed.
    BUS & FX and ENGINE are as before. Nothing was rebuilt: the same controls are shown on a different sub-page. ---- */
