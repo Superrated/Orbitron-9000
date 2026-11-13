@@ -5,6 +5,8 @@
 //
 //   node tools/levels.mjs                         every mood, seeds 1-6, 8 browsers in parallel  -> JSON on stdout
 //   node tools/levels.mjs --moods Acid,Noir --seeds 1,2,3 --workers 2 --out levels.json
+//   node tools/levels.mjs --kits  --moods Dark,Italo --seeds 1,2   the kick alone with each drum kit (same groove): dB per kit
+//   node tools/levels.mjs --loud                              what leaves the master per mood after 14 s: loudness, peak, headroom keeper
 //   node tools/levels.mjs --report levels.json    table: per mood and part, median dB against the kick / against the full mix
 //
 // Per Launch: tracks[k] = { db (absolute), lv, trim, s (the sound's text settings) }, mix = the full groove.
@@ -47,6 +49,8 @@ function report(rows) {
 
 const why = unavailable();
 if (why) { console.error(why); process.exit(2); }
+const opt = k => { const i = a.indexOf(k); if (i < 0) return false; a.splice(i, 1); return true; };
+const KITMODE = opt('--kits'), LOUDMODE = opt('--loud');
 const seeds = (val('--seeds') || '1,2,3,4,5,6').split(',').map(Number), nW = +(val('--workers') || 8), outF = val('--out'), moodArg = val('--moods');
 
 /** In the page, with the Launch playing: solo every unmuted track in turn. */
@@ -79,6 +83,37 @@ const pageMeasure = async ({ mood, seed }) => {
   return res;
 };
 
+/** In the page: the kick alone, once per drum kit. */
+const pageKits = async ({ mood, seed }) => {
+  const c = window.__ctx, an = c.createAnalyser(); an.fftSize = 2048; A.m.connect(an);
+  const buf = new Float32Array(2048), wait = ms => new Promise(r => setTimeout(r, ms));
+  const meas = async ms => { let ss = 0, n = 0, pk = 0; const t0 = performance.now();
+    while (performance.now() - t0 < ms) { an.getFloatTimeDomainData(buf); for (let i = 0; i < buf.length; i++) { ss += buf[i] * buf[i]; const v = Math.abs(buf[i]); if (v > pk) pk = v; } n += buf.length; await wait(20); }
+    return [+(10 * Math.log10(ss / Math.max(1, n) + 1e-12)).toFixed(2), +(20 * Math.log10(pk + 1e-9)).toFixed(2)]; };
+  const bar = 16 * 60 / G.bpm / 4 * 1000, res = { mood, cur: curMood, seed, own: G.kit || '', kits: {} };
+  if (TR[0].m) return res;
+  TR.forEach((T, j) => { T.m = j !== 0; }); await wait(1500);
+  for (const k of ['909', '808', 'Rumble', 'Raw']) { orbKit(k); await wait(1500); res.kits[k] = await meas(2 * bar); }
+  return res;
+};
+/** In the page: let the master settle, then read what leaves it. */
+const pageLoud = async ({ mood, seed }) => {
+  const c = window.__ctx, wait = ms => new Promise(r => setTimeout(r, ms));
+  const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 38; hp.Q.value = .5;
+  const sh = c.createBiquadFilter(); sh.type = 'highshelf'; sh.frequency.value = 1500; sh.gain.value = 4;
+  const an = c.createAnalyser(), ap = c.__tap; an.fftSize = 2048; ap.connect(hp); hp.connect(sh); sh.connect(an);
+  const buf = new Float32Array(2048), b2 = new Float32Array(ap.fftSize);
+  const meas = async ms => { let ss = 0, n = 0, pk = 0; const t0 = performance.now();
+    while (performance.now() - t0 < ms) { an.getFloatTimeDomainData(buf); for (let i = 0; i < buf.length; i++) ss += buf[i] * buf[i]; n += buf.length;
+      ap.getFloatTimeDomainData(b2); for (let i = 0; i < b2.length; i++) { const v = Math.abs(b2[i]); if (v > pk) pk = v; } await wait(20); }
+    return [+(10 * Math.log10(ss / Math.max(1, n) + 1e-12)).toFixed(2), +(20 * Math.log10(pk + 1e-9)).toFixed(2)]; };
+  const res = { mood, cur: curMood, flav: G.flav || '', seed, kick: !TR[0].m };
+  res.first = await meas(3000); res.hr0 = +(orbHeadroom.db || 0).toFixed(2);     // the first 3 s after Play
+  await wait(11000);
+  res.settled = await meas(8000); res.hr = +(orbHeadroom.db || 0).toFixed(2);     // 14-22 s in
+  return res;
+};
+
 const first = await openApp();
 await first.page.evaluate(PAGE_HELPERS);
 const moods = moodArg ? moodArg.split(',') : await first.page.evaluate(() => __moods());
@@ -101,7 +136,7 @@ const worker = async app => {
         await prep(page);   // a fresh page per Launch, launched while stopped: the same mood + seed is the same groove in every run, so before / after can be compared
         await page.evaluate(({ mood, pick, seed }) => { if (pick) MOODMERGE[mood] = [pick]; __seed(seed); document.querySelector('#mood').value = mood; generate(); }, j);
         await page.waitForTimeout(300); await page.click('#play'); await page.waitForFunction(() => window.__ctx && playing);
-        rows.push(await page.evaluate(pageMeasure, j));
+        rows.push(await page.evaluate(KITMODE ? pageKits : LOUDMODE ? pageLoud : pageMeasure, j));
       } catch (e) { console.error(`failed ${j.mood} #${j.seed}: ${e.message}`); }
       console.error(`${++done} ${j.pick || j.mood} #${j.seed}`);
     }
@@ -111,4 +146,4 @@ const apps = [first]; for (let i = 1; i < Math.min(nW, jobs.length); i++) apps.p
 await Promise.all(apps.map(worker));
 rows.sort((x, y) => moods.indexOf(x.mood) - moods.indexOf(y.mood) || (x.cur < y.cur ? -1 : x.cur > y.cur ? 1 : 0) || x.seed - y.seed);
 const json = JSON.stringify(rows);
-if (outF) { writeFileSync(outF, json); report(rows); } else console.log(json);
+if (outF) { writeFileSync(outF, json); if (!KITMODE && !LOUDMODE) report(rows); } else console.log(json);
