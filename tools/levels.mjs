@@ -82,7 +82,8 @@ const pageMeasure = async ({ mood, seed }) => {
 const first = await openApp();
 await first.page.evaluate(PAGE_HELPERS);
 const moods = moodArg ? moodArg.split(',') : await first.page.evaluate(() => __moods());
-const jobs = []; for (const mood of moods) for (const seed of seeds) jobs.push({ mood, seed });
+const merge = await first.page.evaluate(() => window.MOODMERGE || {});   // a merged menu entry (Aurora = Aurora + Outer Rim) is measured once per variant
+const jobs = []; for (const mood of moods) for (const pick of merge[mood] || [null]) for (const seed of seeds) jobs.push({ mood, pick, seed });
 const rows = []; let done = 0;
 const prep = async page => {
   await page.evaluate(PAGE_HELPERS);
@@ -98,16 +99,16 @@ const worker = async app => {
       try {
         await page.reload(); await page.waitForFunction(() => typeof generate === 'function' && document.querySelector('#mood'));
         await prep(page);   // a fresh page per Launch, launched while stopped: the same mood + seed is the same groove in every run, so before / after can be compared
-        await page.evaluate(({ mood, seed }) => { __seed(seed); document.querySelector('#mood').value = mood; generate(); }, j);
+        await page.evaluate(({ mood, pick, seed }) => { if (pick) MOODMERGE[mood] = [pick]; __seed(seed); document.querySelector('#mood').value = mood; generate(); }, j);
         await page.waitForTimeout(300); await page.click('#play'); await page.waitForFunction(() => window.__ctx && playing);
         rows.push(await page.evaluate(pageMeasure, j));
       } catch (e) { console.error(`failed ${j.mood} #${j.seed}: ${e.message}`); }
-      console.error(`${++done} ${j.mood} #${j.seed}`);
+      console.error(`${++done} ${j.pick || j.mood} #${j.seed}`);
     }
   } finally { await app.close(); }
 };
 const apps = [first]; for (let i = 1; i < Math.min(nW, jobs.length); i++) apps.push(await openApp());
 await Promise.all(apps.map(worker));
-rows.sort((x, y) => moods.indexOf(x.mood) - moods.indexOf(y.mood) || x.seed - y.seed);
+rows.sort((x, y) => moods.indexOf(x.mood) - moods.indexOf(y.mood) || (x.cur < y.cur ? -1 : x.cur > y.cur ? 1 : 0) || x.seed - y.seed);
 const json = JSON.stringify(rows);
 if (outF) { writeFileSync(outF, json); report(rows); } else console.log(json);

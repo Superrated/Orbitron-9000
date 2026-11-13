@@ -19,6 +19,9 @@ launch/0190-mood-track-trims.js → platform/0300-load-guard.js → platform/046
 ## init — 11 wraps, defined in js/core/0050-base-state-engine-ui.js
 launch/0180-mood-production-profiles.js → platform/0300-load-guard.js → platform/0350-perf-prerender-hat-fps.js → instruments/0360-lead-bus-taming.js → platform/0370-lean-engine.js → instruments/0480-mini-lead-engine.js → engine/0820-mood-finish-mastering.js → flight/0870-lowpass-fader.js → state/0990-wav-recorder.js → engine/1040-master-plus-multiband.js → engine/1880-perf-shimmer-lazy.js
 
+## fireVoice — 9 wraps, defined in js/core/0090-track-params-voices-tick.js
+launch/0190-mood-track-trims.js → launch/0240-moods-italo-touch-breaks.js → platform/0620-cpu-easy-wins.js → instruments/0750-ride-perc.js → instruments/1160-kick-key-tuned.js → platform/1620-lead-osc-collect.js → launch/1630-sound-variety.js → platform/1920-prerender-perc.js → launch/2440-level-balance.js
+
 ## leadNote — 9 wraps, defined in js/core/0050-base-state-engine-ui.js
 core/0110-generate-builder-tracks-ui.js → core/0120-moods-pad-motif-generator.js → core/0130-drone-gate-arp-lead-presets.js → launch/0450-power-lead-variants.js → launch/0630-power-lead-cells-then-none.js → sequencer/0940-arp-modes.js → instruments/1200-contemporary-leads.js → launch/1750-modern-sound-pass.js → instruments/1910-new-sounds-patterns.js
 
@@ -27,9 +30,6 @@ engine/0150-production-master-glue.js → engine/0340-shimmer-reverb.js → plat
 
 ## viz — 9 wraps, defined in js/core/0100-tabs-perform-visual-risers.js
 ui/0210-viz-solar-system.js → ui/0220-viz-cinematic.js → ui/0270-viz-orbit-map.js → platform/0300-load-guard.js → platform/0350-perf-prerender-hat-fps.js → platform/1480-viz-half-rate-on-fader.js → platform/1490-audio-buffer.js → platform/1580-overload-guard.js → ui/1900-perf-viz-load.js
-
-## fireVoice — 8 wraps, defined in js/core/0090-track-params-voices-tick.js
-launch/0190-mood-track-trims.js → launch/0240-moods-italo-touch-breaks.js → platform/0620-cpu-easy-wins.js → instruments/0750-ride-perc.js → instruments/1160-kick-key-tuned.js → platform/1620-lead-osc-collect.js → launch/1630-sound-variety.js → platform/1920-prerender-perc.js
 
 ## toggle — 8 wraps, defined in js/core/0050-base-state-engine-ui.js
 platform/0740-stability-guards-worker-clock.js → platform/0960-engine-sleep.js → platform/1580-overload-guard.js → platform/1600-pad-chord-ids.js → platform/1700-safety-loop.js → instruments/1780-sub-hold.js → sequencer/2040-lfo-bar-sync.js → flight/2130-clean-start.js
