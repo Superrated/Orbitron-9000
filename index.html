@@ -6475,7 +6475,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13-v0.75c';
+window.ORB_BUILD='2026-11-13-v0.75';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -6537,7 +6537,7 @@ window.ORB_BUILD='2026-11-13-v0.75c';
   if(MAR[m]&&!TR[3].m&&(TR[3].p.pv==='Blip'||TR[3].p.pv==='Conga')&&R()<MAR[m]&&window.setPercSound){setPercSound('Marimba');const P=TR[3].p;if(!(P.filt>0)||P.filt>3600)P.filt=3600}
   if(TR[3].p.pv==='Cowbell')TR[3].lv=+(TR[3].lv*.75).toFixed(2);
   if(TR[3].p.pv==='Conga')TR[3].lv=+(TR[3].lv*.87).toFixed(2)}catch(e){console.warn('[orbitron] mood range',e)}return r}}
-window.ORB_BUILD='2026-11-12g';
+/* v0.75: an older build id was set here and overrode the real one (see ORB_BUILD above) */
 /* ---- v0.4 interplay: parts make room for each other, and Launch keeps a little space in busy grooves. Everything lands on Rotate and
    the planet mutes, so it stays yours to change.
    · perc: when most of its hits land on the kick, it is rotated to the spot that clashes least with the kick and the lead
@@ -6565,7 +6565,7 @@ window.ORB_BUILD='2026-11-12g';
   try{M.lim2.disconnect(A.out)}catch(e){}M.lim2.connect(pre);pre.connect(ws);const cap=ctx.createWaveShaper();cap.curve=CAP;cap.oversample='none';   // the 4x clipper can ring slightly past its ceiling; this plain stage holds the line
   ws.connect(cap);cap.connect(A.out);A.out.gain.value=.9;F={ctx,lim2:M.lim2,pre,ws,cap}}catch(e){console.warn('[orbitron] final stage',e)}};
  setInterval(fit,1000);window.orbFinal=()=>F;}
-window.ORB_BUILD='2026-11-12-v0.5';
+/* v0.75: an older build id was set here and overrode the real one (see ORB_BUILD above) */
 /* ---- v0.4: the re-roll buttons (New lead line, New bassline, Chords, Whole part, Random patch) match the rest of the UI: cut corner,
    dark panel, green edge, and a small line-drawn die in the accent colour instead of the colour emoji. ---- */
 {const st=document.createElement('style');st.textContent=`
