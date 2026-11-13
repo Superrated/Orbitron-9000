@@ -216,7 +216,7 @@ function buildCards(){const root=$("#tracks");root.innerHTML="";TR.forEach((t,k)
  const b=document.createElement("div");b.className="body";const cv=document.createElement("canvas");cv.width=cv.height=208;t.cv=cv;b.appendChild(cv);
  const g=document.createElement("div");g.className="grid";
  const upd=()=>{if(t.pad){while(prog.length<t.st)prog.push(pick([3,4,5,0]));prog.length=t.st}t.pt=pat(t);draw(t,-1)};
- sl(g,t.pad?"Chords":"Steps",t.pad?3:2,t.pad?8:64,t.st,1,v=>{t.st=v;if(!t.pad)t.h=Math.min(t.h,v);upd()});
+ sl(g,t.pad?"Chords":"Steps",t.pad?3:2,t.pad?8:64,t.st,1,v=>{t.st=v;if(!t.pad){t.h=Math.min(t.h,v);t.r=Math.min(t.r||0,v-1)}upd()});   /* v0.71: Rotate stays inside a shortened ring */
  if(!t.pad){sl(g,"Hits",0,32,t.h,1,v=>{t.h=Math.min(v,t.st);upd()});sl(g,"Rotate",0,31,t.r,1,v=>{t.r=v;upd()});sl(g,"Tension",0,1,t.ten||0,.01,v=>{t.ten=v;upd()});if(k===6){const sep=document.createElement("div");sep.className="bksep";sep.textContent="Bassline";g.appendChild(sep);const P=t.p;g.appendChild(mkSel("Lock",["Free","Kick lock","Around kick","Offbeats","Rolling"],P.blk||"Free",v=>P.blk=v));g.appendChild(mkSel("Phrase",["1 bar","2 bars","4 bars"],(P.bph||1)+(P.bph>1?" bars":" bar"),v=>P.bph=parseInt(v)));sl(g,"Gate (0 = Decay)",0,1,P.bgt||0,.01,v=>P.bgt=v);sl(g,"Slide",0,1,P.bsl||0,.01,v=>P.bsl=v);sl(g,"Ghost notes",0,1,P.bgh||0,.01,v=>P.bgh=v);try{window.bassUI&&bassUI(g,t)}catch(e){}}
  if([0,1,2,3,7].includes(k)){const sep=document.createElement("div");sep.className="bksep";sep.textContent="Break feel";g.appendChild(sep);sl(g,"Accent",0,1,t.acc||0,.01,v=>t.acc=v);sl(g,"Ghosts",0,1,t.gho||0,.01,v=>t.gho=v);sl(g,"Variation",0,1,t.vari||0,.01,v=>t.vari=v)}}
  sl(g,"Level",0,t===TR[4]?1.4:1,t.lv,.01,v=>t.lv=v);
@@ -6451,7 +6451,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13f';
+window.ORB_BUILD='2026-11-13g';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -6870,6 +6870,7 @@ window.orbExoProg=function(kind){try{let P,sh;
 @media (min-width:1000px){#t-drums [data-mode=pat] .rumbx,#t-drums[data-mode=pat] .rumbx{display:block}
  #t-synth .card[data-k="4"] .grid>.ctloff:not([data-g="pat"]),#t-synth .card .grid>[data-g=snd][style*="display: none"],#t-drums .card .grid>[data-g=snd][style*="display: none"],#t-drums .card .grid>.pvx.ctloff{display:none!important}}`;document.head.appendChild(st);
  try{[[3,1],[6,1.2],[8,1.5]].forEach(([k,mx])=>{const e=(TR[k].x||[]).find(e=>e[1]==='dec');if(e&&e[3]<mx)e[3]=mx})}catch(e){}
+ try{const X=TR[4].x,f=k=>X.find(e=>e[1]===k),h=f('hold');if(h&&h[3]<16)h[3]=16;['o2d','o3d'].forEach(k=>{const e=f(k);if(e){e[2]=Math.min(e[2],-1250);e[3]=Math.max(e[3],1250)}})}catch(e){}   /* lead patches go to Note length 16 and an octave plus a few cents of detune; the faders stopped at 8 and ±1200 */
  const NAME={0:'kick',1:'hi-hat',2:'clap',3:'perc',7:'snare',8:'stab',9:'Satellite'},SENDS={'Delay send':1,'Reverb send':1,'Reverb':1},SNDSEL={'Sound':1,'Pad sound':1,'Movement':1,'Perc sound':1},PART={'Role':1,'Motion':1,'Register':1,'Amount':1};
  const lab=el=>{if(el._cl!=null)return el._cl;const f=el.firstChild;let t='';if(f)t=f.nodeType===3?f.textContent:(f.firstChild&&f.firstChild.nodeType===3?f.firstChild.textContent:'');return el._cl=(t||'').trim()};
  const hdr=(t,h,g,cls)=>{const d=document.createElement('div');d.className='bksep bhd coh '+cls;d.innerHTML=t+'<small>'+h+'</small>';d.dataset.g=g;d.dataset.keep=g;d._cl='';return d};
@@ -7065,9 +7066,13 @@ window.orbExoProg=function(kind){try{let P,sh;
  function arrange(){const a=ARR[curMood];if(!a)return;const [parts,notes,first,turn]=a,mode=TR[4].p.mode;
   [first,4,5,8,9].filter((k,i,o)=>o.indexOf(k)===i).filter(on).slice(parts).forEach(k=>{TR[k].m=true});             // rule 1
   if(mode!=='Acid 303'&&mode!=='Riff')cap(4,notes);cap(8,notes);if(TR[3].p.pv!=='Ride')cap(3,notes);cap(1,notes*2+2);   // rule 2
-  if(on(4)){if(on(8))TR[8].p.ans=1;if(on(3)&&notes<=4&&TR[3].p.pv!=='Ride')TR[3].p.ans=1}                                 // rule 3
+  {const two=k=>TR[k].pt.filter(Boolean).length>=2;   /* a part with a single hit is not sent to bars 2 & 4 — it would sound once every two bars */
+   if(on(4)){if(on(8)&&two(8))TR[8].p.ans=1;if(on(3)&&notes<=4&&TR[3].p.pv!=='Ride'&&two(3))TR[3].p.ans=1}}                 // rule 3
   {const B=TR[6].p;if(on(6)&&!G.acidGuest&&!B.btn&&(B.bph||1)===1&&R()<(turn||0))B.btn=true}}                            // rule 4
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{arrange();G.pwMode=TR[4].p.mode;build();setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync()}catch(e){}},0)}catch(e){console.warn('[orbitron] arranger',e)}return r};
+ /* tidy-up after every Launch (found by a scan of 120 Launches): a ring whose pattern was left at another length than its Steps is rebuilt,
+    and a pad that plays fewer chords than its progression lists drops the unused ones, so the Chords fader and the Progression menu agree. */
+ const tidy=()=>{TR.forEach(T=>{if(!T.pad&&T.pt.length!==T.st)T.pt=pat(T)});const P=TR[5];if(P&&prog.length>P.st&&P.st>=1){prog.length=P.st;if(pshape.length>P.st)pshape.length=P.st;if(PX&&PX.length>P.st)PX.length=P.st;pmean=null}else if(P&&prog.length>=1&&prog.length<P.st){P.st=prog.length;P.h=P.st;P.pt=pat(P)}};
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{arrange();tidy();G.pwMode=TR[4].p.mode;build();setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync()}catch(e){}},0)}catch(e){console.warn('[orbitron] arranger',e)}return r};
  window.orbArrange=arrange}
 </script>
 </body></html>
