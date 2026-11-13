@@ -1,10 +1,10 @@
 
-/* ---- v0.26: Flight — LOW-PASS and THIN laid out exactly like the LEAD and BASS faders (two side-by-side boxes, same header, same track)
+/* ---- v0.26: Flight — LOW-PASS and THIN (shown as BEAT MORPH since v1.0) laid out exactly like the LEAD and BASS faders (two side-by-side boxes, same header, same track)
    v0.8: the knob height was copied while the reference knob had none yet ('auto'), so both knobs were 0 px tall and invisible; falls back to 70 %. ---- */
 {const lp=document.querySelector('#t-perf .lpf'),th=lp&&lp.querySelector('.thr');if(lp&&th&&!lp.querySelector('.mxrow')){
   const row=document.createElement('div');row.className='mxrow lpr';const a=document.createElement('div'),b=document.createElement('div');a.className='lmx lpa';b.className='bmx tha';
   const h=lp.querySelector('.lph'),t=lp.querySelector('.lpt');h.classList.add('lmh');t.classList.add('lmt');a.append(h,t);
-  const hh=document.createElement('div');hh.className='lmh';hh.innerHTML='<span>THIN</span><small>fewer · more · kick stays</small>';const v=th.querySelector('.thv');hh.appendChild(v);
+  const hh=document.createElement('div');hh.className='lmh';hh.innerHTML='<span>BEAT MORPH</span><small>fewer · more · kick stays</small>';const v=th.querySelector('.thv');hh.appendChild(v);
   const tt=th.querySelector('.tht');tt.classList.add('lmt');tt.insertAdjacentHTML('beforeend','<i style="left:4px">ALL</i><i style="right:4px">BONES</i>');b.append(hh,tt);
   row.append(a,b);th.remove();lp.appendChild(row);lp.classList.add('mxp');
   const copy=()=>{const ref=document.querySelector('#t-perf .mxp:not(.lpf) .lmt'),rb=document.querySelector('#t-perf .mxp:not(.lpf) .lmh b');if(!ref)return;const c=getComputedStyle(ref);
