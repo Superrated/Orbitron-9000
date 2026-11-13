@@ -4,15 +4,18 @@
    Springs back to the centre when released; a tap glides to the spot in about 250 ms. Only bends existing bass parameters while a note is made.
    v0.8: WOBBLE zone — the last 20 % of the right side makes the bass filter wobble in time: 1/8 notes, 1/16 in the last 7 %, deeper
    towards the end. The wobble is locked to the bar and drawn as automation on each note's own filter, so it costs no extra sound nodes.
-   (The 808 bass has no filter, so it does not wobble.) ---- */
+   (The 808 bass has no filter, so it does not wobble.)
+   v0.82: the right (LONG) side starts more gently — note length, gate and sustain follow a slow-start curve instead of jumping in
+   right after the centre, and the level no longer drops in one step when sustain switches on. ---- */
 {const BM={x:0,raf:0};let dep=0;
  window.BWOB=function(fp,w,e,c){const x=BM.x;if(x<.8||!(e>w))return;const d=(x-.8)/.2,sd=sdur(),ps=x>.93?1:2,P=ps*sd,lo=Math.max(60,c*(.4-.2*d)),hi=Math.min(9000,Math.max(lo*2,c*(1.6+2.4*d))),r=hi/lo;
   const cs=w-(((tk%ps)+ps)%ps)*sd,u=Math.max(0,Math.min(1,(w-cs)/P)),v0=u<.5?lo*Math.pow(r,u*2):hi*Math.pow(1/r,(u-.5)*2);
   try{fp.cancelScheduledValues(w);fp.setValueAtTime(v0,w);for(let k=1,n=0;n<64;k++){const t=cs+k*P/2;if(t<=w+.001)continue;if(t>e+P/2)break;fp.exponentialRampToValueAtTime(k%2?hi:lo,t);n++}}catch(_){}};
  const bend=fn=>function(){if(dep||Math.abs(BM.x)<.01)return fn.apply(this,arguments);const B=TR[6],P=B.p,x=BM.x,
    o={dec:P.dec,bgt:P.bgt,bsus:P.bsus,cut:P.cut,envA:P.envA,res:P.res,bsl:P.bsl,lv:B.lv};dep=1;const n={};
-  try{const lf=x<0?Math.pow(2,1.3*x):Math.pow(2,1.7*x);P.dec=Math.max(.04,Math.min(1.8,(P.dec||.13)*lf));
-   if(x<0){if(P.bgt>0)P.bgt=Math.max(.08,P.bgt*lf)}else{if(P.bgt>0)P.bgt=Math.min(1,P.bgt+(1-P.bgt)*x);const s0=P.bsus||0,s1=Math.max(s0,.8*x);P.bsus=s1;if(s1>s0&&P.beng!=='808'){const lv=v=>v<.05?1:Math.max(.25,.7-.5*v);B.lv=B.lv*lv(s1)/lv(s0)}}   /* v0.75: the 808 does not sustain, so it only got quieter (−13 dB at LONG); it keeps its level now */ // long side: Sustain + legato
+  try{const u=x>0?Math.pow(x,1.8):x,lf=x<0?Math.pow(2,1.3*x):Math.pow(2,1.7*u);   /* v0.82: the LONG side eases in — length and sustain grow slowly at first (a tenth of the way ≈ 1.6 %), full at the end */
+   P.dec=Math.max(.04,Math.min(1.8,(P.dec||.13)*lf));
+   if(x<0){if(P.bgt>0)P.bgt=Math.max(.08,P.bgt*lf)}else{if(P.bgt>0)P.bgt=Math.min(1,P.bgt+(1-P.bgt)*u);const s0=P.bsus||0,s1=Math.max(s0,.8*u);P.bsus=s1;if(s1>s0&&P.beng!=='808'){const lv=v=>v<.05?1-6.5*v:Math.max(.25,.7-.5*v);   /* v0.82: no −3 dB jump when Sustain passes 5 % */B.lv=B.lv*lv(s1)/lv(s0)}}   /* v0.75: the 808 does not sustain, so it only got quieter (−13 dB at LONG); it keeps its level now */ // long side: Sustain + legato
    const q=x<0?x:x*x; /* squelch comes in late: a quarter at half-way, full at the end */
    P.cut=Math.max(60,Math.min(6000,(P.cut||500)*Math.pow(2,q)));P.envA=Math.max(0,(P.envA||0)*(1+.5*q));
    const r0=P.res||1;if(x<0)P.res=Math.max(.5,r0*(1+.5*x));else{const top=Math.max(r0,9);P.res=Math.min(top,r0+5*q)}
