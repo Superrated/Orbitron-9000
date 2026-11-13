@@ -8,8 +8,8 @@ var __AWC={};function acidWarm(d){const k=Math.round(d*20);if(__AWC[k])return __
 var __AB=null;function acidBus(){try{if(!ctx||ctx instanceof OfflineAudioContext||!(A.ld||A.dk))return null;const out=A.ld||A.dk;
  if(__AB&&__AB.ctx===ctx&&__AB.out===out)return __AB.inp;
  const inp=ctx.createGain(),sat=ctx.createWaveShaper(),body=ctx.createBiquadFilter(),top=ctx.createBiquadFilter(),cmp=ctx.createDynamicsCompressor(),mk=ctx.createGain();
- sat.curve=acidWarm(.25);sat.oversample='2x';body.type='peaking';body.frequency.value=220;body.Q.value=.8;body.gain.value=2.5;
- top.type='highshelf';top.frequency.value=6000;top.gain.value=-3;
+ sat.curve=acidWarm(.25);sat.oversample='2x';body.type='peaking';body.frequency.value=220;body.Q.value=.8;body.gain.value=2;
+ top.type='highshelf';top.frequency.value=6000;top.gain.value=-1.5;   /* v0.76: 303 more forward — half the top cut (was −3 dB above 6 kHz) and a touch less low-mid body (was +2.5 dB) */
  cmp.threshold.value=-18;cmp.ratio.value=3;cmp.knee.value=8;cmp.attack.value=.005;cmp.release.value=.12;mk.gain.value=.56; /* level-matched to the old acid voice */
- const trim=ctx.createGain(),an=ctx.createAnalyser();an.fftSize=1024;inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(trim);vconn(trim,VX.k,out);trim.connect(an);vtag(inp);inp.__k=4;
- trim.gain.value=(window.orbAcidLvl&&orbAcidLvl.trim)||1;__AB={ctx,out,inp,trim,an};return inp}catch(e){return null}}
+ const trim=ctx.createGain();   /* v0.76: the level meter that sat here is gone with the 4-bar measurement */inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(trim);vconn(trim,VX.k,out);vtag(inp);inp.__k=4;
+ trim.gain.value=(window.orbAcidLvl&&orbAcidLvl.trim)||1;__AB={ctx,out,inp,trim};return inp}catch(e){return null}}
