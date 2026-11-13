@@ -7353,7 +7353,8 @@ window.orbExoProg=function(kind){try{let P,sh;
    PULSE   · HALF ↔ DOUBLE. Right: hats, perc, lead and stab get a second, softer note half a step later — first on the pick-up before
            each beat, then on every off-step, then on every note.
            v0.85: PULSE works on lead and stab only (drums and bass stay as set); the extra notes on the right are sparkles — an octave
-           up and brighter, growing from one note into a quick rising run of 2, 3, then 4 notes as you push further right. Left: half-time — hats, perc, lead, bass and stab lose every fourth
+           up and brighter, growing from one note into a quick rising run of 2, 3, then 4 notes as you push further right.
+           v0.86: on the left the notes keep their own length (no longer held longer); only fewer of them play. Left: half-time — hats, perc, lead, bass and stab lose every fourth
            note, then every second one (the hats thin once more at the end); lead and bass notes are held longer. The kick, clap and snare are never touched. ---- */
 {const lst=[...document.querySelectorAll('style')].find(t=>t.textContent.includes('.lmx .lmt'));
  if(lst){const st=document.createElement('style');st.textContent=lst.textContent.replace(/\.lmx/g,'.xmx')+'.mxrow>.xmx{margin:0;min-width:0}@media (max-width:640px) and (max-height:780px){.mxrow>.xmx{position:relative}}@media (min-width:900px){body.flw #t-perf>.mxp.xmp{grid-column:5/7;grid-row:4}}#t-perf .mxrow .lmt{height:32px!important}#t-perf .mxp{padding-top:6px!important;padding-bottom:7px!important}#t-perf .mxrow .lmh{margin-bottom:4px!important}'   /* v0.77: the wide-screen placement applied on phones too — it stretched the 3-column grid to 6 and the riser and breakdown pads collapsed to nothing. It is behind the wide-screen condition now. All six faders are a touch lower (32 px, were 38–44) so the extra row costs less room. */;document.head.appendChild(st)}
@@ -7394,19 +7395,18 @@ window.orbExoProg=function(kind){try{let P,sh;
  const TE=mk({cls:'tnm',name:'TENSION',hint:'harmony · resonance',l:'CALM',r:'TENSE',title:'Drag right to pull the harmony tight: thirds hang on fourths, then fifths rise, then the root gives way, with rising resonance and a high suspended tone. Drag left and everything settles on root and fifth. Lead and stab also wash out into more reverb and echo. Always in the key. It stays where you leave it; double-tap to go back to AS SET.',on:tens});
  UI.onBeat(()=>{try{if(TN.tone&&TE.x>.01)tone(TE.x)}catch(e){}});   /* the tone follows a key change (Lift, a new root) */
  // ---- PULSE: half ↔ double
- const PU=mk({cls:'plm',name:'PULSE',hint:'lead · stab',l:'HALF',r:'DOUBLE',title:'Drag right for double-time: lead and stab get an extra sparkle half a step later (an octave up, growing into a quick rising run of up to 4 notes), first before each beat, then on every off-step, then on every note. Drag left for half-time: fewer, longer lead and stab notes. Drums and bass are never touched. It stays where you leave it; double-tap to go back to AS SET.'});
+ const PU=mk({cls:'plm',name:'PULSE',hint:'lead · stab',l:'HALF',r:'DOUBLE',title:'Drag right for double-time: lead and stab get an extra sparkle half a step later (an octave up, growing into a quick rising run of up to 4 notes), first before each beat, then on every off-step, then on every note. Drag left for half-time: fewer lead and stab notes, each at its own length. Drums and bass are never touched. It stays where you leave it; double-tap to go back to AS SET.'});
  const cnt=new Int32Array(10),bar=new Int32Array(10),RUN=[0,2,4,7],ONE=[0];
  {const _f=fire;fire=function(k,w){const tx=TE.x,px=PU.x,mel=k===4||k===8||k===9;
    if(!((tx>.01||tx<-.01)&&(mel||k===6))&&!((px>.01||px<-.01)&&(k===4||k===8)))return _f.apply(this,arguments);
-   const T=TR[k],P=T.p,s=((tk%16)+16)%16,a=px<0?-px:px;let two=0,sv=0,o1,o2,o3,o0=TN.on;
+   const T=TR[k],P=T.p,s=((tk%16)+16)%16,a=px<0?-px:px;let two=0,o1,o2,o3,o0=TN.on;
    if(px<-.01&&(k===4||k===8)){
     const b=Math.floor(tk/(T.st||16));if(bar[k]!==b){bar[k]=b;cnt[k]=0}const c=cnt[k]++;   /* counted per track and bar, so off-beat patterns keep their place */
-    if((a>.5&&c%2===1)||(a>.25&&c%4===3))return;sv=1}
+    if((a>.5&&c%2===1)||(a>.25&&c%4===3))return}   /* v0.86: notes keep their own length (no longer held longer) */
    else if(px>.01&&(k===4||k===8)&&!(typeof QOS!=='undefined'&&QOS.lvl>=3))two=px>.8||(px>.5&&s%2===1)||(px>.2&&s%4===3);
    o1=P.res;o2=P.dec;o3=P.hold;const o4=P.rs,o5=P.ds,o6=P.cut,oc=G.oct,lv=T.lv;
    try{if((k===4||k===6||k===8)&&P.res!=null&&(tx>.01||tx<-.01))P.res=tx>0?P.res+(k===4?10:k===8?8:6)*tx*tx:P.res*(1+.6*tx);
     if(tx>.01&&(k===4||k===8)){if(P.rs!=null)P.rs=cl(P.rs+.35*tx*tx,0,1);if(P.ds!=null)P.ds=cl(P.ds+.3*tx*tx,0,1)}
-    if(sv){const f=1+.8*a;if(P.dec!=null)P.dec=cl(P.dec*f,.02,3);if(P.hold)P.hold=P.hold*f}
     if(mel)TN.on=1;
     const r=_f.apply(this,arguments);
     if(two){   /* v0.85: the extra note is a sparkle run — an octave up, brighter, a little more reverb and echo; it grows from 1 to 4
