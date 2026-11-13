@@ -69,11 +69,13 @@
      next strike, so they do not pile up. The first strike of a note stays the full sound. At Full quality FULL TILT asked for 8 complete
      stacked lead voices on every step: engine load 30 % → 70 % with peaks over 100 % (stutter). Fader-only: nothing is stored in the groove. */
   const RK=['uni','subosc','oct2','dec','rel','hold','air'],RS=new Array(RK.length);
-  const rat=(k,w,n,i0)=>{const T=TR[k],P=T.p,lv=T.lv,d=lastDeg,ln=leadNote,an=acidNote,sd=sdur(),gap=sd/n;
+  /* v0.99: on a note the repeats keep the FULL TILT spacing at every fader position (lead 1/8 step, stab 1/4 step): moving the fader up
+     adds repeats after the note (DOUBLE = the note + 1 … 8 fill the step), it does not change their speed. dv = strikes per step that set the spacing. */
+  const rat=(k,w,n,i0,dv)=>{const T=TR[k],P=T.p,lv=T.lv,d=lastDeg,ln=leadNote,an=acidNote,sd=sdur(),gap=sd/dv;
    for(let j=0;j<RK.length;j++)RS[j]=P[RK[j]];
    try{if(k===4){SPD=d;leadNote=spLN;acidNote=spLN;P.uni=1;P.subosc=0;P.oct2=0}else P.air=0;
-    P.dec=Math.min(P.dec==null?.25:P.dec,Math.max(.05,gap*1.5));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(.03,gap));P.hold=Math.min(P.hold||1,1/n);
-    for(let i=i0;i<n;i++){T.lv=lv*(1-.5*i/n);_f.call(null,k,w+i*sd/n)}}
+    P.dec=Math.min(P.dec==null?.25:P.dec,Math.max(.05,gap*1.5));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(.03,gap));P.hold=Math.min(P.hold||1,1/dv);
+    for(let i=i0;i<n;i++){T.lv=lv*(1-.5*i/n);_f.call(null,k,w+i*gap)}}
    finally{T.lv=lv;leadNote=ln;acidNote=an;lastDeg=d;for(let j=0;j<RK.length;j++){if(RS[j]===undefined)delete P[RK[j]];else P[RK[j]]=RS[j]}}};
   fire=function(k,w){const tx=TE.x,px=PU.x,mel=k===4||k===8||k===9;
    if(!((tx>.01||tx<-.01)&&(mel||k===6))&&!(px>.01&&(k===4||k===8)))return _f.apply(this,arguments);
@@ -84,7 +86,7 @@
     if(tx>.01&&(k===4||k===8)){if(P.rs!=null)P.rs=cl(P.rs+.35*tx*tx,0,1);if(P.ds!=null)P.ds=cl(P.ds+.3*tx*tx,0,1)}
     if(mel)TN.on=1;
     const r=_f.apply(this,arguments);
-    if(rc>1)rat(k,w,rc,1);
+    if(rc>1)rat(k,w,rc,1,k===8?4:8);
     return r}
    finally{TN.on=o0;T.lv=lv;if(o1===undefined)delete P.res;else P.res=o1;if(o2===undefined)delete P.dec;else P.dec=o2;if(o3===undefined)delete P.hold;else P.hold=o3;if(o4===undefined)delete P.rs;else P.rs=o4;if(o5===undefined)delete P.ds;else P.ds=o5;if(o6===undefined)delete P.cut;else P.cut=o6;G.oct=oc}}
   /* v0.86: PULSE left = continuous sparkle. Between the normal notes a steady shimmer of quiet lead sparkles (an octave up, brighter,
@@ -98,7 +100,7 @@
    finally{T.lv=lv;G.oct=oc;if(c0===undefined)delete P.cut;else P.cut=c0;if(r0===undefined)delete P.rs;else P.rs=r0;if(d0===undefined)delete P.ds;else P.ds=d0;leadNote=ln;lastDeg=d;cur.n=cn}};
   const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);const px=PU.x;
    if(px>.875){try{const q=typeof QOS!=='undefined'?QOS.lvl:0;   /* v0.87 FULL: a non-stop roll of the last note on steps without a note (lead 4×, stab 2×; busy: lead 2×, no stab) */
-    if(q<3){const L=TR[4],S=TR[8];if(!L.m&&!(L.pt&&L.pt[tk%L.st]))rat(4,w,rN(1,q,4),0);if(q<2&&!S.m&&!(S.pt&&S.pt[tk%S.st]))rat(8,w,2,0)}}catch(e){}}
+    if(q<3){const L=TR[4],S=TR[8];if(!L.m&&!(L.pt&&L.pt[tk%L.st])){const n=rN(1,q,4);rat(4,w,n,0,n)}if(q<2&&!S.m&&!(S.pt&&S.pt[tk%S.st]))rat(8,w,2,0,2)}}catch(e){}}
    else if(px<-.1){try{const a=-px,q=typeof QOS!=='undefined'?QOS.lvl:0,s=((tk%16)+16)%16;
     if(q<3){const ev=(a>.75&&q<2)?1:a>.4?s%2===1:s%4===2,L=TR[4],S=TR[8];
      if(ev&&!L.m&&!(L.pt&&L.pt[tk%L.st]))spark(4,w,SPK[spn++%6],.45);
