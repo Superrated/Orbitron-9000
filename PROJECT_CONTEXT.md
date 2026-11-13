@@ -16,6 +16,7 @@ docs/MOODS.md            generated: for every mood, the files whose code names i
 tools/build.mjs          build / --check / --debug (error-reporting debug.html) / --release
 tools/index.mjs          regenerates the INDEX.md / HOOKS.md / MOODS.md maps
 tools/probe.mjs          run the app headless and inspect state, audio level and swallowed errors
+tools/levels.mjs         measure how loud every part is after a Launch, per mood (solo per track, 8 browsers in parallel)
 tests/                   build.test.mjs (static), browser.test.mjs (runtime), snapshots/launch.json
 ```
 
@@ -27,7 +28,7 @@ tests/                   build.test.mjs (static), browser.test.mjs (runtime), sn
 | `instruments` | how tracks sound: lead engines (Stack/FM/…, Mini, Acid 303), pad types, stab, bass, perc sounds, satellite, patches |
 | `sequencer` | what plays when: Euclid tools, bassline/arp tools, LFOs, feel/micro-timing, evolve, rotate drift |
 | `launch` | Launch = `generate()` and its ~125 wrappers: moods, flavours, riffs, progressions, per-mood trims, dice buttons |
-| `flight` | the performance page: risers, breakdowns, thrusters, drop hits, LOW-PASS / THIN / LEAD / BASS / DRUMS / FX faders |
+| `flight` | the performance page: risers, breakdowns, thrusters, drop hits, LOW-PASS / THIN / LEAD / BASS / TENSION / PULSE faders |
 | `ui` | tabs, cards, faders, menus, Mix/LFO pages, the solar-system visuals, CSS injected from JS |
 | `platform` | robustness + speed: timer heartbeat, render queue, load/overload guards, recovery, audio buffer, PWA install, caches |
 | `state` | persistence: export/save, sectors (16 memory slots), WAV recorder, renamed-setting migrations |
@@ -41,7 +42,8 @@ tests/                   build.test.mjs (static), browser.test.mjs (runtime), sn
 ## Where to change what (start here, then follow HOOKS.md)
 | task | look at |
 |---|---|
-| tune a mood (tempo, sounds, levels) | `docs/MOODS.md` → the mood's own file(s) in `launch/`; per-mood tables: `launch/1220-mood-settings-row`, `1680-mood-flavours`, trims `0190`, `1250`, `1300`, `1930` |
+| tune a mood (tempo, sounds, levels) | `docs/MOODS.md` → the mood's own file(s) in `launch/`; per-mood tables: `launch/1220-mood-settings-row`, `1680-mood-flavours` (5 per mood), trims `0190`, `1250`, `1300`, `1930` |
+| a part too loud / quiet after Launch | `launch/2460-level-balance` (dB per mood and per sound, runs last); measure with `node tools/levels.mjs --moods <m> --out x.json` |
 | add a mood | copy the pattern of `launch/1150-temporal-mood.js` (newest complete mood), add `MOODNAME` entry (`core/0050`), check `docs/MOODS.md` "all-mood tables" for tables that need a row |
 | change a drum or bass sound | `fireVoice()` in `core/0090` (k: 0 kick, 1 hat, 2 clap, 3 perc, 6 bass) + `instruments/` files named after it; drum hits are pre-rendered (`platform/0430`, `1920`, `2160`) |
 | change a lead / pad / stab / satellite sound | `instruments/0160-lead-engine`, `0480-mini-lead-engine`, acid in `core/0090` + `instruments/2200`, `2220`; `pad()` in `core/0120` + `instruments/0670`, `0690`; stab `instruments/0490`; satellite `1790` |

@@ -1975,7 +1975,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.8 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.8';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.81 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.81';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -3450,7 +3450,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
     about −9 LUFS, the ambient moods about −10.5). It replaces the gain that was learned during the first 9 s of every Launch and remembered per
     mood: that one faded up after each Launch, froze wherever it happened to be, and was then thrown off by the 4-bar balance. Nothing listens
     and adjusts any more — the loudness loop below only feeds the meter. */
- const MG={Dark:-3,Ethereal:-4,Acid:-5.5,'Deep Space':-5.5,Ambient:-7,Melancholic:-3.5,Hopeful:-2,Power:-5,Bleep:-5,'Groove Techno':-4.5,Dreamy:-5,Noir:-3.5,Italo:-3.5,'Melodic House':-3.5,Vector:-4.5,Tense:-6,Drone:-3.5,Breaks:-4.5,'Distorted Electro':-6,Temporal:-4,Polymeter:-5.5,Chug:-4.5},mgDb=()=>MG[curMood]!=null?MG[curMood]:-5;try{localStorage.removeItem('orb-mstmem')}catch(e){}
+ const MG={Dark:-2.5,Ethereal:-4,Acid:-5.5,'Deep Space':-5.5,Ambient:-7,Melancholic:-3.5,Hopeful:-2,Power:-4,Bleep:-5,'Groove Techno':-4.5,Dreamy:-3.5,Noir:-3.5,Italo:-3.5,'Melodic House':-3.5,Vector:-4.5,Tense:-6,Drone:-3.5,Breaks:-4.5,'Distorted Electro':-6,Temporal:-4,Polymeter:-4.5,Chug:-5.5},mgDb=()=>MG[curMood]!=null?MG[curMood]:-5;   /* v0.79: measured again with five flavours per mood and the level balance in place — the beat moods settle around −10.4 (K-weighted), the ambient ones within 0.7 dB of that. Only the five that sat apart are nudged, part of the way: Event Horizon +0.5, Nebula +1.5, Max Q +1, Tidal Lock +1, Red Giant −1 */try{localStorage.removeItem('orb-mstmem')}catch(e){}
  const mgSet=tc=>{if(!M||M.ctx!==ctx)return;agDb=on?mgDb():0;try{M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,tc)}catch(e){}};
  function mstBuild(){if(!ctx||!A.lim||!A.out)return;if(M&&M.ctx===ctx)return;
   const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},bq=(t,f)=>{const b=ctx.createBiquadFilter();b.type=t;b.frequency.value=f;b.Q.value=.7071;return b},
@@ -5121,49 +5121,113 @@ window.MOODX={
   const t='screen kept awake · '+(window.orbWakeState?orbWakeState():'?');if(x.textContent!==t)x.textContent=t},1000)}
 </script>
 <script>
-/* ---- v0.24: MOOD FLAVOURS — every mood gets 2–3 flavours after the artists it is built on. A Launch picks one; the flavour sets tempo range,
+/* ---- v0.24: MOOD FLAVOURS — every mood has 5 flavours (v0.78; it was 2–3), each a neighbouring style of the mood. A Launch picks one; the flavour sets tempo range,
    drum kit, lead sound and pattern style, pad, perc and a bass figure of its own (so basslines stop sounding generic).
-   Moods that already had flavours keep them and gain the new sounds. Afterwards two clean-up rules run on every Launch:
+   Moods that already had flavours keep them and gain the new sounds. Moods with built-in flavours (Trajectory, Time Dilation, Ion Storm,
+   Afterglow) keep those and take one from this table by chance, so that they have five in all. Tidal Lock and Red Giant have five here. Afterwards two clean-up rules run on every Launch:
    · no plain, unfiltered oscillators: simple leads get a closed-down filter with an envelope (and sines a touch of fold)
    · no cheesy note runs: straight 16th up/down arps only in the flavours that are built on them (Twin arps, Hi-NRG, Cascade) ---- */
 {const RI=(a,b)=>a+Math.floor(R()*(b-a+1));
  const FL={
   Dark:[{n:'Raw loop',bpm:[132,136],kit:'Raw',lead:{p:['Hard sync','Techno stab','Metal FM'],m:['Motif'],len:[2,3],h:[3,5],mute:.2},pad:{p:['Sync sweep'],mute:.6},bass:{s:['Rolling 16ths','Gallop'],n:['Root','Root + fifth'],ch:'gritty'},perc:{mute:.3}},
    {n:'Industrial',bpm:[128,133],kit:'Raw',lead:{p:['Metal FM','Hollow BP','Hard sync'],m:['Interval','Motif'],len:[2,4],h:[2,4],mute:.4},pad:{p:['Abyss'],mute:.5},bass:{s:['Syncopated','Off-beat'],n:['Root'],ch:'gritty'}},
-   {n:'Hypnotic loop',bpm:[124,128],kit:'Rumble',lead:{p:['Hollow BP','Mini lead','Reese'],m:['Turing loop'],len:[5,7],h:[4,6],mute:.3},pad:{p:['Abyss'],mute:.3},bass:{s:['Pedal','Off-beat'],n:['Pedal','Root'],ch:'deep'},drift:1}],
+   {n:'Hypnotic loop',bpm:[124,128],kit:'Rumble',lead:{p:['Hollow BP','Mini lead','Reese'],m:['Turing loop'],len:[5,7],h:[4,6],mute:.3},pad:{p:['Abyss'],mute:.3},bass:{s:['Pedal','Off-beat'],n:['Pedal','Root'],ch:'deep'},drift:1},
+   {n:'Warehouse stab',bpm:[130,134],kit:'909',lead:{p:['Rave stab','Hypno stab','Techno stab'],m:['Motif'],len:[2,3],h:[3,4],mute:.15},pad:{mute:.8},bass:{s:['Rolling techno','Off-beat'],n:['Root'],ch:'gritty'},perc:{pv:'Ride',ch:.4}},
+   {n:'Dub cavern',bpm:[122,126],kit:'Rumble',lead:{p:['Mist','Weird drone','Hollow BP'],m:['Turing loop','Interval'],len:[4,6],h:[2,3],mute:.4},pad:{p:['Wind','Abyss'],mute:.1},bass:{s:['Dub sub','Pedal'],n:['Root'],ch:'deep'},drift:1}],
   Tense:[{n:'Loop techno',bpm:[134,138],kit:'909',lead:{p:['Hard sync','Mini edge','Techno stab'],m:['Motif'],len:[2,3],h:[4,6]},pad:{mute:.9},bass:{s:['Rolling 16ths','Syncopated'],n:['Root'],ch:'rubbery'}},
-   {n:'Wash techno',bpm:[130,134],kit:'Rumble',lead:{p:['Hollow BP','Metal FM'],m:['Interval'],len:[3,4],h:[2,4],mute:.3},pad:{p:['Sync sweep'],mute:.2},bass:{s:['Off-beat','Gallop'],n:['Root','Root + fifth'],ch:'deep'}}],
-  Power:[{n:'Hard drive',kit:'Rumble',pad:{mute:.8},bass:{s:['Rolling 16ths'],ch:'gritty'}},{n:'Dark grind',kit:'Raw',pad:{p:['Sync sweep','Abyss'],mute:.3},bass:{s:['Gallop','Off-beat'],ch:'deep'}}],
+   {n:'Wash techno',bpm:[130,134],kit:'Rumble',lead:{p:['Hollow BP','Metal FM'],m:['Interval'],len:[3,4],h:[2,4],mute:.3},pad:{p:['Sync sweep'],mute:.2},bass:{s:['Off-beat','Gallop'],n:['Root','Root + fifth'],ch:'deep'}},
+   {n:'Siren run',bpm:[136,140],kit:'Raw',lead:{p:['Hoover','Rave stab','Aggro'],m:['Interval','Motif'],len:[2,3],h:[3,5]},pad:{mute:.9},bass:{s:['Gallop','Rolling 16ths'],n:['Root'],ch:'gritty'}},
+   {n:'Clockwork',bpm:[132,136],kit:'909',lead:{p:['Rubber blip','Bleep','Square chip'],m:['Turing loop'],len:[5,7],h:[5,7]},pad:{mute:.8},bass:{s:['Syncopated','Rolling techno'],n:['Root'],ch:'rubbery'},perc:{pv:'Cowbell',ch:.4},drift:1},
+   {n:'Low pressure',bpm:[128,132],kit:'Rumble',lead:{p:['Reese','Mini drone','Hollow BP'],m:['Motif'],len:[2,4],h:[2,3],mute:.3},pad:{p:['Abyss','Sync sweep'],mute:.3},bass:{s:['Pedal','Off-beat'],n:['Pedal','Root'],ch:'deep'}}],
+  Power:[{n:'Hard drive',kit:'Rumble',pad:{mute:.8},bass:{s:['Rolling 16ths'],ch:'gritty'}},{n:'Dark grind',kit:'Raw',pad:{p:['Sync sweep','Abyss'],mute:.3},bass:{s:['Gallop','Off-beat'],ch:'deep'}},
+   {n:'Steel press',kit:'909',pad:{mute:.9},bass:{s:['Rolling techno'],ch:'gritty'},perc:{pv:'Ride',ch:.5}},
+   {n:'Afterburner',kit:'Raw',pad:{p:['Sync sweep'],mute:.5},bass:{s:['Octave bounce','Gallop'],ch:'rubbery'},perc:{pv:'Cowbell',ch:.35}},
+   {n:'Heavy orbit',kit:'Rumble',pad:{p:['Abyss','Wind'],mute:.2},bass:{s:['Pedal','Off-beat'],n:['Root'],ch:'deep'}}],
   Drone:[{n:'Deep drone',kit:'Rumble',lead:{m:['Turing loop'],h:[3,5],mute:.4},pad:{p:['Wind','Abyss'],mute:0},bass:{held:.6,ch:'deep'}},
-   {n:'Fog loop',bpm:[118,124],kit:'Rumble',lead:{mute:.8},pad:{p:['Wind'],mute:0},bass:{held:.8,ch:'round'},perc:{mute:.7}}],
+   {n:'Fog loop',bpm:[118,124],kit:'Rumble',lead:{mute:.8},pad:{p:['Wind'],mute:0},bass:{held:.8,ch:'round'},perc:{mute:.7}},
+   {n:'Tidal hum',bpm:[114,120],kit:'808',lead:{p:['Mist','Soft sine'],m:['Interval'],h:[2,3],mute:.5},pad:{p:['Tape','Choir'],mute:0},bass:{held:.7,ch:'round'}},
+   {n:'Machine room',bpm:[122,128],kit:'Raw',lead:{p:['Weird drone','Metal FM'],m:['Turing loop'],h:[3,4],mute:.4},pad:{p:['Sync sweep','Abyss'],mute:0},bass:{s:['Pedal'],n:['Pedal'],ch:'gritty'},perc:{pv:'Ride',ch:.3}},
+   {n:'Long wave',kit:'Rumble',lead:{mute:.7},pad:{p:['Cloud','Wind','Air'],mute:0},bass:{s:['Slow pulse','Dub sub'],ch:'deep'},perc:{mute:.5}}],
   'Groove Techno':[{n:'Minimal groove',kit:'909',lead:{p:['Techno stab','Hard sync'],m:['Motif'],len:[2,3],h:[2,4],mute:.3},pad:{mute:.8},bass:{s:['Off-beat','Syncopated'],n:['Root'],ch:'rubbery'},perc:{pv:'Cowbell',ch:.35}},
-   {n:'Tool groove',kit:'909',lead:{mute:.6},bass:{s:['Rolling 16ths','Gallop'],ch:'deep'},perc:{pv:'Conga',ch:.4}}],
-  Temporal:()=>R()<.33?{n:'Dub chord techno',kit:'Rumble',lead:{mute:1},pad:{p:['EP chords','Organ'],mute:0},bass:{s:['Pedal','Off-beat'],ch:'deep'}}:null,
-  Acid:[{n:'Raw acid',bpm:[124,128],kit:'808',pad:{mute:.8}},{n:'Rolling acid',bpm:[136,142],kit:'909',pad:{mute:.7}}],
-  'Distorted Electro':()=>G.deFlav==='techno'&&R()<.5?{n:'Dark electro',kit:'Raw',lead:{p:['Hard sync','Aggro','Techno stab']},pad:{p:['Sync sweep'],mute:.2}}:null,
+   {n:'Tool groove',kit:'909',lead:{mute:.6},bass:{s:['Rolling 16ths','Gallop'],ch:'deep'},perc:{pv:'Conga',ch:.4}},
+   {n:'Tribal tool',kit:'909',lead:{mute:.7},bass:{s:['Syncopated','Bouncy'],ch:'rubbery'},perc:{pv:'Conga',ch:.8}},
+   {n:'Organ loop',kit:'909',lead:{p:['Organ stab','Hypno stab','EP stab'],m:['Motif'],len:[2,3],h:[3,4]},pad:{mute:.8},bass:{s:['Off-beat','Octave bounce'],n:['Root'],ch:'round'}},
+   {n:'Deep roller',kit:'Rumble',lead:{p:['Hollow BP','Rubber blip'],m:['Turing loop'],len:[4,6],h:[3,5],mute:.4},pad:{p:['Abyss'],mute:.5},bass:{s:['Rolling techno','Rolling 16ths'],ch:'deep'},drift:1}],
+  Temporal:()=>{const r=R();return r<.2?{n:'Dub chord techno',kit:'Rumble',lead:{mute:1},pad:{p:['EP chords','Organ'],mute:0},bass:{s:['Pedal','Off-beat'],ch:'deep'}}
+   :r<.4?{n:'Organ jack',kit:'909',lead:{p:['Organ stab','Techno stab'],m:['Motif'],len:[2,2],h:[3,4]},pad:{mute:1},bass:{s:['Off-beat','Syncopated'],n:['Root'],ch:'rubbery'}}:null},   /* else Pummel, Shifting hats or Tribal as built */
+  Acid:[{n:'Raw acid',bpm:[124,128],kit:'808',pad:{mute:.8}},{n:'Rolling acid',bpm:[136,142],kit:'909',pad:{mute:.7}},
+   {n:'Deep acid',bpm:[120,124],kit:'808',pad:{p:['Abyss','Wind'],mute:.2},perc:{pv:'Conga',ch:.4}},
+   {n:'Acid trance',bpm:[132,136],kit:'909',pad:{p:['Strings','Poly'],mute:.3}},
+   {n:'Warehouse acid',bpm:[128,132],kit:'Raw',pad:{mute:.9},perc:{pv:'Ride',ch:.5}}],
+  'Distorted Electro':()=>{const r=R();return r<.2?{n:'Robot funk',kit:'808',lead:{p:['Talkbox','Vowel','Square chip'],m:['Motif'],len:[3,4],h:[3,5]},bass:{s:['Syncopated','Bouncy'],ch:'rubbery'},perc:{pv:'Cowbell',ch:.5}}
+   :r<.4?{n:'Static charge',kit:'Raw',lead:{p:['Metal FM','Aggro','Hard sync'],m:['Interval'],h:[2,4],mute:.2},pad:{mute:.8},bass:{s:['Gallop','Rolling 16ths'],ch:'gritty'}}
+   :r<.6?{n:'Dark electro',kit:'Raw',lead:{p:['Hard sync','Aggro','Techno stab']},pad:{p:['Sync sweep'],mute:.2}}:null},   /* else Broken or Techno as built */
   Melancholic:[{n:'Dark arp',bpm:[120,124],kit:'909',lead:{p:['Formant wave','Mini lead','Hollow BP'],m:['Motif','Turing loop'],len:[4,6],h:[4,6]},pad:{p:['Abyss','Strings'],mute:.2},bass:{s:['Syncopated','Pedal'],n:['Melodic','Root + fifth'],ch:'round'}},
-   {n:'Melancholic synth',bpm:[118,122],kit:'808',lead:{p:['Chorus pulse','Glass'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords','Tape'],mute:.1},bass:{held:.4,s:['Off-beat'],n:['Chord tones'],ch:'deep'}}],
-  'Melodic House':()=>R()<.33?{n:'Deep arp',kit:'808',lead:{p:['String pluck','FM keys'],m:['Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords'],mute:0},bass:{s:['Walking','Syncopated'],n:['Melodic'],ch:'round'},perc:{pv:'Conga',ch:.6}}
-   :G.mhFlav==='cinematic'?{n:'Melodic hook',lead:R()<.5?{p:['Formant wave']}:null}:{n:'Hook house',lead:R()<.5?{p:['String pluck']}:null},
+   {n:'Melancholic synth',bpm:[118,122],kit:'808',lead:{p:['Chorus pulse','Glass'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords','Tape'],mute:.1},bass:{held:.4,s:['Off-beat'],n:['Chord tones'],ch:'deep'}},
+   {n:'Night drive',bpm:[116,120],kit:'808',lead:{p:['Wide saw','Chorus pulse','Mini lead'],m:['Motif'],len:[4,8],h:[4,6]},pad:{p:['Poly','Strings'],mute:.1},bass:{s:['Octave 8ths','Rolling 16ths'],n:['Root'],ch:'round'}},
+   {n:'Piano rain',bpm:[118,122],kit:'808',lead:{p:['House piano','Soft keys','EP stab'],m:['Motif','Interval'],len:[3,4],h:[3,4]},pad:{p:['Tape','Strings'],mute:.1},bass:{s:['Held, syncopated','Syncopated'],n:['Melodic'],ch:'round'}},
+   {n:'Cold wave',bpm:[122,126],kit:'909',lead:{p:['Square chip','Hollow BP','Glass'],m:['Turing loop','Motif'],len:[4,6],h:[4,6]},pad:{p:['PWM','Choir'],mute:.3},bass:{s:['Octave bounce','Off-beat'],n:['Root + fifth'],ch:'rubbery'}}],
+  'Melodic House':()=>{const r=R();return r<.2?{n:'Sunrise keys',lead:{p:['House piano','Sunny keys']},pad:{p:['Strings','Poly'],mute:0}}
+   :r<.4?{n:'Deep organ',kit:'808',lead:{p:['Organ stab','Soft keys']},pad:{p:['EP chords'],mute:0},bass:{s:['Off-beat','Bouncy'],ch:'round'}}
+   :r<.6?{n:'Deep arp',kit:'808',lead:{p:['String pluck','FM keys'],m:['Motif'],len:[3,4],h:[3,5]},pad:{p:['EP chords'],mute:0},bass:{s:['Walking','Syncopated'],n:['Melodic'],ch:'round'},perc:{pv:'Conga',ch:.6}}
+   :G.mhFlav==='cinematic'?{n:'Melodic hook',lead:R()<.5?{p:['Formant wave']}:null}:{n:'Hook house',lead:R()<.5?{p:['String pluck']}:null}},
   Noir:[{n:'Trip-hop dub',bpm:[118,122],kit:'808',lead:{mute:.7},pad:{p:['EP chords','Abyss'],mute:0},bass:{s:['Pedal','Syncopated'],n:['Root'],ch:'deep'}},
-   {n:'Rain garage',bpm:[124,128],kit:'Rumble',lead:{p:['Formant wave','Mist'],m:['Turing loop'],h:[2,4],mute:.4},pad:{p:['Wind','Abyss'],mute:0},bass:{s:['Off-beat'],ch:'deep',held:.3}}],
-  Vector:()=>G.vecFlav&&/rubber/.test(G.vecFlav)&&R()<.4?{n:'Modular fold',lead:{p:['West Coast fold']}}:G.vecFlav&&/night/.test(G.vecFlav)&&R()<.5?{n:'Night modular',pad:{p:['EP chords'],mute:0}}:null,
+   {n:'Rain garage',bpm:[124,128],kit:'Rumble',lead:{p:['Formant wave','Mist'],m:['Turing loop'],h:[2,4],mute:.4},pad:{p:['Wind','Abyss'],mute:0},bass:{s:['Off-beat'],ch:'deep',held:.3}},
+   {n:'Smoky keys',bpm:[112,118],kit:'808',lead:{p:['Soft keys','EP stab','FM keys'],m:['Motif','Interval'],len:[3,4],h:[2,4],mute:.2},pad:{p:['Tape','EP chords'],mute:.1},bass:{s:['Slow pulse','Syncopated'],n:['Melodic','Root + fifth'],ch:'round'}},
+   {n:'Low-slung dub',bpm:[120,124],kit:'Rumble',lead:{p:['Organ stab','Hypno stab'],m:['Motif'],len:[2,3],h:[2,3],mute:.3},pad:{p:['Abyss'],mute:.3},bass:{s:['Dub sub','Off-beat'],n:['Root'],ch:'deep'},perc:{pv:'Conga',ch:.4}},
+   {n:'Night bus',bpm:[126,130],kit:'808',lead:{p:['Vowel','Glass','Mist'],m:['Turing loop'],len:[4,6],h:[3,5],mute:.3},pad:{p:['Choir','Air'],mute:0},bass:{s:['Half-time','Reese'],ch:'deep'}}],
+  Vector:()=>{const r=R();return r<.2?{n:'Marimba garden',lead:{p:['Rubber blip','Glass']},perc:{pv:'Marimba',ch:1}}:r<.4?{n:'Bell lab',lead:{p:['FM bell','Mini sparkle']},pad:{p:['Bell pad','Wavetable'],mute:0}}
+   :G.vecFlav&&/rubber/.test(G.vecFlav)&&R()<.4?{n:'Modular fold',lead:{p:['West Coast fold']}}:G.vecFlav&&/night/.test(G.vecFlav)&&R()<.5?{n:'Night modular',pad:{p:['EP chords'],mute:0}}:null},   /* else Rubber, Cascade or Night as built */
   Dreamy:[{n:'Folk electronica',bpm:[118,122],kit:'808',lead:{p:['String pluck','Glass'],m:['Motif','Marbles'],len:[4,6],h:[4,7]},pad:{p:['EP chords','Bell pad'],mute:.2},bass:{s:['Syncopated','Walking'],n:['Melodic'],ch:'round'},perc:{pv:'Conga',ch:.5}},
-   {n:'Warm psych',bpm:[120,124],kit:'909',lead:{p:['Chorus pulse','Soft sine'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['Glass','Poly'],mute:.2},bass:{s:['Octave bounce','Off-beat'],n:['Root + fifth'],ch:'rubbery'}}],
+   {n:'Warm psych',bpm:[120,124],kit:'909',lead:{p:['Chorus pulse','Soft sine'],m:['Interval','Motif'],len:[3,4],h:[3,5]},pad:{p:['Glass','Poly'],mute:.2},bass:{s:['Octave bounce','Off-beat'],n:['Root + fifth'],ch:'rubbery'}},
+   {n:'Lagoon',bpm:[112,118],kit:'808',lead:{p:['Mini flute','Soft sine','Vowel'],m:['Motif','Marbles'],len:[4,6],h:[3,5]},pad:{p:['Choir','Tape'],mute:0},bass:{s:['Slow pulse','Syncopated'],n:['Melodic'],ch:'round'},perc:{pv:'Marimba',ch:.6}},
+   {n:'Sparkle drift',bpm:[120,124],kit:'909',lead:{p:['Mini sparkle','FM bell','Bright pluck'],m:['Turing loop','Converge'],len:[5,7],h:[5,7]},pad:{p:['Wavetable','Cloud'],mute:.1},bass:{s:['Melodic pulse','Off-beat'],n:['Root + fifth'],ch:'round'},drift:1},
+   {n:'Cassette house',bpm:[118,122],kit:'808',lead:{p:['Sunny keys','Soft keys','EP stab'],m:['Motif','Interval'],len:[3,4],h:[3,4]},pad:{p:['Tape','EP chords'],mute:.1},bass:{s:['Bouncy','Octave bounce'],ch:'rubbery'}}],
   Ethereal:[{n:'Tape nostalgia',bpm:[100,110],kit:'808',lead:{p:['Soft sine','Glass'],m:['Motif'],h:[2,4]},pad:{p:['Tape','Air'],mute:0},bass:{held:.6,ch:'round'}},
-   {n:'Glacial ambient',bpm:[108,116],kit:'Rumble',lead:{p:['West Coast fold','Glass'],m:['Turing loop'],h:[3,5]},pad:{p:['Wind','Glass'],mute:0},bass:{held:.4,ch:'deep'}}],
+   {n:'Glacial ambient',bpm:[108,116],kit:'Rumble',lead:{p:['West Coast fold','Glass'],m:['Turing loop'],h:[3,5]},pad:{p:['Wind','Glass'],mute:0},bass:{held:.4,ch:'deep'}},
+   {n:'Choir dawn',bpm:[96,106],kit:'808',lead:{p:['Vowel','Mist'],m:['Interval'],h:[2,3],mute:.3},pad:{p:['Choir','Strings'],mute:0},bass:{held:.7,ch:'round'}},
+   {n:'Bell mist',bpm:[104,112],kit:'808',lead:{p:['FM bell','Mini sparkle','Glass'],m:['Marbles','Turing loop'],h:[3,5]},pad:{p:['Bell pad','Cloud'],mute:0},bass:{held:.5,ch:'round'},perc:{pv:'Marimba',ch:.4}},
+   {n:'Slow tide',bpm:[100,108],kit:'Rumble',lead:{p:['Mini flute','Soft sine'],m:['Motif'],len:[4,6],h:[2,4]},pad:{p:['Wavetable','Air'],mute:0},bass:{s:['Slow pulse','Dub sub'],ch:'deep'}}],
   Hopeful:[{n:'Twin arps',bpm:[124,128],kit:'909',arp:1,lead:{p:['Chorus pulse'],m:['Pedal arp','Chord arp'],h:[8,12]},pad:{p:['Strings','Glass'],mute:0},bass:{s:['Octave bounce','Off-beat'],ch:'rubbery'}},
-   {n:'Trance pulse',bpm:[126,130],kit:'909',lead:{p:['String pluck','Pluck'],m:['Motif'],len:[3,4],h:[5,7]},pad:{p:['Poly'],mute:.4},bass:{s:['Rolling 16ths','Syncopated'],ch:'deep'}}],
+   {n:'Trance pulse',bpm:[126,130],kit:'909',lead:{p:['String pluck','Pluck'],m:['Motif'],len:[3,4],h:[5,7]},pad:{p:['Poly'],mute:.4},bass:{s:['Rolling 16ths','Syncopated'],ch:'deep'}},
+   {n:'Piano sunrise',bpm:[122,126],kit:'909',lead:{p:['House piano','Sunny keys'],m:['Motif'],len:[3,4],h:[4,6]},pad:{p:['Strings','Poly'],mute:.1},bass:{s:['Octave bounce','Bouncy'],ch:'round'}},
+   {n:'Wide open',bpm:[126,130],kit:'909',lead:{p:['Wide saw','Supersaw'],m:['Motif','Interval'],len:[3,4],h:[3,5]},pad:{p:['Poly','Brass'],mute:.3},bass:{s:['Rolling 16ths','Off-beat'],ch:'deep'}},
+   {n:'Bell cascade',bpm:[124,128],kit:'808',arp:1,lead:{p:['FM bell','Bright pluck','Glass'],m:['Chord arp','Pedal arp'],h:[8,12]},pad:{p:['Bell pad','Glass'],mute:0},bass:{s:['Melodic pulse','Syncopated'],ch:'round'}}],
   Italo:[{n:'Sequencer disco',bpm:[116,120],kit:'808',lead:{p:['Chorus pulse','Mini lead'],m:['Motif'],len:[4,8],h:[5,7]},pad:{mute:.5},bass:{s:['Octave 8ths','Octave bounce'],ch:'rubbery'}},
-   {n:'Hi-NRG',bpm:[122,126],kit:'909',arp:1,lead:{p:['Chorus pulse','Mini edge'],m:['Pedal arp'],h:[8,12]},bass:{s:['Octave 8ths','Disco run'],ch:'gritty'},perc:{pv:'Cowbell',ch:.6}}],
+   {n:'Hi-NRG',bpm:[122,126],kit:'909',arp:1,lead:{p:['Chorus pulse','Mini edge'],m:['Pedal arp'],h:[8,12]},bass:{s:['Octave 8ths','Disco run'],ch:'gritty'},perc:{pv:'Cowbell',ch:.6}},
+   {n:'Cosmic disco',bpm:[108,114],kit:'808',lead:{p:['Mini brass','Mini lead','Wide saw'],m:['Motif'],len:[4,8],h:[3,5]},pad:{p:['Strings','Poly'],mute:.1},bass:{s:['Octave bounce','Syncopated'],ch:'round'},perc:{pv:'Conga',ch:.6}},
+   {n:'Robot disco',bpm:[118,122],kit:'808',lead:{p:['Talkbox','Vowel','Square chip'],m:['Motif'],len:[3,4],h:[4,6]},pad:{mute:.6},bass:{s:['Octave 8ths'],ch:'rubbery'},perc:{pv:'Cowbell',ch:.5}},
+   {n:'House disco',bpm:[120,124],kit:'909',lead:{p:['House piano','Organ stab','EP stab'],m:['Motif'],len:[2,4],h:[3,5]},pad:{p:['Strings'],mute:.4},bass:{s:['Bouncy','Octave bounce'],ch:'rubbery'}}],
   Breaks:[{n:'Liquid atmos',kit:'808',lead:{p:['Soft sine','Glass'],h:[3,3]},pad:{p:['EP chords','Wind','Air'],mute:0},bass:{s:['Syncopated'],ch:'deep'},perc:{pv:'Conga',ch:.5}},
-   {n:'Jungle sweep',kit:'Rumble',lead:{p:['Reese','Hollow BP'],h:[2,3]},pad:{p:['Abyss','Strings'],mute:.2},bass:{s:['Syncopated','Rolling 16ths'],ch:'gritty'}}],
+   {n:'Jungle sweep',kit:'Rumble',lead:{p:['Reese','Hollow BP'],h:[2,3]},pad:{p:['Abyss','Strings'],mute:.2},bass:{s:['Syncopated','Rolling 16ths'],ch:'gritty'}},
+   {n:'Rave breaks',kit:'909',lead:{p:['Rave stab','Hoover','House piano'],m:['Motif'],h:[3,4]},pad:{mute:.7},bass:{s:['Syncopated','Bouncy'],ch:'gritty'}},
+   {n:'Electro breaks',kit:'808',lead:{p:['Bleep','Square chip','Talkbox'],h:[3,5]},pad:{mute:.6},bass:{s:['Syncopated','Octave bounce'],ch:'rubbery'},perc:{pv:'Cowbell',ch:.5}},
+   {n:'Dub breaks',kit:'Rumble',lead:{p:['Organ stab','Mist'],h:[2,3],mute:.3},pad:{p:['Abyss','Tape'],mute:.1},bass:{s:['Dub sub','Half-time'],ch:'deep'}}],
   Bleep:[{n:'Sub bleep',kit:'909',lead:{p:['Bleep','Hollow BP'],m:['Motif'],h:[3,5]},pad:{mute:.8},bass:{s:['Off-beat','Syncopated'],n:['Root'],ch:'deep'}},
-   {n:'Bleep bass',kit:'808',lead:{p:['West Coast fold','Bleep'],m:['Interval'],h:[2,4]},pad:{mute:.7},bass:{s:['Syncopated'],ch:'round'},perc:{pv:'Cowbell',ch:.5}}],
+   {n:'Bleep bass',kit:'808',lead:{p:['West Coast fold','Bleep'],m:['Interval'],h:[2,4]},pad:{mute:.7},bass:{s:['Syncopated'],ch:'round'},perc:{pv:'Cowbell',ch:.5}},
+   {n:'Night shift',kit:'909',lead:{p:['Space blip','Rubber blip','Bleep'],m:['Turing loop'],h:[4,6]},pad:{p:['Hollow','Abyss'],mute:.5},bass:{s:['Off-beat','Dub sub'],n:['Root'],ch:'deep'},drift:1},
+   {n:'Chip signal',kit:'808',lead:{p:['Square chip','Bleep'],m:['Motif'],len:[3,4],h:[4,6]},pad:{mute:.8},bass:{s:['Octave bounce','Syncopated'],ch:'rubbery'}},
+   {n:'Bell telemetry',kit:'808',lead:{p:['FM bell','Glass','Space blip'],m:['Interval','Marbles'],h:[2,4]},pad:{p:['Bell pad','Glass'],mute:.3},bass:{s:['Slow pulse','Syncopated'],ch:'round'},perc:{pv:'Marimba',ch:.5}}],
   'Deep Space':[{n:'Arctic drone',kit:'Rumble',lead:{p:['Mist','Soft sine'],h:[1,2]},pad:{p:['Wind','Air'],mute:0}},
-   {n:'Space techno',kit:'Rumble',lead:{p:['Formant wave','Mini drone'],m:['Turing loop'],h:[2,3]},pad:{p:['Abyss','Glass'],mute:0}}],
-  Ambient:[{n:'Generative ambient',lead:{p:['Glass','Soft sine'],h:[1,3]},pad:{p:['Wind','EP chords'],mute:0}},{n:'Slow strings',lead:{mute:.7},pad:{p:['Strings','Abyss','Air'],mute:0}}]};
- const ARPOK=()=>G.arpOn||G.flav==='Twin arps'||G.flav==='Hi-NRG'||(curMood==='Vector'&&/cascade/.test(G.vecFlav||''));
+   {n:'Space techno',kit:'Rumble',lead:{p:['Formant wave','Mini drone'],m:['Turing loop'],h:[2,3]},pad:{p:['Abyss','Glass'],mute:0}},
+   {n:'Solar choir',kit:'Rumble',lead:{p:['Vowel','Mist'],h:[1,2],mute:.3},pad:{p:['Choir','Air'],mute:0}},
+   {n:'Signal drift',kit:'808',lead:{p:['Space blip','FM bell'],m:['Marbles'],h:[2,3]},pad:{p:['Cloud','Wavetable'],mute:0}},
+   {n:'Dark matter',kit:'Rumble',lead:{p:['Weird drone','Mini drone'],h:[1,2],mute:.4},pad:{p:['Abyss','Sync sweep'],mute:0}}],
+  Polymeter:[{n:'Iron lattice',kit:'Raw',lead:{p:['Metal FM','Hard sync']},bass:{s:['Rolling techno'],ch:'gritty'}},
+   {n:'Hollow tide',kit:'Rumble',lead:{p:['Hollow BP','Mist'],mute:.3},pad:{p:['Abyss','Wind'],mute:.4},bass:{s:['Pedal','Off-beat'],ch:'deep'}},
+   {n:'Drum circle',kit:'909',lead:{mute:.7},bass:{s:['Syncopated'],ch:'rubbery'},perc:{pv:'Conga',ch:1}},
+   {n:'Blip matrix',kit:'909',lead:{p:['Rubber blip','Bleep','Space blip']},bass:{s:['Off-beat'],n:['Root'],ch:'rubbery'}},
+   {n:'Stab cycle',kit:'909',lead:{p:['Hypno stab','Techno stab','Organ stab']},bass:{s:['Rolling 16ths','Gallop'],ch:'deep'},perc:{pv:'Ride',ch:.4}}],
+  Chug:[{n:'Tar pit',kit:'Rumble',lead:{p:['Reese','Mini bass']},bass:{s:['Reese','Half-time'],ch:'gritty'}},
+   {n:'Slow burn',kit:'808',lead:{p:['Mini lead','Chorus pulse']},pad:{p:['Strings','Poly'],mute:.4},bass:{s:['Octave bounce','Bouncy'],ch:'rubbery'},perc:{pv:'Cowbell',ch:.5}},
+   {n:'Dust storm',kit:'Raw',lead:{p:['Hard sync','Aggro'],mute:.2},pad:{p:['Sync sweep'],mute:.5},bass:{s:['Gallop','Syncopated'],ch:'gritty'}},
+   {n:'Cosmic crawl',kit:'808',lead:{p:['Mini brass','Wide saw']},pad:{p:['Tron','Choir'],mute:.3},bass:{s:['Slow pulse','Pedal'],ch:'round'},perc:{pv:'Conga',ch:.5}},
+   {n:'Dub giant',kit:'Rumble',lead:{p:['Organ stab','Hollow BP'],mute:.3},pad:{p:['Abyss','Tape'],mute:.3},bass:{s:['Dub sub','Off-beat'],ch:'deep'}}],
+  Ambient:[{n:'Generative ambient',lead:{p:['Glass','Soft sine'],h:[1,3]},pad:{p:['Wind','EP chords'],mute:0}},{n:'Slow strings',lead:{mute:.7},pad:{p:['Strings','Abyss','Air'],mute:0}},
+   {n:'Tape garden',lead:{p:['Soft keys','Mini flute'],h:[1,3]},pad:{p:['Tape','Bell pad'],mute:0}},
+   {n:'Cloud field',lead:{p:['Mist','Glass'],m:['Marbles'],h:[1,2],mute:.4},pad:{p:['Cloud','Wavetable','Air'],mute:0}},
+   {n:'Night choir',lead:{p:['Vowel','Soft sine'],h:[1,2],mute:.5},pad:{p:['Choir','Strings'],mute:0}}]};
+ const ARPOK=()=>G.arpOn||G.flavArp||(curMood==='Vector'&&/cascade/.test(G.vecFlav||''));
  /* v0.25: quick arp leads in the moods they belong to — filtered, a slow filter sweep on a free LFO, a touch of echo; never a bare oscillator */
  const ARPM={Melancholic:.45,'Melodic House':.4,Hopeful:.5,Italo:.35,Vector:.3,Dreamy:.3,Tense:.25};
  const ARPP={Melancholic:['Formant wave','Pluck','Mini lead','Cinematic arp'],'Melodic House':['Cinematic arp','Formant wave','Pluck','String pluck'],Hopeful:['Chorus pulse','Pluck','String pluck'],
@@ -5178,7 +5242,7 @@ window.MOODX={
   P.dec=Math.min(P.dec||.2,.22);P.ds=Math.max(P.ds||0,.28);P.rdr=0;L.lv=(L.lv||.45)*.85;buf=[];mot=[];mp=-1;
   const F=LFOS.find(x=>!(x.d>0));if(F)Object.assign(F,{tg:'Lead cutoff',sh:0,sync:1,div:pick([32,64]),d:+(.3+R()*.2).toFixed(2),ph:0})};
  const ringH=(T,h)=>{const hh=Math.max(1,Math.min(T.st-1,Math.round(h*T.st/16)));if(T.h!==hh){T.h=hh;T.pt=pat(T)}};
- const apply=f=>{const L=TR[4],P=L.p,PD=TR[5],B=TR[6],P3=TR[3],acid=P.mode==='Acid 303';G.flav=f.n;
+ const apply=f=>{const L=TR[4],P=L.p,PD=TR[5],B=TR[6],P3=TR[3],acid=P.mode==='Acid 303';G.flav=f.n;G.flavArp=f.arp?1:0;
   if(f.bpm&&!G.bpmLock){G.bpm=RI(f.bpm[0],f.bpm[1]);$('#bpm').value=G.bpm;$('#bv').textContent=G.bpm;try{if(A.dl)A.dl.delayTime.value=(G.dt||.75)*60/G.bpm}catch(e){}}
   if(f.kit&&window.orbKit)orbKit(f.kit);
   const l=f.lead;if(l&&!acid){if(l.mute!=null&&R()<l.mute)L.m=true;else if(l.p||l.m||l.h){L.m=false;
@@ -5196,7 +5260,7 @@ window.MOODX={
   if(eng==='FM'&&(P.fmi||0)<.6)P.fmi=.9;
   // no cheesy runs
   const run=['Up','Up/Down','Random','Chord arp','Pedal arp'].includes(P.mode);if(run&&!ARPOK()){if(L.h>=8||P.mode==='Random'){P.mode=pick(['Motif','Interval','Turing loop']);if(L.st===16&&L.h>7){L.h=pick([4,5,6]);L.pt=pat(L)}buf=[];mot=[];mp=-1}}};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{G.flav=null;let f=FL[curMood];if(typeof f==='function')f=f();else if(Array.isArray(f))f=pick(f);if(f)apply(f);arpify();clean();driftMore();
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{G.flav=null;G.flavArp=0;let f=FL[curMood];if(typeof f==='function')f=f();else if(Array.isArray(f))f=pick(f);if(f)apply(f);arpify();clean();driftMore();
    const Q=window.orbQuality;if(Q){Q.gate();Q.slots();if(!TR[4].m&&TR[4].p.mode!=='Acid 303'){Q.bestRotation();Q.bestMelody()}}}catch(e){console.warn('[orbitron] flavour',e)}
   try{build()}catch(e){}setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync();if(typeof lfoUI==='function')lfoUI()}catch(e){}},0);return r};
  window.orbFlavours=FL}
@@ -6393,9 +6457,16 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 /* ---- v0.35: HEADROOM. A slow level keeper on the mix bus holds the summed mix around −1 dBFS peak before the mastering stage
    (so about 6 dB clear of the master saturator), in every mood. It moves slowly (down ≤1 dB/s, up ≤0.3 dB/s), stays within −7…+2 dB,
    and never lifts quiet passages on purpose (breakdowns, the Flight low-pass, stops). The mastering stage's loudness loop restores the level. ---- */
-{const H={ctx:null,hist:[],db:0};window.orbHeadroom=H;
+/* v0.79: A FIXED START LEVEL PER MOOD. Measured over 6 Launches of every mood: each one started 2–3 dB hot and then slid down over the
+   first ten seconds while this keeper found its place (it ended 2 to 6 dB down, depending on the mood). The keeper now starts where that
+   mood settles (HS, dB; a touch above the measured value, so it only ever has a little left to do), set as the Launch is made and when the
+   audio engine starts — the level is right from bar 1 and nothing new moves while you play. */
+{const HS={Dark:-3.5,Melancholic:-3,'Melodic House':-3,Dreamy:-2.5,Tense:-4.5,'Deep Space':-1.5,Ethereal:-3.5,Hopeful:-4.5,Noir:-4,Drone:-3,Acid:-2.5,Power:-3.5,Italo:-4.5,Breaks:-3.5,Bleep:-3,'Distorted Electro':-3,Ambient:-3.5,'Groove Techno':-4.5,Vector:-2.5,Temporal:-4,Polymeter:-4.5,Chug:-5},H={ctx:null,hist:[],db:0};window.orbHeadroom=H;
+ const start=()=>{H.db=HS[curMood]!=null?HS[curMood]:-3.5;H.hist=[];try{if(ctx&&A.m&&A.m.context===ctx){const v=.8*Math.pow(10,H.db/20),t=ctx.currentTime;
+   if(ctx.state!=='running'||!playing)A.m.gain.value=v;else if(A.m.gain.value>=.4)A.m.gain.setTargetAtTime(v,t,.08)}}catch(e){}};   /* a start or safety fade in progress is left alone; the keeper takes over after it */
+ {const _g=generate;generate=function(){const r=_g.apply(this,arguments);start();return r}}
  METER.every(1,()=>{try{if(!ctx||ctx.state!=='running'||!playing||!A.m||A.m.context!==ctx||(window.DR&&DR.rendering))return;
-  if(H.ctx!==ctx){H.ctx=ctx;H.hist=[];H.db=0}
+  if(H.ctx!==ctx){H.ctx=ctx;start()}
   const p=METER.mix().peak;if(!isFinite(p))return;
   H.hist.push(p);if(H.hist.length>16)H.hist.shift();if(H.hist.length<6)return;           // ≈4 s window of 250 ms reads
   const base=.8*Math.pow(10,H.db/20);if(A.m.gain.value<base*.75)return;                    // a start or safety fade is running
@@ -6710,7 +6781,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13-v0.8-a';
+window.ORB_BUILD='2026-11-13-v0.81';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -7236,72 +7307,77 @@ window.orbExoProg=function(kind){try{let P,sh;
    if(typeof lfoUI==='function')lfoUI()}catch(e){console.warn('[orbitron] moods',e)}return r}}
 </script>
 <script>
-/* ---- v0.75: two more Flight faders, in a row under LEAD and BASS. Both stay where you leave them; double-tap or a Launch = back to AS SET.
-   DRUMS · TIGHT ↔ WILD. Left: shorter, closed hats and shorter toms, ghosts and bar-to-bar variation fade out. Right: longer, opening hats,
-           longer toms with more pitch bend, ghost notes and variation come in on hats, perc, snare and clap, accents deepen. The kick is
-           never touched. Only bends the settings while a hit is made — your own values stay as they are.
-   FX    · DRY ↔ WASH. Left: echo, reverb and shimmer pull back to nothing. Right: more echo with longer feedback, more reverb and shimmer —
-           a wash to throw over a transition. Moves the four FX levels together; the Mix faders keep their values.
-   v0.8: DRUMS · RATCHETS — past ~55 % WILD, hats and perc sometimes fire 2 quick hits (1/32) or 3 (a triplet, near the end) instead of
-           one, a bit quieter, more often the further you go. Same pre-rendered sounds, so almost no extra CPU.
-         FX · DUB THROW — flick the FX fader to the right and let go: the echo catches that moment and keeps ringing (long feedback) for
-           about two bars while the dry groove carries on, then it settles back. The fader returns to where it was.
-         FX · FREEZE — the last 10 % of WASH freezes the reverb into an endless pad (a long feedback loop fed from the reverb, closed off
-           once full); pull back below 88 % and it fades out over a few seconds. Built only the first time you use it. ---- */
+/* ---- v0.78: two Flight faders in a row under LEAD and BASS — TENSION and PULSE (they replace DRUMS and FX, which bent too little to be
+   worth a fader). One works on the harmony, the other on the rhythm, so together they build and release: TENSE + DOUBLE into a drop,
+   CALM + HALF for a breather. Both stay where you leave them; double-tap or a Launch = back to AS SET. Your own settings are never
+   changed: notes are only bent while they are made.
+   TENSION · CALM ↔ TENSE. Right, in three steps: thirds are suspended to fourths, then fifths rise to sixths, then even the root gives
+           way to the seventh below — lead, pad, stab and Satellite; the bass keeps the ground, so you hear the pull against it.
+           Resonance on lead and bass rises with it and a thin, high suspended tone swells in. Left: passing notes settle on chord
+           notes, then everything rests on root and fifth; resonance comes down. Always in the key.
+   PULSE   · HALF ↔ DOUBLE. Right: hats, perc, lead and stab get a second, softer note half a step later — first on the pick-up before
+           each beat, then on every off-step, then on every note. Left: half-time — hats, perc, lead, bass and stab lose every fourth
+           note, then every second one (the hats thin once more at the end); lead and bass notes are held longer. The kick, clap and snare are never touched. ---- */
 {const lst=[...document.querySelectorAll('style')].find(t=>t.textContent.includes('.lmx .lmt'));
  if(lst){const st=document.createElement('style');st.textContent=lst.textContent.replace(/\.lmx/g,'.xmx')+'.mxrow>.xmx{margin:0;min-width:0}@media (max-width:640px) and (max-height:780px){.mxrow>.xmx{position:relative}}@media (min-width:900px){body.flw #t-perf>.mxp.xmp{grid-column:1/7;grid-row:5}}#t-perf .mxrow .lmt{height:32px!important}#t-perf .mxp{padding-top:6px!important;padding-bottom:7px!important}#t-perf .mxrow .lmh{margin-bottom:4px!important}'   /* v0.77: the wide-screen placement applied on phones too — it stretched the 3-column grid to 6 and the riser and breakdown pads collapsed to nothing. It is behind the wide-screen condition now. All six faders are a touch lower (32 px, were 38–44) so the extra row costs less room. */;document.head.appendChild(st)}
  const mk=(o)=>{const F={x:0,raf:0,el:null};let last=null;
   const show=()=>{const el=F.el;if(!el)return;const x=F.x;if(last!==null&&Math.abs(x-last)<.002)return;last=x;const k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
-   k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';b.textContent=F.tag||(Math.abs(x)<.01?'AS SET':(o.lab&&o.lab(x))||(x<0?o.l:o.r)+' '+Math.round(Math.abs(x)*100)+'%');if(o.on)try{o.on(x)}catch(e){}};
+   k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';b.textContent=Math.abs(x)<.01?'AS SET':(x<0?o.l:o.r)+' '+Math.round(Math.abs(x)*100)+'%';if(o.on)try{o.on(x)}catch(e){}};
   F.build=row=>{const el=F.el=document.createElement('div');el.className='xmx '+o.cls;
    el.innerHTML='<div class="lmh"><span>'+o.name+'</span><small>'+o.hint+'</small><b>AS SET</b></div><div class="lmt" title="'+o.title+'"><div class="lmc"></div><div class="lmf"></div><div class="lmk"></div><i style="left:4px">'+o.l+'</i><i style="right:4px">'+o.r+'</i></div>';
    row.appendChild(el);const tr=el.querySelector('.lmt');let on=0,tg=0,lt=0,lt2=0;
    const sm=t=>{const dt=Math.min(50,t-(lt||t));lt=t;F.x+=(tg-F.x)*(1-Math.exp(-dt/70));if(Math.abs(tg-F.x)<.002)F.x=tg;show();if(on||F.x!==tg)F.raf=requestAnimationFrame(sm);else F.raf=0};
    const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));if(Math.abs(tg)<.06)tg=0};
-   let fd=null;tr.addEventListener('pointerdown',e=>{e.preventDefault();fd={t:performance.now(),px:e.clientX,x:F.x};cancelAnimationFrame(F.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;F.raf=requestAnimationFrame(sm)});
+   tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(F.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;F.raf=requestAnimationFrame(sm)});
    tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{on=0}));
-   tr.addEventListener('pointerup',e=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(F.raf);F.raf=requestAnimationFrame(sm)}lt2=n;
-    /* v0.8 flick: a quick swipe to the right (< 0.3 s, > 40 px) fires o.flick and the knob goes back to where it was */
-    if(o.flick&&fd&&n-fd.t<300&&e.clientX-fd.px>40){tg=fd.x;lt=0;lt2=0;cancelAnimationFrame(F.raf);F.raf=requestAnimationFrame(sm);try{o.flick()}catch(_){}}fd=null});show()};
+   tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(F.raf);F.raf=requestAnimationFrame(sm)}lt2=n});show()};
   F.set=v=>{F.x=Math.max(-1,Math.min(1,v));last=null;show()};return F};
- // ---- FX: dry ↔ wash
- const fx=x=>{if(!ctx||!A.dO||A.dO.context!==ctx)return;const t=ctx.currentTime,z=(p,v)=>{try{p.setTargetAtTime(v,t,.06)}catch(e){}},d=G.dly||0,f=G.fb||0,r=G.rev||0,s=G.shim||0;
-  if(x<0){z(A.dO.gain,d*(1+x));z(A.dF.gain,f*(1+.5*x));z(A.rO.gain,r*(1+.9*x));z(A.sh.gain,s*(1+x))}
-  else{z(A.dO.gain,Math.min(.7,d+.28*x));z(A.dF.gain,Math.min(.8,f+(.8-Math.min(.8,f))*.8*x*x));z(A.rO.gain,Math.min(1,r+.3*x));z(A.sh.gain,Math.min(1.4,s+.35*x))}};   /* refined: at full WASH the old amounts piled up in the compressor and the whole mix dropped 4–5 dB and pumped. Less of each, and the long feedback only arrives in the last part of the travel */
- /* v0.8 FREEZE: a ping-pong feedback loop (two long delays, filtered) fed from the reverb output. Engage: open the input ~1.2 s, then
-    close it and hold the loop at 0.985 feedback = an endless pad. Release: fade out, then disconnect everything (no idle CPU). */
- const FZ={on:0,n:null,tm:0};
- const frz=on=>{if(!ctx||!A.rO||A.rO.context!==ctx||on===FZ.on)return;FZ.on=on;const t=ctx.currentTime;
-  if(on){if(FZ.n)try{FZ.n.kill()}catch(e){}const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},inG=g(0),out=g(0),fa=g(0),fb=g(0),dA=ctx.createDelay(3),dB=ctx.createDelay(3),
-    f=(ty,hz)=>{const b=ctx.createBiquadFilter();b.type=ty;b.frequency.value=hz;b.Q.value=.5;return b},la=f('lowpass',4200),lb=f('lowpass',3800),ha=f('highpass',140),hb=f('highpass',160),pL=ctx.createStereoPanner(),pR=ctx.createStereoPanner();
-   dA.delayTime.value=1.37;dB.delayTime.value=1.91;pL.pan.value=-.6;pR.pan.value=.6;
-   A.rO.connect(inG);inG.connect(dA);dA.connect(la);la.connect(ha);ha.connect(fa);fa.connect(dB);dB.connect(lb);lb.connect(hb);hb.connect(fb);fb.connect(dA);ha.connect(pL);hb.connect(pR);pL.connect(out);pR.connect(out);out.connect(A.dk);
-   inG.gain.setTargetAtTime(1,t,.05);inG.gain.setTargetAtTime(0,t+1.2,.25);[fa,fb].forEach(x=>{x.gain.setTargetAtTime(.985,t,.3)});out.gain.setTargetAtTime(.85,t,.4);
-   const all=[inG,out,fa,fb,dA,dB,la,lb,ha,hb,pL,pR];FZ.n={out,fa,fb,inG,kill:()=>{try{A.rO.disconnect(inG)}catch(e){}all.forEach(x=>{try{x.disconnect()}catch(e){}})}}}
-  else if(FZ.n){const n=FZ.n;FZ.n=null;n.inG.gain.setTargetAtTime(0,t,.05);n.out.gain.setTargetAtTime(0,t,.9);[n.fa,n.fb].forEach(x=>x.gain.setTargetAtTime(.4,t+.5,.6));setTimeout(()=>{try{n.kill()}catch(e){}},5500)}};
- /* v0.8 DUB THROW: the echo input opens wide for one beat and the feedback goes long, then the input closes and the echo rings out for
-    about two bars before the FX fader's own values come back */
- let thr=0;const throwFX=()=>{if(!ctx||!A.dI||A.dI.context!==ctx)return;const t=ctx.currentTime,b=60/G.bpm,z=(p,v,at,tc)=>{p.setTargetAtTime(v,at,tc)};
-  [A.dI.gain,A.dF.gain,A.dO.gain].forEach(p=>{try{p.cancelScheduledValues(t)}catch(e){}});z(A.dI.gain,2.6,t,.01);z(A.dI.gain,1,t+b,.05);z(A.dF.gain,.84,t,.03);z(A.dO.gain,Math.max(G.dly||0,.6),t,.03);
-  FX.tag='THROW';FX.set(FX.x);clearTimeout(thr);thr=setTimeout(()=>{FX.tag=null;FX.set(FX.x);try{fx(FX.x)}catch(e){}},b*8*1000)};
- const FX=mk({cls:'fxm',name:'FX',hint:'echo · reverb · shimmer',l:'DRY',r:'WASH',lab:x=>x>.9?'FREEZE':null,flick:()=>throwFX(),title:'Drag left to dry the mix out; right for more echo, reverb and shimmer — the last 10 % freezes the reverb into an endless pad. Flick right and let go for a dub throw. It stays where you leave it; double-tap to go back to AS SET.',on:x=>{if(!FX||!FX.tag)fx(x);if(x>.9){if(!FZ.on&&!FZ.tm)FZ.tm=setTimeout(()=>{FZ.tm=0;if(FX.x>.9&&!FX.tag)frz(1)},350)}else if(x<.88){clearTimeout(FZ.tm);FZ.tm=0;frz(0)}}});   /* freeze only after 0.35 s above 90 %, so a flick (dub throw) never freezes */
- {const _fx=applyFX;applyFX=function(){const r=_fx.apply(this,arguments);if(Math.abs(FX.x)>.01)try{fx(FX.x)}catch(e){}return r}}
- // ---- DRUMS: tight ↔ wild
- const DR=mk({cls:'drm',name:'DRUMS',hint:'hats · toms · ghosts',l:'TIGHT',r:'WILD',title:'Drag left for short, closed hats and toms with no ghost notes; right for long opening hats, bending toms, ghost notes and variation. The kick is never touched. It stays where you leave it; double-tap to go back to AS SET.'});
- let dep=0;const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
- const wrap=(fn,pick)=>function(k){const x=DR.x;if(dep||Math.abs(x)<.01||(pick&&k!==1&&k!==3))return fn.apply(this,arguments);dep=1;const sv=[],put=(o,key,v)=>{sv.push([o,key,o[key],v]);o[key]=v},w=Math.max(0,x),t=Math.max(0,-x);
-  try{if(pick){const T=TR[k],P=T.p;put(P,'dec',cl((P.dec||.05)*Math.pow(2,x<0?1.5*x:1.2*x),k===1?.015:.03,k===1?.4:1.5));
-     if(k===1){put(P,'open',cl((P.open||0)*(1-t)+.5*w,0,1));put(T,'acc',cl((T.acc||0)+.4*w,0,1))}else put(P,'bend',cl((P.bend||0)+.6*w,0,3))}
-    else [1,3,7,2].forEach(i=>{const T=TR[i];if(!T||T.m)return;put(T,'gho',cl(Math.max((T.gho||0)*(1-t),(i===2?.2:.45)*w*w),0,1));put(T,'vari',cl(Math.max((T.vari||0)*(1-t),(i===2?.25:.4)*w),0,1))   /* refined: ghosts come in late and stop short of clutter */});
-   const r=fn.apply(this,arguments);
-   if(pick&&w>.55&&R()<.5*(w-.55)/.45){const T=TR[k],tm=arguments[1],sd=sdur(),n=w>.85&&R()<.4?3:2;put(T,'lv',T.lv*.62);for(let i=1;i<n;i++)fn.call(this,k,tm+sd*i/n)}   /* v0.8 ratchet */
-   return r}
-  finally{dep=0;for(let i=sv.length-1;i>=0;i--){const [o,key,old,nw]=sv[i];if(o[key]===nw){if(old===undefined)delete o[key];else o[key]=old}}}};
- {const _f=fire;fire=wrap(_f,1)}{const _a=arrStep;arrStep=wrap(_a,0)}
+ const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+ // ---- TENSION: calm ↔ tense
+ /* note map: for every degree of the scale, how many scale steps it moves at the current level (-2 … 3). Rebuilt only when the level or the scale changes. */
+ const TN={lv:0,on:0,sc:null,ml:0,map:new Int8Array(16),tone:null,off:0};
+ const near=(s,n,i,ok)=>{for(const o of [-1,1,-2,2,-3,3]){const j=((i+o)%n+n)%n;if(ok(s[j]%12))return o}return 0};
+ const remap=()=>{const s=SC[G.scale]||[0],n=Math.min(16,s.length),L=TN.lv,m=TN.map;TN.sc=G.scale;TN.ml=L;
+  for(let i=0;i<n;i++){const v=((s[i]%12)+12)%12,root=v===0,fifth=v===7,third=v===3||v===4;let o=0;
+   if(L===-1){if(!root&&!fifth&&!third)o=near(s,n,i,x=>x===0||x===7||x===3||x===4)}
+   else if(L===-2){if(!root&&!fifth)o=near(s,n,i,x=>x===0||x===7)}
+   else if(L>0){if(third)o=1;else if(fifth&&L>1)o=1;else if(root&&L>2)o=-1}
+   m[i]=o}};
+ {const _d=d2f;d2f=function(d,o){if(TN.on&&TN.lv&&d===Math.floor(d)){if(TN.sc!==G.scale||TN.ml!==TN.lv)remap();const n=SC[G.scale].length;if(n<=16)d+=TN.map[((d%n)+n)%n]}return _d(d,o)}}
+ {const _p=pad;pad=function(){if(!TN.lv)return _p.apply(this,arguments);const o=TN.on;TN.on=1;try{return _p.apply(this,arguments)}finally{TN.on=o}}}
+ /* the suspended tone: two quiet sines (seventh and ninth of the key, high up) into the reverb; made when the fader first goes right, stopped when it is back */
+ const toneF=()=>{const s=SC[G.scale]||[0,2],n=s.length,b=440*Math.pow(2,(72+G.root-69)/12);return [b*Math.pow(2,s[n-1]/12),b*Math.pow(2,(12+s[Math.min(1,n-1)])/12)]};
+ const tone=x=>{if(!ctx||!A.m||A.m.context!==ctx)return;let T=TN.tone;if(T&&T.ctx!==ctx)T=TN.tone=null;const t=ctx.currentTime;
+  if(x<=.01){if(T){T.g.gain.setTargetAtTime(0,t,.15);clearTimeout(TN.off);TN.off=setTimeout(()=>{const Z=TN.tone;if(!Z||TN.x>.01)return;TN.tone=null;try{Z.a.stop();Z.b.stop();Z.g.disconnect()}catch(e){}},1500)}return}
+  if(!T){const g=ctx.createGain(),a=ctx.createOscillator(),b=ctx.createOscillator(),gb=ctx.createGain();g.gain.value=0;gb.gain.value=.6;a.type=b.type='sine';a.connect(g);b.connect(gb);gb.connect(g);g.connect(A.m);if(A.rI){const r=ctx.createGain();r.gain.value=1.5;g.connect(r);r.connect(A.rI)}
+   a.start();b.start();T=TN.tone={ctx,g,a,b,r:-1,s:null}}
+  if(T.r!==G.root||T.s!==G.scale){T.r=G.root;T.s=G.scale;const f=toneF();T.a.frequency.setTargetAtTime(f[0],t,.05);T.b.frequency.setTargetAtTime(f[1],t,.05)}
+  T.g.gain.setTargetAtTime(.012*x*x,t,.08)};
+ const tens=x=>{TN.x=x;TN.lv=x>.8?3:x>.5?2:x>.2?1:x<-.7?-2:x<-.3?-1:0;try{tone(x)}catch(e){}};
+ const TE=mk({cls:'tnm',name:'TENSION',hint:'harmony · resonance',l:'CALM',r:'TENSE',title:'Drag right to pull the harmony tight: thirds hang on fourths, then fifths rise, then the root gives way, with rising resonance and a high suspended tone. Drag left and everything settles on root and fifth. Always in the key. It stays where you leave it; double-tap to go back to AS SET.',on:tens});
+ UI.onBeat(()=>{try{if(TN.tone&&TE.x>.01)tone(TE.x)}catch(e){}});   /* the tone follows a key change (Lift, a new root) */
+ // ---- PULSE: half ↔ double
+ const PU=mk({cls:'plm',name:'PULSE',hint:'hats · perc · lead · stab',l:'HALF',r:'DOUBLE',title:'Drag right for double-time: hats, perc, lead and stab get a second note half a step later, first before each beat, then on every off-step, then on every note. Drag left for half-time: fewer, longer notes. Kick, clap and snare are never touched. It stays where you leave it; double-tap to go back to AS SET.'});
+ const cnt=new Int32Array(10),bar=new Int32Array(10);
+ {const _f=fire;fire=function(k,w){const tx=TE.x,px=PU.x,mel=k===4||k===8||k===9;
+   if(!((tx>.01||tx<-.01)&&(mel||k===6))&&!((px>.01||px<-.01)&&(k===1||k===3||k===4||k===6||k===8)))return _f.apply(this,arguments);
+   const T=TR[k],P=T.p,s=((tk%16)+16)%16,a=px<0?-px:px;let two=0,sv=0,o1,o2,o3,o0=TN.on;
+   if(px<-.01&&(k===1||k===3||k===4||k===6||k===8)){
+    const b=Math.floor(tk/(T.st||16));if(bar[k]!==b){bar[k]=b;cnt[k]=0}const c=cnt[k]++;   /* counted per track and bar, so off-beat patterns keep their place */
+    if((a>.5&&c%2===1)||(a>.25&&c%4===3)||(k===1&&a>.85&&c%4===2))return;sv=k===4||k===6}
+   else if(px>.01&&k!==6&&(k===1||k===3||k===4||k===8)&&!(typeof QOS!=='undefined'&&QOS.lvl>=3))two=px>.8||(px>.5&&s%2===1)||(px>.2&&s%4===3);
+   o1=P.res;o2=P.dec;o3=P.hold;const lv=T.lv;
+   try{if((k===4||k===6)&&P.res!=null&&(tx>.01||tx<-.01))P.res=tx>0?P.res+(k===4?5:3)*tx*tx:P.res*(1+.6*tx);
+    if(sv){const f=1+.8*a;if(P.dec!=null)P.dec=cl(P.dec*f,.02,3);if(P.hold)P.hold=P.hold*f}
+    if(mel)TN.on=1;
+    const r=_f.apply(this,arguments);
+    if(two){T.lv=lv*.7;_f.call(this,k,w+sdur()/2)}
+    return r}
+   finally{TN.on=o0;T.lv=lv;if(o1===undefined)delete P.res;else P.res=o1;if(o2===undefined)delete P.dec;else P.dec=o2;if(o3===undefined)delete P.hold;else P.hold=o3}}}
  const add=()=>{if(document.querySelector('#t-perf .xmx'))return;const b=document.querySelector('#t-perf .bmx:not(.tha)'),pn0=b&&b.closest('.panel');if(!pn0)return;
-  const pn=document.createElement('div');pn.className='panel mxp xmp';const row=document.createElement('div');row.className='mxrow';pn.appendChild(row);pn0.after(pn);DR.build(row);FX.build(row)};
- add();UI.on(()=>{try{add()}catch(e){}});window.orbFlightFx=FX;window.orbFlightDrums=DR;
- {const _g=generate;generate=function(){try{if(DR.x)DR.set(0);if(FX.x)FX.set(0)}catch(e){}return _g.apply(this,arguments)}}   /* a Launch puts them back to AS SET, like LOW-PASS, LEAD and BASS */}
+  const pn=document.createElement('div');pn.className='panel mxp xmp';const row=document.createElement('div');row.className='mxrow';pn.appendChild(row);pn0.after(pn);TE.build(row);PU.build(row)};
+ add();UI.on(()=>{try{add()}catch(e){}});window.orbFlightTension=TE;window.orbFlightPulse=PU;
+ {const _g=generate;generate=function(){try{if(TE.x)TE.set(0);if(PU.x)PU.set(0)}catch(e){}return _g.apply(this,arguments)}}   /* a Launch puts them back to AS SET, like LOW-PASS, LEAD and BASS */}
 /* ---- v0.75: the Mix page in four parts. MIXER is the mixer and nothing else: Balance and one strip per track (level, pan).
    SHAPE holds the big movers that used to sit on top of the strips — Space, Air, Pump, Feel, Drum bus — and the Texture bed.
    BUS & FX and ENGINE are as before. Nothing was rebuilt: the same controls are shown on a different sub-page. ---- */
@@ -7385,5 +7461,83 @@ window.orbExoProg=function(kind){try{let P,sh;
   setInterval(()=>{if(typeof QOS==='undefined')return;const l=typeof ctx!=='undefined'&&ctx&&playing?Math.max(QOS.lvl||0,QOS.ml||0):0;
    if(l!==OS.lvl){OS.lvl=l;apply()}else if(OS.nodes.size>400)apply()},500);
   window.orbOversample={state:()=>({lvl:OS.lvl,nodes:OS.nodes.size})}}}
+</script>
+<script>
+/* ---- v0.78: LEVEL BALANCE after a Launch — every part sits where it belongs, in every mood and with every sound. Measured, not guessed:
+   tools/levels.mjs played 6 Launches of each mood (four rounds, the last on the v0.81 build), soloed every part and read its loudness against the kick where the buses meet
+   (so the lead compressor, bus gains, echo and reverb are included). Before this pass a lead could land anywhere from 3 to 24 dB under
+   the kick, a pad from 4 to 33 dB under it, and the bass moved by up to 20 dB inside one mood — the sound picked mattered more than the mood.
+   Two small tables put that right, in dB:
+     MB  per mood and part   (1 hat · 2 clap · 3 perc · 4 lead · 5 pad · 6 bass · 7 snare · 8 stab)
+     SB  per sound           (a Marimba is far louder than a Conga; an 808 held bass far quieter than a Reese …)
+   Where the parts are aimed, against the kick (read with the headroom keeper held still, so every part is read at the same mix gain):
+   bass −7.5 · pad −17.5 (−14.5 in Aurora, Outer Rim, Low Orbit, Orbital Hum) · snare −17 · clap −17.5 · hat −21.5 · perc −23
+   (Tidal Lock toms −18) · stab −24 · lead by mood: forward −15 (Lost Signal, Afterglow, Nebula, First Light, Solar Flare, Satellite Disco,
+   Telemetry, Trajectory), soft −21 (Aurora, Outer Rim, Low Orbit, Orbital Hum), tucked in −19 elsewhere. These are the levels the parts
+   had on average before this pass: the balance evens out moods and sounds, it does not make any part louder or quieter overall.
+   Applied once, as the Launch ends: the lead through its bus level, the perc around its voice, the others through the track trims.
+   Outer Rim's hats are left alone (its cosmic events play through every solo, so they cannot be read), and so is the Satellite
+   (it plays too rarely to be read in four bars). The Level faders are not moved
+   and nothing listens or corrects while you play. To retune: measure again, change a number. ---- */
+{const MB={
+  Dark:{'4':-1,'5':10,'6':2.3,'8':1},
+  Melancholic:{'3':3.5,'4':2.7,'5':7.5,'6':2.3},
+  Dreamy:{'1':3.9,'2':4.1,'3':5.3,'4':2.9},
+  Tense:{'1':-1.6,'3':3.8,'5':5.5},
+  Ethereal:{'1':1,'2':1.5,'3':4.7,'4':-4.5,'5':2.8,'7':2.4},
+  Hopeful:{'1':3.6,'3':3.5,'4':2.5,'5':-8.9,'6':-3.2},
+  Noir:{'1':3.9,'2':1.2,'3':3.8,'4':-5.3,'5':-8.2,'6':1.4,'7':1.1},
+  Drone:{'3':3.9,'4':-2.5,'5':9,'6':-3.7},
+  Acid:{'2':-2.7,'3':-2.9,'7':-2.4},
+  Power:{'1':-2,'2':-3.9,'3':1.5,'4':5.7,'5':-1.7,'6':-1.3},
+  Italo:{'2':2.6,'3':4.6,'4':3.6,'5':-10,'6':1},
+  Breaks:{'1':-2.1,'2':2,'3':-6.4,'4':-1.4,'5':4.4},
+  Bleep:{'1':1.2,'3':-2.1,'4':4.6,'6':-4.1},
+  'Distorted Electro':{'1':2,'2':2.2,'3':4.2,'4':-2.4,'7':-4},
+  Ambient:{'1':4.3,'2':5.9,'3':3.6,'5':1.7,'6':4},
+  'Groove Techno':{'1':-2.1,'2':-3.9,'5':-2},
+  Vector:{'5':-3.4,'6':2.7,'7':-1.5},
+  Temporal:{'1':2.8,'2':-2.7,'5':4.9,'6':1.7,'8':5.5},
+  Polymeter:{'1':-1.7,'2':2.8,'4':2.2,'6':1.8},
+  Chug:{'1':-1.5,'3':1,'5':6.7,'8':3.1},
+  'Deep Space':{'2':-2.1,'3':5.4,'4':-5.7,'5':10},
+  'Melodic House':{'3':1.9,'4':4.7,'5':-5.3,'6':-3.2,'7':1.4}},
+ SB={
+  3:{Ride:2.1,Cowbell:3.4,Marimba:-10,Blip:-4.3},   // perc sound
+  4:{'Techno stab':4.5,'House piano':-1.3,'Bright pluck':2.6,'Organ stab':2.7,'Rave stab':2.3,'EP stab':-4.4,'Chorus pulse':-4.7,'Rubber blip':5.4,'Mini drone':-5.1,Pluck:4.3,'Mini brass':2.7,'FM stab':6.3,'Hollow BP':-1,Hoover:-3.5,'Weird drone':-7.9,'String pluck':-1.4,'Wide saw':1.2,'Hypno stab':3.1,Vowel:-2.6},   // lead patch
+  5:{Abyss:-2.9,Tape:1.5,Air:-9.2,Choir:-6.3,Strings:2.3,Brass:10,'Warm saw':1.5,Hollow:-3.8,Wavetable:1.8,'Bell pad':-2.1,'EP chords':-1.5,Cloud:1.5},   // pad sound
+  6:{'Rolling techno':1.2,Reese:-3.5,'Held, syncopated · 808':7.2,'Held, syncopated':-1.2,Held:-2.9,'Rolling 16ths':3.3,'Off-beat':3.3,'Held · 808':10,'Octave bounce':-1.5,'Modern minimal · 808':4.7,'Modern minimal':1.8,Gallop:3.4,'Rolling techno · 808':-4.8,Bouncy:-2.8,'Modern bounce · 808':1.5,'Modern bounce':-1.2}   // bass style (· 808 = the 808 bass engine)
+ };
+ /* v0.79: the kick is what everything else is measured against, so it has to be the same size whatever drum kit a flavour picks.
+    Played alone on the same grooves, Rumble came out 1.3 dB quieter and Raw 1.2 dB louder than 909 and 808 (which agree). */
+ const KB={Rumble:2.5,Raw:-2.5};   /* the drum bus gives back about half of a kick trim, so the trims are twice the difference */
+ const snd=k=>{const p=TR[k].p;return k===4?(p.mode==='Acid 303'?'Acid 303':p.patch):k===5?p.patch:k===3?p.pv:(p.bsty||'')+(p.beng==='808'?' · 808':'')};
+ /* the perc sounds read the track level themselves (most are played from pre-rendered hits), so the track trim never reached them: their part of the balance is applied here, around the voice */
+ let pg=1;{const _fv=fireVoice;fireVoice=function(k,w){if(k!==3||pg===1)return _fv.apply(this,arguments);const T=TR[3],o=T.lv;T.lv=o*pg;try{return _fv.apply(this,arguments)}finally{T.lv=o}}}
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);
+  try{pg=1;const kb=KB[G.kit];if(kb)TRIM[0]=(TRIM[0]||0)+kb;const b=MB[curMood]||{};for(let k=1;k<10;k++){const s=SB[k],d=(b[k]||0)+((s&&s[snd(k)])||0);if(!d)continue;
+    if(k===4)G.ldMul=+((G.ldMul||1)*Math.pow(10,d/20)).toFixed(3);else if(k===3)pg=Math.pow(10,d/20);else TRIM[k]=(TRIM[k]||0)+d}}catch(e){console.warn('[orbitron] level balance',e)}
+  return r};
+ window.orbLevelBalance={MB,SB}}
+</script>
+<script>
+/* ---- v0.79: the kick ducks only the SUB of the bass. Until now every kick pulled the whole bass down (by 65 % or more), so a bass line lost
+   its notes between the kicks. The bass bus is now split at 110 Hz: below it the duck works exactly as before (the kick keeps the low end to
+   itself), above it the bass dips less than half as far, so the line stays readable through the kick. The two halves add up flat again
+   (Linkwitz-Riley split), and nothing is added per note: five fixed nodes on the bus, built once per audio engine.
+   The duck itself (depth, tempo-synced recovery, Sidechain depth LFO, PUMP fader) is untouched — it now steers a control signal that both
+   halves follow. ---- */
+{const XF=110,HI=.55;   /* crossover (Hz) · how far the upper half follows the duck: at a full duck it still plays at 55 % */
+ const realGain=Object.getOwnPropertyDescriptor(GainNode.prototype,'gain').get;
+ const build=b=>{b.__sub=1;
+  const lp=ctx.createBiquadFilter(),hp=ctx.createBiquadFilter(),lo=ctx.createGain(),hi=ctx.createGain(),inv=ctx.createGain(),one=ctx.createConstantSource(),d=ctx.createGain(),sc=ctx.createGain();
+  lp.type='lowpass';hp.type='highpass';lp.frequency.value=hp.frequency.value=XF;lp.Q.value=hp.Q.value=.5;inv.gain.value=-1;
+  lo.gain.value=0;hi.gain.value=HI;sc.gain.value=1-HI;one.offset.value=1;d.gain.value=realGain.call(b).value;
+  one.connect(d);d.connect(lo.gain);d.connect(sc);sc.connect(hi.gain);one.start();        // d = the duck curve as a signal: lows follow it fully, highs partly
+  try{b.disconnect(A.m)}catch(e){b.disconnect()}
+  b.connect(lp);lp.connect(lo);lo.connect(A.m);b.connect(hp);hp.connect(inv);inv.connect(hi);hi.connect(A.m);
+  const g=realGain.call(b);g.cancelScheduledValues(0);g.value=1;
+  Object.defineProperty(b,'gain',{value:d.gain,configurable:true})};                       // duck() keeps writing A.dkb.gain: it now reaches the control signal
+ const _d=duck;duck=function(t){const b=A.dkb;if(b&&!b.__sub&&ctx&&b.context===ctx&&!(ctx instanceof OfflineAudioContext))try{build(b)}catch(e){b.__sub=1;console.warn('[orbitron] bass sub sidechain',e)}return _d.apply(this,arguments)}}
 </script>
 </body></html>

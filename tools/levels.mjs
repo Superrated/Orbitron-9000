@@ -1,0 +1,162 @@
+#!/usr/bin/env node
+// Measure how loud every part is after a Launch, per mood: plays the app headless, solos each unmuted track in turn and
+// reads its loudness (K-weighted, like LUFS without gating) where the buses meet (A.m, before the master chain).
+// So bus gains, the lead compressor and the echo/reverb returns are all included; the master's automatic loudness is not.
+//
+//   node tools/levels.mjs                         every mood, seeds 1-6, 8 browsers in parallel  -> JSON on stdout
+//   node tools/levels.mjs --moods Acid,Noir --seeds 1,2,3 --workers 2 --out levels.json
+//   node tools/levels.mjs --kits  --moods Dark,Italo --seeds 1,2   the kick alone with each drum kit (same groove): dB per kit
+//   node tools/levels.mjs --loud                              what leaves the master per mood, first 3 s and 7-12 s in: loudness, peak, headroom keeper (3 Launches each, ~2 min)
+//   node tools/levels.mjs --loudreport new.json [old.json]    table of a --loud run, next to an earlier one
+//   node tools/levels.mjs --report levels.json    table: per mood and part, median dB against the kick / against the full mix
+//
+// Per Launch: tracks[k] = { db (absolute), lv, trim, s (the sound's text settings) }, mix = the full groove.
+// qos = the highest load level seen (above 1 the app sheds effects and voices: use fewer --workers and measure again).
+import { openApp, unavailable, PAGE_HELPERS } from '../tests/harness.mjs';
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const a = process.argv.slice(2), val = k => { const i = a.indexOf(k); if (i < 0) return undefined; const v = a[i + 1]; a.splice(i, 2); return v; };
+const NM = ['kick', 'hat', 'clap', 'perc', 'lead', 'pad', 'bass', 'snare', 'stab', 'sat'];
+const med = v => { const s = [...v].sort((x, y) => x - y); return s.length ? (s[(s.length - 1) >> 1] + s[s.length >> 1]) / 2 : NaN; };
+
+const rep = val('--report');
+if (rep) { report(JSON.parse(readFileSync(rep, 'utf8'))); process.exit(0); }
+const lrep = val('--loudreport');
+if (lrep) { loudReport(JSON.parse(readFileSync(lrep, 'utf8')), a[0] ? JSON.parse(readFileSync(a[0], 'utf8')) : null); process.exit(0); }
+function loudReport(rows, old) {
+  const grp = rs => { const by = {}; for (const r of rs) (by[r.cur] || (by[r.cur] = [])).push(r); return by; }, B = grp(rows), A = old ? grp(old) : {}, f = v => v.toFixed(1).padStart(7);
+  const line = v => f(med(v.map(x => x.first[0]))) + f(med(v.map(x => x.settled[0]))) + f(med(v.map(x => x.first[0])) - med(v.map(x => x.settled[0]))) + f(med(v.map(x => x.settled[1])));
+  console.log('loudness (K-weighted dB) — start = first 3 s, settled = later, slide = start - settled, peak dBFS\n' + 'mood'.padEnd(19) + '  start settled  slide   peak' + (old ? '   | before:  start settled  slide   peak' : ''));
+  for (const m in B) console.log(m.padEnd(19) + line(B[m]) + (A[m] ? '   |        ' + line(A[m]) : ''));
+  const sl = Object.values(B).map(v => med(v.map(x => x.first[0])) - med(v.map(x => x.settled[0]))), st = Object.values(B).map(v => med(v.map(x => x.settled[0])));
+  console.log(`median slide ${med(sl).toFixed(1)} dB · settled loudness from ${Math.min(...st).toFixed(1)} to ${Math.max(...st).toFixed(1)}`);
+}
+
+export function summarize(rows) {
+  const by = {};
+  for (const r of rows) (by[r.cur || r.mood] || (by[r.cur || r.mood] = [])).push(r);
+  const out = {};
+  for (const m in by) {
+    out[m] = {};
+    for (let k = 0; k < 10; k++) {
+      const rs = by[m].filter(r => r.tracks[k]);
+      if (!rs.length) continue;
+      const vk = rs.filter(r => r.tracks[0]).map(r => r.tracks[k].db - r.tracks[0].db), vm = rs.map(r => r.tracks[k].db - r.mix);
+      out[m][k] = { n: rs.length, of: by[m].length, kick: med(vk), mix: med(vm), lo: Math.min(...vm), hi: Math.max(...vm) };
+    }
+  }
+  return out;
+}
+function report(rows) {
+  const S = summarize(rows), f = v => v == null || v !== v ? '    .' : (v > 0 ? '+' : '') + v.toFixed(1).padStart(v > 0 ? 4 : 5);
+  for (const ref of ['kick', 'mix']) {
+    console.log(`\nmedian dB against the ${ref}  (n = Launches in which the part played)`);
+    console.log('mood'.padEnd(20) + NM.map(n => n.padStart(9)).join(''));
+    for (const m in S) console.log(m.padEnd(20) + NM.map((_, k) => S[m][k] ? (f(S[m][k][ref]) + '/' + S[m][k].n).padStart(9) : '        .').join(''));
+  }
+  console.log('\nspread per mood against the mix (max - min over Launches, dB)');
+  for (const m in S) console.log(m.padEnd(20) + NM.map((_, k) => S[m][k] && S[m][k].n > 1 ? (S[m][k].hi - S[m][k].lo).toFixed(1).padStart(9) : '        .').join(''));
+}
+
+const why = unavailable();
+if (why) { console.error(why); process.exit(2); }
+const opt = k => { const i = a.indexOf(k); if (i < 0) return false; a.splice(i, 1); return true; };
+const KITMODE = opt('--kits'), LOUDMODE = opt('--loud');
+const seeds = (val('--seeds') || (LOUDMODE ? '1,2,3' : '1,2,3,4,5,6')).split(',').map(Number), nW = +(val('--workers') || 8), outF = val('--out'), moodArg = val('--moods');
+
+/** In the page, with the Launch playing: solo every unmuted track in turn. */
+const pageMeasure = async ({ mood, seed }) => {
+  const c = window.__ctx;
+  if (!window.__lv) {
+    const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 38; hp.Q.value = .5;
+    const sh = c.createBiquadFilter(); sh.type = 'highshelf'; sh.frequency.value = 1500; sh.gain.value = 4;
+    const an = c.createAnalyser(); an.fftSize = 2048; A.m.connect(hp); hp.connect(sh); sh.connect(an);
+    window.__lv = { an, buf: new Float32Array(2048) };
+  }
+  const { an, buf } = window.__lv, wait = ms => new Promise(r => setTimeout(r, ms));
+  const meas = async ms => { let ss = 0, n = 0; const t0 = performance.now();
+    while (performance.now() - t0 < ms) { an.getFloatTimeDomainData(buf); for (let i = 0; i < buf.length; i++) ss += buf[i] * buf[i]; n += buf.length; await wait(20); }
+    return 10 * Math.log10(ss / Math.max(1, n) + 1e-12); };
+  await wait(1500);
+  const bar = 16 * 60 / G.bpm / 4 * 1000, M0 = TR.map(T => !!T.m), res = { mood, cur: curMood, flav: G.flav || '', seed, bpm: G.bpm, tracks: {}, qos: 0 };
+  const txt = p => { const o = {}; for (const k in p) if (typeof p[k] === 'string') o[k] = p[k]; return o; };
+  try {
+    res.mix = +(await meas(2 * bar)).toFixed(2);
+    for (const k of [0, 1, 2, 7, 3, 6, 4, 8, 9, 5]) {
+      if (M0[k]) continue;
+      TR.forEach((T, j) => { T.m = j !== k; }); await wait(1000);
+      res.qos = Math.max(res.qos, QOS.lvl || 0);
+      const db = await meas((k < 4 || k === 7 ? 2 : 4) * bar);
+      if (db > -90) res.tracks[k] = { db: +db.toFixed(2), lv: +(+TR[k].lv).toFixed(3), trim: (window.TRIM || TRIM)[k], s: txt(TR[k].p) };
+    }
+  } finally { TR.forEach((T, j) => { T.m = M0[j]; }); }
+  await wait(1200);
+  return res;
+};
+
+/** In the page: the kick alone, once per drum kit. */
+const pageKits = async ({ mood, seed }) => {
+  const c = window.__ctx, an = c.createAnalyser(); an.fftSize = 2048; A.m.connect(an);
+  const buf = new Float32Array(2048), wait = ms => new Promise(r => setTimeout(r, ms));
+  const meas = async ms => { let ss = 0, n = 0, pk = 0; const t0 = performance.now();
+    while (performance.now() - t0 < ms) { an.getFloatTimeDomainData(buf); for (let i = 0; i < buf.length; i++) { ss += buf[i] * buf[i]; const v = Math.abs(buf[i]); if (v > pk) pk = v; } n += buf.length; await wait(20); }
+    return [+(10 * Math.log10(ss / Math.max(1, n) + 1e-12)).toFixed(2), +(20 * Math.log10(pk + 1e-9)).toFixed(2)]; };
+  const bar = 16 * 60 / G.bpm / 4 * 1000, res = { mood, cur: curMood, seed, own: G.kit || '', kits: {} };
+  if (TR[0].m) return res;
+  TR.forEach((T, j) => { T.m = j !== 0; }); await wait(1500);
+  for (const k of ['909', '808', 'Rumble', 'Raw']) { orbKit(k); await wait(1500); res.kits[k] = await meas(2 * bar); }
+  return res;
+};
+/** In the page: let the master settle, then read what leaves it. */
+const pageLoud = async ({ mood, seed }) => {
+  const c = window.__ctx, wait = ms => new Promise(r => setTimeout(r, ms));
+  const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 38; hp.Q.value = .5;
+  const sh = c.createBiquadFilter(); sh.type = 'highshelf'; sh.frequency.value = 1500; sh.gain.value = 4;
+  const an = c.createAnalyser(), ap = c.__tap; an.fftSize = 2048; ap.connect(hp); hp.connect(sh); sh.connect(an);
+  const buf = new Float32Array(2048), b2 = new Float32Array(ap.fftSize);
+  const meas = async ms => { let ss = 0, n = 0, pk = 0; const t0 = performance.now();
+    while (performance.now() - t0 < ms) { an.getFloatTimeDomainData(buf); for (let i = 0; i < buf.length; i++) ss += buf[i] * buf[i]; n += buf.length;
+      ap.getFloatTimeDomainData(b2); for (let i = 0; i < b2.length; i++) { const v = Math.abs(b2[i]); if (v > pk) pk = v; } await wait(20); }
+    return [+(10 * Math.log10(ss / Math.max(1, n) + 1e-12)).toFixed(2), +(20 * Math.log10(pk + 1e-9)).toFixed(2)]; };
+  const res = { mood, cur: curMood, flav: G.flav || '', seed, kick: !TR[0].m };
+  res.first = await meas(3000); res.hr0 = +(orbHeadroom.db || 0).toFixed(2);     // the first 3 s after Play
+  await wait(4000);
+  res.settled = await meas(5000); res.hr = +(orbHeadroom.db || 0).toFixed(2);     // 7-12 s in (the keeper starts at the mood's level, so it has settled by then)
+  return res;
+};
+
+const first = await openApp();
+await first.page.evaluate(PAGE_HELPERS);
+const moods = moodArg ? moodArg.split(',') : await first.page.evaluate(() => __moods());
+const merge = await first.page.evaluate(() => window.MOODMERGE || {});   // a merged menu entry (Aurora = Aurora + Outer Rim) is measured once per variant
+const jobs = []; for (const mood of moods) for (const pick of merge[mood] || [null]) for (const seed of seeds) jobs.push({ mood, pick, seed });
+const rows = []; let done = 0;
+const prep = async page => {
+  await page.evaluate(PAGE_HELPERS);
+  await page.evaluate(hold => {
+    if (hold) Object.defineProperty(orbHeadroom, 'db', { get: () => 0, set() {} });   // solo readings: the headroom keeper must not move the mix gain between them
+    viz = function () {};                                       // no visuals: more browsers fit on the machine
+    for (const k of ['lvl', 'ml', 'floor']) Object.defineProperty(QOS, k, { get: () => 0, set() {} });   // a busy test machine must not make the app shed voices and effects
+    if (window.orbSafety) orbSafety.warn = () => {}; window.orbSafetyWarn = () => {};          // ... nor send it to the kick + hat lifeboat (v0.8)
+  }, !LOUDMODE);
+};
+const worker = async app => {
+  try {
+    const { page } = app;
+    for (let j; (j = jobs.shift());) {
+      try {
+        await page.reload(); await page.waitForFunction(() => typeof generate === 'function' && document.querySelector('#mood'));
+        await prep(page);   // a fresh page per Launch, launched while stopped: the same mood + seed is the same groove in every run, so before / after can be compared
+        await page.evaluate(({ mood, pick, seed }) => { if (pick) MOODMERGE[mood] = [pick]; __seed(seed); document.querySelector('#mood').value = mood; generate(); }, j);
+        await page.waitForTimeout(300); await page.click('#play'); await page.waitForFunction(() => window.__ctx && playing);
+        rows.push(await page.evaluate(KITMODE ? pageKits : LOUDMODE ? pageLoud : pageMeasure, j));
+      } catch (e) { console.error(`failed ${j.mood} #${j.seed}: ${e.message}`); }
+      console.error(`${++done} ${j.pick || j.mood} #${j.seed}`);
+    }
+  } finally { await app.close(); }
+};
+const apps = [first]; for (let i = 1; i < Math.min(nW, jobs.length); i++) apps.push(await openApp());
+await Promise.all(apps.map(worker));
+rows.sort((x, y) => moods.indexOf(x.mood) - moods.indexOf(y.mood) || (x.cur < y.cur ? -1 : x.cur > y.cur ? 1 : 0) || x.seed - y.seed);
+const json = JSON.stringify(rows);
+if (outF) { writeFileSync(outF, json); if (LOUDMODE) loudReport(rows, null); else if (!KITMODE) report(rows); } else console.log(json);

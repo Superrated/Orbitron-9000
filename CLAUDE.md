@@ -18,6 +18,8 @@ node --test tests/*.test.mjs    # static checks (1 s) + headless-Chrome runtime 
 UPDATE_SNAPSHOTS=1 node --test tests/*.test.mjs   # accept an INTENDED change to Launch output
 node tools/probe.mjs --mood Acid --launch "TR[4].p"   # inspect the running app headless
 node tools/probe.mjs --debug --play --launch --listen 3000   # + list errors hidden by catch(e){} (with src file:line)
+node tools/levels.mjs --moods Acid,Noir --out levels.json   # loudness of every part after a Launch (dB against the kick); no --moods = all, ~18 min
+node tools/levels.mjs --loud --out loud.json   # loudness leaving the master per mood, at the start and settled (~2.5 min); --loudreport new.json old.json compares two runs
 node tools/build.mjs --release 0.8   # also copy the build to releases/
 ```
 
