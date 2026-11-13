@@ -7665,15 +7665,15 @@ window.orbExoProg=function(kind){try{let P,sh;
    v0.94: ONE button, one test, about 2 minutes, all by itself:
      1. it Launches a heavy groove — Nebula (the mood that asks most of the engine) with every track switched on — and lets it build up for a few seconds.
         This REPLACES the groove that was playing.
-     2. four runs of 10 s on that groove (RUNS): the lowest latency (Minimum buffer) at Full, Light and Survival quality, then Light with
+     2. four runs of 20 s on that groove (RUNS): the lowest latency (Minimum buffer) at Full, Light and Survival quality, then Light with
         the default 52 ms buffer. Your Visuals setting is left alone. The screen is kept awake.
      3. your own settings come back, and the result ends with SUGGESTED SETTINGS for this device: the first run in that order that played
         clean (no dropout, no late step, no lost time) — best sound at the lowest delay. USE THESE SETTINGS applies them.
    v0.95: it did not seem to end — the Launch rebuilds the Mix page, and the test kept writing into the old, removed copy of its panel.
-   The state now lives outside the page and is drawn into whichever panel is on screen. Also: 10 s per run (about 1 minute in all),
+   The state now lives outside the page and is drawn into whichever panel is on screen. Also (v0.96: 20 s per run, about 1¾ minutes in all),
    a countdown, and a watchdog that ends the test with a message if a run cannot start or finish.
    Nothing here touches the audio path: it only reads counters, four times a second. ---- */
-{const SECS=10,SETTLE=3,BUILD=8;let run=null,series=null,pre='';
+{const SECS=20,SETTLE=3,BUILD=8;let run=null,series=null,pre='';
  /* what the panel shows; drawn into the panel that is on screen NOW (the Mix page is rebuilt by Launch and by engine restarts) */
  const V={text:'',pick:null,busy:false,applied:false,t1:0};
  const ms=x=>Math.round(x*1000),QN={'Hi-fi':'Full','Auto':'Auto','Eco':'Light','Survival':'Survival'};
@@ -7747,7 +7747,7 @@ window.orbExoProg=function(kind){try{let P,sh;
  setInterval(()=>{if(V.busy)draw()},250);   /* the countdown */
  const ui=()=>{const d=$('#diag');if(!d||d.querySelector('.ptest'))return;const w=document.createElement('div');w.className='ptest';w.style.cssText='margin-top:8px';
   const b=document.createElement('button'),cp=document.createElement('button'),us=document.createElement('button'),o=document.createElement('div');b.type=cp.type=us.type='button';o.className='pto';
-  b.textContent='▶ PERFORMANCE TEST · 1 min';b.title='Launches a heavy groove (it replaces the current one), plays four runs of '+SECS+' s at different quality and buffer settings, puts your settings back and suggests the best settings for this device.';
+  b.textContent='▶ PERFORMANCE TEST · 2 min';b.title='Launches a heavy groove (it replaces the current one), plays four runs of '+SECS+' s at different quality and buffer settings, puts your settings back and suggests the best settings for this device.';
   cp.textContent='COPY RESULT';us.textContent='USE THESE SETTINGS';
   [b,cp,us].forEach(x=>x.style.cssText='font:inherit;color:inherit;background:transparent;border:1px solid rgba(0,255,156,.45);border-radius:6px;padding:6px 10px;margin:0 8px 6px 0;cursor:pointer');
   o.style.cssText='white-space:pre-wrap;user-select:text;-webkit-user-select:text';
