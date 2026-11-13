@@ -2402,7 +2402,7 @@ setInterval(()=>{METER.n++;const J=METER.jobs;for(let i=0;i<J.length;i++)if(METE
  window.setPercSound=setPv;
  const _g91=generate;generate=function(){_g91();const T=TR[3],P=T.p;P.pv='Blip';BLIP=null;const m=RM[curMood]||[0,['o']];
   P.rtn=+(.9+R()*.25).toFixed(2);P.rdc=+(.8+R()*.8).toFixed(2);P.rbl=+(R()*.5).toFixed(2);const ty=pick(m[1]);
-  RIDE={st:16,r:ty==='o'?2:0,h:ty==='e'?8:ty==='j'?pick([6,7]):4,ten:ty==='j'?.25:0,acc:ty==='q'?.2:.5,gho:ty==='j'?.25:0,vari:.2,lv:Math.min(T.lv||.5,.45)};RIDE.pt=pat(Object.assign({n:'Ride'},RIDE));if(R()<m[0])setPv('Ride');else build()};
+  RIDE={st:16,r:ty==='o'?2:0,h:ty==='e'?8:ty==='j'?pick([6,7]):4,ten:ty==='j'?.25:0,acc:ty==='q'?.2:.5,gho:ty==='j'?.25:0,vari:.2,lv:Math.min(T.lv||.5,.75)}   /* v0.71: was .45 — the ride sat about 12 dB under the hats until the balance lifted it */;RIDE.pt=pat(Object.assign({n:'Ride'},RIDE));if(R()<m[0])setPv('Ride');else build()};
  build()}
 /* ---- v92: audio engine reset button in the header ---- */
 {const top=document.querySelector('.panel.top'),stg=top&&top.querySelector('.stg');if(top){const b=document.createElement('button');b.className='stg rstb';b.textContent='↻ RESET';b.title='Restart the audio engine (keeps your groove)';
@@ -2611,7 +2611,7 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   $('#root').value=G.root;$('#scale').value=G.scale;$('#bpm').value=G.bpm;$('#bv').textContent=G.bpm}catch(e){}
   try{syncMix()}catch(e){}requestAnimationFrame(()=>{try{build()}catch(e){}try{kl()}catch(e){}})}
  // the scheduler hook: runs first in every step, before any track fires
- const _as=arrStep;arrStep=function(w){if(SS.q&&tk%64===0&&!SS.held){const S=SS.q,gq=SS._q,qn=SS.qn;SS.q=null;SS._q=-1;try{apply(S,w);SS._a=gq;window._mstLearn=performance.now()+9000;msg('▶ ARRIVED AT '+(qn||'SECTOR').toUpperCase()+' · '+MN(curMood))}catch(e){console.warn('sector',e)}paint()}return _as.apply(this,arguments)};
+ const _as=arrStep;arrStep=function(w){if(SS.q&&tk%64===0&&!SS.held){const S=SS.q,gq=SS._q,qn=SS.qn;SS.q=null;SS._q=-1;try{apply(S,w);SS._a=gq;try{window.orbMPlus&&orbMPlus.mood()}catch(e){}msg('▶ ARRIVED AT '+(qn||'SECTOR').toUpperCase()+' · '+MN(curMood))}catch(e){console.warn('sector',e)}paint()}return _as.apply(this,arguments)};
  // hold off while a riser / breakdown pad is held (they restore their own snapshot on release)
  document.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('#t-perf .rz'))SS.held++},true);
  const rel=()=>{if(SS.held)SS.held=0};['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,rel,true));
@@ -3348,7 +3348,13 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
    peak meter on Mix. One switch to compare with the previous master. Survives engine rebuilds ---- */
 {let on=true;try{const v=localStorage.getItem('orb-mst');if(v!=null)on=v==='1'}catch(e){}
  const DRV=Math.pow(10,-1.5/20),TARGET=-9, /* v0.4 master: was -9; the final clipper (end of file) catches the extra peaks */AMBT=new Set(['Ambient','Deep Space','Ethereal','Drone','Dreamy']),AMT={Ambient:.35,'Deep Space':.4,Ethereal:.5,Dreamy:.6,Drone:.7,Noir:.65,Melancholic:.65,Hopeful:.7,'Melodic House':.65,Vector:.65,Bleep:.6,Italo:.7};
- let M=null,agDb=0,hist=[],stv=-70,pk=-70,pkT=0;const MEM={};try{Object.assign(MEM,JSON.parse(localStorage.getItem('orb-mstmem')||'{}'))}catch(e){}setInterval(()=>{try{localStorage.setItem('orb-mstmem',JSON.stringify(MEM))}catch(e){}},10000);
+ let M=null,agDb=0,hist=[],stv=-70,pk=-70,pkT=0;
+ /* v0.71 gain structure: the master gain is a fixed value per mood (dB, measured over many Launches so every mood lands on the same loudness:
+    about −9 LUFS, the ambient moods about −10.5). It replaces the gain that was learned during the first 9 s of every Launch and remembered per
+    mood: that one faded up after each Launch, froze wherever it happened to be, and was then thrown off by the 4-bar balance. Nothing listens
+    and adjusts any more — the loudness loop below only feeds the meter. */
+ const MG={Dark:-3,Ethereal:-4,Acid:-4.5,'Deep Space':-5.5,Ambient:-7,Melancholic:-3.5,Hopeful:-2,Power:-5,Bleep:-5,'Groove Techno':-4.5,Dreamy:-5,Noir:-3.5,Italo:-3.5,'Melodic House':-3.5,Vector:-3.5,Tense:-6,Drone:-3.5,Breaks:-4.5,'Distorted Electro':-6,Temporal:-4},mgDb=()=>MG[curMood]!=null?MG[curMood]:-5;try{localStorage.removeItem('orb-mstmem')}catch(e){}
+ const mgSet=tc=>{if(!M||M.ctx!==ctx)return;agDb=on?mgDb():0;try{M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,tc)}catch(e){}};
  function mstBuild(){if(!ctx||!A.lim||!A.out)return;if(M&&M.ctx===ctx)return;
   const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},bq=(t,f)=>{const b=ctx.createBiquadFilter();b.type=t;b.frequency.value=f;b.Q.value=.7071;return b},
    cp=(th,ra,at,re)=>{const c=ctx.createDynamicsCompressor();c.threshold.value=th;c.ratio.value=ra;c.attack.value=at;c.release.value=re;c.knee.value=10;return c};
@@ -3363,24 +3369,21 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   // meters: K-weighted loudness and plain peak, taken from the final output
   const kh=bq('highpass',60),ks=ctx.createBiquadFilter();ks.type='highshelf';ks.frequency.value=1500;ks.gain.value=4;const an=ctx.createAnalyser(),ap=ctx.createAnalyser();an.fftSize=2048;ap.fftSize=2048;
   A.out.connect(kh);kh.connect(ks);ks.connect(an);A.out.connect(ap);
-  window._mstLearn=performance.now()+9000;lim2.ratio.value=20;lim2.threshold.value=on?-1:-.5;lim2.knee.value=0;if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1;M={ctx,lim2,dry,wet,ag,cL,cM,cH,gL,gM,gH,an,ap,inp,sum,l1,h1};agDb=MEM[curMood]!=null?MEM[curMood]:-8;try{ag.gain.value=Math.pow(10,agDb/20)}catch(e){}hist=[];amount()}   /* v0.6: start below the target and fade up, never above it */
+  lim2.ratio.value=20;lim2.threshold.value=on?-1:-.5;lim2.knee.value=0;if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1;M={ctx,lim2,dry,wet,ag,cL,cM,cH,gL,gM,gH,an,ap,inp,sum,l1,h1};agDb=on?mgDb():0;try{ag.gain.value=Math.pow(10,agDb/20)}catch(e){}hist=[];amount()}
  function amount(){if(!M)return;const a=AMT[curMood]!=null?AMT[curMood]:.8,t=ctx.currentTime;
   // Web Audio compressors add their own makeup gain (≈ 0.6 × the gain reduction at 0 dBFS); cancel it so the bands only shape, never boost
   [[M.cL,M.gL,-3-1.5*a,1.1+.25*a,0],[M.cM,M.gM,-2-1*a,1.05+.15*a,0],[M.cH,M.gH,-1.5-1*a,1.05+.15*a,0]].forEach(([c,g,th,ra,trim])=>{c.threshold.value=th;c.ratio.value=ra;
    const mk=.6*(-th)*(1-1/ra);g.gain.setTargetAtTime(Math.pow(10,(trim-mk)/20),t,.05)})}
- function setOn(v){on=v;if(v){window._mstLearn=performance.now()+9000;hist=[]}try{localStorage.setItem('orb-mst',on?'1':'0')}catch(e){}if(M&&M.ctx===ctx){const t=ctx.currentTime;M.wet.gain.setTargetAtTime(on?1:0,t,.05);M.dry.gain.setTargetAtTime(on?0:1,t,.05);M.lim2.ratio.value=on?20:1;M.lim2.threshold.value=on?-1:0;if(A.pre&&A.pre.context===ctx)A.pre.gain.setTargetAtTime(on?DRV:1,t,.1);if(on){agDb=MEM[curMood]!=null?MEM[curMood]:-8;M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),t,.15)}if(!on){agDb=0;M.ag.gain.setTargetAtTime(1,t,.1);if(A.pre&&A.pre.context===ctx)A.pre.gain.setTargetAtTime(1,t,.1)}}lab()}
- window.orbMPlus={set:v=>setOn(!!v),on:()=>on,M:()=>M};
- // loudness loop: short-term (3 s) K-weighted level; the gain moves at most +0.5 dB/s up and 1 dB/s down, never more than −9…+6 dB,
- // and does not lift passages that are far below the target on purpose (breakdowns, risers, the Flight low-pass, stopping)
+ function setOn(v){on=v;if(v)hist=[];try{localStorage.setItem('orb-mst',on?'1':'0')}catch(e){}if(M&&M.ctx===ctx){const t=ctx.currentTime;M.wet.gain.setTargetAtTime(on?1:0,t,.05);M.dry.gain.setTargetAtTime(on?0:1,t,.05);M.lim2.ratio.value=on?20:1;M.lim2.threshold.value=on?-1:0;if(A.pre&&A.pre.context===ctx)A.pre.gain.setTargetAtTime(on?DRV:1,t,.1);mgSet(on?.15:.1)}lab()}
+ window.orbMPlus={set:v=>setOn(!!v),on:()=>on,M:()=>M,mood:()=>mgSet(.15)};
+ // loudness meter: short-term (3 s) K-weighted level and peak, read twice a second. It only shows the level — it never moves the gain.
  METER.every(2,()=>{if(!M||M.ctx!==ctx||ctx.state!=='running')return;
   let s=0,p=0;{const b=METER.read(M.an,2048);for(let i=0;i<2048;i++){const v=b[i];s+=v*v}}{const b=METER.read(M.ap,2048);for(let i=0;i<2048;i++){const q=b[i]<0?-b[i]:b[i];if(q>p)p=q}}if(!isFinite(s))return;
   hist.push(s/2048);if(hist.length>6)hist.shift();const ms=hist.reduce((a,b)=>a+b,0)/hist.length;stv=ms>0?10*Math.log10(2*ms)-.691:-70;
   const pdb=p>0?20*Math.log10(p):-70,now=performance.now();if(pdb>pk||now-pkT>1200){pk=pdb;pkT=now}
-  if(on&&playing&&stv>-45&&hist.length>=6&&performance.now()<(window._mstLearn||0)){const err=TARGET+(AMBT.has(curMood)?-1.5:0)-stv,lp=window.LOWPASS?LOWPASS.get():1;   /* v0.6: ambient moods aim 1.5 dB lower */
-   if(!(err>0&&(stv<TARGET-8||lp<.999))){agDb=Math.max(-16,Math.min(4,agDb+Math.max(-.75,Math.min(err>2?.5:.2,err*.3))));   /* v0.6: faster both ways, so it settles within ~2 s */MEM[curMood]=agDb;M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.5)}}
   show()},500);   /* v0.33: loudness read twice a second */
  const _in=init;init=function(){const r=_in.apply(this,arguments);try{setTimeout(()=>{try{mstBuild();if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1}catch(e){console.warn('master+',e)}},0)}catch(e){}return r};
- const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();window._mstLearn=performance.now()+9000;if(on&&M&&M.ctx===ctx){agDb=MEM[curMood]!=null?MEM[curMood]:-8;hist=[];M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,.15)}}catch(e){}return r};
+ const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();hist=[];mgSet(.15)}catch(e){}return r};
  // UI under Mood finish
  let box=null;const lab=()=>{if(!box)return;const b=box.querySelector('button');{const h=on?'▲ Master+ <b>ON</b> · peak control + −9 LUFS':'△ Master+ <b>OFF</b> · previous master';if(b.innerHTML!==h)b.innerHTML=h}b.classList.toggle('on',on)};
  function show(){if(!box||!box.offsetParent)return;const t=box.querySelector('.mtx'),f=box.querySelector('.mfl');const l=stv<-60?'—':stv.toFixed(1);
@@ -3956,6 +3959,12 @@ window.MOODX={
 /* v178: low-end/balance recheck trims (dB): Deep Space sub drone was level with the kick, Vector and Dreamy pads still loud, Melodic House clave perc */
 {const T={'Deep Space':{9:-4},Vector:{5:-4},Dreamy:{5:-3},'Melodic House':{3:-3}};for(const m in T){if(!MTRIM[m])continue;for(const k in T[m])MTRIM[m][+k]=(MTRIM[m][+k]||0)+T[m][k]}}
 </script><script>
+/* v0.71 gain structure: the corrections the 4-bar balance used to make a few bars after (nearly) every Launch are now part of the mood presets
+   (dB, added to MTRIM; measured over 6 Launches per mood against the kick). 1 hi-hat · 2 clap · 3 perc · 5 pad · 6 bass · 9 Satellite.
+   Only parts that sat outside their range Launch after Launch are touched, and only part of the way, so each mood keeps its own balance. */
+{const T={Ethereal:{1:3,2:2,9:3},Ambient:{1:3,2:4},Dreamy:{1:2,6:4},'Deep Space':{5:5},Breaks:{5:6,6:3},Power:{5:3},'Groove Techno':{5:2},
+  'Melodic House':{3:-3,6:2},Hopeful:{3:-3},Melancholic:{3:-3}};for(const m in T){if(!MTRIM[m])continue;for(const k in T[m])MTRIM[m][+k]=(MTRIM[m][+k]||0)+T[m][k]}}
+</script><script>
 /* v179: "808 ↔ room" character fader on Hi-hat and Clap (Sound page). 0.5 = the sound as before. Towards 0 = 808 style (hat: softer, more noise,
    less metal, a little darker and longer · clap: wider, darker, smoother); towards 1 = acoustic / room (hat: less metal, some room,
    longer, small hit-to-hit differences · clap: more room, longer tail, small hit-to-hit differences). Hit-to-hit differences use 4
@@ -4374,7 +4383,7 @@ window.MOODX={
 <script>
 /* ---- v0.22: PRO POLISH — make every Launch and every edit sound more finished. CPU-light by design.
    1. Auto mix balance: listens to every track for 4 bars, then nudges each track's Level (the normal Level fader) into a target range
-      against the kick. Runs after each Launch, and on "⚖ Balance mix" (Mix → Channels) after your own edits. Beatless moods are skipped.
+      against the kick. Runs on "⚖ Balance mix" (Mix → Channels) after your own edits (v0.71: no longer after each Launch). Beatless moods are skipped.
    2. Clean-up EQ: one shared low-cut per track (not per note) where a sound has no business: clap 180 Hz, perc 120, lead 140, pad 110
       (+ a −2 dB dip at 300 Hz against mud), snare 110. Hats and the dub stab have their own filter stages; kick, bass, sub and the Acid 303 line are untouched.
       While the Flight low-pass is engaged it steps aside (that fader already shapes the sound).
@@ -4409,7 +4418,7 @@ window.MOODX={
   MEAS={an:k=>{if(!A_[k]){const a=ctx.createAnalyser();a.fftSize=2048;a.__an=1;if(RT.lpOn&&RT.lpOn())a.__lpf=1; /* a meter made while the low-pass is engaged listens before the filter (as before) */A_[k]=a;acc[k]=[0,0]}return A_[k]}};
   const st=performance.now(),iv=setInterval(()=>{for(const k in A_){A_[k].getFloatTimeDomainData(buf);let s=0;for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];acc[k][0]+=s/buf.length;acc[k][1]++}
    if(performance.now()-st>=ms){clearInterval(iv);MEAS=null;const o={};for(const k in acc)o[k]=Math.sqrt(acc[k][0]/Math.max(1,acc[k][1]));setTimeout(()=>{for(const k in A_)try{A_[k].disconnect()}catch(e){}},1500);res(o)}},40)})}
- async function balance(src){if(BAL.state==='busy')return;if(!ctx||!playing){BAL.pend=1;status('⚖ will balance once playing');return}
+ async function balance(src){if(BAL.state==='busy')return;if(!ctx||!playing){status('⚖ press Play first');return}
   if(window.LOWPASS&&LOWPASS.get()<.999){status('⚖ open the Flight low-pass first');return}
   BAL.state='busy';BAL.pend=0;const bars=4,ms=bars*16*sdur()*1000;status('⚖ listening for '+bars+' bars…');
   let r;try{r=await measure(ms)}catch(e){BAL.state='idle';status('');return}BAL.state='idle';
@@ -4419,13 +4428,13 @@ window.MOODX={
    const mx=k===4?1.4:1,nv=Math.max(.02,Math.min(mx,T.lv*Math.pow(10,d/20)));const real=20*Math.log10(nv/T.lv);if(Math.abs(real)<.3)return;T.lv=nv;ch.push(NM[k]+' '+(real>0?'+':'')+real.toFixed(1))});
   syncCh();status(ch.length?'⚖ balanced: '+ch.join(', ')+' dB':'⚖ mix already in range — nothing changed');setTimeout(()=>{if(BAL.state==='idle')status('')},9000)}
  const syncCh=()=>{document.querySelectorAll('#t-mix .cs').forEach(c=>{const n=(c.querySelector('h3')||{}).textContent,k=NM.indexOf((n||'').trim());if(k<0)return;const r=c.querySelector('input[type=range]'),b=c.querySelector('b');if(r){r.value=TR[k].lv;if(b)b.textContent=Math.round(TR[k].lv*100)}});try{window.syncFaders&&syncFaders()}catch(e){}};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(G.pro){BAL.pend=1;BAL.at=null}}catch(e){}return r};
- setInterval(()=>{try{if(!BAL.pend||BAL.state==='busy'||!ctx)return;if(!playing){return}if(BAL.at==null){BAL.at=performance.now()+16*sdur()*1000;return}if(performance.now()>=BAL.at){BAL.at=null;balance('launch')}}catch(e){}},250);
+ /* v0.71: the balance no longer runs by itself after a Launch (it stepped track levels by up to 5 dB a few bars in, right after the master
+    gain had settled). The mood presets carry those corrections now (see MTRIM v0.71); "⚖ Balance mix" is still there for your own edits. */
  // ---- UI: Balance button (Mix → Channels), Pro polish switch (Mix → Bus & FX, next to Air) ----
  const st=document.createElement('style');st.textContent=`.balbx{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 8px}.balbx button{min-height:38px;padding:0 14px;border:1px solid var(--acc,#ffe44d);border-radius:10px;background:rgba(255,228,77,.08);color:var(--acc,#ffe44d);font:inherit;font-weight:700;letter-spacing:.06em;cursor:pointer}
  .balbx .balst{font-size:11px;opacity:.8;flex:1 1 160px}.prosw{grid-column:1/-1;display:flex;gap:8px;align-items:center;font-size:12px}.prosw button{min-height:34px;padding:0 12px;border-radius:9px;border:1px solid rgba(0,255,156,.4);background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer}.prosw button.on{background:var(--acc,#ffe44d);color:#0a0f0c;border-color:var(--acc,#ffe44d)}.prosw small{opacity:.65}`;document.head.appendChild(st);
  const ui=()=>{const ch=document.querySelector('#t-mix .ch');if(ch&&!document.querySelector('#t-mix .balbx')){const b=document.createElement('div');b.className='balbx';b.innerHTML='<button type="button">⚖ Balance mix</button><span class="balst"></span>';b.querySelector('button').onclick=()=>balance('user');ch.before(b);status(BAL.msg)}
-  const m=$('#mix');if(m&&!m.querySelector('.prosw')){const d=document.createElement('div');d.className='prosw';d.innerHTML='<button type="button"></button><small>clean-up EQ per track · tape glue · analog drift · auto balance after Launch</small>';const bt=d.querySelector('button');
+  const m=$('#mix');if(m&&!m.querySelector('.prosw')){const d=document.createElement('div');d.className='prosw';d.innerHTML='<button type="button"></button><small>clean-up EQ per track · tape glue · analog drift</small>';const bt=d.querySelector('button');
    const lab=()=>{bt.textContent=G.pro?'● Pro polish ON':'○ Pro polish OFF';bt.classList.toggle('on',!!G.pro)};lab();bt.onclick=()=>{G.pro=G.pro?0:1;try{localStorage.setItem('orb-pro',G.pro)}catch(e){}tapeSet();lab()};
    const air=m.querySelector('.airsl');if(air)air.after(d);else m.appendChild(d)}};
  UI.on(()=>{try{ui()}catch(e){}});
