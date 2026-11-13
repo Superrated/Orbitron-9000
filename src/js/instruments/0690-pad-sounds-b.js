@@ -1,0 +1,18 @@
+/* ---- v86: four more pad sounds (Poly — classic poly-style chorused saw+pulse, Wavetable — morphing timbre, Cloud — granular shimmer, Tron — wobbly tape-choir) and a pad Movement control (Classic, Ensemble chorus, Phaser) ---- */
+let PWT=null;function padWT(){if(PWT&&PWT.c===ctx)return PWT.w;const mk=fn=>{const N=40,re=new Float32Array(N),im=new Float32Array(N);for(let n=1;n<N;n++)im[n]=fn(n);return ctx.createPeriodicWave(re,im)};
+ const w=[mk(n=>n===1?1:n===2?.3:n===3?.1:0),mk(n=>1/n*(n%3===0?.2:1)),mk(n=>n%2?1/(n*.7):0.0)];PWT={c:ctx,w};return w}
+function padMove(p,w,e,out){const mv=p.mov||'Classic';if(mv==='Ensemble'){const i=ctx.createGain(),d1=ctx.createDelay(.05),d2=ctx.createDelay(.05),l1=plfo(.5,w,e),l2=plfo(.7,w,e),g1=ctx.createGain(),g2=ctx.createGain(),pl=ctx.createStereoPanner(),pr=ctx.createStereoPanner(),dry=ctx.createGain();
+  d1.delayTime.value=.012;d2.delayTime.value=.017;g1.gain.value=.0012;g2.gain.value=.0012; /* v0.22: classic chorus depth (~6-8 cents), was ~30 cents */l1.connect(g1);g1.connect(d1.delayTime);l2.connect(g2);g2.connect(d2.delayTime);pl.pan.value=-.8;pr.pan.value=.8;dry.gain.value=.7;
+  i.connect(dry);dry.connect(out);i.connect(d1);i.connect(d2);d1.connect(pl);d2.connect(pr);pl.connect(out);pr.connect(out);return i}
+ if(mv==='Phaser'){const i=ctx.createGain(),l=plfo(.15+R()*.2,w,e),lg=ctx.createGain(),mix=ctx.createGain();lg.gain.value=700;l.connect(lg);let last=i;[300,700,1500,3000].forEach(f=>{const a=ctx.createBiquadFilter();a.type='allpass';a.frequency.value=f;a.Q.value=.7;lg.connect(a.frequency);last.connect(a);last=a});
+  i.connect(out);last.connect(mix);mix.gain.value=.9;mix.connect(out);return i}
+ return out}
+PADN.push('Poly','Wavetable','Cloud','Tron','EP chords','Abyss','Sync sweep','Wind');Object.assign(PGAIN,{'EP chords':1.6,Abyss:1,'Sync sweep':1.2,Wind:4});Object.assign(PCUT,{'EP chords':3,Abyss:.5,'Sync sweep':1.6,Wind:4});Object.assign(PGAIN,{Poly:.95,Wavetable:1.65,Cloud:1.9,Tron:1.15});Object.assign(PCUT,{Poly:1.6,Wavetable:2.5,Cloud:3.5,Tron:1.5});
+TR[5].p.mov=TR[5].p.mov||'Classic';
+{const ADD={Dark:['Wavetable','Tron'],Melancholic:['Tron','Poly','Wavetable'],Dreamy:['Poly','Cloud'],Tense:['Wavetable'],Ethereal:['Cloud','Wavetable'],Hopeful:['Poly'],Noir:['Tron','Poly'],Drone:['Cloud','Wavetable'],Acid:['Poly'],Italo:['Poly','Poly'],Breaks:['Cloud','Poly'],'Deep Space':['Cloud','Wavetable','Cloud'],Bleep:['Wavetable']};
+ for(const m in ADD)if(MOODS[m]&&MOODS[m].pt)ADD[m].forEach(x=>MOODS[m].pt.push(x));
+ const MW={Dark:['Classic','Phaser'],Melancholic:['Ensemble','Classic'],Dreamy:['Ensemble','Phaser'],Tense:['Phaser','Classic'],Ethereal:['Ensemble','Classic'],Hopeful:['Ensemble'],Noir:['Phaser','Classic'],Drone:['Phaser','Classic'],Acid:['Phaser'],Italo:['Ensemble'],Breaks:['Ensemble','Classic'],'Deep Space':['Ensemble','Classic'],Bleep:['Classic','Phaser'],'Melodic House':['Ensemble','Classic'],'Distorted Electro':['Phaser','Classic'],Ambient:['Ensemble','Phaser'],'Groove Techno':['Classic'],Temporal:['Classic'],Vector:['Ensemble','Phaser','Classic']};
+ const _g86=generate;generate=function(){_g86();const P=TR[5].p;P.mov=P.patch==='Poly'?'Ensemble':pick(MW[curMood]||['Classic','Ensemble','Phaser']);build()};
+ // Movement select on the pad sound page
+ BUILD.hooks.push({post(){queueMicrotask(()=>queueMicrotask(()=>{const c=[...document.querySelectorAll('.card')].find(c=>+c.dataset.k===5);if(!c||c.querySelector('[data-mov]'))return;const g=c.querySelector('.grid');if(!g)return;
+  const el=mkSel('Movement',['Classic','Ensemble','Phaser'],TR[5].p.mov||'Classic',v=>TR[5].p.mov=v);el.dataset.g='snd';el.dataset.mov=1;const ps=[...g.children].find(x=>/^Pad sound/.test(x.textContent));if(ps)ps.after(el);else g.appendChild(el)}))}});build()}
