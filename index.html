@@ -1356,22 +1356,29 @@ const _init38=init;init=function(){const nw=!ctx;_init38();if(nw)setTimeout(hatM
 function hatMetalInit(){if(A.hmP||!window.OfflineAudioContext)return;const sr=ctx.sampleRate,oc=new OfflineAudioContext(1,Math.floor(sr*.6),sr),m=oc.createGain(),bp=oc.createBiquadFilter(),hp=oc.createBiquadFilter();bp.type='bandpass';bp.frequency.value=9200;bp.Q.value=.7;hp.type='highpass';hp.frequency.value=4960;hp.Q.value=.5;m.connect(bp);bp.connect(hp);hp.connect(oc.destination);
  [205.3,304.4,369.6,522.7,540,800].forEach(f=>{const o=oc.createOscillator();o.type='square';o.frequency.value=f*1.6;o.connect(m);o.start()});A.hmP=oc.startRendering().then(b=>{A.hm2=b}).catch(()=>{})};
 /* ---- v39: lead taming — lead bus (de-harsh EQ + compressor), max 3 overlapping lead notes, calmer generated lead settings ---- */
-G.ldOut=.82;
+G.ldOut=1;   /* v0.77: was .82 */
 const _init39=init;init=function(){const nw=!ctx;_init39();if(!nw)return;const pk=ctx.createBiquadFilter(),hs=ctx.createBiquadFilter(),c=ctx.createDynamicsCompressor(),o=ctx.createGain();A.ld=ctx.createGain();
  pk.type='peaking';pk.frequency.value=3000;pk.Q.value=1;pk.gain.value=-3.5;hs.type='highshelf';hs.frequency.value=8000;hs.gain.value=-2.5;
- c.threshold.value=-22;c.ratio.value=4;c.knee.value=8;c.attack.value=.004;c.release.value=.16;o.gain.value=G.ldOut;A.ldo=o;A.ldc=c;
+ c.threshold.value=-26;c.ratio.value=3;c.knee.value=10;c.attack.value=.008;c.release.value=.2;o.gain.value=G.ldOut;A.ldo=o;A.ldc=c;
  {const fd=ctx.createGain(),fi=ctx.createGain(),fz=ctx.createWaveShaper(),ft=ctx.createBiquadFilter(),fw=ctx.createGain();fd.gain.value=1;fi.gain.value=1;fw.gain.value=0;
   const n=2048,c=new Float32Array(n),k=2.2,b=.1,o0=Math.atan(k*b),nm=Math.atan(k*(1+b))-o0;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=(Math.atan(k*(x+b))-o0)/nm}fz.curve=c;fz.oversample='2x'; /* warm overdrive */
   ft.type='lowpass';ft.frequency.value=5200;ft.Q.value=.5;A.ld.connect(fd);fd.connect(pk);A.ld.connect(fi);{const fh=ctx.createBiquadFilter(),pe=ctx.createBiquadFilter(),de=ctx.createBiquadFilter();fh.type='highpass';fh.frequency.value=180;fh.Q.value=.6;pe.type=de.type='highshelf';pe.frequency.value=de.frequency.value=1500;pe.gain.value=6;de.gain.value=-6;
    fi.connect(fh);fh.connect(pe);pe.connect(fz);fz.connect(de);de.connect(ft)} /* brighter notes drive the overdrive harder, like a filter into a pedal */ft.connect(fw);fw.connect(pk);A.fz={fd,fi,fw}} // v0.22 lead bus fuzz (LEAD fader)
- pk.connect(hs);hs.connect(o);o.connect(A.dk);
+ pk.connect(hs);hs.connect(c);c.connect(o);o.connect(A.dk);
+ /* v0.77: leads were barely audible in many Launches. Measured against the kick over 60 Launches the lead sat at −20 dB in the middle and
+    down to −31 dB; v0.7 was −19 / −27. The fixed per-patch gain of v0.75 could not follow how much a patch's level changes with the cutoff,
+    drive and register a Launch picks. Three changes, nothing that listens over time:
+    · the lead bus compressor that was built here but never connected is in the path (3:1 above −26 dB): quiet patches pass, loud ones are held;
+    · the per-patch gain below does half of what it did (the compressor does the rest); the 303 keeps its own full value;
+    · the lead bus is 1.7 dB hotter.
+    Result on the same kind of Launches: −15.6 dB in the middle, quietest −24 dB, loudest unchanged at about −8 dB. */
  /* v0.75: the automatic level control on the lead bus is gone (it read the bus ten times a second and kept moving the gain). The lead bus
     gain is now fixed per lead patch — see LK below. */
  ldSet()};
 /* v0.75 lead bus level per patch (dB): the gain the old automatic control settled on, measured per patch over many Launches. Applied together
    with the mood's lead level (G.ldMul); set when the patch or mood changes, checked as a note starts (two compares, nothing else). */
-const LK={'Acid 303':-9,'Aggro':-4.5,'Bleep':-3,'Bright pluck':2,'Chorus pulse':-1.5,'Cinematic arp':-1.5,'Clean':2,'Dense':-4,'Donk':-3.5,'EP stab':-2,'FM bell':2.5,'FM keys':-8,'Formant wave':-2,'Glass':-0.5,'Hard sync':-0.5,'Hollow BP':-2.5,'Hoover':0.5,'House piano':1.5,'Hypno stab':-0.5,'Metal FM':-2.5,'Mini acid':-0.5,'Mini bass':4,'Mini brass':-1,'Mini drone':1,'Mini edge':6,'Mini fifths':6,'Mini lead':-1.5,'Mini sparkle':-0.5,'Mini wobble':-1,'Mist':-6,'Organ':-4,'Organ stab':-5.5,'Pluck':2,'Rave stab':-7,'Reese':-1,'Rubber blip':0.5,'Soft keys':-3.5,'Soft sine':-0.5,'Space blip':4,'Square chip':-3.5,'String pluck':-4.5,'Sunny keys':-4.5,'Talkbox':-4.5,'Techno stab':-2,'Vowel':-0.5,'Weird drone':-3.5,'West Coast fold':-6,'Wide saw':1};for(const k in LK)LK[k]=Math.pow(10,LK[k]/20);let _ldV=-1,_ldO=null;
-function ldSet(){const o=A.ldo;if(!o||!ctx||o.context!==ctx)return;const P=TR[4].p,v=G.ldOut*(G.ldMul||1)*(LK[P.mode==='Acid 303'?'Acid 303':P.patch]||1);if(v===_ldV&&o===_ldO)return;
+const LK={'Acid 303':-9,'Aggro':-4.5,'Bleep':-3,'Bright pluck':2,'Chorus pulse':-1.5,'Cinematic arp':-1.5,'Clean':2,'Dense':-4,'Donk':-3.5,'EP stab':-2,'FM bell':2.5,'FM keys':-8,'Formant wave':-2,'Glass':-0.5,'Hard sync':-0.5,'Hollow BP':-2.5,'Hoover':0.5,'House piano':1.5,'Hypno stab':-0.5,'Metal FM':-2.5,'Mini acid':-0.5,'Mini bass':4,'Mini brass':-1,'Mini drone':1,'Mini edge':6,'Mini fifths':6,'Mini lead':-1.5,'Mini sparkle':-0.5,'Mini wobble':-1,'Mist':-6,'Organ':-4,'Organ stab':-5.5,'Pluck':2,'Rave stab':-7,'Reese':-1,'Rubber blip':0.5,'Soft keys':-3.5,'Soft sine':-0.5,'Space blip':4,'Square chip':-3.5,'String pluck':-4.5,'Sunny keys':-4.5,'Talkbox':-4.5,'Techno stab':-2,'Vowel':-0.5,'Weird drone':-3.5,'West Coast fold':-6,'Wide saw':1};for(const k in LK)LK[k]=Math.pow(10,LK[k]/20);let _ldV=-1,_ldO=null;const LKA=LK['Acid 303'];
+function ldSet(){const o=A.ldo;if(!o||!ctx||o.context!==ctx)return;const P=TR[4].p,ac=P.mode==='Acid 303',v=G.ldOut*(G.ldMul||1)*(ac?LKA:Math.sqrt(LK[P.patch]||1));if(v===_ldV&&o===_ldO)return;
  const first=o!==_ldO;_ldV=v;_ldO=o;try{if(first)o.gain.value=v;else o.gain.setTargetAtTime(v,ctx.currentTime,.1)}catch(e){}}
 const LVQ=[];function leadVoice(g,w){ldSet();for(let i=LVQ.length-1;i>=0;i--)if(w-LVQ[i].w>2.5)LVQ.splice(i,1);
  while(LVQ.length>=((QOS.floor||0)>=1||(QOS.lvl||0)>=1?2:3)){const o=LVQ.shift();try{o.g.gain.cancelScheduledValues(w);o.g.gain.setTargetAtTime(.0001,w,.06)}catch(e){}
@@ -1952,7 +1959,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.75 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.75';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.76 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.76';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -3992,7 +3999,11 @@ window.MOODX={
    (dB, added to MTRIM; measured over 6 Launches per mood against the kick). 1 hi-hat · 2 clap · 3 perc · 5 pad · 6 bass · 9 Satellite.
    Only parts that sat outside their range Launch after Launch are touched, and only part of the way, so each mood keeps its own balance. */
 {const T={Ethereal:{1:3,2:2,9:3},Ambient:{1:3,2:4},Dreamy:{1:2,6:4},'Deep Space':{5:5},Breaks:{5:6,6:3},Power:{5:3},'Groove Techno':{5:2},
-  'Melodic House':{3:-3,6:2},Hopeful:{3:-3},Melancholic:{3:-3}};for(const m in T){if(!MTRIM[m])continue;for(const k in T[m])MTRIM[m][+k]=(MTRIM[m][+k]||0)+T[m][k]}}
+  'Melodic House':{3:-3,6:2},Hopeful:{3:-3},Melancholic:{3:-3}};for(const m in T){if(!MTRIM[m])continue;for(const k in T[m])MTRIM[m][+k]=(MTRIM[m][+k]||0)+T[m][k]}
+ /* v0.77: pads sat about 30 dB under the kick in the middle (down to −43 dB) — present on paper, inaudible in the mix. +6 dB of trim in
+    every mood except the four where the pad already carries the track (Aurora, Outer Rim, Low Orbit, Orbital Hum). The pad's own gain
+    stage gives back about half of a trim, so this is roughly +3 dB heard. */
+ for(const m in MTRIM)if(!['Ethereal','Deep Space','Ambient','Drone'].includes(m))MTRIM[m][5]=(MTRIM[m][5]||0)+6}
 </script><script>
 /* v179: "808 ↔ room" character fader on Hi-hat and Clap (Sound page). 0.5 = the sound as before. Towards 0 = 808 style (hat: softer, more noise,
    less metal, a little darker and longer · clap: wider, darker, smoother); towards 1 = acoustic / room (hat: less metal, some room,
@@ -5475,7 +5486,7 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
    for(const o of[-n,0,n])for(const t of tgt){const v=t+o;if(v<-3||v>n+5)continue;const sc=Math.abs(v-c0)+(v>c0?.01:0);if(sc<bs){bs=sc;best=v}}SST.cp=best;d=best}
   let f=xm?SST.dF:d2f(d,regOct(p)+(G.ldUp||0)),f2=d2!=null?d2f(d2,regOct(p)+(G.ldUp||0)):0;while(f>(sp||xm?2000:1000)){f/=2;f2/=2}const FQ=f2?[f,f2]:[f];
   const tone=p.tone==null?.5:p.tone,space=p.space==null?.4:p.space,trim=(typeof dbg==='function'&&typeof TRIM!=='undefined')?dbg(TRIM[9]||0):1,
-   g=ctx.createGain(),out=A.ld||A.dk;g.__k=9;let e;orb=Math.max(0,Math.min(1,p.orb||0)),oph=tk*Math.PI/32,lv=T.lv*trim*(xm?(mot==='Double bass'?.16:.22):sp?.24:mot==='Arp'?(f2?.2:.25):mot==='Phase'?.26:.3)/Math.sqrt(FQ.length)*(orb&&mot!=='Long'?(s%4===2?1+.3*orb:1-.12*orb):1),
+   g=ctx.createGain(),out=A.ld||A.dk;g.__k=9;let e;orb=Math.max(0,Math.min(1,p.orb||0)),oph=tk*Math.PI/32,lv=T.lv*trim*(xm?(mot==='Double bass'?.16:.22):sp?.24:mot==='Arp'?(f2?.2:.25):mot==='Phase'?.26:.3)*.3/Math.sqrt(FQ.length)   /* v0.77: ×0.3 — the Satellite plays through the lead bus, whose compressor (now connected) lifts quiet parts; without this it came out about 9 dB louder than in v0.7 */*(orb&&mot!=='Long'?(s%4===2?1+.3*orb:1-.12*orb):1),
    AT=.003+Math.pow(p.att==null?.2:p.att,2)*.6,RL=.08+Math.pow(p.rel==null?.32:p.rel,2)*2.4;
   const env=(a,hold,rl)=>{g.gain.setValueAtTime(.0001,w);g.gain.linearRampToValueAtTime(lv,w+a);g.gain.setValueAtTime(lv,w+Math.max(a,hold));g.gain.setTargetAtTime(.0001,w+Math.max(a,hold),rl/3);e=w+Math.max(a,hold)+rl+.1};
   const cap=600*Math.pow(2,tone*3+orb*.9*Math.sin(oph/2));
@@ -6475,7 +6486,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13-v0.75-b';
+window.ORB_BUILD='2026-11-13-v0.76-c';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -6996,7 +7007,7 @@ window.orbExoProg=function(kind){try{let P,sh;
    FX    · DRY ↔ WASH. Left: echo, reverb and shimmer pull back to nothing. Right: more echo with longer feedback, more reverb and shimmer —
            a wash to throw over a transition. Moves the four FX levels together; the Mix faders keep their values. ---- */
 {const lst=[...document.querySelectorAll('style')].find(t=>t.textContent.includes('.lmx .lmt'));
- if(lst){const st=document.createElement('style');st.textContent=lst.textContent.replace(/\.lmx/g,'.xmx')+'.mxrow>.xmx{margin:0;min-width:0}@media (max-width:640px) and (max-height:780px){.mxrow>.xmx{position:relative}}body.flw #t-perf>.mxp.xmp{grid-column:1/7;grid-row:5}';document.head.appendChild(st)}
+ if(lst){const st=document.createElement('style');st.textContent=lst.textContent.replace(/\.lmx/g,'.xmx')+'.mxrow>.xmx{margin:0;min-width:0}@media (max-width:640px) and (max-height:780px){.mxrow>.xmx{position:relative}}@media (min-width:900px){body.flw #t-perf>.mxp.xmp{grid-column:1/7;grid-row:5}}#t-perf .mxrow .lmt{height:32px!important}#t-perf .mxp{padding-top:6px!important;padding-bottom:7px!important}#t-perf .mxrow .lmh{margin-bottom:4px!important}'   /* v0.77: the wide-screen placement applied on phones too — it stretched the 3-column grid to 6 and the riser and breakdown pads collapsed to nothing. It is behind the wide-screen condition now. All six faders are a touch lower (32 px, were 38–44) so the extra row costs less room. */;document.head.appendChild(st)}
  const mk=(o)=>{const F={x:0,raf:0,el:null};let last=null;
   const show=()=>{const el=F.el;if(!el)return;const x=F.x;if(last!==null&&Math.abs(x-last)<.002)return;last=x;const k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
    k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';b.textContent=Math.abs(x)<.01?'AS SET':(x<0?o.l:o.r)+' '+Math.round(Math.abs(x)*100)+'%';if(o.on)try{o.on(x)}catch(e){}};

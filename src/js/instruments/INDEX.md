@@ -6,8 +6,8 @@ Per file: what it does · **defines** new globals · **wraps** globals defined b
 - **0160-lead-engine.js** (14.2 KB) — v13: versatile lead engine — 6 oscillator models, 4 filter types, ADSR, stereo unison, pitch env, vibrato, key tracking, 17 tuned patches
   defines: LDEF LBASE LENG LFT EGN PWC pulseWave ORW organWave VWF VWC VWN vowelWave leadPoly …
   wraps: applyMode generate
-- **0360-lead-bus-taming.js** (4.3 KB) — v39: lead taming — lead bus (de-harsh EQ + compressor), max 3 overlapping lead notes, calmer generated lead settings
-  defines: _init39 LK _ldV _ldO ldSet LVQ leadVoice _gen39 __LCOL
+- **0360-lead-bus-taming.js** (5.1 KB) — v39: lead taming — lead bus (de-harsh EQ + compressor), max 3 overlapping lead notes, calmer generated lead settings
+  defines: _init39 LK _ldV _ldO LKA ldSet LVQ leadVoice _gen39 __LCOL
   wraps: init generate
 - **0480-mini-lead-engine.js** (10.3 KB) — v55: "Mini" lead engine — classic three-oscillator monosynth style: 3 VCOs (wave / range / detune / level) + noise, hot mixer, 4-pole ladder filter …
   defines: MWN MRN MWC miniWave LADDER_SRC ladCap _init55 LADN ladPool ladGet ladFree miniVoice NOTMINI miniSels
@@ -48,7 +48,7 @@ Per file: what it does · **defines** new globals · **wraps** globals defined b
   wraps: fire generate
 - **1780-sub-hold.js** (2.1 KB) — v0.26: SUB HOLD on the bass replaces the Sub drone track — a clean sine on the chord root that rings from chord change to chord change under …
   wraps: chordLog arrStep toggle generate
-- **1790-satellite.js** (18.0 KB) — v0.26: SATELLITE — replaces the Sub drone track (slot 9). One Launch picks one of two roles: Counter · a second line (warm saw, strings or reed) …
+- **1790-satellite.js** (18.2 KB) — v0.26: SATELLITE — replaces the Sub drone track (slot 9). One Launch picks one of two roles: Counter · a second line (warm saw, strings or reed) …
   defines: orbSatState orbSatRing orbSatSdef orbSatellite
   wraps: fire arrStep subDrone generate
 - **1910-new-sounds-patterns.js** (15.6 KB) — v0.29: NEW SOUNDS + SMARTER LEAD AND BASS PATTERNS Leads: House piano and EP stab (chords that follow the pad), Rave stab and Organ stab (one chord …
