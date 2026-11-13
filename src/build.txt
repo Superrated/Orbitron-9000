@@ -1,0 +1,270 @@
+# Orbitron 9000 build manifest — the ORDER of this file is the order of the code in index.html.
+# Order matters: later files wrap (patch) functions defined by earlier files; the last wrapper runs first.
+#
+#   raw  <path>          copied verbatim (HTML / CSS fragments)
+#   js   <path> [glue]   opens a new <script> with this file's content
+#   js+  <path> [glue]   continues the <script> opened above (same script: shared hoisting, one error stops the rest)
+#   glue after </script>: (none) = newline · "-" = nothing · "nl2" = blank line
+#
+# Add a new feature file: create src/js/<area>/<NNNN>-<slug>.js and add a `js` line where it must run
+# (usually at the end). Then: node tools/build.mjs
+raw  html/head.html
+raw  css/base.css
+raw  html/body.html
+js   js/platform/0010-render-queue.js
+js   js/state/0020-migrate-eco-name.js
+js   js/platform/0030-heartbeat-timers.js
+js   js/platform/0040-disconnect-ended-sources.js
+js   js/core/0050-base-state-engine-ui.js
+js   js/state/0060-saving-share-download.js
+js+  js/engine/0070-safe-exp-ramp.js
+js+  js/ui/0080-event-driven-sync.js
+js+  js/core/0090-track-params-voices-tick.js
+js+  js/core/0100-tabs-perform-visual-risers.js
+js+  js/core/0110-generate-builder-tracks-ui.js
+js+  js/core/0120-moods-pad-motif-generator.js
+js+  js/core/0130-drone-gate-arp-lead-presets.js
+js+  js/sequencer/0140-lfos.js
+js+  js/engine/0150-production-master-glue.js
+js+  js/instruments/0160-lead-engine.js
+js+  js/launch/0170-power-mood.js
+js+  js/launch/0180-mood-production-profiles.js
+js+  js/launch/0190-mood-track-trims.js
+js+  js/flight/0200-perform-tab-punch-ins.js
+js+  js/ui/0210-viz-solar-system.js
+js+  js/ui/0220-viz-cinematic.js
+js+  js/launch/0230-breaks-engine.js
+js+  js/launch/0240-moods-italo-touch-breaks.js
+js+  js/launch/0250-deep-space-mood.js
+js+  js/launch/0260-anti-wall-tame-generations.js
+js+  js/ui/0270-viz-orbit-map.js
+js+  js/flight/0280-punch-ins-claps-rolls.js
+js+  js/flight/0290-punch-ins-horn-planet-song.js
+js+  js/platform/0300-load-guard.js
+js+  js/flight/0310-riser-shepard.js
+js+  js/flight/0320-steam-horn-arm.js
+js+  js/ui/0330-space-cues.js
+js+  js/engine/0340-shimmer-reverb.js
+js+  js/platform/0350-perf-prerender-hat-fps.js
+js+  js/instruments/0360-lead-bus-taming.js
+js+  js/platform/0370-lean-engine.js
+js+  js/ui/0380-fun-space-ui.js
+js+  js/ui/0390-space-naming.js
+js+  js/launch/0400-power-lead-a.js
+js+  js/launch/0410-italo-electro-pop.js
+js+  js/launch/0420-power-lead-b.js
+js+  js/platform/0430-prerendered-drums-interruptions.js
+js+  js/platform/0440-stage-mode.js
+js+  js/launch/0450-power-lead-variants.js
+js+  js/platform/0460-survival-voice-cap.js
+js+  js/launch/0470-loop-polish.js
+js+  js/instruments/0480-mini-lead-engine.js
+js+  js/instruments/0490-dub-stab.js
+js+  js/instruments/0500-mini-patches.js
+js+  js/flight/0510-breakdown-pads.js
+js+  js/flight/0520-thrusters-drop-hits.js
+js+  js/flight/0530-phone-layout.js
+js+  js/sequencer/0540-lfo-targets.js
+js+  js/ui/0550-mix-tab-channels.js
+js+  js/sequencer/0560-euclid-tension-breakbeat-tools.js
+js+  js/ui/0570-engine-subtab.js
+js+  js/ui/0580-compact-header.js
+js+  js/sequencer/0590-bassline-tools.js
+js+  js/instruments/0600-bass-drive-square.js
+js+  js/launch/0610-power-lead-h.js
+js+  js/platform/0620-cpu-easy-wins.js
+js+  js/launch/0630-power-lead-cells-then-none.js
+js+  js/launch/0640-pad-harmony-library.js
+js+  js/launch/0650-bleep-mood.js
+js+  js/launch/0660-launch-fadeout.js
+js+  js/instruments/0670-pad-sounds-a.js
+js+  js/launch/0680-the-touch-mood-removed.js
+js+  js/instruments/0690-pad-sounds-b.js
+js+  js/sequencer/0700-pad-pattern-options.js
+js+  js/launch/0710-moods-use-tools.js
+js+  js/launch/0720-pad-variety.js
+js+  js/engine/0730-unified-metering.js
+js+  js/platform/0740-stability-guards-worker-clock.js
+js+  js/instruments/0750-ride-perc.js
+js+  js/platform/0760-reset-button-silent-recovery.js
+js+  js/launch/0770-bpm-lock.js
+js+  js/platform/0780-stability-phone-pass.js
+js+  js/flight/0790-break-thruster.js
+js+  js/flight/0800-ride-push-arm.js
+js+  js/launch/0810-key-scale-lock.js
+js+  js/engine/0820-mood-finish-mastering.js
+js+  js/state/0830-sectors.js
+js+  js/platform/0840-background-recovery.js
+js+  js/platform/0850-phone-pause.js
+js+  js/ui/0860-solo.js
+js+  js/flight/0870-lowpass-fader.js
+js+  js/ui/0880-compact-top-phone.js
+js+  js/launch/0890-italo-restore.js
+js+  js/sequencer/0900-bassline-toolkit.js
+js+  js/ui/0910-bass-pattern-page.js
+js+  js/ui/0920-lead-pattern-page.js
+js+  js/ui/0930-faders-show-value.js
+js+  js/sequencer/0940-arp-modes.js
+js+  js/sequencer/0950-rotate-drift.js
+js+  js/platform/0960-engine-sleep.js
+js+  js/launch/0970-moods-melodic-house-electro.js
+js+  js/instruments/0980-marimba.js
+js+  js/state/0990-wav-recorder.js
+js+  js/launch/1000-groove-techno-mood.js
+js+  js/ui/1010-lfo-tab-phone.js
+js+  js/engine/1020-space-stereo.js
+js+  js/launch/1030-vector-mood.js
+js+  js/engine/1040-master-plus-multiband.js
+js+  js/instruments/1050-kick-rumble.js
+js+  js/launch/1060-contemporary-leads.js
+js+  js/ui/1070-fader-lfo-violet.js
+js+  js/instruments/1080-clap-body.js
+js+  js/launch/1090-pad-generation-4.js
+js+  js/launch/1100-phrase-harmony.js  -
+js   js/launch/1110-mood-sweep-fixes.js  -
+js   js/instruments/1120-de-cheese-leads.js  -
+js   js/launch/1130-no-mood-leakage.js
+js   js/ui/1140-menus-follow-sound.js
+js   js/launch/1150-temporal-mood.js  -
+js   js/instruments/1160-kick-key-tuned.js
+js   js/engine/1170-drum-bus.js
+js   js/sequencer/1180-evolve.js
+js   js/launch/1190-groove-families.js
+js   js/instruments/1200-contemporary-leads.js
+js   js/instruments/1210-produced-leads.js
+js   js/launch/1220-mood-settings-row.js  -
+js   js/launch/1230-no-dated-leads.js
+js   js/ui/1240-mood-menu-names.js  -
+js   js/launch/1250-balance-trims.js  -
+js   js/launch/1260-perc-kit-per-mood.js
+js   js/launch/1270-darker-harmony.js
+js   js/launch/1280-tight-low-end.js  -
+js   js/engine/1290-pa-safe-low-end.js  -
+js   js/launch/1300-low-end-trims.js  -
+js   js/launch/1305-mood-trims-balance-corrections.js  -
+js   js/instruments/1310-hat-clap-808-room.js
+js   js/launch/1320-808-room-per-mood.js  -
+js   js/engine/1330-ducked-reverb.js
+js   js/flight/1340-hat-push.js
+js   js/flight/1350-lead-macro-fader.js
+js   js/instruments/1360-lead-patches-modern.js
+js   js/flight/1370-bass-macro-fader.js
+js   js/flight/1380-full-width.js
+js   js/ui/1390-perc-sound-page.js
+js   js/instruments/1400-held-bass.js
+js   js/ui/1410-pad-progression-menu.js
+js   js/launch/1420-dice-pad-part.js
+js   js/launch/1430-dice-lead-line.js
+js   js/ui/1440-lead-sound-pages.js
+js   js/engine/1450-master-air.js
+js   js/engine/1460-pro-polish.js
+js   js/flight/1470-faders-over-lfos.js
+js   js/platform/1480-viz-half-rate-on-fader.js
+js   js/platform/1490-audio-buffer.js
+js   js/flight/1500-lead-grit.js
+js   js/ui/1510-pad-pattern-page.js
+js   js/launch/1520-calmer-pads.js
+js   js/launch/1530-launch-polish.js
+js   js/launch/1540-dice-bassline.js
+js   js/flight/1550-planet-mutes.js
+js   js/flight/1560-launch-resets-faders.js
+js   js/sequencer/1570-lfo-targets-polymeters.js
+js   js/platform/1580-overload-guard.js
+js   js/launch/1590-mood-refinement.js
+js   js/platform/1600-pad-chord-ids.js
+js   js/flight/1610-thrusters-vs-mutes.js
+js   js/platform/1620-lead-osc-collect.js
+js   js/launch/1630-sound-variety.js
+js   js/engine/1640-pump-fader.js
+js   js/ui/1650-interface-cleanup.js
+js   js/launch/1660-launch-quality.js
+js   js/platform/1670-output-device-change.js
+js   js/launch/1680-mood-flavours.js
+js   js/launch/1690-in-time-launch.js
+js   js/platform/1700-safety-loop.js
+js   js/flight/1710-release-on-beat.js
+js   js/ui/1720-css-polish.js
+js   js/ui/1730-mute-sync.js
+js   js/launch/1740-interval-fix.js
+js   js/launch/1750-modern-sound-pass.js  nl2
+js   js/launch/1760-phrase-basslines.js  -
+raw  html/glue-1.html
+js   js/flight/1770-thin-fader.js  -
+raw  html/glue-2.html
+js   js/instruments/1780-sub-hold.js  nl2
+js   js/instruments/1790-satellite.js  nl2
+js   js/ui/1800-card-rebuilds-fix.js
+js   js/launch/1810-groove-score.js  nl2
+js   js/ui/1820-tester-mode.js  nl2
+js   js/flight/1830-lowpass-thin-layout.js
+js   js/launch/1840-acid-riffs.js
+js   js/flight/1850-kick-switch.js
+js   js/ui/1860-perf-syncfaders.js
+js   js/ui/1870-perf-bass-card.js
+js   js/engine/1880-perf-shimmer-lazy.js
+js   js/engine/1890-perf-master-lp.js
+js   js/ui/1900-perf-viz-load.js
+js   js/instruments/1910-new-sounds-patterns.js
+js   js/platform/1920-prerender-perc.js
+js   js/launch/1930-tonal-balance.js
+js   js/ui/1940-riff-picker.js
+js   js/engine/1950-mastering.js
+js   js/launch/1960-polyrhythm.js
+js   js/launch/1970-character.js
+js   js/flight/1980-no-stutters.js
+js   js/launch/1990-perc-brightness.js
+js   js/sequencer/2000-feel-microtiming.js
+js   js/engine/2010-tempo-synced-tails.js
+js   js/engine/2020-frequency-slots.js
+js   js/engine/2030-headroom.js
+js   js/sequencer/2040-lfo-bar-sync.js
+js   js/sequencer/2050-lfo-note-targets.js
+js   js/launch/2060-launch-timestamp.js
+js   js/flight/2070-drift-thruster.js
+js   js/flight/2080-harmony-thrusters.js
+js   js/flight/2090-thruster-order.js
+js+  js/sequencer/2091-launch-lfo-picker.js
+js   js/flight/2100-octave-lifts-stab.js
+js   js/flight/2110-thin-mirrored.js
+js   js/flight/2120-naming.js
+js   js/flight/2130-clean-start.js
+js   js/platform/2140-buffer-tip.js
+js   js/platform/2150-pwa-install.js
+js   js/platform/2160-drum-cache-cap.js
+js+  js/instruments/2161-perc-analog-character.js
+js+  js/ui/2162-one-rebuild-per-launch.js
+js+  js/launch/2163-pad-level-trim.js
+js+  js/platform/2164-update-ready-note.js
+js+  js/ui/2165-screen-orientation-width.js
+js+  js/launch/2166-mood-range.js
+js+  js/launch/2167-interplay.js
+js+  js/engine/2168-master-final-clipper.js
+js+  js/ui/2169-reroll-button-style.js
+js   js/state/2170-ep-stab-rename.js
+js   js/launch/2180-acid-line-generator.js
+js   js/launch/2190-acid-deja-vu.js
+js   js/instruments/2200-acid-production.js
+js   js/launch/2210-acid-guest-lines.js
+js   js/instruments/2220-acid-fine-tuning.js
+js   js/launch/2230-acid-level.js
+js   js/launch/2240-long-bass.js
+js   js/launch/2250-satellite-motions.js
+js   js/instruments/2260-marimba-level.js
+js   js/launch/2270-variety-afterglow-lost-signal.js
+js   js/launch/2280-max-q.js
+js   js/launch/2290-more-riffs.js
+js   js/launch/2300-gravity-assist.js
+js   js/launch/2310-modern-bass-styles.js
+js   js/launch/2320-pad-gate-rhythm.js
+js   js/launch/2330-desert-gamelan-progressions.js
+js   js/launch/2340-gamelan-riffs-scales.js
+js   js/launch/2350-first-light.js
+js   js/ui/2360-slider-ranges.js
+js   js/ui/2370-ui-fixes.js
+js   js/ui/2380-euclid-redraw.js
+js   js/ui/2390-pattern-sound-layout.js
+js   js/launch/2400-moods-merged-tidal-lock-red-giant.js
+js   js/flight/2410-drums-fx-faders.js
+js+  js/ui/2420-mix-four-tabs.js
+js   js/launch/2430-arranger.js  -
+raw  html/end.html

@@ -1,0 +1,17 @@
+
+<style>/* v0.26: tablet / desktop — every page uses the full width (Flight already did) */
+@media (min-width:1000px){
+ body{max-width:none!important;padding-left:20px!important;padding-right:20px!important}
+ #t-gen:not([hidden]),#t-lfo:not([hidden]){display:grid!important;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:10px;align-items:start}
+ #t-gen>*,#t-lfo>*{margin:0!important;min-width:0}
+ #t-gen>.sio{grid-column:1/-1}
+ #t-drums .body,#t-synth .body{flex-direction:row!important;align-items:flex-start!important}
+ #t-drums .body>canvas,#t-synth .body>canvas{width:150px!important;height:150px!important;align-self:flex-start!important}
+ #t-drums .body .grid,#t-synth .body .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))!important}
+ #mix{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))!important}
+ #viz{max-width:min(100%,calc(100vh - 160px))!important}
+}</style>
+<style>/* v0.26: phone — smaller sector slots and bank tabs so the whole Launch page fits without scrolling */
+@media (max-width:640px){.sgrid button.sl{height:28px!important;min-height:28px!important;padding-top:0!important;padding-bottom:0!important}.sgrid{gap:4px!important}
+ .sbank{margin:0 0 4px!important;gap:4px}.sbank button{height:24px!important;min-height:24px!important}}
+@media (max-width:640px) and (max-height:740px){.sgrid button.sl{height:24px!important;min-height:24px!important}}</style>

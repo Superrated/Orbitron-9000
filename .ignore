@@ -1,0 +1,6 @@
+# Keeps code search focused on the sources (ripgrep and most agent tools honour this file)
+releases/
+index.html
+debug.html
+tests/snapshots/
+icons/

@@ -1,0 +1,17 @@
+</style></head><body>
+<h1>ORBITRON<span>//</span>9000</h1>
+<div class="panel top">
+ <button id="play">▶ Play</button>
+ <label class="sl" style="min-width:110px">Tempo<b id="bv">124</b><input id="bpm" type="range" min="80" max="180" value="124"></label>
+ <span id="kinfo" class="kinfo"></span>
+</div>
+<div class="tabs" id="tabs"></div>
+<div id="tracks" hidden></div>
+<section class="tp" id="t-gen"><div class="panel"><h2>Generate a full groove</h2><p class="gnote">One tap builds key, tempo, drums, melody and pad to fit the chosen mood. Randomize all is wilder: it also scrambles rhythms and keys.</p><div id="gbox"><button id="rnd">Randomize all</button></div></div>
+<div class="panel"><h2>Key and scale</h2><div id="kbox"><select id="root" aria-label="Root"></select><select id="scale" aria-label="Scale"></select></div><p class="gnote" id="gsum" style="margin:8px 0 0"></p></div></section>
+<section class="tp" id="t-drums" hidden></section>
+<section class="tp" id="t-synth" hidden></section>
+<section class="tp" id="t-mix" hidden><div class="panel"><h2>Mix bus · sidechain · rumble</h2><div class="grid" id="mix"></div></div></section>
+<section class="tp" id="t-lfo" hidden></section>
+<section class="tp" id="t-viz" hidden><div class="panel"><canvas id="viz" width="720" height="720" style="width:100%;height:auto;max-width:560px;display:block;margin:auto"></canvas><div class="lg" id="lg"></div></div></section>
+<section class="tp" id="t-perf" hidden></section>
