@@ -4,7 +4,7 @@
 {const NEW={
   'Cinematic arp':{pg:1.5,eng:'Stack',uni:5,usp:18,wid:.8,det:9,wave:.3,ft:'LP24',cut:700,res:6,envA:2600,dec:.2,sus:0,att:2,kt:.4,subosc:.15,oct2:.2,ds:.4,rs:.55,glide:0,vib:0,drv:0,crush:0,fold:0,penv:0,
    mode:'Up/Down',range:2,cyc:0,nrep:1,rst:0,xv:'arp',_t:{st:16,h:16,r:0,ten:0}},
-  'Donk':{pg:1.6,eng:'FM',fmr:2,fmi:3,fenv:.9,uni:1,usp:0,wid:0,ft:'LP12',cut:2400,res:3,envA:1800,dec:.13,sus:0,att:1,penv:12,pdec:.035,kt:.2,subosc:.3,oct2:0,ds:.18,rs:.08,glide:0,vib:0,drv:0,crush:0,fold:0,
+  'Donk':{pg:1.6,eng:'FM',fmr:2,fmi:2.2,fenv:.9,uni:1,usp:0,wid:0,ft:'LP12',cut:1300,res:3,envA:1000,/* v0.83: mellower (fmi 3, cut 2400, env 1800) */dec:.13,sus:0,att:1,penv:12,pdec:.035,kt:.2,subosc:.3,oct2:0,ds:.18,rs:.08,glide:0,vib:0,drv:0,crush:0,fold:0,
    mode:'Motif',len:3,range:1,cyc:0,nrep:1,rst:0,xv:'donk',_t:{st:16,h:5,r:2,ten:.1}},
   'Rave stab':{pg:1.4,eng:'Organ',uni:2,usp:10,wid:.4,ft:'LP12',cut:2200,res:2,envA:2500,dec:.2,sus:0,att:2,kt:.3,drv:.25,crush:.25,subosc:0,oct2:0,ds:.3,rs:.3,glide:0,vib:3,vibr:.8,fold:0,penv:0,
    mode:'Motif',len:2,range:1,cyc:0,nrep:1,rst:0,xv:'stab',_t:{st:16,h:3,r:3,ten:.25}}};

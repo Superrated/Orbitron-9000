@@ -12,8 +12,8 @@
  Object.assign(LPRE,{
   'House piano':{pg:1.1,eng:'FM',fmr:1,fmi:2.6,fenv:1.2,uni:1,usp:0,wid:.3,ft:'LP12',cut:2600,res:.8,envA:4200,dec:.55,sus:0,att:1,kt:.4,subosc:0,oct2:0,drv:.08,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.3,rs:.3,chd:'Follow pad'},
   'EP stab':{pg:1.05,eng:'FM',fmr:1,fmi:1.1,fenv:2.2,uni:1,usp:0,wid:.45,ft:'LP12',cut:1800,res:.7,envA:2200,dec:.7,sus:.2,hold:.9,rel:.35,att:2,kt:.3,subosc:0,oct2:0,drv:.12,crush:0,fold:0,penv:0,glide:0,vib:4,vibr:4.2,ds:.35,rs:.35,chd:'Follow pad'},
-  'Rave stab':{pg:3,eng:'Stack',uni:1,usp:0,wid:.4,wave:.1,det:11,ft:'LP24',cut:1100,res:2.5,envA:4200,dec:.24,sus:0,att:1,kt:.3,subosc:.1,oct2:0,drv:.25,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.45,rs:.35,chd:'Rave'},
-  'Organ stab':{pg:2.6,eng:'Organ',uni:1,usp:0,wid:.3,ft:'LP12',cut:4200,res:.7,envA:800,dec:.26,sus:0,att:2,rel:.05,kt:0,subosc:0,oct2:0,drv:.3,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.35,rs:.3,chd:'Organ'}});
+  'Rave stab':{pg:3,eng:'Stack',uni:1,usp:0,wid:.4,wave:.1,det:11,ft:'LP24',cut:900,res:2.5,envA:2000,/* v0.83: mellower (cut 1100, env 4200) */dec:.24,sus:0,att:1,kt:.3,subosc:.1,oct2:0,drv:.25,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.45,rs:.35,chd:'Rave'},
+  'Organ stab':{pg:2.6,eng:'Organ',uni:1,usp:0,wid:.3,ft:'LP12',cut:1700,/* v0.83: mellower (was 4200) */res:.7,envA:800,dec:.26,sus:0,att:2,rel:.05,kt:0,subosc:0,oct2:0,drv:.3,crush:0,fold:0,penv:0,glide:0,vib:0,ds:.35,rs:.3,chd:'Organ'}});
  const CHD={Rave:[0,3,7,12],Organ:[0,3,7,10]},CHOPT=['Off','Follow pad','Rave','Organ'];
  const extra=()=>QOS.eco2||QOS.lvl>=2?1:QOS.lvl>=1?2:3;
  const ratios=(p,d)=>{const lim=extra();if(CHD[p.chd])return CHD[p.chd].slice(1,1+lim).map(s=>Math.pow(2,s/12));
