@@ -7397,20 +7397,22 @@ window.orbExoProg=function(kind){try{let P,sh;
  const TE=mk({cls:'tnm',name:'TENSION',hint:'harmony · resonance',l:'CALM',r:'TENSE',title:'Drag right to pull the harmony tight: thirds hang on fourths, then fifths rise, then the root gives way, with rising resonance and a high suspended tone. Drag left and everything settles on root and fifth. Lead and stab also wash out into more reverb and echo. Always in the key. It stays where you leave it; double-tap to go back to AS SET.',on:tens});
  UI.onBeat(()=>{try{if(TN.tone&&TE.x>.01)tone(TE.x)}catch(e){}});   /* the tone follows a key change (Lift, a new root) */
  // ---- PULSE: half ↔ double
- const PU=mk({cls:'plm',name:'PULSE',hint:'lead · stab',l:'SPARKLE',r:'FULL TILT',lab:x=>x<0?'SPARKLE '+Math.round(-x*100)+'%':x>.75?'FULL TILT':x>.5?'QUAD':x>.25?'TRIP':x>.05?'DOUBLE':'AS SET',title:'Drag right to ratchet lead and stab: every note is struck 2×, then 3×, then 4× inside its step; at FULL TILT the last note keeps rolling between notes. Drag left for a continuous sparkle: a steady shimmer of quiet lead sparkles walks up and down the chord between your notes, from 8ths to every 16th. Drums and bass are never touched. It stays where you leave it; double-tap to go back to AS SET.'});
+ const PU=mk({cls:'plm',name:'PULSE',hint:'lead · stab',l:'SPARKLE',r:'FULL TILT',lab:x=>x<0?'SPARKLE '+Math.round(-x*100)+'%':x>.875?'FULL TILT':x>.05?(['DOUBLE','TRIP','QUAD'][sN(x)-2]||sN(x)+'×'):'AS SET',title:'Drag right to ratchet lead and stab: every note is struck 2×, 3×, 4× … up to 8× inside its step; at FULL TILT the last note keeps rolling between notes. Drag left for a continuous sparkle: a steady shimmer of quiet lead sparkles walks up and down the chord between your notes, from 8ths to every 16th. Drums and bass are never touched. It stays where you leave it; double-tap to go back to AS SET.'});
  const ONE=[0],SPK=[0,2,4,7,4,2];let SPD=0,spn=0;const spLN=function(){return SPD};
  /* v0.87: PULSE right = ratchets. How many strikes per step: DOUBLE 2 · TRIP 3 · QUAD 4 · FULL TILT 4 plus a non-stop roll between notes.
-    CPU: 2 at most when the device is busy (QOS 2), none under overload (QOS 3). */
- const rN=(a,q)=>q>=3?1:Math.min(q>=2?2:4,a>.5?4:a>.25?3:2);
+    v0.88: QUAD → FULL TILT was too abrupt: now 5, 6, 7, 8 strikes in between, then FULL TILT (8 + the roll). Repeats fade to half level.
+    CPU: lead 8 / stab 4 at most; 4 when the device is a bit busy (QOS 1), 2 when busy (QOS 2), none under overload (QOS 3). */
+ const sN=a=>Math.min(8,2+Math.floor((a-.05)/.825*7)),   /* DOUBLE 2 · TRIP 3 · QUAD 4 · 5 · 6 · 7 · 8 · FULL TILT (8 + roll), evenly along the fader */
+  rN=(a,q,k)=>q>=3?1:Math.min(q>=2?2:q>=1?4:k===8?4:8,sN(a));   /* the stab is a heavier voice: 4 at most */
  {const _f=fire;
   /* the same note struck again: the lead keeps its last note (normal and acid engines), the stab its chord; a little softer each time */
   const rat=(k,w,n,i0)=>{const T=TR[k],lv=T.lv,d=lastDeg,ln=leadNote,an=acidNote,sd=sdur();
-   try{if(k===4){SPD=d;leadNote=spLN;acidNote=spLN}for(let i=i0;i<n;i++){T.lv=lv*(1-.12*i);_f.call(null,k,w+i*sd/n)}}
+   try{if(k===4){SPD=d;leadNote=spLN;acidNote=spLN}for(let i=i0;i<n;i++){T.lv=lv*(1-.5*i/n);_f.call(null,k,w+i*sd/n)}}
    finally{T.lv=lv;leadNote=ln;acidNote=an;lastDeg=d}};
   fire=function(k,w){const tx=TE.x,px=PU.x,mel=k===4||k===8||k===9;
    if(!((tx>.01||tx<-.01)&&(mel||k===6))&&!(px>.01&&(k===4||k===8)))return _f.apply(this,arguments);
    const T=TR[k],P=T.p,s=((tk%16)+16)%16,a=px<0?-px:px;let rc=1,o1,o2,o3,o0=TN.on;
-   if(px>.05&&(k===4||k===8))rc=rN(px,typeof QOS!=='undefined'?QOS.lvl:0);
+   if(px>.05&&(k===4||k===8))rc=rN(px,typeof QOS!=='undefined'?QOS.lvl:0,k);
    o1=P.res;o2=P.dec;o3=P.hold;const o4=P.rs,o5=P.ds,o6=P.cut,oc=G.oct,lv=T.lv;
    try{if((k===4||k===6||k===8)&&P.res!=null&&(tx>.01||tx<-.01))P.res=tx>0?P.res+(k===4?10:k===8?8:6)*tx*tx:P.res*(1+.6*tx);
     if(tx>.01&&(k===4||k===8)){if(P.rs!=null)P.rs=cl(P.rs+.35*tx*tx,0,1);if(P.ds!=null)P.ds=cl(P.ds+.3*tx*tx,0,1)}
@@ -7429,8 +7431,8 @@ window.orbExoProg=function(kind){try{let P,sh;
     _f.call(null,k,w)}
    finally{T.lv=lv;G.oct=oc;if(c0===undefined)delete P.cut;else P.cut=c0;if(r0===undefined)delete P.rs;else P.rs=r0;if(d0===undefined)delete P.ds;else P.ds=d0;leadNote=ln;lastDeg=d;cur.n=cn}};
   const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);const px=PU.x;
-   if(px>.75){try{const q=typeof QOS!=='undefined'?QOS.lvl:0;   /* v0.87 FULL: a non-stop roll of the last note on steps without a note (lead 4×, stab 2×; busy: lead 2×, no stab) */
-    if(q<3){const L=TR[4],S=TR[8];if(!L.m&&!(L.pt&&L.pt[tk%L.st]))rat(4,w,q>=2?2:4,0);if(q<2&&!S.m&&!(S.pt&&S.pt[tk%S.st]))rat(8,w,2,0)}}catch(e){}}
+   if(px>.875){try{const q=typeof QOS!=='undefined'?QOS.lvl:0;   /* v0.87 FULL: a non-stop roll of the last note on steps without a note (lead 4×, stab 2×; busy: lead 2×, no stab) */
+    if(q<3){const L=TR[4],S=TR[8];if(!L.m&&!(L.pt&&L.pt[tk%L.st]))rat(4,w,rN(1,q,4),0);if(q<2&&!S.m&&!(S.pt&&S.pt[tk%S.st]))rat(8,w,2,0)}}catch(e){}}
    else if(px<-.1){try{const a=-px,q=typeof QOS!=='undefined'?QOS.lvl:0,s=((tk%16)+16)%16;
     if(q<3){const ev=(a>.75&&q<2)?1:a>.4?s%2===1:s%4===2,L=TR[4],S=TR[8];
      if(ev&&!L.m&&!(L.pt&&L.pt[tk%L.st]))spark(4,w,SPK[spn++%6],.45);
