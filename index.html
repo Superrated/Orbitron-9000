@@ -1269,7 +1269,10 @@ const _vz30=viz;viz=function(){if(QOS.lvl>=3&&(QOS.f++%2)){requestAnimationFrame
 // status badge
 const QB=document.createElement('span');QB.style.cssText='font:700 10px ui-monospace,monospace;padding:2px 6px;border:1px solid currentColor;margin-left:8px;letter-spacing:.06em;white-space:nowrap';QB.title='Load guard: sheds notes and effects automatically when the device is overloaded';$('#kinfo').after(QB);
 setInterval(()=>{if(!ctx||!playing){QOS.lvl=0;QOS.ml=0}else{const a=QOS.src.size,H=QOS.hi,vis=!document.hidden;let p=0;
-  if(a>H[0]||QOS.load>.6||(vis&&QOS.ft>30))p=1;if(a>H[1]||QOS.load>.8||QOS.late>0||(vis&&QOS.ft>45))p=2;if(a>H[2]||QOS.load>.95||QOS.late>2)p=3;
+  /* v0.97: the time between screen frames no longer raises the level. The visuals are slowed on purpose (about 15 frames a second), and the guard
+     read that as a struggling device: the core level sat at SAVING at every quality, trimming the sound for no reason. Audio signs only now:
+     voices, engine load, late steps. */
+  if(a>H[0]||QOS.load>.6)p=1;if(a>H[1]||QOS.load>.8||QOS.late>0)p=2;if(a>H[2]||QOS.load>.95||QOS.late>2)p=3;
   let pa=0;if(a>H[0]||QOS.load>.6)pa=1;if(a>H[1]||QOS.load>.8||QOS.late>1)pa=2;if(a>H[2]||QOS.load>.95||QOS.late>4)pa=3;if(pa>(QOS.ml||0)){QOS.ml=pa;QOS.mc=8}else if(pa<(QOS.ml||0)&&--QOS.mc<=0){QOS.ml--;QOS.mc=6}p=Math.max(p,QOS.floor||0,QOS.stageFloor||0);if(p>QOS.lvl){QOS.lvl=p;QOS.cool=8}else if(p<QOS.lvl&&--QOS.cool<=0){QOS.lvl--;QOS.cool=6}QOS.late=0;if(a>QOS.hard)steal((a-QOS.hard*.8)/2)}
  /* v0.26: the badge shows the level actually in effect (the load meter or the active saving stage, whichever is higher), written only on change */
  {let q0='Eco';try{q0=localStorage.getItem('orb-q')||'Eco'}catch(e){}const base=q0==='Survival'?2:q0==='Eco'?1:0,lvR=QOS.lvl||0,lv=Math.min(3,Math.max(QOS.ml||0,lvR>base?lvR:0)),t='CORE '+QOS.nm[lv]; /* perf 13: the mode's own built-in light setting is not shown as a warning */if(QB.textContent!==t)QB.textContent=t;if(QB.__l!==lv){QB.__l=lv;QB.style.color=QOS.cl[lv]}}},400);
@@ -4634,23 +4637,20 @@ window.MOODX={
 </script>
 <script>
 /* ---- v0.22 performance: "Audio buffer" (bigger buffer = fewer underruns, more delay; restarts the engine for a moment, groove kept)
-   and "Visuals" (Full / Low / Off — frees the main thread that schedules the notes). Both in Mix → Bus & FX under Engine quality. ---- */
-{const BUF={'Minimum · auto':'interactive', /* v0.4: asks the browser for its lowest latency; the phone picks the value */'Small · 26 ms':.025,'Standard · auto':'playback','Large · 52 ms':.05, /* v0.27: Small = lowest latency for fast pads and faders; may crackle on busy phones */'Extra large · 102 ms':.1,'Max · 186 ms':.2},VIS=['Full','Low','Off'];
+   and "Visuals" (Full / Low / Off — frees the main thread that schedules the notes). Both in Mix → Bus & FX under Engine quality.
+   v0.97: the Visuals menu is gone — the visuals always run at Low (about 15 frames a second) at every quality; an old Full / Off choice is ignored. ---- */
+{const BUF={'Minimum · auto':'interactive', /* v0.4: asks the browser for its lowest latency; the phone picks the value */'Small · 26 ms':.025,'Standard · auto':'playback','Large · 52 ms':.05, /* v0.27: Small = lowest latency for fast pads and faders; may crackle on busy phones */'Extra large · 102 ms':.1,'Max · 186 ms':.2};
  const get=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},put=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
  let buf=get('orb-buf2','Large · 52 ms');{const MIG={'Standard':'Standard · auto','Minimum · lowest':'Minimum · auto','Minimum · browser lowest':'Minimum · auto'};if(MIG[buf]){buf=MIG[buf];put('orb-buf2',buf)}} /* v0.4: every option reads 'size · value'; 'auto' = the browser picks */if(!(buf in BUF))buf='Large · 52 ms'; /* v0.22 stability: 0.1 s is the default (new key, so an old 'Standard' choice does not stick) · v0.90: the default is Large · 52 ms — half the delay; since finished voices are unplugged (platform/0040) the busiest 52 ms of a groove needs less of the engine than the busiest 102 ms did before. A buffer you picked yourself stays. *//* v0.31: until you pick Visuals yourself, Eco and Survival start with Low visuals (about 15 fps) and Hi-fi/Auto with Full */
- let visSet=get('orb-vis','');const visNow=()=>VIS.includes(visSet)?visSet:(['Eco','Survival'].includes(get('orb-q','Eco'))?'Low':'Full');let vis=visNow();
- UI.on(()=>{if(!VIS.includes(visSet)){const v=visNow();if(v!==vis){vis=v;document.querySelectorAll('#t-mix .vissel select').forEach(s=>s.value=v)}}});
+ const vis='Low'; /* v0.97: the only mode */
  window.orbBufHint=()=>BUF[buf];
  // visuals
- let lastV=0;const _vz=viz;viz=function(){if(vis==='Full')return _vz();const n=performance.now();
-  if(vis==='Off'){setTimeout(()=>requestAnimationFrame(viz),400);return}if(n-lastV<66){requestAnimationFrame(viz);return}lastV=n;return _vz()};
- const _dr=draw;draw=function(T,s){if(vis==='Off'&&playing&&s>=0)return;return _dr.apply(this,arguments)};
+ let lastV=0;const _vz=viz;viz=function(){const n=performance.now();if(n-lastV<66){requestAnimationFrame(viz);return}lastV=n;return _vz()};
  const ui=()=>{const q=[...document.querySelectorAll('#t-mix label.sl')].find(l=>l.firstChild&&l.firstChild.textContent.trim()==='Engine quality');const m=q?q.parentElement:null; /* Engine panel (Mix → Engine) */
   if(!m)return;if(m.querySelector('.bufsel'))return;document.querySelectorAll('#t-mix .bufsel,#t-mix .vissel').forEach(e=>e.remove());
   const mk=(lab,opts,val,fn,cls,tip)=>{const l=document.createElement('label');l.className='sl '+cls;l.title=tip;l.appendChild(document.createTextNode(lab));const se=document.createElement('select');opts.forEach(o=>se.add(new Option(o,o)));se.value=val;se.onchange=()=>fn(se.value);l.appendChild(se);return l};
   const b=mk('Audio buffer',Object.keys(BUF),buf,v=>{buf=v;put('orb-buf2',v);if(ctx&&window.hardReset)hardReset('audio buffer '+v)},'bufsel','Bigger buffer = fewer dropouts/underruns, but pads and faders respond later. auto = the browser picks the size (Minimum: its lowest, Standard: its normal). Minimum and Small also schedule notes less far ahead, so faders, mutes and edits land sooner. The real total is under Flight diagnostics → latency. Changing it restarts the audio for a moment; the groove keeps playing.');
-  const v=mk('Visuals',VIS,vis,x=>{vis=x;visSet=x;put('orb-vis',x);if(x!=='Off')requestAnimationFrame(()=>{})},'vissel','Low = about 15 frames per second, Off = no live animation. Frees the main thread so notes stay on time on busy devices.');
-  if(q){q.after(b);b.after(v)}else{m.prepend(v);m.prepend(b)}};
+  if(q)q.after(b);else m.prepend(b)};
  const _mx=mix;mix=function(){const r=_mx.apply(this,arguments);try{ui()}catch(e){}return r};try{ui()}catch(e){}UI.on(()=>{try{ui()}catch(e){}});
  window.orbPerf={buf:()=>buf,vis:()=>vis}}
 </script>
@@ -7666,7 +7666,7 @@ window.orbExoProg=function(kind){try{let P,sh;
      1. it Launches a heavy groove — Nebula (the mood that asks most of the engine) with every track switched on — and lets it build up for a few seconds.
         This REPLACES the groove that was playing.
      2. four runs of 20 s on that groove (RUNS): the lowest latency (Minimum buffer) at Full, Light and Survival quality, then Light with
-        the default 52 ms buffer. Your Visuals setting is left alone. The screen is kept awake.
+        the default 52 ms buffer. The screen is kept awake.
      3. your own settings come back, and the result ends with SUGGESTED SETTINGS for this device: the first run in that order that played
         clean (no dropout, no late step, no lost time) — best sound at the lowest delay. USE THESE SETTINGS applies them.
    v0.95: it did not seem to end — the Launch rebuilds the Mix page, and the test kept writing into the old, removed copy of its panel.
@@ -7697,7 +7697,7 @@ window.orbExoProg=function(kind){try{let P,sh;
   const q=ls('orb-q','Eco'),buf=(window.orbPerf&&orbPerf.buf())||'?',lat=ms((c.baseLatency||0)+(c.outputLatency||0));
   const clean=!early&&!r.reset&&!late&&lost<15&&(u==null||u===0);
   done({early,q,buf,lat,clean,vo:r.vo,text:
-   'settings    quality '+(QN[q]||q)+' · buffer '+buf+' · visuals '+((window.orbPerf&&orbPerf.vis())||'?')+'\n'+
+   'settings    quality '+(QN[q]||q)+' · buffer '+buf+'\n'+
    'latency     '+lat+' ms  (buffer '+ms(c.baseLatency||0)+' + output '+ms(c.outputLatency||0)+') · '+c.sampleRate+' Hz\n'+
    'dropouts    '+(u==null?'not reported by this browser':u+(ud!=null?' · '+ud+' ms of silence':''))+' · clock lost '+lost+' ms'+(r.reset?' · ENGINE RESTARTED':'')+'\n'+
    'late steps  '+late+' · core level up to '+QOS.nm[r.lvl]+' · most voices '+r.vo+'\n'+

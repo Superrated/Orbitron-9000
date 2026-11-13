@@ -6,7 +6,7 @@
      1. it Launches a heavy groove — Nebula (the mood that asks most of the engine) with every track switched on — and lets it build up for a few seconds.
         This REPLACES the groove that was playing.
      2. four runs of 20 s on that groove (RUNS): the lowest latency (Minimum buffer) at Full, Light and Survival quality, then Light with
-        the default 52 ms buffer. Your Visuals setting is left alone. The screen is kept awake.
+        the default 52 ms buffer. The screen is kept awake.
      3. your own settings come back, and the result ends with SUGGESTED SETTINGS for this device: the first run in that order that played
         clean (no dropout, no late step, no lost time) — best sound at the lowest delay. USE THESE SETTINGS applies them.
    v0.95: it did not seem to end — the Launch rebuilds the Mix page, and the test kept writing into the old, removed copy of its panel.
@@ -37,7 +37,7 @@
   const q=ls('orb-q','Eco'),buf=(window.orbPerf&&orbPerf.buf())||'?',lat=ms((c.baseLatency||0)+(c.outputLatency||0));
   const clean=!early&&!r.reset&&!late&&lost<15&&(u==null||u===0);
   done({early,q,buf,lat,clean,vo:r.vo,text:
-   'settings    quality '+(QN[q]||q)+' · buffer '+buf+' · visuals '+((window.orbPerf&&orbPerf.vis())||'?')+'\n'+
+   'settings    quality '+(QN[q]||q)+' · buffer '+buf+'\n'+
    'latency     '+lat+' ms  (buffer '+ms(c.baseLatency||0)+' + output '+ms(c.outputLatency||0)+') · '+c.sampleRate+' Hz\n'+
    'dropouts    '+(u==null?'not reported by this browser':u+(ud!=null?' · '+ud+' ms of silence':''))+' · clock lost '+lost+' ms'+(r.reset?' · ENGINE RESTARTED':'')+'\n'+
    'late steps  '+late+' · core level up to '+QOS.nm[r.lvl]+' · most voices '+r.vo+'\n'+

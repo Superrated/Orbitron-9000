@@ -26,7 +26,10 @@ const _vz30=viz;viz=function(){if(QOS.lvl>=3&&(QOS.f++%2)){requestAnimationFrame
 // status badge
 const QB=document.createElement('span');QB.style.cssText='font:700 10px ui-monospace,monospace;padding:2px 6px;border:1px solid currentColor;margin-left:8px;letter-spacing:.06em;white-space:nowrap';QB.title='Load guard: sheds notes and effects automatically when the device is overloaded';$('#kinfo').after(QB);
 setInterval(()=>{if(!ctx||!playing){QOS.lvl=0;QOS.ml=0}else{const a=QOS.src.size,H=QOS.hi,vis=!document.hidden;let p=0;
-  if(a>H[0]||QOS.load>.6||(vis&&QOS.ft>30))p=1;if(a>H[1]||QOS.load>.8||QOS.late>0||(vis&&QOS.ft>45))p=2;if(a>H[2]||QOS.load>.95||QOS.late>2)p=3;
+  /* v0.97: the time between screen frames no longer raises the level. The visuals are slowed on purpose (about 15 frames a second), and the guard
+     read that as a struggling device: the core level sat at SAVING at every quality, trimming the sound for no reason. Audio signs only now:
+     voices, engine load, late steps. */
+  if(a>H[0]||QOS.load>.6)p=1;if(a>H[1]||QOS.load>.8||QOS.late>0)p=2;if(a>H[2]||QOS.load>.95||QOS.late>2)p=3;
   let pa=0;if(a>H[0]||QOS.load>.6)pa=1;if(a>H[1]||QOS.load>.8||QOS.late>1)pa=2;if(a>H[2]||QOS.load>.95||QOS.late>4)pa=3;if(pa>(QOS.ml||0)){QOS.ml=pa;QOS.mc=8}else if(pa<(QOS.ml||0)&&--QOS.mc<=0){QOS.ml--;QOS.mc=6}p=Math.max(p,QOS.floor||0,QOS.stageFloor||0);if(p>QOS.lvl){QOS.lvl=p;QOS.cool=8}else if(p<QOS.lvl&&--QOS.cool<=0){QOS.lvl--;QOS.cool=6}QOS.late=0;if(a>QOS.hard)steal((a-QOS.hard*.8)/2)}
  /* v0.26: the badge shows the level actually in effect (the load meter or the active saving stage, whichever is higher), written only on change */
  {let q0='Eco';try{q0=localStorage.getItem('orb-q')||'Eco'}catch(e){}const base=q0==='Survival'?2:q0==='Eco'?1:0,lvR=QOS.lvl||0,lv=Math.min(3,Math.max(QOS.ml||0,lvR>base?lvR:0)),t='CORE '+QOS.nm[lv]; /* perf 13: the mode's own built-in light setting is not shown as a warning */if(QB.textContent!==t)QB.textContent=t;if(QB.__l!==lv){QB.__l=lv;QB.style.color=QOS.cl[lv]}}},400);

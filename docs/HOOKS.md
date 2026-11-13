@@ -46,8 +46,8 @@ launch/0190-mood-track-trims.js → platform/0300-load-guard.js → platform/035
 ## applyFX — 5 wraps, defined in js/launch/0180-mood-production-profiles.js
 engine/0340-shimmer-reverb.js → platform/0460-survival-voice-cap.js → instruments/1910-new-sounds-patterns.js → launch/1930-tonal-balance.js → engine/1950-mastering.js
 
-## draw — 5 wraps, defined in js/core/0050-base-state-engine-ui.js
-core/0090-track-params-voices-tick.js → platform/0350-perf-prerender-hat-fps.js → platform/1490-audio-buffer.js → platform/1580-overload-guard.js → ui/2380-euclid-redraw.js
+## draw — 4 wraps, defined in js/core/0050-base-state-engine-ui.js
+core/0090-track-params-voices-tick.js → platform/0350-perf-prerender-hat-fps.js → platform/1580-overload-guard.js → ui/2380-euclid-redraw.js
 
 ## mv — 3 wraps, defined in js/sequencer/0140-lfos.js
 platform/0620-cpu-easy-wins.js → flight/1470-faders-over-lfos.js → sequencer/1570-lfo-targets-polymeters.js
