@@ -1,6 +1,10 @@
 /* ---- v126: Sectors — 16 memory slots holding a full groove (patterns, sounds, chords, mix, LFOs). Save: tap SAVE, then a slot. 🔒 Protect blocks overwriting filled slots.
    Load: tap a slot; it is queued and swaps in on the next 4-bar boundary, from inside the step scheduler (data only: no generator, no new audio graph, drum hits pre-rendered while waiting).
-   Tempo and key follow their locks; "Keep mutes" keeps the current mutes. Stored on the device. ---- */
+   Tempo and key follow their locks; "Keep mutes" keeps the current mutes. Stored on the device.
+   v1.0 CRATE: every filled slot shows its key and tempo ("Am · 128"), and the slots that make a good next groove light up, like a DJ's
+   crate. Strong glow = key fits (same, relative major/minor or one step round the circle of fifths) AND tempo within 6 BPM AND energy
+   within 1 level; soft glow = energy within 1 and key OR tempo fits. Energy is a hidden 1–9 rating per mood (ENERGY below). A locked key
+   or tempo always counts as fitting (the slot will keep it anyway). A dot on a bank button = that bank holds a strong fit. ---- */
 {const KEY='orb-sectors',N=16,EXG=new Set(['bpmLock','keyLock','fin','oct','master','pro']),SKIPT=new Set(['x','mb','cs','fl','el']);
  const msg=t=>{try{if(typeof say==='function')say(t)}catch(e){}};let SL=[];try{SL=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){SL=[]}if(!Array.isArray(SL))SL=[];while(SL.length<N)SL.push(null);SL.length=N;
  const PC_=['Kep','Zer','Vel','Orn','Thal','Nyx','Cael','Ur','Xan','Vesp','Lyr','Quor','Sol','Drav','Myr','Gal','Kor','Tor','Ard','Zeph','Ob','Phor','Ix','Ner','Alt','Glyn','Hesp','Jov','Rhed','Sar','Tes','Vor','Cor','Mar','Brin','Cass','Dex','Fen'],
@@ -65,10 +69,24 @@
   b.addEventListener('pointerdown',()=>{ate=0;if(SS.prot||SS.save||!SL[i]||raf)return;t0=performance.now();raf=requestAnimationFrame(step)});
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop))}
  const MC={Dark:'#8f7bff',Melancholic:'#6aa7ff',Dreamy:'#ff9de6',Tense:'#ff5d73',Ethereal:'#9ff4ff',Hopeful:'#ffe44d',Noir:'#b9a27a',Drone:'#7fd0ff',Acid:'#b6ff3b',Power:'#ff8a3d',Italo:'#ff6bd6',Breaks:'#ffd36b','Deep Space':'#5d7bff',Bleep:'#00ff9c','Melodic House':'#ff9ab0','Distorted Electro':'#ff3d3d',Ambient:'#9ff0d0','Groove Techno':'#ffb347',Temporal:'#b8c8d8',Vector:'#7af0ff'};
+ // ---- v1.0 crate: key · tempo on each slot, glow on the slots that fit as the next groove ----
+ const ENERGY={Ambient:1,'Deep Space':2,Ethereal:3,Dreamy:4,Noir:4,Drone:4,Melancholic:5,'Melodic House':5,Italo:5,Chug:5,Hopeful:6,Vector:6,Bleep:6,Polymeter:6,'The Touch':6,
+  Dark:7,'Distorted Electro':7,Tense:8,'Groove Techno':8,Temporal:8,Acid:9,Power:9,Breaks:9};
+ const isMin=sc=>{const s=SC[sc];if(!s)return /min|dorian|phryg/i.test(sc||'');return s.includes(3)&&!s.includes(4)||!s.includes(3)&&!s.includes(4)&&s.includes(8)};
+ const keyOf=(r,sc)=>{r=((+r||0)%12+12)%12;const m=isMin(sc);return{r,m,pos:m?(r+3)%12:r}};   /* pos = the relative major's root: same pos = same or relative key */
+ const keyLbl=(r,sc)=>{const k=keyOf(r,sc);return NN[k.r]+(k.m?'m':'')};
+ const keyFit=(a,b)=>a.pos===b.pos||(a.m===b.m&&((a.r-b.r+12)%12===7||(b.r-a.r+12)%12===7));
+ const fitOf=s=>{if(!s||!s.G)return 0;const e1=ENERGY[curMood],e2=ENERGY[s.mood];if(e1!=null&&e2!=null&&Math.abs(e1-e2)>1)return 0;
+  const kf=G.keyLock||keyFit(keyOf(G.root,G.scale),keyOf(s.G.root,s.G.scale)),tf=G.bpmLock||Math.abs((+s.G.bpm||0)-(+G.bpm||0))<=6;return kf&&tf?2:kf||tf?1:0};
+ const sig=()=>curMood+'|'+G.bpm+'|'+G.root+'|'+G.scale+'|'+(G.keyLock?1:0)+(G.bpmLock?1:0)+'|'+bank+'|'+SS._a+'|'+SS._q+'|'+(SS.save||SS.del?1:0);let lastSig='';
  let blink=0;
- function paint(){bkb.forEach((x,b)=>{const n=BK[b].filter(Boolean).length,h='Bank '+BL[b]+(n?' <small>'+n+'</small>':'');if(x._h!==h){x._h=h;x.innerHTML=h}x.classList.toggle('on',b===bank);x.classList.toggle('qd',SS._q>=0&&Math.floor(SS._q/N)===b&&b!==bank)});const st=playing&&ctx?(64-((tk%64)+64)%64):0,bars=Math.ceil(st/16);
-  btns.forEach((b,i)=>{const s=SL[i],q=SS.qi===i;b.classList.toggle('full',!!s);b.classList.toggle('act',SS.act===i&&!q);b.classList.toggle('q',q);b.classList.toggle('blk',q&&blink);
-   b.style.setProperty('--sc',s&&MC[s.mood]||'#00ff9c');b.title=s?(s.nm+' · slot '+(i+1)):'Slot '+(i+1)+' (empty)';const h='<u>'+(i+1)+'</u>'+(s?'<b>'+s.nm+'</b>':'<b class="e">'+(i+1)+'</b>')+(q?'<i>'+(playing?'in '+bars+' bar'+(bars>1?'s':''):'…')+'</i>':'');if(b._h!==h){b._h=h;b.innerHTML=h}});
+ function paint(){lastSig=sig();const pick_=!SS.save&&!SS.del,skip=(b,i)=>b*N+i===SS._a||b*N+i===SS._q;
+  bkb.forEach((x,b)=>{const n=BK[b].filter(Boolean).length,h='Bank '+BL[b]+(n?' <small>'+n+'</small>':'');if(x._h!==h){x._h=h;x.innerHTML=h}x.classList.toggle('on',b===bank);x.classList.toggle('qd',SS._q>=0&&Math.floor(SS._q/N)===b&&b!==bank);
+   x.classList.toggle('fit',pick_&&b!==bank&&BK[b].some((s,i)=>s&&!skip(b,i)&&fitOf(s)===2))});const st=playing&&ctx?(64-((tk%64)+64)%64):0,bars=Math.ceil(st/16);
+  btns.forEach((b,i)=>{const s=SL[i],q=SS.qi===i,f=pick_&&s&&!q&&SS.act!==i?fitOf(s):0;b.classList.toggle('full',!!s);b.classList.toggle('act',SS.act===i&&!q);b.classList.toggle('q',q);b.classList.toggle('blk',q&&blink);
+   b.classList.toggle('g2',f===2);b.classList.toggle('g1',f===1);
+   const ki=s&&s.G?keyLbl(s.G.root,s.G.scale)+' · '+Math.round(+s.G.bpm||0):'';
+   b.style.setProperty('--sc',s&&MC[s.mood]||'#00ff9c');b.title=s?(s.nm+' · slot '+(i+1)+(ki?' · '+ki+' BPM':'')):'Slot '+(i+1)+' (empty)';const h='<u>'+(i+1)+'</u>'+(s?'<b>'+s.nm+'</b>':'<b class="e">'+(i+1)+'</b>')+(q?'<i>'+(playing?'in '+bars+' bar'+(bars>1?'s':''):'…')+'</i>':ki?'<em>'+ki+'</em>':'');if(b._h!==h){b._h=h;b.innerHTML=h}});
   bS.classList.toggle('on',!!SS.save);bS.textContent=SS.save?'💾 Pick a slot…':'💾 Save';if(SS.prot&&SS.del)SS.del=0;bD.classList.toggle('on',!!SS.del);bD.classList.toggle('dim',!!SS.prot);bD.textContent=SS.del?'🗑 Pick a planet…':'🗑 Delete';grid.classList.toggle('delmode',!!SS.del);
   if(!bP.style.background)bP.textContent=SS.prot?'🔒 Protected':'🔓 Unlocked';bP.classList.toggle('on',!!SS.prot);
   bK.textContent=SS.keepM?'Keep mutes ✓':'Keep mutes ✗';bK.classList.toggle('on',!!SS.keepM);
@@ -86,7 +104,9 @@
   const step=()=>{const k=Math.min(1,(performance.now()-t0)/3000);bP.style.background='linear-gradient(90deg,rgba(255,93,115,.5) '+k*100+'%,transparent '+k*100+'%)';if(k>=1){raf=0;bP.style.background='';SS.prot=0;saveUI();paint();msg('🔓 SECTORS UNLOCKED · tap to lock again');return}bP.textContent='HOLD '+Math.ceil(3-(performance.now()-t0)/1000)+'… to unlock';raf=requestAnimationFrame(step)};
   bP.addEventListener('pointerdown',e=>{e.preventDefault();if(!SS.prot){SS.prot=1;saveUI();paint();msg('🔒 SECTORS PROTECTED');return}if(raf)return;t0=performance.now();raf=requestAnimationFrame(step)});
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>bP.addEventListener(ev,()=>{if(raf)stop()}));bP.addEventListener('contextmenu',e=>e.preventDefault())}bK.onclick=()=>{SS.keepM=SS.keepM?0:1;saveUI();paint()};
- setInterval(()=>{blink^=1;if(SS.q||SS.act>=0)paint()},350);paint();
+ setInterval(()=>{blink^=1;if(SS.q||SS.act>=0||sig()!==lastSig)paint()},350);paint();   /* v1.0: also repaint when the groove, key, tempo or a lock changed, so the glow follows */
+ /* v1.0: a Launch replaces the groove, so no slot is "playing" any more (the old slot stayed lit and was left out of the glow) */
+ {const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{SS.act=-1}catch(e){}return r}}
 
  // ---- export / import (.orbit) ----
  const io=document.createElement('div');io.className='sio';io.innerHTML='<button class="sexp" title="Export all sectors to a .orbit file">⇪ Export</button><label class="simp" title="Import sectors from a .orbit file">⇩ Import<input type="file" class="sfile"></label>';
@@ -127,6 +147,9 @@
 .sect .sl.full{opacity:1;border-color:var(--sc);background:color-mix(in srgb,var(--sc) 14%,transparent)}
 .sect .sl.act b,.sect .sl.act u,.sect .sl.act i{color:#04100a!important}.sect .sl.act{background:var(--sc);color:#04100a;box-shadow:0 0 10px color-mix(in srgb,var(--sc) 60%,transparent)}
 .sect .sl.q{opacity:1;border-color:var(--acc,#ffe44d);box-shadow:0 0 0 2px var(--acc,#ffe44d) inset}.sect .sl.q.blk{background:color-mix(in srgb,var(--acc,#ffe44d) 35%,transparent)}
+.sect .sl em{font-style:normal;font-size:9px;line-height:1;opacity:.85;margin-top:2px;white-space:nowrap;overflow:hidden;max-width:94%;letter-spacing:.02em;text-transform:none}.sect .sl.act em{color:#04100a!important}
+.sect .sl.g2{border-color:#eafff4;box-shadow:inset 0 0 0 2px #eafff4,inset 0 0 14px 2px rgba(234,255,244,.5)}.sect .sl.g1{border-color:rgba(234,255,244,.85);box-shadow:inset 0 0 0 1px rgba(234,255,244,.6),inset 0 0 8px rgba(234,255,244,.2)}
+.sbank button.fit{position:relative}.sbank button.fit::after{content:'';position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%;background:#eafff4;box-shadow:0 0 6px #eafff4}
 .sect .sl.deny{animation:sdeny .4s}@keyframes sdeny{0%,100%{transform:none}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 .sect{position:relative}#t-gen>.sio{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 8px}#t-gen>.sio button,#t-gen>.sio label{min-height:40px!important;height:40px;padding:0 10px;font-size:12px;display:flex;justify-content:center;align-items:center;border:1px solid rgba(0,255,156,.3);border-radius:10px;background:transparent;color:inherit;font-family:inherit;cursor:pointer;opacity:.8;text-transform:uppercase;letter-spacing:.06em}#t-gen>.sio label{position:relative;overflow:hidden}#t-gen>.sio .sfile{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:40px}.sect .simq.fl{animation:sqfl 1.2s}@keyframes sqfl{0%,40%{background:rgba(255,228,77,.25)}100%{background:transparent}}.sect .simq .stx{flex:1 1 100%;min-height:64px;max-height:120px;background:rgba(0,0,0,.35);color:inherit;border:1px solid rgba(0,255,156,.3);border-radius:8px;font:11px/1.3 monospace;padding:6px;resize:vertical}
 .sect .sio button,.sect .simq button{min-height:36px;border:1px solid rgba(0,255,156,.3);border-radius:10px;background:transparent;color:inherit;font:inherit;font-size:12px;cursor:pointer;opacity:.8}
