@@ -385,7 +385,7 @@ function fireVoice(k,w){const T=TR[k],p=T.p,v=T.lv;if(window.DR&&DR.on(k,w,v,p))
  else if(k===4)leadPoly(w);
  else if(k===6&&p.beng==='808'&&window.bass808)bass808(w,p,v);
  else if(k===6){let d=G.pedal?0:cur.r;if(lastDeg%2&&R()<p.fifth)d+=4;const bS=(p.bsus||0)>.01,bB=window.BFDEC||p.dec,bR=Math.min(.35,Math.max(.04,bB*.8)),f=window.BOVF||d2f(d,p.oct)*(G.bstyle==='octave'?(tk%2?2:1):G.bstyle==='funk'?[1,1,2,1,2,1,1,2][tk%8]:(R()<p.jump?2:1)),e=w+p.dec+(bS?bR:0)+.05,o=osc("sawtooth",f,w,e),o2=osc("sawtooth",f,w,e),s=osc("sine",f,w,e),q=ctx.createBiquadFilter(),g=ctx.createGain(),sg=ctx.createGain();o2.detune.value=p.det;sg.gain.value=p.sub*1.2;{const pp=p.bpp||0;if(pp>.02&&!(window.BSLF&&Math.abs(BSLF/f-1)>.01)){const f0=f*Math.pow(2,pp*1.5),te=w+.035+pp*.04;[o,o2,s].forEach(x=>{x.frequency.setValueAtTime(f0,w);x.frequency.exponentialRampToValueAtTime(f,te)})}}q.type="lowpass";q.Q.value=p.res;{const bm=Math.pow(2,2*mv("Bass cutoff",w));if(bS&&p.dec>.3){const L=p.dec,a=Math.min(.45,L*.35),c=p.cut*bm;q.frequency.setValueAtTime(c*.6,w);q.frequency.exponentialRampToValueAtTime(Math.min(16000,c*(1+p.envA*.6)),w+a);q.frequency.exponentialRampToValueAtTime(c*.5,w+L)} /* v0.22: long held notes swell open, then settle */
- else{q.frequency.setValueAtTime(p.cut*bm*(1+p.envA),w);q.frequency.exponentialRampToValueAtTime(p.cut*bm*.4,w+(window.BFDEC||p.dec)*.8)}}if(bS){const pk=v*.6,sl=Math.max(.0002,pk*Math.min(1,p.bsus));g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(pk,w+.003);g.gain.setTargetAtTime(sl,w+.003,Math.max(.015,bB/3));g.gain.setTargetAtTime(.0001,w+Math.max(.02,p.dec),bR/4)}else env(g,w,v*.6,p.dec);if(window.BSLF&&Math.abs(BSLF/f-1)>.01)[o,o2,s].forEach(x=>{x.frequency.setValueAtTime(BSLF,w);x.frequency.exponentialRampToValueAtTime(f,w+(window.BSLT||.06))});window.BLF=f;window.BLFN=(window.BLFN||0)+1;o.connect(q);o2.connect(q);{const sm=p.sqm||0;if(sm>.02){const o3=osc('square',f,w,e),g3=ctx.createGain();g3.gain.value=sm*.8;{const pp=p.bpp||0;if(pp>.02&&!(window.BSLF&&Math.abs(BSLF/f-1)>.01)){o3.frequency.setValueAtTime(f*Math.pow(2,pp*1.5),w);o3.frequency.exponentialRampToValueAtTime(f,w+.035+pp*.04)}}o3.connect(g3);g3.connect(q);o.detune.value=0;if(window.BSLF&&Math.abs(BSLF/f-1)>.01){o3.frequency.setValueAtTime(BSLF,w);o3.frequency.exponentialRampToValueAtTime(f,w+(window.BSLT||.06))}}}
+ else{q.frequency.setValueAtTime(p.cut*bm*(1+p.envA),w);q.frequency.exponentialRampToValueAtTime(p.cut*bm*.4,w+(window.BFDEC||p.dec)*.8)}if(window.BWOB)BWOB(q.frequency,w,e,p.cut*bm)}if(bS){const pk=v*.6,sl=Math.max(.0002,pk*Math.min(1,p.bsus));g.gain.setValueAtTime(.0001,w);g.gain.exponentialRampToValueAtTime(pk,w+.003);g.gain.setTargetAtTime(sl,w+.003,Math.max(.015,bB/3));g.gain.setTargetAtTime(.0001,w+Math.max(.02,p.dec),bR/4)}else env(g,w,v*.6,p.dec);if(window.BSLF&&Math.abs(BSLF/f-1)>.01)[o,o2,s].forEach(x=>{x.frequency.setValueAtTime(BSLF,w);x.frequency.exponentialRampToValueAtTime(f,w+(window.BSLT||.06))});window.BLF=f;window.BLFN=(window.BLFN||0)+1;o.connect(q);o2.connect(q);{const sm=p.sqm||0;if(sm>.02){const o3=osc('square',f,w,e),g3=ctx.createGain();g3.gain.value=sm*.8;{const pp=p.bpp||0;if(pp>.02&&!(window.BSLF&&Math.abs(BSLF/f-1)>.01)){o3.frequency.setValueAtTime(f*Math.pow(2,pp*1.5),w);o3.frequency.exponentialRampToValueAtTime(f,w+.035+pp*.04)}}o3.connect(g3);g3.connect(q);o.detune.value=0;if(window.BSLF&&Math.abs(BSLF/f-1)>.01){o3.frequency.setValueAtTime(BSLF,w);o3.frequency.exponentialRampToValueAtTime(f,w+(window.BSLT||.06))}}}
  {let src=q;const gr=p.bgr||0;if(gr>.02&&window.bassFold){const fw=ctx.createWaveShaper(),kk=Math.round(gr*10);fw.curve=BFC[kk]||(BFC[kk]=bassFold(kk/10));const fm=ctx.createGain();fm.gain.value=1/(1+gr*.6);q.connect(fw);fw.connect(fm);src=fm}const dv=p.bdrv||0;if(dv>.02){const ws=ctx.createWaveShaper(),k=Math.round((1+dv*6)*10)/10;ws.curve=BDC[k]||(BDC[k]=satCurve(k));const mk=ctx.createGain();mk.gain.value=1+dv*2.4;src.connect(ws);ws.connect(mk);mk.connect(g)}else src.connect(g)}s.connect(sg);sg.connect(g);send(g,A.dkb,0,0)}};
 const BDC={};
 function fire(k,w){OCT=(k===6||k===9)?0:(G.oct||0);FIX=0;if(k===3&&TR[3].p.mode==="Fixed")FIX=440*Math.pow(2,(TR[3].p.tune-69)/12);if(tk%2)w+=G.swing*sdur();
@@ -1368,7 +1368,7 @@ const _init39=init;init=function(){const nw=!ctx;_init39();if(!nw)return;const p
   const n=2048,c=new Float32Array(n),k=2.2,b=.1,o0=Math.atan(k*b),nm=Math.atan(k*(1+b))-o0;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=(Math.atan(k*(x+b))-o0)/nm}fz.curve=c;fz.oversample='2x'; /* warm overdrive */
   ft.type='lowpass';ft.frequency.value=5200;ft.Q.value=.5;A.ld.connect(fd);fd.connect(pk);A.ld.connect(fi);{const fh=ctx.createBiquadFilter(),pe=ctx.createBiquadFilter(),de=ctx.createBiquadFilter();fh.type='highpass';fh.frequency.value=180;fh.Q.value=.6;pe.type=de.type='highshelf';pe.frequency.value=de.frequency.value=1500;pe.gain.value=6;de.gain.value=-6;
    fi.connect(fh);fh.connect(pe);pe.connect(fz);fz.connect(de);de.connect(ft)} /* brighter notes drive the overdrive harder, like a filter into a pedal */ft.connect(fw);fw.connect(pk);A.fz={fd,fi,fw}} // v0.22 lead bus fuzz (LEAD fader)
- pk.connect(hs);hs.connect(c);c.connect(o);o.connect(A.dk);
+ pk.connect(hs);hs.connect(c);{const lf=ctx.createBiquadFilter();lf.type='lowpass';lf.frequency.value=20000;lf.Q.value=.7;c.connect(lf);lf.connect(o);A.ldlp=lf}o.connect(A.dk);   /* v0.8: one open low-pass at the end of the lead bus — the LEAD fader sweeps it closed (1500) */
  /* v0.77: leads were barely audible in many Launches. Measured against the kick over 60 Launches the lead sat at −20 dB in the middle and
     down to −31 dB; v0.7 was −19 / −27. The fixed per-patch gain of v0.75 could not follow how much a patch's level changes with the cutoff,
     drive and register a Launch picks. Three changes, nothing that listens over time:
@@ -2810,8 +2810,11 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
    Pulling left closes the synths first; the drums start closing only past ~45% of the travel. Echo and reverb sends close with
    their source. While the fader is not fully open, every sound a track creates is tagged; wherever such a sound leaves the track
    (into any shared bus: master, ducked bus, lead bus, rumble, hat/perc stages, delay, reverb, shimmer) it passes its group's filter.
-   Nothing is tagged or rerouted while the fader is fully open. ---- */
-{const LP={v:1,ctx:null,dest:null,f:{syn:new Map(),drm:new Map(),pad:new Map()}};const PZ=.70,VV=(v=LP.v)=>Math.min(1,v/PZ);let CURG=null;const DRK=new Set([1,2,3,7]);
+   Nothing is tagged or rerouted while the fader is fully open.
+   v0.8: a bipolar DJ filter. The fader rests in the CENTRE (open). Left = the low-pass as before (synths first, then drums; kick stays).
+   Right = high-pass: everything thins from the bottom up, kick and bass first, with a resonant edge — the classic build-up sweep.
+   The same filters switch type when the fader crosses the centre (frequency jumps to the open edge first, so there is no click). ---- */
+{const LP={v:1,h:0,ctx:null,dest:null,f:{syn:new Map(),drm:new Map(),pad:new Map()}};const PZ=.70,VV=(v=LP.v)=>Math.min(1,v/PZ);let CURG=null;const DRK=new Set([1,2,3,7]);
  const DZ=.45;const cur=(v0=LP.v)=>{const v=VV(v0),op=v>=.999,a=Math.max(0,Math.min(1,(v-DZ)/(1-DZ))),
    fs=v>=DZ?650*Math.pow(20000/650,Math.pow(a,.9)):60*Math.pow(650/60,v/DZ),vd=Math.min(1,v/DZ);
   const fd=op||vd>=1?20000:140*Math.pow(20000/140,Math.pow(vd,.9));
@@ -2821,62 +2824,81 @@ window.lockSvg=on=>'<svg class="lk'+(on?' on':'')+'" viewBox="0 0 24 24" width="
   // pads: the first 30 % of the travel darkens only the pads (filter down to about 800 Hz, level unchanged, no resonance); after that they follow the synths
   const pt=v0>=PZ?(1-v0)/(1-PZ):1,pf=v0>=.999?20000:Math.min(20000*Math.pow(800/20000,pt),op?20000:fs),pg=1;
   return{syn:[op?20000:fs,op?1.31:res(fs,.2),op?1:mk(fs,3)],drm:[fd,fd>=19999?1.31:res(fd,.12),fd>=19999?1:mk(fd,2)],pad:[pf,1.31,pg]}};
+ /* v0.8 high-pass side: h 0…1 → cutoff 20 Hz … 2.6 kHz (drums 1.4 kHz, so hats and snare tops stay), resonance grows, a little makeup gain */
+ const hpc=(h=LP.h)=>{const e=Math.pow(h,1.15),q=1.31*(1+1.6*h),g=Math.pow(10,4.5*h/20),f=top=>20*Math.pow(top/20,e);return{syn:[f(2600),q,g],drm:[f(1400),q,g],pad:[f(2600),q,g]}};
+ const TY=()=>LP.h>0?'highpass':'lowpass',curA=()=>LP.h>0?hpc():cur(),eng=()=>LP.v<.999||LP.h>.001;
  function prep(){if(LP.ctx===ctx&&LP.dest)return;LP.ctx=ctx;LP.f={syn:new Map(),drm:new Map(),pad:new Map()};LP.dest=1}
- function bus(gk,d){let f=LP.f[gk].get(d);if(!f){const c=cur()[gk],f1=ctx.createBiquadFilter(),f2=ctx.createBiquadFilter(),g=ctx.createGain();
-   f1.type=f2.type='lowpass';f1.Q.value=.54;f1.frequency.value=f2.frequency.value=c[0];f2.Q.value=c[1];g.gain.value=c[2];f1.connect(f2);f2.connect(g);g.connect(d);f1.__lpf=1;f={f1,f2,g};LP.f[gk].set(d,f)}return f.f1}
+ function bus(gk,d){let f=LP.f[gk].get(d);if(!f){const c=curA()[gk],f1=ctx.createBiquadFilter(),f2=ctx.createBiquadFilter(),g=ctx.createGain();
+   f1.type=f2.type=TY();f1.Q.value=.54;f1.frequency.value=f2.frequency.value=c[0];f2.Q.value=c[1];g.gain.value=c[2];f1.connect(f2);f2.connect(g);g.connect(d);f1.__lpf=1;f={f1,f2,g};LP.f[gk].set(d,f)}return f.f1}
  /* a voice output leaving its track passes its group's filter (only while the fader is engaged: CURG is set by wrap() below) */
  RT.lpOn=()=>!!CURG;
  RT.lp=d=>(CURG&&LP.dest&&LP.ctx===ctx&&!(d instanceof AudioDestinationNode)&&!d.__lpf)?bus(CURG,d):d;
- function apply(){if(!ctx||LP.ctx!==ctx)return;const c=cur(),t=ctx.currentTime;['syn','drm','pad'].forEach(g=>LP.f[g].forEach(f=>{[f.f1,f.f2].forEach(b=>{b.frequency.cancelScheduledValues(t);b.frequency.setTargetAtTime(c[g][0],t,.03)});f.f2.Q.setTargetAtTime(c[g][1],t,.05);f.g.gain.setTargetAtTime(c[g][2],t,.05)}))}
- const wrap=(fn,g)=>function(){if(LP.v>=.999||!ctx||(window.DR&&DR.rendering))return fn.apply(this,arguments);const gg=typeof g==='function'?g(arguments[0]):g;if(!gg)return fn.apply(this,arguments);prep();const o=CURG;CURG=gg;try{return fn.apply(this,arguments)}finally{CURG=o}};
- fire=wrap(fire,k=>k===0?null:DRK.has(k)?'drm':k===5?'pad':'syn');window.lpRun=(g,fn)=>wrap(fn,g)();pad=wrap(pad,'pad');grains=wrap(grains,'syn');
+ function apply(){if(!ctx||LP.ctx!==ctx)return;const c=curA(),t=ctx.currentTime,ty=TY();['syn','drm','pad'].forEach(g=>LP.f[g].forEach(f=>{[f.f1,f.f2].forEach(b=>{b.frequency.cancelScheduledValues(t);if(b.type!==ty){b.type=ty;b.frequency.setValueAtTime(ty==='highpass'?20:20000,t)}b.frequency.setTargetAtTime(c[g][0],t,.03)});f.f2.Q.setTargetAtTime(c[g][1],t,.05);f.g.gain.setTargetAtTime(c[g][2],t,.05)}))}
+ const wrap=(fn,g)=>function(){if(!eng()||!ctx||(window.DR&&DR.rendering))return fn.apply(this,arguments);const gg=typeof g==='function'?g(arguments[0]):g;if(!gg)return fn.apply(this,arguments);prep();const o=CURG;CURG=gg;try{return fn.apply(this,arguments)}finally{CURG=o}};
+ fire=wrap(fire,k=>k===0?(LP.h>0?'drm':null):DRK.has(k)?'drm':k===5?'pad':'syn');window.lpRun=(g,fn)=>wrap(fn,g)();pad=wrap(pad,'pad');grains=wrap(grains,'syn');
  // energy thinning: stage 1 from 65 % of travel, 2 below ~39 %, 3 below ~18 %. Strong positions survive; the kick never thins.
  /* v0.26: thinning has its own THIN fader (0 = every note … 1 = only the strongest hits); the low-pass is filter only */
- const TH={v:0};window.THIN=TH;const thin=()=>{const t=TH.v;return t>=.9?4:t>=.65?3:t>=.4?2:t>=.12?1:0};   // all three stages arrive before the drum filter starts (DZ .45)
+ const TH={v:0,m:0};window.THIN=TH;const thin=()=>{const t=TH.v;return t>=.9?4:t>=.65?3:t>=.4?2:t>=.12?1:0};   // all three stages arrive before the drum filter starts (DZ .45)
  const pushed=k=>(k===1&&window.rigidHats&&rigidHats.on())||(window.breakFX&&breakFX.is()&&(k===1||k===2||k===3||k===7)); /* v0.22: a percussion push keeps every hit of its own track */
- const drop=(k,s)=>{const st=thin();if(!st||k===0||pushed(k))return false;const o16=s%2===1,off8=s%4===2;
-  if(k===3)return st>=1&&o16||st>=2&&off8;                       // perc
-  if(k===1)return st>=2&&o16||st>=4&&s%4!==2;                      // hats: 16ths → 8ths → off-beats only
-  if(k===2||k===7)return st>=2&&s%8!==4||st>=3&&s!==12;           // clap / snare: backbeats, then half time
-  if(k===4)return st>=1&&o16||st>=2&&off8||st>=3&&s%8!==0;        // lead: 16ths → quarters → half notes
-  if(k===6)return st>=2&&o16||st>=3&&off8||st>=4&&s%8!==0;         // bass
-  if(k===8||k===9)return st>=3&&o16||st>=4&&s%4!==0;               // dub stab, sub
-  if(k===5)return false;return st>=2&&o16};
- const DC={};const _ft=fire;fire=function(k){try{if(thin()&&drop(k,((tk%16)+16)%16)){DC[k]=(DC[k]||0)+1;return}}catch(e){}return _ft.apply(this,arguments)};
+ /* v0.8 MUSICAL ORDER: no more four coarse stages. Every note gets a score = how strong its spot in the bar is (downbeat 5, half bar 4,
+    quarter 3, 8th 2, off-16th 1) + how much the track carries the groove (perc 0 … bass 1.6, snare/clap backbeat +1.5). As you pull left
+    the cut-off line rises smoothly, so the weakest notes of the whole groove go first, across all tracks at once, and only the bones are
+    left at the end (bass on the one, backbeat, the strongest lead/stab notes). Lead, bass, stab and satellite keep at least their first
+    note of each bar until the last 15 %, so no part disappears early. */
+ const W16=[5,1,2,1,3,1,2,1,4,1,2,1,3,1,2,1],TB=[0,.6,1.2,0,1.2,0,1.6,1.2,.9,.9],PROT=[0,0,0,0,1,0,1,0,1,1],LB=new Int32Array(10).fill(-1);
+ const drop=(k,s)=>{const t=TH.v;if(t<.01||k===0||k===5||pushed(k))return false;const sc=W16[s]+(TB[k]||0)+((k===2||k===7)&&s%8===4?1.5:0);return sc<1+4.6*t};
+ /* v0.8 MORE (THIN fader, right of centre): extra energy without touching the pattern — hat 32nd ratchets, perc and hat ghost notes on
+    empty 16ths, and a snare roll into every 4th bar. The added hits are quieter and never thinned. */
+ let ADD=0;const ghost=(k,w,lv)=>{const T=TR[k];if(!T||T.m)return;const o=T.lv;T.lv=o*lv;ADD=1;try{fire(k,w)}catch(e){}finally{ADD=0;T.lv=o}};
+ const DC={};const _ft=fire;fire=function(k,w){if(ADD)return _ft.apply(this,arguments);
+  try{if(TH.v>=.01&&k!==0){const s=((tk%16)+16)%16;if(drop(k,s)){const bar=Math.floor(tk/16);if(!(PROT[k]&&TH.v<.85&&LB[k]!==bar)){DC[k]=(DC[k]||0)+1;return}}}}catch(e){}
+  LB[k]=Math.floor(tk/16);const r=_ft.apply(this,arguments);
+  if(TH.m>.01&&k===1&&R()<.5*TH.m)ghost(1,w+sdur()*.5,.55);   // hat ratchet
+  return r};
+ {const _as=arrStep;arrStep=function(w){const r=_as.apply(this,arguments);const m=TH.m;if(m<=.01||!playing)return r;
+  try{const s=((tk%16)+16)%16,odd=s%2===1,P=TR[3],H=TR[1];
+   if(P&&!P.pt[tk%P.st]&&R()<m*(odd?.4:.2))ghost(3,w,.5);              // perc ghosts on empty 16ths
+   if(H&&!H.pt[tk%H.st]&&odd&&R()<m*.35)ghost(1,w,.45);                // hat ghosts
+   if(m>.3&&(((tk%64)+64)%64)>=60){const k=TR[7]&&!TR[7].m?7:2;ghost(k,w,.35+.25*((tk%64)-60)/3);if(m>.75)ghost(k,w+sdur()*.5,.3)}  // roll into every 4th bar
+  }catch(e){}return r}}
  const _gt=grains;grains=function(){try{if(thin()>=2&&R()<.5)return}catch(e){}return _gt.apply(this,arguments)};
  // ---- UI ----
  const host=$('#t-perf');const pan=document.createElement('div');pan.className='panel lpf';
- pan.innerHTML='<div class="lph"><span>LOW-PASS</span><small>filter · kick stays</small><b class="lpv">OPEN</b></div><div class="lpt" title="Drag to close the filter; it stays where you leave it. Double-tap to open fully."><div class="lpz drm"></div><div class="lpz pad"></div><div class="lpfill"></div><div class="lpk"></div><i>CLOSED</i><i>OPEN</i></div>';
+ pan.innerHTML='<div class="lph"><span>FILTER</span><small>low-pass · high-pass</small><b class="lpv">OPEN</b></div><div class="lpt" title="Centre = open. Drag left for low-pass (synths close first, kick stays), right for high-pass (kick and bass go first). It stays where you leave it; double-tap to open."><div class="lpz drm"></div><div class="lpz pad"></div><div class="lpz hp"></div><div class="lpc"></div><div class="lpfill"></div><div class="lpk"></div><i>LOW</i><i>HIGH</i></div>';
  const tr=pan.querySelector('.lpt'),kn=pan.querySelector('.lpk'),fill=pan.querySelector('.lpfill'),val=pan.querySelector('.lpv');
  const fmt=h=>h>=1000?(h/1000).toFixed(h>=10000?0:1)+'k':Math.round(h)+'';
- function show(){const c=cur();kn.style.left=(LP.v*100)+'%';fill.style.width=((1-LP.v)*100)+'%';pan.classList.toggle('on',LP.v<.999);
-  const th=thin();val.textContent=LP.v>=.999?'OPEN':LP.v>=PZ?'PADS '+fmt(c.pad[0]):'SYN '+fmt(c.syn[0])+' · DRM '+(c.drm[0]>=19000?'open':fmt(c.drm[0]))}
- function set(v){LP.v=Math.max(0,Math.min(1,v));if(LP.v>.9995)LP.v=1;if(ctx)prep();apply();show()}
- window.lpReset=()=>{tgt=null;if(raf)cancelAnimationFrame(raf);raf=0;lt=0;set(1);try{window.thinSet&&thinSet(0)}catch(e){}};
+ const POS=()=>LP.h>0?.5+.5*LP.h:.5*LP.v;
+ function show(){const c=cur(),p=POS();kn.style.left=(p*100)+'%';fill.style.right='auto';fill.style.left=(Math.min(p,.5)*100)+'%';fill.style.width=(Math.abs(p-.5)*100)+'%';pan.classList.toggle('on',eng());
+  val.textContent=LP.h>0?'HP '+fmt(hpc().syn[0]):LP.v>=.999?'OPEN':LP.v>=PZ?'PADS '+fmt(c.pad[0]):'SYN '+fmt(c.syn[0])+' · DRM '+(c.drm[0]>=19000?'open':fmt(c.drm[0]))}
+ /* v0.8: position 0 … 0.5 … 1 = low-pass closed … open … high-pass closed */
+ function setPos(p){p=Math.max(0,Math.min(1,p));if(Math.abs(p-.5)<.002)p=.5;if(p<=.5){LP.v=p/.5;LP.h=0;if(LP.v>.9995)LP.v=1}else{LP.v=1;LP.h=(p-.5)/.5}if(ctx)prep();apply();show()}
+ function set(v){setPos(.5*Math.max(0,Math.min(1,v)))}   /* the low-pass amount (1 = open), as before */
+ window.lpReset=()=>{tgt=null;if(raf)cancelAnimationFrame(raf);raf=0;lt=0;setPos(.5);try{window.thinSet&&thinSet(0)}catch(e){}};
  // glide toward a target. Tap: constant speed, so the time follows the distance (full sweep ≈ 4 s, a small nudge is quick),
  // eased in the last stretch. Drag: follows the finger closely.
  const SPD=.25;let tgt=null,mode='tap',raf=0,lt=0;
- const step=ts=>{raf=0;if(tgt==null)return;const dt=lt?Math.min(.05,(ts-lt)/1000):1/60;lt=ts;const d=tgt-LP.v;
-  if(Math.abs(d)<.002){const t=tgt;tgt=null;lt=0;set(t);return}
-  if(mode==='drag')set(LP.v+d*.45);else{const mv=Math.min(Math.abs(d),SPD*dt*Math.min(1,.25+Math.abs(d)*6));set(LP.v+Math.sign(d)*mv)}
+ const step=ts=>{raf=0;if(tgt==null)return;const dt=lt?Math.min(.05,(ts-lt)/1000):1/60;lt=ts;
+  const p=POS(),d2=tgt-p;if(Math.abs(d2)<.002){const t=tgt;tgt=null;lt=0;setPos(t);return}
+  if(mode==='drag')setPos(p+d2*.45);else{const mv=Math.min(Math.abs(d2),SPD*dt*Math.min(1,.25+Math.abs(d2)*6));setPos(p+Math.sign(d2)*mv)}
   raf=requestAnimationFrame(step)};
- const go=(v,m)=>{tgt=Math.max(0,Math.min(1,v>.985?1:v));mode=m;if(!raf){lt=0;raf=requestAnimationFrame(step)}};
+ const go=(v,m)=>{tgt=Math.max(0,Math.min(1,Math.abs(v-.5)<.03?.5:v));mode=m;if(!raf){lt=0;raf=requestAnimationFrame(step)}};
  let drag=0,moved=0,x0=0;const pos=e=>{const r=tr.getBoundingClientRect();return (e.clientX-r.left)/r.width};
  tr.addEventListener('pointerdown',e=>{e.preventDefault();drag=1;moved=0;x0=e.clientX;try{tr.setPointerCapture(e.pointerId)}catch(x){}go(pos(e),'tap')});
  tr.addEventListener('pointermove',e=>{if(!drag)return;if(Math.abs(e.clientX-x0)>4)moved=1;go(pos(e),moved?'drag':'tap')});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{drag=0}));
- let lastTap=0;tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lastTap<300)go(1,'tap');lastTap=n});
+ let lastTap=0;tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lastTap<300)go(.5,'tap');lastTap=n});
  tr.addEventListener('contextmenu',e=>e.preventDefault());
  host.appendChild(pan);show();
  // a fresh audio engine starts with fresh filters at the current position
  const _iL=init;init=function(){const r=_iL.apply(this,arguments);LP.dest=null;return r};
- window.LOWPASS={set,glide:v=>go(v,'tap'),get:()=>LP.v,freqs:cur,thin,drops:()=>Object.assign({},DC),busCount:()=>LP.f.syn.size+LP.f.drm.size+LP.f.pad.size};
+ window.LOWPASS={set,setPos,pos:POS,hp:()=>LP.h,glide:v=>go(.5*v,'tap'),get:()=>LP.h>0?1-LP.h:LP.v,freqs:curA,thin,drops:()=>Object.assign({},DC),busCount:()=>LP.f.syn.size+LP.f.drm.size+LP.f.pad.size};
  const st=document.createElement('style');st.textContent=`.lpf{padding:8px 12px 10px!important}.lpf .lph{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;font-size:11px;letter-spacing:.12em}
 .lpf .lph span{font-weight:700;color:var(--acc,#ffe44d)}.lpf .lph small{opacity:.55;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase}.lpf .lph b{margin-left:auto;font-size:10.5px;letter-spacing:.06em;opacity:.7}.lpf.on .lph b{opacity:1;color:var(--acc,#ffe44d)}
 .lpf .lpt{position:relative;height:44px;border:1px solid rgba(0,255,156,.35);border-radius:10px;background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(0,255,156,.10));touch-action:none;user-select:none;cursor:ew-resize;overflow:hidden}
-.lpf .lpz.pad{position:absolute;right:0;top:0;bottom:0;width:30%;border-left:1px dashed rgba(181,131,255,.45);background:rgba(181,131,255,.07)}
-.lpf .lpz.drm{position:absolute;left:0;top:0;bottom:0;width:31.5%;border-right:1px dashed rgba(255,228,77,.35);background:repeating-linear-gradient(135deg,transparent 0 6px,rgba(255,228,77,.05) 6px 12px)}
+.lpf .lpz.pad{position:absolute;left:35%;top:0;bottom:0;width:15%;border-left:1px dashed rgba(181,131,255,.45);background:rgba(181,131,255,.07)}
+.lpf .lpz.hp{position:absolute;left:50%;right:0;top:0;bottom:0;background:repeating-linear-gradient(45deg,transparent 0 6px,rgba(0,200,255,.05) 6px 12px)}.lpf .lpc{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(214,255,230,.35)}
+.lpf .lpz.drm{position:absolute;left:0;top:0;bottom:0;width:15.75%;border-right:1px dashed rgba(255,228,77,.35);background:repeating-linear-gradient(135deg,transparent 0 6px,rgba(255,228,77,.05) 6px 12px)}
 .lpf .lpfill{position:absolute;right:0;top:0;bottom:0;width:0;background:rgba(0,0,0,.45)}
-.lpf .lpk{position:absolute;top:3px;bottom:3px;width:18px;margin-left:-9px;left:100%;border-radius:6px;background:var(--acc,#ffe44d);box-shadow:0 0 10px rgba(255,228,77,.6)}
+.lpf .lpk{position:absolute;top:3px;bottom:3px;width:18px;margin-left:-9px;left:50%;border-radius:6px;background:var(--acc,#ffe44d);box-shadow:0 0 10px rgba(255,228,77,.6)}
 .lpf .lpt i{position:absolute;top:50%;transform:translateY(-50%);font-style:normal;font-size:9px;letter-spacing:.14em;opacity:.45;pointer-events:none}.lpf .lpt i:first-of-type{left:10px}.lpf .lpt i:last-of-type{right:14px}
 @media (max-width:640px){.lpf .lpt{height:40px}body #t-perf>.rz>div{height:clamp(34px,calc((100dvh - 722px)/2),118px)!important}.lpf .lph{white-space:nowrap}.lpf .lph small{display:none}.lpf .lph b{font-size:10px}}
 @media (max-width:640px) and (max-height:880px){#t-perf>.rz>div>div:last-child{display:none}}
@@ -4089,7 +4111,7 @@ window.MOODX={
    if(x>0){const wl=Math.max(0,(x-.8)/.2),hv=wl,ad=.35*Math.min(x,.8)/.8+1.0*wl+.8*wl*wl,gr=0; /* Radian: warm, steady drive up to 80 %, then wild */ /* no grit: it adds a noise voice per note */ /* warm up to 60 %, then heavy drive + grit to the end */
     P.drv=Math.min(2.2,(P.drv||0)+ad);if(hv>0&&P.res!=null)P.res=Math.min(Math.max(P.res,11),P.res+4.5*hv); /* resonance screams into the overdrive */if(gr>0)P.grit=Math.min(1,(P.grit||0)+gr);{const hasD=P.eng!=='Mini',ac=Math.min(ad,1.35);P.pg=(P.pg||1)/(1+ad*.4)/(hasD?1+ac*.75:1)/(1+.4*wl)} /* Mini has no drive stage, so only the level term is undone there */}
    if(x<0)P.pg=(P.pg||1)*(1-.3*x);   /* v0.75: short plucks lost about 4 dB; most of it is given back */
-   if(P.cut!=null)P.cut=Math.max(60,Math.min(12000,P.cut*Math.pow(2,x<0?1.2*x:.5*Math.max(0,(x-.8)/.2))));if(P.envA!=null)P.envA=Math.max(0,P.envA*(1+(x<0?.6*x:.4*Math.max(0,(x-.8)/.2))));
+   if(P.cut!=null)P.cut=Math.max(60,Math.min(12000,P.cut*Math.pow(2,x<0?.6*x:1.4*Math.min(x,1))));if(P.envA!=null)P.envA=Math.max(0,P.envA*(1+(x<0?.6*x:.6*x)));   /* v0.8: the notes open up over the whole right side (up to ~2.6 octaves brighter); the left side's closing is mostly the live bus filter (1500) */
    if(x>0){const T=TR[4],n=T.st||16,d=Math.max(1,n/Math.max(1,T.h||1)),gap=d*sdur(); /* every note gets the same length limit (from the average spacing), so all notes lengthen alike */
     P.dec=Math.min(P.dec,Math.max(o.dec||.1,gap*2));if(P.hold)P.hold=Math.min(P.hold,Math.max(o.hold||1,d*2));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(o.rel||.05,gap))}
    P.ds=Math.max(0,Math.min(1,(P.ds||0)*(1+x)));P.rs=Math.max(0,Math.min(1,(P.rs||0)*(1+x)));return _f.apply(this,arguments)}
@@ -4139,8 +4161,14 @@ window.MOODX={
 <script>
 /* ---- v0.22: BASS macro fader on Flight, under LEAD. Centre = the bass exactly as set (manual edits included). Left = tight: shorter, darker, less resonance.
    Right = squelch: longer notes, brighter cutoff, more filter envelope, more resonance (capped so it stays round), a hint of slide; level compensated.
-   Springs back to the centre when released; a tap glides to the spot in about 250 ms. Only bends existing bass parameters while a note is made. ---- */
+   Springs back to the centre when released; a tap glides to the spot in about 250 ms. Only bends existing bass parameters while a note is made.
+   v0.8: WOBBLE zone — the last 20 % of the right side makes the bass filter wobble in time: 1/8 notes, 1/16 in the last 7 %, deeper
+   towards the end. The wobble is locked to the bar and drawn as automation on each note's own filter, so it costs no extra sound nodes.
+   (The 808 bass has no filter, so it does not wobble.) ---- */
 {const BM={x:0,raf:0};let dep=0;
+ window.BWOB=function(fp,w,e,c){const x=BM.x;if(x<.8||!(e>w))return;const d=(x-.8)/.2,sd=sdur(),ps=x>.93?1:2,P=ps*sd,lo=Math.max(60,c*(.4-.2*d)),hi=Math.min(9000,Math.max(lo*2,c*(1.6+2.4*d))),r=hi/lo;
+  const cs=w-(((tk%ps)+ps)%ps)*sd,u=Math.max(0,Math.min(1,(w-cs)/P)),v0=u<.5?lo*Math.pow(r,u*2):hi*Math.pow(1/r,(u-.5)*2);
+  try{fp.cancelScheduledValues(w);fp.setValueAtTime(v0,w);for(let k=1,n=0;n<64;k++){const t=cs+k*P/2;if(t<=w+.001)continue;if(t>e+P/2)break;fp.exponentialRampToValueAtTime(k%2?hi:lo,t);n++}}catch(_){}};
  const bend=fn=>function(){if(dep||Math.abs(BM.x)<.01)return fn.apply(this,arguments);const B=TR[6],P=B.p,x=BM.x,
    o={dec:P.dec,bgt:P.bgt,bsus:P.bsus,cut:P.cut,envA:P.envA,res:P.res,bsl:P.bsl,lv:B.lv};dep=1;const n={};
   try{const lf=x<0?Math.pow(2,1.3*x):Math.pow(2,1.7*x);P.dec=Math.max(.04,Math.min(1.8,(P.dec||.13)*lf));
@@ -4176,7 +4204,7 @@ window.MOODX={
   .mxrow .lmh span{opacity:.8}.mxrow .lmt i{display:none}}`;document.head.appendChild(st)}
  let el=null,lastX=null;const show=()=>{if(!el)return;const x=BM.x;if(lastX!==null&&Math.abs(x-lastX)<.002)return;lastX=x;const k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
    k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';
-   b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'TIGHT ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};
+   b.textContent=Math.abs(x)<.01?'AS SET':(x<0?'TIGHT ':x>=.8?'WOBBLE ':'LONG ')+Math.round(Math.abs(x)*100)+'%'};
  const glideBack=()=>{cancelAnimationFrame(BM.raf);const x0=BM.x,t0=performance.now(),D=2500;const step=t=>{const p=Math.min(1,(t-t0)/D),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;BM.x=x0*(1-e);show();if(p<1)BM.raf=requestAnimationFrame(step);else{BM.x=0;show()}};BM.raf=requestAnimationFrame(step)};
  const add=()=>{if(document.querySelector('.bmx'))return;const lm=document.querySelector('.lmx');if(!lm)return;
   el=document.createElement('div');el.className='bmx';
@@ -4559,8 +4587,11 @@ window.MOODX={
 <script>
 /* ---- v0.22: LEAD fader grit — one shared fuzz stage on the lead bus (not per note, so the CPU cost is fixed and tiny). Transparent up to
    half-way, then the fuzz blends in and is driven harder towards the end: rough, slightly asymmetric, toned down above ~6.5 kHz.
-   Level-matched; works on every lead patch, including Mini (which has no drive of its own). ---- */
+   Level-matched; works on every lead patch, including Mini (which has no drive of its own).
+   v0.8: a real filter sweep. Left of centre the lead bus low-pass (0360) closes from fully open down to ~280 Hz, with a resonant edge
+   that grows as it closes — it moves live while notes ring, like turning a cutoff knob. Right of centre the notes open up (1350). ---- */
 {let last=null;setInterval(()=>{try{if(!ctx||!A.fz)return;const x=(window.leadMacro&&leadMacro.x)||0;if(last!==null&&Math.abs(x-last)<.003)return;last=x;
+  {const lf=A.ldlp,t=ctx.currentTime;if(lf&&lf.context===ctx){const c=x<0?-x:0,f=c<.005?20000:20000*Math.pow(280/20000,Math.pow(c,.75));lf.frequency.setTargetAtTime(f,t,.04);lf.Q.setTargetAtTime(.7+2.3*Math.pow(c,.8),t,.06)}}
   const a=Math.max(0,Math.min(1,(x-.5)/.5)),t=ctx.currentTime,F=A.fz;
   const wl=Math.max(0,(x-.8)/.2),w0=Math.min(1,a/.6),dr=1+3*w0+9*wl+16*wl*wl;F.fi.gain.setTargetAtTime(dr,t,.03);F.fw.gain.setTargetAtTime(.12*w0,t,.03);   /* v0.75: the fuzz no longer gets louder in the last 20 % — the lead used to jump 6–17 dB there once its automatic level control was gone */F.fd.gain.setTargetAtTime(1-.25*w0-.55*wl,t,.03); /* v0.22 Radian: light warm overdrive 50–80 %, the wild fuzz only in the last 20 % */
   const L=window.LEX;if(L&&L.ctx===ctx){if(L.fb0==null||a===0)L.fb0=L.fb0==null?L.fb.gain.value:L.fb0;const e=wl;L.fb.gain.setTargetAtTime(Math.min(.72,L.fb0+.3*e),t,.15)}}catch(e){}},40)}
@@ -5712,16 +5743,17 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
 </script>
 
 <script>
-/* ---- v0.26: Flight — LOW-PASS and THIN laid out exactly like the LEAD and BASS faders (two side-by-side boxes, same header, same track) ---- */
+/* ---- v0.26: Flight — LOW-PASS and THIN laid out exactly like the LEAD and BASS faders (two side-by-side boxes, same header, same track)
+   v0.8: the knob height was copied while the reference knob had none yet ('auto'), so both knobs were 0 px tall and invisible; falls back to 70 %. ---- */
 {const lp=document.querySelector('#t-perf .lpf'),th=lp&&lp.querySelector('.thr');if(lp&&th&&!lp.querySelector('.mxrow')){
   const row=document.createElement('div');row.className='mxrow lpr';const a=document.createElement('div'),b=document.createElement('div');a.className='lmx lpa';b.className='bmx tha';
   const h=lp.querySelector('.lph'),t=lp.querySelector('.lpt');h.classList.add('lmh');t.classList.add('lmt');a.append(h,t);
-  const hh=document.createElement('div');hh.className='lmh';hh.innerHTML='<span>THIN</span><small>fewer notes · kick stays</small>';const v=th.querySelector('.thv');hh.appendChild(v);
+  const hh=document.createElement('div');hh.className='lmh';hh.innerHTML='<span>THIN</span><small>fewer · more · kick stays</small>';const v=th.querySelector('.thv');hh.appendChild(v);
   const tt=th.querySelector('.tht');tt.classList.add('lmt');tt.insertAdjacentHTML('beforeend','<i style="left:4px">ALL</i><i style="right:4px">BONES</i>');b.append(hh,tt);
   row.append(a,b);th.remove();lp.appendChild(row);lp.classList.add('mxp');
   const copy=()=>{const ref=document.querySelector('#t-perf .mxp:not(.lpf) .lmt'),rb=document.querySelector('#t-perf .mxp:not(.lpf) .lmh b');if(!ref)return;const c=getComputedStyle(ref);
    [t,tt].forEach(x=>{['height','borderTopWidth','borderStyle','borderColor','borderRadius','backgroundColor','backgroundImage','boxShadow'].forEach(k=>x.style[k]=c[k]);x.style.borderWidth=c.borderTopWidth});
-   const kn=document.querySelector('#t-perf .mxp:not(.lpf) .lmk');if(kn){const k=getComputedStyle(kn),tk=tt.querySelector('.thk'),lk=t.querySelector('.lpk');[tk,lk].forEach(x=>{if(!x)return;x.style.width=k.width;x.style.height=k.height;x.style.borderRadius=k.borderRadius;x.style.marginLeft='-'+(parseFloat(k.width)/2)+'px';x.style.top='50%';x.style.bottom='auto';x.style.transform='translateY(-50%)'})}
+   const kn=document.querySelector('#t-perf .mxp:not(.lpf) .lmk');if(kn){const k=getComputedStyle(kn),tk=tt.querySelector('.thk'),lk=t.querySelector('.lpk');[tk,lk].forEach(x=>{if(!x)return;x.style.width=k.width;x.style.height=(parseFloat(k.height)>0?k.height:'70%');x.style.borderRadius=k.borderRadius;x.style.marginLeft='-'+(parseFloat(k.width)/2)+'px';x.style.top='50%';x.style.bottom='auto';x.style.transform='translateY(-50%)'})}
    if(rb){const k=getComputedStyle(rb);[v,h.querySelector('b')].forEach(x=>{if(x){x.style.color=k.color;x.style.fontSize=k.fontSize}})}};
   copy();setTimeout(copy,300);window.addEventListener('resize',()=>setTimeout(copy,50));
   const st=document.createElement('style');st.textContent=`#t-perf .lpf.mxp{padding:8px 12px 10px!important}
@@ -6403,18 +6435,26 @@ html body #t-perf .arm.g5{grid-template-columns:repeat(5,minmax(0,1fr))!importan
 <script>
 /* ---- v0.36: THIN fader mirrored to match LOW-PASS — it rests on the right (ALL) and you pull left for fewer notes (BONES on the left).
    No jump on tap: it only moves once you drag more than ~8 px, relative to where it was and a bit slower than the finger, so a stray
-   touch doesn't thin the groove. Double-tap still switches it off. ---- */
-{const fix=()=>{const tt=document.querySelector('#t-perf .lpf .tht');if(!tt||!window.THIN)return null;const kn=tt.querySelector('.thk'),fl=tt.querySelector('.thfill'),v=THIN.v;
-  if(kn)kn.style.left=((1-v)*100)+'%';if(fl){fl.style.left='auto';fl.style.right='0';fl.style.width=(v*100)+'%'}
-  const ii=tt.querySelectorAll('i');if(ii.length>=2){if(ii[0].textContent!=='BONES')ii[0].textContent='BONES';if(ii[1].textContent!=='ALL')ii[1].textContent='ALL'}
-  tt.title='Drag left for fewer notes · double-tap to switch off';return tt};
- if(window.thinSet){const _ts=thinSet;window.thinSet=thinSet=function(v){const r=_ts.apply(this,arguments);try{fix()}catch(e){}return r}}
+   touch doesn't thin the groove. Double-tap still switches it off.
+   v0.8: bipolar, like the other Flight faders — it rests in the CENTRE (ALL). Left = fewer notes (weakest first, BONES at the end),
+   right = MORE (hat ratchets, ghost notes, a snare roll into every 4th bar). Double-tap = back to ALL. ---- */
+{const POS=()=>THIN.m>0?.5+.5*THIN.m:.5-.5*THIN.v;
+ const fix=()=>{const tt=document.querySelector('#t-perf .lpf .tht');if(!tt||!window.THIN)return null;const kn=tt.querySelector('.thk'),fl=tt.querySelector('.thfill'),p=POS();
+  if(kn)kn.style.left=(p*100)+'%';if(fl){fl.style.right='auto';fl.style.left=(Math.min(p,.5)*100)+'%';fl.style.width=(Math.abs(p-.5)*100)+'%'}
+  if(!tt.querySelector('.thc')){const c=document.createElement('div');c.className='thc';tt.prepend(c)}
+  const ii=tt.querySelectorAll('i');if(ii.length>=2){if(ii[0].textContent!=='BONES')ii[0].textContent='BONES';if(ii[1].textContent!=='MORE')ii[1].textContent='MORE'}
+  const v=document.querySelector('#t-perf .lpf .thv'),t=THIN.m>0?'MORE '+Math.round(THIN.m*100)+'%':THIN.v>0?'FEWER '+Math.round(THIN.v*100)+'%':'ALL';
+  if(v&&v.textContent!==t)v.textContent=t;const row=tt.closest('.tha');if(row)row.classList.toggle('on',THIN.m>0||THIN.v>0);
+  tt.title='Centre = every note. Drag left for fewer notes (weakest first), right for MORE (ratchets, ghost notes, rolls). Double-tap = back to all.';return tt};
+ let _ts=null;if(window.thinSet){_ts=thinSet;window.thinSet=thinSet=function(v){THIN.m=0;const r=_ts.apply(this,arguments);try{fix()}catch(e){}return r}}
+ window.thinPos=p=>{p=Math.max(0,Math.min(1,p));if(Math.abs(p-.5)<.02)p=.5;if(p<=.5){THIN.m=0;_ts&&_ts((.5-p)/.5)}else{_ts&&_ts(0);THIN.m=(p-.5)/.5;if(THIN.m<.02)THIN.m=0}try{fix()}catch(e){}};
  const hook=()=>{const tt=fix();if(!tt||tt.__mir)return!!tt;tt.__mir=1;const box=tt.parentElement;let d=null,last=0;
   box.addEventListener('pointerdown',e=>{if(!tt.contains(e.target))return;e.stopPropagation();e.preventDefault();const n=performance.now();
-   if(n-last<300){last=0;thinSet(0);d=null;return}last=n;d={x:e.clientX,v:THIN.v,go:false,id:e.pointerId};try{tt.setPointerCapture(e.pointerId)}catch(x){}},true);
+   if(n-last<300){last=0;thinSet(0);d=null;return}last=n;d={x:e.clientX,p:POS(),go:false,id:e.pointerId};try{tt.setPointerCapture(e.pointerId)}catch(x){}},true);
   box.addEventListener('pointermove',e=>{if(!d||!tt.contains(e.target)&&e.target!==tt)return;e.stopPropagation();const dx=e.clientX-d.x;if(!d.go){if(Math.abs(dx)<8)return;d.go=true;d.x=e.clientX;return}
-   const w=tt.getBoundingClientRect().width||1;thinSet(d.v-(e.clientX-d.x)/w*.75)},true);
+   const w=tt.getBoundingClientRect().width||1;thinPos(d.p+(e.clientX-d.x)/w*.75)},true);
   ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>box.addEventListener(ev,e=>{if(d&&(tt.contains(e.target)||e.target===tt)){e.stopPropagation();if(d.go)last=0}d=null},true));return true};
+ {const st=document.createElement('style');st.textContent='#t-perf .lpf .tht .thc{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(214,255,230,.35);pointer-events:none}';document.head.appendChild(st)}
  if(!hook())setTimeout(hook,600);setTimeout(hook,2500);UI.on(()=>{try{fix()}catch(e){}})}
 </script>
 <script>
@@ -7043,26 +7083,50 @@ window.orbExoProg=function(kind){try{let P,sh;
            longer toms with more pitch bend, ghost notes and variation come in on hats, perc, snare and clap, accents deepen. The kick is
            never touched. Only bends the settings while a hit is made — your own values stay as they are.
    FX    · DRY ↔ WASH. Left: echo, reverb and shimmer pull back to nothing. Right: more echo with longer feedback, more reverb and shimmer —
-           a wash to throw over a transition. Moves the four FX levels together; the Mix faders keep their values. ---- */
+           a wash to throw over a transition. Moves the four FX levels together; the Mix faders keep their values.
+   v0.8: DRUMS · RATCHETS — past ~55 % WILD, hats and perc sometimes fire 2 quick hits (1/32) or 3 (a triplet, near the end) instead of
+           one, a bit quieter, more often the further you go. Same pre-rendered sounds, so almost no extra CPU.
+         FX · DUB THROW — flick the FX fader to the right and let go: the echo catches that moment and keeps ringing (long feedback) for
+           about two bars while the dry groove carries on, then it settles back. The fader returns to where it was.
+         FX · FREEZE — the last 10 % of WASH freezes the reverb into an endless pad (a long feedback loop fed from the reverb, closed off
+           once full); pull back below 88 % and it fades out over a few seconds. Built only the first time you use it. ---- */
 {const lst=[...document.querySelectorAll('style')].find(t=>t.textContent.includes('.lmx .lmt'));
  if(lst){const st=document.createElement('style');st.textContent=lst.textContent.replace(/\.lmx/g,'.xmx')+'.mxrow>.xmx{margin:0;min-width:0}@media (max-width:640px) and (max-height:780px){.mxrow>.xmx{position:relative}}@media (min-width:900px){body.flw #t-perf>.mxp.xmp{grid-column:1/7;grid-row:5}}#t-perf .mxrow .lmt{height:32px!important}#t-perf .mxp{padding-top:6px!important;padding-bottom:7px!important}#t-perf .mxrow .lmh{margin-bottom:4px!important}'   /* v0.77: the wide-screen placement applied on phones too — it stretched the 3-column grid to 6 and the riser and breakdown pads collapsed to nothing. It is behind the wide-screen condition now. All six faders are a touch lower (32 px, were 38–44) so the extra row costs less room. */;document.head.appendChild(st)}
  const mk=(o)=>{const F={x:0,raf:0,el:null};let last=null;
   const show=()=>{const el=F.el;if(!el)return;const x=F.x;if(last!==null&&Math.abs(x-last)<.002)return;last=x;const k=el.querySelector('.lmk'),f=el.querySelector('.lmf'),b=el.querySelector('b');
-   k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';b.textContent=Math.abs(x)<.01?'AS SET':(x<0?o.l:o.r)+' '+Math.round(Math.abs(x)*100)+'%';if(o.on)try{o.on(x)}catch(e){}};
+   k.style.left=((x+1)/2*100)+'%';f.style.left=(x<0?(x+1)/2*100:50)+'%';f.style.width=(Math.abs(x)/2*100)+'%';b.textContent=F.tag||(Math.abs(x)<.01?'AS SET':(o.lab&&o.lab(x))||(x<0?o.l:o.r)+' '+Math.round(Math.abs(x)*100)+'%');if(o.on)try{o.on(x)}catch(e){}};
   F.build=row=>{const el=F.el=document.createElement('div');el.className='xmx '+o.cls;
    el.innerHTML='<div class="lmh"><span>'+o.name+'</span><small>'+o.hint+'</small><b>AS SET</b></div><div class="lmt" title="'+o.title+'"><div class="lmc"></div><div class="lmf"></div><div class="lmk"></div><i style="left:4px">'+o.l+'</i><i style="right:4px">'+o.r+'</i></div>';
    row.appendChild(el);const tr=el.querySelector('.lmt');let on=0,tg=0,lt=0,lt2=0;
    const sm=t=>{const dt=Math.min(50,t-(lt||t));lt=t;F.x+=(tg-F.x)*(1-Math.exp(-dt/70));if(Math.abs(tg-F.x)<.002)F.x=tg;show();if(on||F.x!==tg)F.raf=requestAnimationFrame(sm);else F.raf=0};
    const at=e=>{const r=tr.getBoundingClientRect();tg=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width)*2-1));if(Math.abs(tg)<.06)tg=0};
-   tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(F.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;F.raf=requestAnimationFrame(sm)});
+   let fd=null;tr.addEventListener('pointerdown',e=>{e.preventDefault();fd={t:performance.now(),px:e.clientX,x:F.x};cancelAnimationFrame(F.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;F.raf=requestAnimationFrame(sm)});
    tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{on=0}));
-   tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(F.raf);F.raf=requestAnimationFrame(sm)}lt2=n});show()};
+   tr.addEventListener('pointerup',e=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(F.raf);F.raf=requestAnimationFrame(sm)}lt2=n;
+    /* v0.8 flick: a quick swipe to the right (< 0.3 s, > 40 px) fires o.flick and the knob goes back to where it was */
+    if(o.flick&&fd&&n-fd.t<300&&e.clientX-fd.px>40){tg=fd.x;lt=0;lt2=0;cancelAnimationFrame(F.raf);F.raf=requestAnimationFrame(sm);try{o.flick()}catch(_){}}fd=null});show()};
   F.set=v=>{F.x=Math.max(-1,Math.min(1,v));last=null;show()};return F};
  // ---- FX: dry ↔ wash
  const fx=x=>{if(!ctx||!A.dO||A.dO.context!==ctx)return;const t=ctx.currentTime,z=(p,v)=>{try{p.setTargetAtTime(v,t,.06)}catch(e){}},d=G.dly||0,f=G.fb||0,r=G.rev||0,s=G.shim||0;
   if(x<0){z(A.dO.gain,d*(1+x));z(A.dF.gain,f*(1+.5*x));z(A.rO.gain,r*(1+.9*x));z(A.sh.gain,s*(1+x))}
   else{z(A.dO.gain,Math.min(.7,d+.28*x));z(A.dF.gain,Math.min(.8,f+(.8-Math.min(.8,f))*.8*x*x));z(A.rO.gain,Math.min(1,r+.3*x));z(A.sh.gain,Math.min(1.4,s+.35*x))}};   /* refined: at full WASH the old amounts piled up in the compressor and the whole mix dropped 4–5 dB and pumped. Less of each, and the long feedback only arrives in the last part of the travel */
- const FX=mk({cls:'fxm',name:'FX',hint:'echo · reverb · shimmer',l:'DRY',r:'WASH',title:'Drag left to dry the mix out; right for more echo with longer feedback, more reverb and shimmer. It stays where you leave it; double-tap to go back to AS SET.',on:fx});
+ /* v0.8 FREEZE: a ping-pong feedback loop (two long delays, filtered) fed from the reverb output. Engage: open the input ~1.2 s, then
+    close it and hold the loop at 0.985 feedback = an endless pad. Release: fade out, then disconnect everything (no idle CPU). */
+ const FZ={on:0,n:null,tm:0};
+ const frz=on=>{if(!ctx||!A.rO||A.rO.context!==ctx||on===FZ.on)return;FZ.on=on;const t=ctx.currentTime;
+  if(on){if(FZ.n)try{FZ.n.kill()}catch(e){}const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},inG=g(0),out=g(0),fa=g(0),fb=g(0),dA=ctx.createDelay(3),dB=ctx.createDelay(3),
+    f=(ty,hz)=>{const b=ctx.createBiquadFilter();b.type=ty;b.frequency.value=hz;b.Q.value=.5;return b},la=f('lowpass',4200),lb=f('lowpass',3800),ha=f('highpass',140),hb=f('highpass',160),pL=ctx.createStereoPanner(),pR=ctx.createStereoPanner();
+   dA.delayTime.value=1.37;dB.delayTime.value=1.91;pL.pan.value=-.6;pR.pan.value=.6;
+   A.rO.connect(inG);inG.connect(dA);dA.connect(la);la.connect(ha);ha.connect(fa);fa.connect(dB);dB.connect(lb);lb.connect(hb);hb.connect(fb);fb.connect(dA);ha.connect(pL);hb.connect(pR);pL.connect(out);pR.connect(out);out.connect(A.dk);
+   inG.gain.setTargetAtTime(1,t,.05);inG.gain.setTargetAtTime(0,t+1.2,.25);[fa,fb].forEach(x=>{x.gain.setTargetAtTime(.985,t,.3)});out.gain.setTargetAtTime(.85,t,.4);
+   const all=[inG,out,fa,fb,dA,dB,la,lb,ha,hb,pL,pR];FZ.n={out,fa,fb,inG,kill:()=>{try{A.rO.disconnect(inG)}catch(e){}all.forEach(x=>{try{x.disconnect()}catch(e){}})}}}
+  else if(FZ.n){const n=FZ.n;FZ.n=null;n.inG.gain.setTargetAtTime(0,t,.05);n.out.gain.setTargetAtTime(0,t,.9);[n.fa,n.fb].forEach(x=>x.gain.setTargetAtTime(.4,t+.5,.6));setTimeout(()=>{try{n.kill()}catch(e){}},5500)}};
+ /* v0.8 DUB THROW: the echo input opens wide for one beat and the feedback goes long, then the input closes and the echo rings out for
+    about two bars before the FX fader's own values come back */
+ let thr=0;const throwFX=()=>{if(!ctx||!A.dI||A.dI.context!==ctx)return;const t=ctx.currentTime,b=60/G.bpm,z=(p,v,at,tc)=>{p.setTargetAtTime(v,at,tc)};
+  [A.dI.gain,A.dF.gain,A.dO.gain].forEach(p=>{try{p.cancelScheduledValues(t)}catch(e){}});z(A.dI.gain,2.6,t,.01);z(A.dI.gain,1,t+b,.05);z(A.dF.gain,.84,t,.03);z(A.dO.gain,Math.max(G.dly||0,.6),t,.03);
+  FX.tag='THROW';FX.set(FX.x);clearTimeout(thr);thr=setTimeout(()=>{FX.tag=null;FX.set(FX.x);try{fx(FX.x)}catch(e){}},b*8*1000)};
+ const FX=mk({cls:'fxm',name:'FX',hint:'echo · reverb · shimmer',l:'DRY',r:'WASH',lab:x=>x>.9?'FREEZE':null,flick:()=>throwFX(),title:'Drag left to dry the mix out; right for more echo, reverb and shimmer — the last 10 % freezes the reverb into an endless pad. Flick right and let go for a dub throw. It stays where you leave it; double-tap to go back to AS SET.',on:x=>{if(!FX||!FX.tag)fx(x);if(x>.9){if(!FZ.on&&!FZ.tm)FZ.tm=setTimeout(()=>{FZ.tm=0;if(FX.x>.9&&!FX.tag)frz(1)},350)}else if(x<.88){clearTimeout(FZ.tm);FZ.tm=0;frz(0)}}});   /* freeze only after 0.35 s above 90 %, so a flick (dub throw) never freezes */
  {const _fx=applyFX;applyFX=function(){const r=_fx.apply(this,arguments);if(Math.abs(FX.x)>.01)try{fx(FX.x)}catch(e){}return r}}
  // ---- DRUMS: tight ↔ wild
  const DR=mk({cls:'drm',name:'DRUMS',hint:'hats · toms · ghosts',l:'TIGHT',r:'WILD',title:'Drag left for short, closed hats and toms with no ghost notes; right for long opening hats, bending toms, ghost notes and variation. The kick is never touched. It stays where you leave it; double-tap to go back to AS SET.'});
@@ -7071,7 +7135,9 @@ window.orbExoProg=function(kind){try{let P,sh;
   try{if(pick){const T=TR[k],P=T.p;put(P,'dec',cl((P.dec||.05)*Math.pow(2,x<0?1.5*x:1.2*x),k===1?.015:.03,k===1?.4:1.5));
      if(k===1){put(P,'open',cl((P.open||0)*(1-t)+.5*w,0,1));put(T,'acc',cl((T.acc||0)+.4*w,0,1))}else put(P,'bend',cl((P.bend||0)+.6*w,0,3))}
     else [1,3,7,2].forEach(i=>{const T=TR[i];if(!T||T.m)return;put(T,'gho',cl(Math.max((T.gho||0)*(1-t),(i===2?.2:.45)*w*w),0,1));put(T,'vari',cl(Math.max((T.vari||0)*(1-t),(i===2?.25:.4)*w),0,1))   /* refined: ghosts come in late and stop short of clutter */});
-   return fn.apply(this,arguments)}
+   const r=fn.apply(this,arguments);
+   if(pick&&w>.55&&R()<.5*(w-.55)/.45){const T=TR[k],tm=arguments[1],sd=sdur(),n=w>.85&&R()<.4?3:2;put(T,'lv',T.lv*.62);for(let i=1;i<n;i++)fn.call(this,k,tm+sd*i/n)}   /* v0.8 ratchet */
+   return r}
   finally{dep=0;for(let i=sv.length-1;i>=0;i--){const [o,key,old,nw]=sv[i];if(o[key]===nw){if(old===undefined)delete o[key];else o[key]=old}}}};
  {const _f=fire;fire=wrap(_f,1)}{const _a=arrStep;arrStep=wrap(_a,0)}
  const add=()=>{if(document.querySelector('#t-perf .xmx'))return;const b=document.querySelector('#t-perf .bmx:not(.tha)'),pn0=b&&b.closest('.panel');if(!pn0)return;
