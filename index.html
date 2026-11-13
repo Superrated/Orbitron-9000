@@ -3382,7 +3382,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
     about −9 LUFS, the ambient moods about −10.5). It replaces the gain that was learned during the first 9 s of every Launch and remembered per
     mood: that one faded up after each Launch, froze wherever it happened to be, and was then thrown off by the 4-bar balance. Nothing listens
     and adjusts any more — the loudness loop below only feeds the meter. */
- const MG={Dark:-3,Ethereal:-4,Acid:-5,'Deep Space':-5.5,Ambient:-7,Melancholic:-3.5,Hopeful:-2,Power:-5,Bleep:-5,'Groove Techno':-4.5,Dreamy:-5,Noir:-3.5,Italo:-3.5,'Melodic House':-3.5,Vector:-4.5,Tense:-6,Drone:-3.5,Breaks:-4.5,'Distorted Electro':-6,Temporal:-4,Polymeter:-5.5,Chug:-4.5},mgDb=()=>MG[curMood]!=null?MG[curMood]:-5;try{localStorage.removeItem('orb-mstmem')}catch(e){}
+ const MG={Dark:-3,Ethereal:-4,Acid:-5.5,'Deep Space':-5.5,Ambient:-7,Melancholic:-3.5,Hopeful:-2,Power:-5,Bleep:-5,'Groove Techno':-4.5,Dreamy:-5,Noir:-3.5,Italo:-3.5,'Melodic House':-3.5,Vector:-4.5,Tense:-6,Drone:-3.5,Breaks:-4.5,'Distorted Electro':-6,Temporal:-4,Polymeter:-5.5,Chug:-4.5},mgDb=()=>MG[curMood]!=null?MG[curMood]:-5;try{localStorage.removeItem('orb-mstmem')}catch(e){}
  const mgSet=tc=>{if(!M||M.ctx!==ctx)return;agDb=on?mgDb():0;try{M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,tc)}catch(e){}};
  function mstBuild(){if(!ctx||!A.lim||!A.out)return;if(M&&M.ctx===ctx)return;
   const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},bq=(t,f)=>{const b=ctx.createBiquadFilter();b.type=t;b.frequency.value=f;b.Q.value=.7071;return b},
@@ -6475,7 +6475,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13-v0.75';
+window.ORB_BUILD='2026-11-13-v0.75-b';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -6633,11 +6633,11 @@ var __AWC={};function acidWarm(d){const k=Math.round(d*20);if(__AWC[k])return __
 var __AB=null;function acidBus(){try{if(!ctx||ctx instanceof OfflineAudioContext||!(A.ld||A.dk))return null;const out=A.ld||A.dk;
  if(__AB&&__AB.ctx===ctx&&__AB.out===out)return __AB.inp;
  const inp=ctx.createGain(),sat=ctx.createWaveShaper(),body=ctx.createBiquadFilter(),top=ctx.createBiquadFilter(),cmp=ctx.createDynamicsCompressor(),mk=ctx.createGain();
- sat.curve=acidWarm(.25);sat.oversample='2x';body.type='peaking';body.frequency.value=220;body.Q.value=.8;body.gain.value=2.5;
- top.type='highshelf';top.frequency.value=6000;top.gain.value=-3;
+ sat.curve=acidWarm(.25);sat.oversample='2x';body.type='peaking';body.frequency.value=220;body.Q.value=.8;body.gain.value=2;
+ top.type='highshelf';top.frequency.value=6000;top.gain.value=-1.5;   /* v0.76: 303 more forward — half the top cut (was −3 dB above 6 kHz) and a touch less low-mid body (was +2.5 dB) */
  cmp.threshold.value=-18;cmp.ratio.value=3;cmp.knee.value=8;cmp.attack.value=.005;cmp.release.value=.12;mk.gain.value=.56; /* level-matched to the old acid voice */
- const trim=ctx.createGain(),an=ctx.createAnalyser();an.fftSize=1024;inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(trim);vconn(trim,VX.k,out);trim.connect(an);vtag(inp);inp.__k=4;
- trim.gain.value=(window.orbAcidLvl&&orbAcidLvl.trim)||1;__AB={ctx,out,inp,trim,an};return inp}catch(e){return null}}
+ const trim=ctx.createGain();   /* v0.76: the level meter that sat here is gone with the 4-bar measurement */inp.connect(sat);sat.connect(body);body.connect(top);top.connect(cmp);cmp.connect(mk);mk.connect(trim);vconn(trim,VX.k,out);vtag(inp);inp.__k=4;
+ trim.gain.value=(window.orbAcidLvl&&orbAcidLvl.trim)||1;__AB={ctx,out,inp,trim};return inp}catch(e){return null}}
 </script>
 <script>
 /* ---- v0.5: 303 GUEST LINES — in fitting moods a Launch sometimes turns the lead into a 303 line that takes the bass's place
@@ -6680,14 +6680,13 @@ var __ADC={};function acidDrive(t,d){if(t!=='Crunch'&&t!=='Fuzz')return acidWarm
  function drv2(c){const d=dfind(c);return d&&d.style.display!=='none'&&d.offsetParent!==null}}
 </script>
 <script>
-/* ---- v0.5: 303 LEVEL ON LAUNCH — for about 4 bars after an acid Launch the acid bus measures the line and sets one correction
-   (at most ±6 dB) so every acid Launch sits at the same level in the mix; then it freezes, so your own fader moves are never undone. ---- */
-{const T0=.279;   /* v0.6: 303 about 1.5 dB more present */ const LV={trim:1,cal:null};window.orbAcidLvl=LV;
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(TR[4].p.mode==='Acid 303'&&!TR[4].m){LV.trim=1;LV.cal={t0:performance.now(),dur:Math.max(6000,4*4*60/G.bpm*1000),sum:0,n:0};
-   if(window.__AB&&__AB.ctx===ctx)__AB.trim.gain.setTargetAtTime(1,ctx.currentTime,.05)}else LV.cal=null}catch(e){}return r};
- setInterval(()=>{try{const C=LV.cal,AB=window.__AB;if(!C||!playing||!AB||AB.ctx!==ctx||TR[4].m)return;const buf=METER.read(AB.an,1024);let ss=0;for(let i=0;i<1024;i++)ss+=buf[i]*buf[i];const rms=Math.sqrt(ss/1024);
-   if(rms>.002){C.sum+=rms;C.n++}
-   if(performance.now()-C.t0>C.dur&&C.n>=8){const m=C.sum/C.n,tr=Math.max(.5,Math.min(2,T0*(curMood==='Acid'?.9:1)/m));   /* Solar Flare: 303 a little lower (it's the main part there) */LV.trim=tr;LV.cal=null;AB.trim.gain.setTargetAtTime(tr,ctx.currentTime,1.2)}}catch(e){}},250)}
+/* ---- v0.76: 303 LEVEL — a fixed amount, +6.5 dB on the acid bus, so the 303 sits forward from its first note.
+   Until v0.75 the acid bus measured the line for about 4 bars after an acid Launch and then set one correction (at most ±6 dB).
+   That measurement always turned the 303 UP, by 2.7 to 6 dB (4 dB in the middle, over 15 acid Launches), so every acid line
+   started too quiet and stepped up about four bars in. It now starts at its full level from the first note: the old middle correction
+   plus 2.5 dB to sit further forward, and Solar Flare no longer holds it 1 dB back. No measuring, no timer; your Level fader is as before. ---- */
+{const LV={trim:Math.pow(10,6.5/20),cal:null};window.orbAcidLvl=LV;
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(window.__AB&&__AB.ctx===ctx)__AB.trim.gain.setTargetAtTime(LV.trim,ctx.currentTime,.05)}catch(e){}return r}}
 </script>
 <script>
 /* ---- v0.5: LONG BASS ON LAUNCH — in Ambient, Deep Space, Dreamy, Melodic House and Noir a Launch sometimes gives the bass one of the two
