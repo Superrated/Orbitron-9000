@@ -3379,7 +3379,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
     about −9 LUFS, the ambient moods about −10.5). It replaces the gain that was learned during the first 9 s of every Launch and remembered per
     mood: that one faded up after each Launch, froze wherever it happened to be, and was then thrown off by the 4-bar balance. Nothing listens
     and adjusts any more — the loudness loop below only feeds the meter. */
- const MG={Dark:-3,Ethereal:-4,Acid:-4.5,'Deep Space':-5.5,Ambient:-7,Melancholic:-3.5,Hopeful:-2,Power:-5,Bleep:-5,'Groove Techno':-4.5,Dreamy:-5,Noir:-3.5,Italo:-3.5,'Melodic House':-3.5,Vector:-3.5,Tense:-6,Drone:-3.5,Breaks:-4.5,'Distorted Electro':-6,Temporal:-4,Polymeter:-5.5,Chug:-4.5},mgDb=()=>MG[curMood]!=null?MG[curMood]:-5;try{localStorage.removeItem('orb-mstmem')}catch(e){}
+ const MG={Dark:-3,Ethereal:-4,Acid:-5,'Deep Space':-5.5,Ambient:-7,Melancholic:-3.5,Hopeful:-2,Power:-5,Bleep:-5,'Groove Techno':-4.5,Dreamy:-5,Noir:-3.5,Italo:-3.5,'Melodic House':-3.5,Vector:-4.5,Tense:-6,Drone:-3.5,Breaks:-4.5,'Distorted Electro':-6,Temporal:-4,Polymeter:-5.5,Chug:-4.5},mgDb=()=>MG[curMood]!=null?MG[curMood]:-5;try{localStorage.removeItem('orb-mstmem')}catch(e){}
  const mgSet=tc=>{if(!M||M.ctx!==ctx)return;agDb=on?mgDb():0;try{M.ag.gain.setTargetAtTime(Math.pow(10,agDb/20),ctx.currentTime,tc)}catch(e){}};
  function mstBuild(){if(!ctx||!A.lim||!A.out)return;if(M&&M.ctx===ctx)return;
   const g=v=>{const n=ctx.createGain();n.gain.value=v;return n},bq=(t,f)=>{const b=ctx.createBiquadFilter();b.type=t;b.frequency.value=f;b.Q.value=.7071;return b},
@@ -6451,7 +6451,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13d';
+window.ORB_BUILD='2026-11-13e';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -6874,6 +6874,12 @@ window.orbExoProg=function(kind){try{let P,sh;
  const lab=el=>{if(el._cl!=null)return el._cl;const f=el.firstChild;let t='';if(f)t=f.nodeType===3?f.textContent:(f.firstChild&&f.firstChild.nodeType===3?f.firstChild.textContent:'');return el._cl=(t||'').trim()};
  const hdr=(t,h,g,cls)=>{const d=document.createElement('div');d.className='bksep bhd coh '+cls;d.innerHTML=t+'<small>'+h+'</small>';d.dataset.g=g;d.dataset.keep=g;d._cl='';return d};
  const restyle=(e,t,h)=>{e.classList.add('bksep','bhd');e.innerHTML=t+'<small>'+h+'</small>'};
+ /* three faders that were really switches with number codes (0 · 1 · 2 …) are shown as menus. The fader stays underneath, hidden, and the
+    menu moves it, so everything that reads or sets the fader keeps working. */
+ const CODED={'Filter mode (LP·BP·HP)':['Filter mode',['Low-pass','Band-pass','High-pass']],'Sweep shape':['Sweep shape',['Sine','Ramp up','Ramp down','Random steps']],'Decay switch':['Release follows decay',['Off','On']]};
+ const menu=(e,cd)=>{const i=e.querySelector('input[type=range]');if(!i)return;const cur=cd[1][Math.max(0,Math.min(cd[1].length-1,Math.round(+i.value)))];
+  if(!e._menu){const l=mkSel(cd[0],cd[1],cur,v=>{i.value=cd[1].indexOf(v);i.dispatchEvent(new Event('input',{bubbles:true}))});l.style.margin='0';[...e.children].forEach(c=>{c.style.display='none'});e.appendChild(l);e._menu=l.querySelector('select')}
+  else if(document.activeElement!==e._menu&&e._menu.value!==cur)e._menu.value=cur};
  function card(c){const k=+c.dataset.k,g=c.querySelector('.grid'),T=TR[k];if(!g||!T)return;let kids=[...g.children];const by=n=>kids.find(e=>lab(e)===n);
   // ---- headings
   if(NAME[k]!=null&&!g.querySelector(':scope>.coh-r')){const s=by('Steps');if(s){g.insertBefore(hdr('Rhythm','the Euclid ring · when the '+NAME[k]+' plays','pat','coh-r'),s)}}
@@ -6887,7 +6893,7 @@ window.orbExoProg=function(kind){try{let P,sh;
     else if(cl.contains('satc')){restyle(e,'Part','role · motion · how much');e.dataset.g='pat';e.dataset.keep='pat'}else restyle(e,t,'')}
    else if(cl.contains('pph')&&!cl.contains('bhd')){const p=e.textContent.split('·');restyle(e,p[0].trim(),(p[1]||'').trim())}
    // ---- display order: pattern first, sound after; inside sound: heading, sound menu, Level … sends last
-   const snd=e.dataset.g==='snd',l=lab(e);let own=null;
+   const snd=e.dataset.g==='snd',l=lab(e);let own=null;if(CODED[l]&&e.tagName==='DIV'&&cl.contains('sl'))menu(e,CODED[l]);
    if(cl.contains('coh-s0'))own=-200;else if(cl.contains('coh-s1'))own=49;
    else if(snd&&k!==4){if(l==='Level')own=k===3?-45:-5;else if(SENDS[l])own=50;else if(SNDSEL[l]&&k!==3&&e.tagName==='LABEL')own=-10}
    else if(!snd){if(k===9&&(cl.contains('satc')||PART[l]))own=5;else if(k===6&&cl.contains('bassroll'))own=-100}
@@ -6982,7 +6988,7 @@ window.orbExoProg=function(kind){try{let P,sh;
  // ---- FX: dry ↔ wash
  const fx=x=>{if(!ctx||!A.dO||A.dO.context!==ctx)return;const t=ctx.currentTime,z=(p,v)=>{try{p.setTargetAtTime(v,t,.06)}catch(e){}},d=G.dly||0,f=G.fb||0,r=G.rev||0,s=G.shim||0;
   if(x<0){z(A.dO.gain,d*(1+x));z(A.dF.gain,f*(1+.5*x));z(A.rO.gain,r*(1+.9*x));z(A.sh.gain,s*(1+x))}
-  else{z(A.dO.gain,Math.min(.9,d+.45*x));z(A.dF.gain,Math.min(.88,f+(.88-Math.min(.88,f))*.9*x));z(A.rO.gain,Math.min(1.2,r+.5*x));z(A.sh.gain,Math.min(1.6,s+.5*x))}};
+  else{z(A.dO.gain,Math.min(.7,d+.28*x));z(A.dF.gain,Math.min(.8,f+(.8-Math.min(.8,f))*.8*x*x));z(A.rO.gain,Math.min(1,r+.3*x));z(A.sh.gain,Math.min(1.4,s+.35*x))}};   /* refined: at full WASH the old amounts piled up in the compressor and the whole mix dropped 4–5 dB and pumped. Less of each, and the long feedback only arrives in the last part of the travel */
  const FX=mk({cls:'fxm',name:'FX',hint:'echo · reverb · shimmer',l:'DRY',r:'WASH',title:'Drag left to dry the mix out; right for more echo with longer feedback, more reverb and shimmer. It stays where you leave it; double-tap to go back to AS SET.',on:fx});
  {const _fx=applyFX;applyFX=function(){const r=_fx.apply(this,arguments);if(Math.abs(FX.x)>.01)try{fx(FX.x)}catch(e){}return r}}
  // ---- DRUMS: tight ↔ wild
@@ -6991,7 +6997,7 @@ window.orbExoProg=function(kind){try{let P,sh;
  const wrap=(fn,pick)=>function(k){const x=DR.x;if(dep||Math.abs(x)<.01||(pick&&k!==1&&k!==3))return fn.apply(this,arguments);dep=1;const sv=[],put=(o,key,v)=>{sv.push([o,key,o[key],v]);o[key]=v},w=Math.max(0,x),t=Math.max(0,-x);
   try{if(pick){const T=TR[k],P=T.p;put(P,'dec',cl((P.dec||.05)*Math.pow(2,x<0?1.5*x:1.2*x),k===1?.015:.03,k===1?.4:1.5));
      if(k===1){put(P,'open',cl((P.open||0)*(1-t)+.5*w,0,1));put(T,'acc',cl((T.acc||0)+.4*w,0,1))}else put(P,'bend',cl((P.bend||0)+.6*w,0,3))}
-    else [1,3,7,2].forEach(i=>{const T=TR[i];if(!T||T.m)return;put(T,'gho',cl(Math.max((T.gho||0)*(1-t),(i===2?.3:.6)*w),0,1));put(T,'vari',cl(Math.max((T.vari||0)*(1-t),(i===2?.3:.5)*w),0,1))});
+    else [1,3,7,2].forEach(i=>{const T=TR[i];if(!T||T.m)return;put(T,'gho',cl(Math.max((T.gho||0)*(1-t),(i===2?.2:.45)*w*w),0,1));put(T,'vari',cl(Math.max((T.vari||0)*(1-t),(i===2?.25:.4)*w),0,1))   /* refined: ghosts come in late and stop short of clutter */});
    return fn.apply(this,arguments)}
   finally{dep=0;for(let i=sv.length-1;i>=0;i--){const [o,key,old,nw]=sv[i];if(o[key]===nw){if(old===undefined)delete o[key];else o[key]=old}}}};
  {const _f=fire;fire=wrap(_f,1)}{const _a=arrStep;arrStep=wrap(_a,0)}
@@ -7013,68 +7019,52 @@ window.orbExoProg=function(kind){try{let P,sh;
 #t-mix[data-mx=shape] .mxcp .spc:last-of-type{border-bottom:0}#t-mix .mxs button{padding-left:2px;padding-right:2px;letter-spacing:.1em}`;document.head.appendChild(st)}}
 </script>
 <script>
-/* ---- v0.71: ARRANGER — space in time. Runs last on every Launch and shapes what the mood's own generators made, after how records in each
-   subgenre are put together (reference per mood in the table below; working notes, taken from memory of the records, not from audio).
-   It adds no new controls and no new engine features: it only sets things you can already set by hand.
-   · a budget of parts (Mute): each mood has a most-melodic-parts-at-once number and an order of who stays (dub techno keeps the chord stab,
-     acid keeps the 303, deep house keeps the chords …) and at most three drum voices next to the kick (two in the spacious moods);
-   · fewer notes (Hits): a ceiling on hits per bar for lead, stab, perc and hats, and a sparser bass Style where the genre has a sparse bassline;
-   · call and response (Answer, Rotate, Satellite Motion): next to a lead, the stab and — in melodic and spacious moods — the perc play in
-     bars 2 & 4 only; a busy Satellite becomes an Answer; rings turn to where the lead is silent;
-   · change over time (Steps, Tension, Rotate drift, Variation, bass Ending): a looping one-bar lead becomes a two-bar ring with uneven gaps,
-     perc rings drift, hats vary from bar to bar, the bass gets a turnaround every fourth bar.
-   Acid 303 lines, Riff mode, arps and the polymeter moods keep their own rhythm. ---- */
-{/* f: t techno · m melodic · s spacious. mel = melodic parts at once (lead 4, pad 5, stab 8, Satellite 9), pri = who stays first.
-    lead / stab / perc / hat = most hits per bar. bass = most hits per bar before a sparser style is chosen. ref = the records kept in mind. */
- const SPARSE=['Off-beat','Syncopated','Half-time','Slow pulse'],DUB=['Dub sub','Half-time','Slow pulse'];
- const BR={
-  Dark:{f:'t',mel:2,pri:[4,8,5,9],lead:4,stab:3,perc:4,hat:10,ref:'Ben Klock – Subzero · Marcel Dettmann – Let\'s Do It'},
-  Tense:{f:'t',mel:1,pri:[4,5,8,9],lead:5,perc:4,hat:12,ref:'Nitzer Ebb – Join in the Chant · Front 242 – Headhunter'},
-  Acid:{f:'t',mel:1,pri:[4,5,8,9],perc:4,hat:8,ref:'Hardfloor – Acperience 1 · Phuture – Acid Tracks'},
-  Power:{f:'t',mel:2,pri:[4,5,8,9],lead:4,perc:4,hat:12,ref:'Jeff Mills – The Bells · Joey Beltram – Energy Flash'},
-  'Groove Techno':{f:'t',mel:1,pri:[4,8,9,5],lead:4,perc:7,hat:12,nocr:1,ref:'Ben Sims, Mark Broom (hard groove) · Surgeon – Magneze'},
-  Temporal:{f:'t',mel:2,pri:[8,4,9,5],lead:3,stab:2,perc:5,hat:12,nocr:1,ref:'Gaetano Parisio, Marco Carola (Neapolitan loop techno)'},
-  Bleep:{f:'t',mel:1,pri:[4,5,8,9],lead:5,perc:4,hat:8,ref:'LFO – LFO · Sweet Exorcist – Testone'},
-  'Distorted Electro':{f:'t',mel:1,pri:[4,5,8,9],lead:4,perc:4,hat:12,dpri:[1,7,3,2],ref:'Kraftwerk – Numbers · Helena Hauff, The Hacker (electro)'},
-  Drone:{f:'t',mel:2,pri:[4,5,8,9],lead:6,perc:3,hat:6,ref:'Robert Hood – Minus · Plastikman – Spastik'},
-  Polymeter:{f:'t',mel:2,pri:[8,4,9,5],perc:6,hat:10,nocr:1,ref:'Donato Dozzy · Rrose – Waterfall'},
-  Chug:{f:'t',mel:2,pri:[4,5,8,9],lead:3,perc:4,hat:8,ref:'Andrew Weatherall, Red Axes (slow chug)'},
-  Melancholic:{f:'m',mel:3,pri:[4,5,9,8],lead:8,perc:3,hat:6,bass:6,bs:SPARSE,ref:'Stephan Bodzin – Singularity · Tale Of Us & Vaal – Monument'},
-  'Melodic House':{f:'m',mel:2,pri:[4,5,8,9],lead:6,perc:4,hat:8,bass:6,bs:SPARSE,ref:'Âme – Rej'},
-  Hopeful:{f:'m',mel:3,pri:[4,5,9,8],lead:8,perc:4,hat:8,ref:'Sasha – Xpander · Eric Prydz – Opus'},
-  Italo:{f:'m',mel:2,pri:[4,5,9,8],lead:7,perc:3,hat:12,ref:'Giorgio Moroder – Chase · Alexander Robotnick – Problèmes d\'Amour'},
-  Vector:{f:'m',mel:2,pri:[4,5,9,8],lead:5,perc:4,hat:8,ref:'Legowelt, KiNK (hardware house)'},
-  Breaks:{f:'m',mel:2,pri:[5,4,9,8],lead:5,perc:4,hat:10,dpri:[7,1,3,2],ref:'LTJ Bukem – Horizons · Photek – Ni-Ten-Ichi-Ryu'},
-  Dreamy:{f:'m',mel:3,pri:[5,4,9,8],lead:5,perc:3,hat:6,bass:4,bs:SPARSE,ref:'Mr. Fingers – Can You Feel It · Kerri Chandler – Rain'},
-  Ethereal:{f:'s',mel:2,pri:[5,4,9,8],lead:5,perc:3,hat:6,bass:4,bs:DUB,ref:'Aphex Twin – Xtal · Biosphere – Novelty Waves'},
-  'Deep Space':{f:'s',mel:2,pri:[5,9,4,8],lead:4,perc:2,hat:5,bass:4,bs:DUB,ref:'Global Communication – 14:31 · Gas – Pop'},
-  Ambient:{f:'s',mel:2,pri:[5,9,4,8],lead:4,perc:3,hat:5,bass:4,bs:DUB,ref:'Brian Eno – An Ending (Ascent) · Stars of the Lid'},
-  Noir:{f:'s',mel:2,pri:[8,5,4,9],lead:3,stab:3,perc:3,hat:6,bass:4,bs:DUB,ref:'Basic Channel – Phylyps Trak II · Maurizio – M6'}};
- window.orbBrief=BR;
- const on=k=>!TR[k].m,d16=T=>T.pt.reduce((a,b)=>a+(b?1:0),0)/T.st*16;
- const cap=(k,c)=>{const T=TR[k];if(c==null||!on(k)||d16(T)<=c+.01)return;T.h=Math.max(1,Math.round(c*T.st/16));T.pt=pat(T)};
- const over=(A,B)=>{let c=0,n=0;for(let i=0;i<64;i++)if(B.pt[i%B.st]){n++;if(A.pt[i%A.st])c++}return n?c/n:0};
- const dodge=(k,ck)=>{const T=TR[k],C=TR[ck];if(!on(k)||!on(ck)||over(C,T)<.26)return;const r0=T.r||0;let best=r0,bs=1e9;for(let i=0;i<T.st;i++){T.r=(r0+i)%T.st;T.pt=pat(T);const s=over(C,T)+Math.min(i,T.st-i)*.004;if(s<bs){bs=s;best=T.r}}T.r=best;T.pt=pat(T)};
- const RUN=['Up','Up/Down','Chord arp','Converge','Diverge','Pedal arp','Random'];
- function arrange(){const b=BR[curMood];if(!b)return;const L=TR[4],lp=L.p,acid=lp.mode==='Acid 303',riff=lp.mode==='Riff',f=b.f,loopy=curMood==='Drone'||curMood==='Polymeter'||curMood==='Temporal'||curMood==='Groove Techno';
-  // 1 · the budget of parts
-  {const mel=b.pri.filter(on);mel.slice(b.mel).forEach(k=>{TR[k].m=true});const dp=(b.dpri||[1,2,3,7]).filter(on);dp.slice(f==='s'?2:3).forEach(k=>{TR[k].m=true})}
-  // 2 · fewer notes
-  const free=!acid&&!riff&&!(curMood==='Power'&&G.pgate);
-  if(free&&b.lead!=null)cap(4,b.lead);cap(8,b.stab);if(TR[3].p.pv!=='Ride')cap(3,b.perc);cap(1,b.hat);
-  if(b.bs&&on(6)&&d16(TR[6])>b.bass+.01&&!G.acidGuest)try{window.bassStyle&&bassStyle(pick(b.bs))}catch(e){}
-  // 3 · who answers whom
-  const lead=on(4),S=TR[9];
-  if(on(8)){if(lead){TR[8].p.ans=1;if(!b.nocr)dodge(8,4)}}
-  if(on(3)&&TR[3].p.pv!=='Ride'){if(f!=='t'&&lead&&!(TR[3].p.ans|0)&&R()<.6)TR[3].p.ans=1;if(lead&&!b.nocr)dodge(3,4)}
-  if(on(9)&&lead&&S.p.role!=='Sparkle'&&(S.p.mot==='Arp'||S.p.mot==='Phase')&&d16(L)>4){S.p.mot='Answer';try{window.orbSatRing&&orbSatRing();window.orbSatSdef&&orbSatSdef(S.p)}catch(e){}}
-  // 4 · change over time
-  if(lead&&free&&!loopy&&!RUN.includes(lp.mode)&&L.st===16&&L.h>=2&&R()<.65){const h=L.pt.reduce((a,x)=>a+(x?1:0),0);L.st=32;L.h=Math.max(2,Math.round(h*2*(f==='t'?.75:.8)));L.ten=Math.max(L.ten||0,+(.2+R()*.25).toFixed(2));L.pt=pat(L);if(on(8)&&!b.nocr)dodge(8,4)}
-  if(on(3)&&f==='t'&&!(TR[3].p.rdr>0)&&R()<.6)TR[3].p.rdr=pick([4,8]);
-  if(on(1)&&!(TR[1].vari>0)&&R()<.6)TR[1].vari=+(.15+R()*.12).toFixed(2);
-  if(on(6)&&!acid&&!TR[6].p.btn&&(TR[6].p.bph||1)===1&&R()<.35)TR[6].p.btn=true;
-  G.arr=curMood}
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{arrange();G.pwMode=TR[4].p.mode;build();setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync()}catch(e){}},0)}catch(e){console.warn('[orbitron] arranger',e)}return r};
+/* ---- v0.71: ARRANGER — three rules, one line per mood. Runs last on every Launch; it only presses Mute, lowers Hits and sets Answer,
+   all things you can do by hand. No new controls.
+
+     ARR[mood] = [ parts , notes , first ]
+
+     parts · how many melodic parts may play at once (lead, pad, stab, Satellite). The bass does not count.
+     notes · the most hits per bar for lead, stab and perc. Hats may play twice that plus two.
+     first · the part that always stays (4 lead · 5 pad · 8 stab · 9 Satellite); after it: lead, pad, stab, Satellite.
+
+   Rule 1  too many melodic parts → the last ones in that order are muted.
+   Rule 2  too many hits          → Hits comes down to the ceiling (the ring keeps its rotation and tension).
+   Rule 3  a lead and a stab      → the stab answers: it plays in bars 2 & 4 only. With notes at 4 or less, the perc answers too.
+
+   Left alone: Acid 303 lines and Riff-mode leads (they have their own written rhythm), the ride, kick, clap, snare and bass.
+   To make a mood busier or emptier, change its two numbers. A mood without a line is not arranged at all.
+   The numbers come from how records in each subgenre are built (from memory, not from audio) — the reference is noted per line. ---- */
+{const ARR={
+  Dark:[2,4,4],               // Ben Klock – Subzero · Marcel Dettmann – Let's Do It
+  Tense:[1,5,4],              // Nitzer Ebb – Join in the Chant · Front 242 – Headhunter
+  Acid:[1,4,4],               // Hardfloor – Acperience 1 · Phuture – Acid Tracks
+  Power:[2,4,4],              // Jeff Mills – The Bells · Joey Beltram – Energy Flash
+  'Groove Techno':[1,6,4],    // Surgeon – Magneze · Ben Sims, Mark Broom
+  Temporal:[2,5,8],           // Gaetano Parisio, Marco Carola
+  Bleep:[1,5,4],              // LFO – LFO · Sweet Exorcist – Testone
+  'Distorted Electro':[1,4,4],// Kraftwerk – Numbers · Helena Hauff, The Hacker
+  Drone:[2,6,4],              // Robert Hood – Minus · Plastikman – Spastik
+  Polymeter:[2,6,8],          // Rrose – Waterfall · Donato Dozzy
+  Chug:[2,4,4],               // Andrew Weatherall, Red Axes
+  Melancholic:[3,8,4],        // Stephan Bodzin – Singularity · Tale Of Us & Vaal – Monument
+  'Melodic House':[2,6,4],    // Âme – Rej
+  Hopeful:[3,8,4],            // Sasha – Xpander · Eric Prydz – Opus
+  Italo:[2,7,4],              // Giorgio Moroder – Chase · Alexander Robotnick – Problèmes d'Amour
+  Vector:[2,5,4],             // Legowelt, KiNK
+  Breaks:[2,5,5],             // LTJ Bukem – Horizons · Photek – Ni-Ten-Ichi-Ryu
+  Dreamy:[3,5,5],             // Mr. Fingers – Can You Feel It · Kerri Chandler – Rain
+  Ethereal:[2,4,5],           // Aphex Twin – Xtal · Biosphere – Novelty Waves
+  'Deep Space':[2,3,5],       // Global Communication – 14:31 · Gas – Pop
+  Ambient:[2,3,5],            // Brian Eno – An Ending (Ascent) · Stars of the Lid
+  Noir:[2,3,8]};              // Basic Channel – Phylyps Trak II · Maurizio – M6
+ window.orbArr=ARR;
+ const on=k=>!TR[k].m,cap=(k,c)=>{const T=TR[k];if(!on(k))return;const h=Math.max(1,Math.round(c*T.st/16));if(T.h>h){T.h=h;T.pt=pat(T)}};
+ function arrange(){const a=ARR[curMood];if(!a)return;const [parts,notes,first]=a,mode=TR[4].p.mode;
+  [first,4,5,8,9].filter((k,i,o)=>o.indexOf(k)===i).filter(on).slice(parts).forEach(k=>{TR[k].m=true});             // rule 1
+  if(mode!=='Acid 303'&&mode!=='Riff')cap(4,notes);cap(8,notes);if(TR[3].p.pv!=='Ride')cap(3,notes);cap(1,notes*2+2);   // rule 2
+  if(on(4)){if(on(8))TR[8].p.ans=1;if(on(3)&&notes<=4&&TR[3].p.pv!=='Ride')TR[3].p.ans=1}}                                // rule 3
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{arrange();G.pwMode=TR[4].p.mode;build();setTimeout(()=>{try{window.syncFaders&&syncFaders()}catch(e){}},0)}catch(e){console.warn('[orbitron] arranger',e)}return r};
  window.orbArrange=arrange}
 </script>
 </body></html>
