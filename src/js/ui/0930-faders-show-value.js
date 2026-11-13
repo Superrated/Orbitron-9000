@@ -12,5 +12,6 @@
  const soon=()=>{setTimeout(syncAll,0);setTimeout(syncAll,80)};
  ['#t-drums','#t-synth'].forEach(id=>{const c=document.querySelector(id);if(c){c.addEventListener('change',soon,true);c.addEventListener('click',e=>{if(e.target.closest('button'))soon()},true)}});
  const _gs=generate;generate=function(){const r=_gs.apply(this,arguments);soon();return r};
- UI.on(()=>{if(!document.hidden)try{TR.forEach(T=>{const c=T.mb&&T.mb.closest('.card');if(c&&c.offsetParent)syncCard(T)})}catch(e){}})} /* v0.23: only cards on screen */
+ UI.on(()=>{if(document.hidden)return;try{const d=$('#t-drums'),y=$('#t-synth');if(!isShown(d)&&!isShown(y))return;   /* v0.8: no card on screen (Flight, Mix …): nothing to do, no layout read */
+  TR.forEach(T=>{const c=T.mb&&T.mb.closest('.card');if(c&&isShown(c))syncCard(T)})}catch(e){}})} /* v0.23: only cards on screen */
 

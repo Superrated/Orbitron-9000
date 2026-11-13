@@ -151,7 +151,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
 <script>
 /* ---- perf 1: a finished sound source is disconnected right away, so the filters and gains behind it fall silent and drop out of the audio graph
    instead of being processed until garbage collection ---- */
-{const P=AudioScheduledSourceNode.prototype,st=P.start;P.start=function(){const r=st.apply(this,arguments);try{if(!(this.context instanceof OfflineAudioContext))this.addEventListener('ended',()=>{try{this.disconnect()}catch(e){}},{once:true})}catch(e){}return r}}
+{const P=AudioScheduledSourceNode.prototype,st=P.start,ONCE={once:true};
+ /* v0.8 quick win: one shared 'ended' handler (it was a new closure per sound); it also takes the source off the load guard's list (platform/0300) */
+ function ended(){try{this.disconnect()}catch(e){}if(this.__q)QOS.src.delete(this)}
+ P.start=function(){const r=st.apply(this,arguments);try{if(!(this.context instanceof OfflineAudioContext))this.addEventListener('ended',ended,ONCE)}catch(e){}return r}}
 </script>
 <script>
 /* v172: display names for moods (internal keys unchanged, so sectors, exports and settings keep working) */
@@ -235,7 +238,7 @@ function draw(t,s){const c=t.cv;if(!c)return;const x=c.getContext("2d"),tx=windo
 // ---------- Audio ----------
 function irM(b){const m=ctx.createBuffer(1,b.length,b.sampleRate);m.copyToChannel(b.getChannelData(0),0);return m} /* v0.22: mono impulse = half the convolution work */
 function ir(sec,dec,lp){const n=ctx.sampleRate*sec,b=ctx.createBuffer(2,n,ctx.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);let y=0;for(let i=0;i<n;i++){y+=((R()*2-1)-y)*lp;d[i]=y*Math.pow(1-i/n,dec)}}return b}
-function curve(k){const n=512,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/n*2-1;c[i]=Math.tanh(x*(1+k))}return c}
+let CURVEC={},CURVEN=0;function curve(k){k=Math.round(k*50)/50;if(CURVEC[k])return CURVEC[k];if(++CURVEN>200){CURVEC={};CURVEN=1}const key=k;const n=512,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/n*2-1;c[i]=Math.tanh(x*(1+k))}return CURVEC[key]=c}   /* v0.8: cached, in 0.02 steps of drive (the lead's Drive asked for a new table on every note) */
 function init(){if(ctx){ctx.resume();return}
  ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:window.orbBufHint?orbBufHint():'playback'});window.LAMIN=Math.max(0,(ctx.baseLatency||0)*1.6+.06);{const h=window.orbBufHint?orbBufHint():'playback';window.LASC=(h==='interactive'||(typeof h==='number'&&h<=.03))?.6:1}   /* v0.75: see the scheduler */
  const g=(v=1)=>{const n=ctx.createGain();n.gain.value=v;return n};
@@ -286,7 +289,9 @@ function leadNote(p){const n=SC[G.scale].length,top=p.range*n;
  const L=Math.round(p.len);bp=(bp+1)%L;if(buf[bp]===undefined||R()>p.dv){
   buf[bp]=p.mode==="Marbles"?Math.round(Math.max(0,Math.min(1,p.bias+gauss()*p.spread*.5))*(top-1)):Math.max(0,Math.min(top-1,prev+Math.round(gauss()*p.spread*4)))}
  prev=buf[bp];return buf[bp]}
-function grains(w,sd){OCT=G.oct||0;const T=TR[5];if(R()>G.dens*1.2)return;const n=1+Math.floor(R()*2);for(let i=0;i<n;i++){const t0=w+R()*sd,dur=.12+R()*.35,f=d2f(pick(cur.n),3)*pick([2,2,3,4]),o=osc("sine",f,t0,t0+dur+.02),g=ctx.createGain(),pn=ctx.createStereoPanner();o.detune.value=(R()-.5)*14;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(T.lv*.07,t0+dur/2);g.gain.linearRampToValueAtTime(0,t0+dur);pn.pan.value=R()*2-1;o.connect(g);g.connect(pn);routeTrack(pn,null,A.sh)}}
+function grains(w,sd){OCT=G.oct||0;const T=TR[5];if(R()>G.dens*1.2)return;const n=1+Math.floor(R()*2);for(let i=0;i<n;i++){const t0=w+R()*sd,dur=.12+R()*.35,f=d2f(pick(cur.n),3)*pick([2,2,3,4]),o=osc("sine",f,t0,t0+dur+.02),g=ctx.createGain();o.detune.value=(R()-.5)*14;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(T.lv*.07,t0+dur/2);g.gain.linearRampToValueAtTime(0,t0+dur);const pn=grainPan(R());o.connect(g);vconn(g,null,pn)}}
+/* v0.8 quick win: grains share five fixed stereo positions (they made a new panner per grain); the grain itself is still registered as a voice */
+let GPN=null;function grainPan(r){if(!GPN||GPN.ctx!==ctx||GPN.out!==A.sh){GPN={ctx,out:A.sh,p:[-.8,-.4,0,.4,.8].map(v=>{const n=ctx.createStereoPanner();n.pan.value=v;n.connect(A.sh);return n})}}return GPN.p[Math.min(4,Math.floor(r*5))]}
 function toggle(){init();UI.sync(600);playing=!playing;$("#play").classList.toggle("on",playing);$("#play").textContent=playing?"■ Stop":"▶ Play";
  if(playing){tk=0;buf=[];nextT=ctx.currentTime+.06;timer=setInterval(tick,25)}else{clearInterval(timer);TR.forEach(t=>draw(t,-1))}}
 function mix(){const f=[["Delay mix","dly",0,.8,.01,v=>A.dO&&(A.dO.gain.value=v)],["Delay feedback","fb",0,.85,.01,v=>A.dF&&(A.dF.gain.value=v)],["Reverb mix","rev",0,1,.01,v=>A.rO&&(A.rO.gain.value=v)],["Shimmer verb","shim",0,1.5,.01,v=>A.sh&&(A.sh.gain.value=v)],["Grain density","dens",0,1,.01,()=>0],["Sidechain depth","duck",0,.95,.01,()=>0],["Sidechain release","rel",.05,.5,.01,()=>0],["Rumble","rumble",0,1,.005,v=>A.rg&&(A.rg.gain.value=v)],["Rumble cutoff","rcut",60,260,1,v=>A.rl&&(A.rl.frequency.value=v)],["Bus grit","bgrit",0,1,.01,v=>A.gr&&(A.gr.gain.value=v*.3)]];const m=$("#mix");f.forEach(([l,k,a,b,s,fn])=>sl(m,l,a,b,G[k],s,v=>{G[k]=v;fn(v)}))}
@@ -323,7 +328,9 @@ const UI={fns:[],bfns:[],t0:0,t1:0,t2:0,tb:0,passes:0,
  on(fn){if(typeof fn==='function')this.fns.push(fn);return 0},
  onBeat(fn){this.bfns.push(fn)},   // small displays that follow the playhead: once per beat, driven by the sequencer
  beat(){if(this.tb||!this.bfns.length)return;this.tb=setTimeout(()=>{this.tb=0;if(document.hidden)return;const F=this.bfns;for(let i=0;i<F.length;i++)try{F[i]()}catch(e){}},0)},
- flush(){if(document.hidden)return;const F=this.fns;for(let i=0;i<F.length;i++)try{F[i]()}catch(e){}this.passes++},
+ flush(){if(document.hidden)return;this.lf=performance.now();const F=this.fns;for(let i=0;i<F.length;i++)try{F[i]()}catch(e){}this.passes++},
+ /* v0.8 quick win: the sequencer's once-per-bar refresh is ONE pass (it used sync(): two passes per bar), skipped if a pass ran in the last 150 ms */
+ bar(){if(this.tbar)return;this.tbar=setTimeout(()=>{this.tbar=0;if(performance.now()-(this.lf||0)>150)this.flush()},0)},
  /* sync(): one pass now + one at 180 ms. sync(late, true): skip the immediate pass — used around a card rebuild, whose own hooks add controls
     over the next ~120 ms (running first would place additions before their anchors exist). late = one more pass after that many ms. */
  sync(late,settle){if(!settle&&!this.t0)this.t0=setTimeout(()=>{this.t0=0;this.flush()},0);if(!this.t1)this.t1=setTimeout(()=>{this.t1=0;this.flush()},180);
@@ -393,7 +400,7 @@ function fire(k,w){OCT=(k===6||k===9)?0:(G.oct||0);FIX=0;if(k===3&&TR[3].p.mode=
 /* v0.75 latency: with the Minimum or Small audio buffer the notes are also scheduled less far ahead (60 % of the normal look-ahead, never
    less than the buffer needs). Before, those buffers only made the low-pass and FX faders quicker; LEAD, BASS, DRUMS, mutes and pattern edits
    act when a note is made and still waited the full 0.2–0.3 s. The longer safety cushions (Launch, hidden tab, overload) are not shortened. */
-function tick(){const sd=60/G.bpm/4;while(nextT<ctx.currentTime+Math.max(typeof QOS!=='undefined'?(QOS.la<=.4?QOS.la*(window.LASC||1):QOS.la):.12,window.LAMIN||0)){const w=nextT,dl=Math.max(0,(w-ctx.currentTime)*1e3);arrStep(w);if(tk%4===0)UI.beat();if(tk%16===0)UI.sync();   /* a new bar: queued switches (sectors, ride, kick pattern …) have just landed */
+function tick(){const sd=60/G.bpm/4;while(nextT<ctx.currentTime+Math.max(typeof QOS!=='undefined'?(QOS.la<=.4?QOS.la*(window.LASC||1):QOS.la):.12,window.LAMIN||0)){const w=nextT,dl=Math.max(0,(w-ctx.currentTime)*1e3);arrStep(w);if(tk%4===0)UI.beat();if(tk%16===0)UI.bar();   /* a new bar: queued switches (sectors, ride, kick pattern …) have just landed */
  TR.forEach((T,k)=>{if(T.pad){const L=16*T.p.bars;const hr=padSched(T,L);if(hr){const ci=hr[0];if(!T.m)pad(ci,w,hr[1]*sd);else padChord(ci,w);DQ.push([T,ci,w])}if(!T.m)grains(w,sd);return}
   const s=tk%T.st;if(T.pt[s]&&!T.m)fire(k,w);DQ.push([T,s,w])});
  gateStep(w,sd);nextT+=sd;tk++}};
@@ -735,7 +742,8 @@ const HH={g:null};
 const CLC={};function clipCurve(dr){const kk=Math.round(dr*1000);if(CLC[kk])return CLC[kk];return CLC[kk]=clipCurve0(dr)}
 function clipCurve0(dr){const n=2048,c=new Float32Array(n),k=.3+3*dr,nm=Math.tanh(k);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=Math.tanh(x*k)/nm}return c} /* v0.22: covers ±2 (input is padded by 6 dB) */
 function wsCurve2(){const n=2048,c=new Float32Array(n);for(let i=0;i<n;i++){const x=2*(i/(n-1)*2-1);c[i]=Math.tanh(x)}return c}
-function satCurve(k){const n=1024,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*k)/k}return c}
+/* v0.8 quick win: curves are cached — a few voices asked for a fresh 1024-point table on every note (assigning .curve copies it, so sharing is safe) */
+let SATC={},SATN=0;function satCurve(k){const key=+k;if(SATC[key])return SATC[key];if(++SATN>200){SATC={};SATN=1}const n=1024,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*k)/k}return SATC[key]=c}
 /* damped stereo room/hall: pre-delay, sparse early reflections, exponential tail whose highs die faster */
 function ir2(sec,pre){const sr=ctx.sampleRate,n=Math.floor(sr*sec),b=ctx.createBuffer(2,n,sr),P=Math.floor(sr*pre);let ref=(window.__irRef&&__irRef.sr===sr)?__irRef.v:0;if(!ref){const o=ir(3.2,2.4,.3).getChannelData(0);for(let i=0;i<o.length;i++)ref+=o[i]*o[i];window.__irRef={sr,v:ref}} /* v0.34: computed once */
  let en=0;for(let c=0;c<2;c++){const d=b.getChannelData(c);let y=0;for(let i=P;i<n;i++){const t=(i-P)/(n-P),a=.85-.7*t;y+=((R()*2-1)-y)*a;d[i]=y*Math.exp(-6.2*t)}
@@ -1223,8 +1231,12 @@ const QOS={lvl:0,cool:0,src:new Set(),load:0,late:0,ft:16,f:0,lt:0,la:.12,hi:[17
 /* every sound source made for the live engine is registered here (start / stop times, pad chord, voice id) — the load guard, voice stealing,
    the lead voice limit and the Launch fade read this. Creation itself is native: mkOsc / mkBuf / mkConst create the node, then register it. */
 const LiveAC=window.AudioContext||window.webkitAudioContext;
-function qsrc(n){const st=n.start.bind(n),sp=n.stop.bind(n);
- n.start=(t=0,...r)=>{n.__s=t;n.__e=Infinity;n.__pc=window.__PADC||0;n.__v=VX.n;if(window.__LCOL)__LCOL.push(n);QOS.src.add(n);return st(t,...r)};n.stop=(t=0)=>{n.__e=t;return sp(t)};n.addEventListener('ended',()=>QOS.src.delete(n));return n}
+/* v0.8 quick win: the bookkeeping lives on the prototype (it was 4 new closures + a listener per sound); qsrc only marks the node.
+   The shared 'ended' handler in platform/0040 takes it off the list. */
+{const P=AudioScheduledSourceNode.prototype,st=P.start,sp=P.stop;
+ P.start=function(t){if(this.__q){this.__s=t||0;this.__e=Infinity;this.__pc=window.__PADC||0;this.__v=VX.n;if(window.__LCOL)__LCOL.push(this);QOS.src.add(this)}return st.apply(this,arguments)};
+ P.stop=function(t){if(this.__q)this.__e=t||0;return sp.apply(this,arguments)}}
+function qsrc(n){n.__q=1;return n}
 function mkOsc(c){c=c||ctx;const n=c['createOscillator']();return c instanceof LiveAC?qsrc(n):n}
 function mkBuf(c){c=c||ctx;const n=c['createBufferSource']();return c instanceof LiveAC?qsrc(n):n}
 function mkConst(c){c=c||ctx;const n=c['createConstantSource']();return c instanceof LiveAC?qsrc(n):n}
@@ -1232,7 +1244,7 @@ function steal(nx){ /* v0.23: the pad chord that is sounding now is never stolen
  const now=ctx.currentTime,cur=window.__PADL||0,c=[...QOS.src].filter(n=>n.__e!==Infinity&&n.__e-now>.35&&!(n.__pc&&n.__pc===cur)).sort((a,b)=>(a.__pc?1:0)-(b.__pc?1:0)||a.__s-b.__s).slice(0,Math.ceil(nx));
  QOS.stolen=(QOS.stolen||0)+c.length;QOS.stolenPad=(QOS.stolenPad||0)+c.filter(n=>n.__pc).length;c.forEach(n=>{try{n.stop(now+.02)}catch(e){}})}
 const _init30=init;init=function(){const nw=!ctx;_init30();if(nw&&ctx.renderCapacity){try{ctx.renderCapacity.start({updateInterval:1});ctx.renderCapacity.addEventListener('update',e=>QOS.load=Math.max(e.averageLoad||0,(e.peakLoad||0)*.8))}catch(e){}}};
-const _tick30=tick;tick=function(){if(!ctx)return;const sd=60/G.bpm/4,now=ctx.currentTime;if(nextT<now-.025){const miss=Math.ceil((now-nextT)/sd);nextT+=miss*sd;tk+=miss;QOS.late++}else if(nextT<now)QOS.late++;_tick30()};
+const _tick30=tick;tick=function(){if(!ctx)return;const sd=60/G.bpm/4,now=ctx.currentTime;if(nextT<now-.025){const miss=Math.ceil((now-nextT)/sd);nextT+=miss*sd;tk+=miss;QOS.late++;QOS.skips=(QOS.skips||0)+1 /* v0.8: counted for the safety lifeboat (platform/1700) */}else if(nextT<now)QOS.late++;_tick30()};
 document.addEventListener('visibilitychange',()=>{QOS.la=document.hidden?1.2:.12});
 // shedding hooks
 const _fire30=fire;fire=function(k,w){const L=QOS.ml||0;if(L>=2){if(k===3&&(L>=3||R()<.5))return;if(L>=3&&(k===8||k===9))return}_fire30(k,w)};
@@ -1515,10 +1527,10 @@ window.DR={cache:new Map(),pend:new Set(),rendering:false,vr:1,hits:0,live:0,
   try{this._render(k,key,fx,!!snap)}finally{if(keep){for(const q in p)if(!(q in keep))delete p[q];Object.assign(p,keep)}}},
  _render(k,key,fx,snapped){const T=TR[k],p=T.p,sr=ctx.sampleRate,len=k===0||k===7?p.dec+.08:k===2?3*p.spread/1e3+p.tail+.08:p.dec+.08,oc=new OfflineAudioContext(1,Math.ceil(sr*Math.min(1.5,len)),sr);
   const sink=oc.createGain(),nul=oc.createGain();sink.connect(oc.destination);
-  const sv={ctx,ks:A.ks,m:A.m,ru:A.ru,dI:A.dI,rI:A.rI,duck,FIX,lv:T.lv,OCT};FIX=fx;const keyNow=this.key(k,p);FIX=sv.FIX;if(keyNow!==key&&!snapped){this.pend.delete(key);return}
+  const sv={ctx,ks:A.ks,ksd:A.ksd,m:A.m,ru:A.ru,dI:A.dI,rI:A.rI,duck,FIX,lv:T.lv,OCT};FIX=fx;const keyNow=this.key(k,p);FIX=sv.FIX;if(keyNow!==key&&!snapped){this.pend.delete(key);return}
   try{ctx=oc;A.ks=sink;A.m=sink;A.ru=nul;A.dI=nul;A.rI=nul;duck=()=>{};FIX=fx;OCT=0;this.rendering=true;
    if(k===7)snare(0,1);else fireVoice(k,0)}
-  catch(e){}finally{this.rendering=false;ctx=sv.ctx;A.ks=sv.ks;A.m=sv.m;A.ru=sv.ru;A.dI=sv.dI;A.rI=sv.rI;duck=sv.duck;FIX=sv.FIX;T.lv=sv.lv;OCT=sv.OCT}
+  catch(e){}finally{this.rendering=false;ctx=sv.ctx;A.ks=sv.ks;A.ksd=sv.ksd /* v0.8: the render must not mark the live kick shaper as up to date */;A.m=sv.m;A.ru=sv.ru;A.dI=sv.dI;A.rI=sv.rI;duck=sv.duck;FIX=sv.FIX;T.lv=sv.lv;OCT=sv.OCT}
   const vr=this.vr;oc.startRendering().then(b=>{if(this.cache.size>40)this.cache.delete(this.cache.keys().next().value);this.cache.set(key,{b,vr});this.pend.delete(key)}).catch(()=>this.pend.delete(key))}};
 /* ---- Stage mode ---- */
 {let stage=false;try{stage=localStorage.getItem('orb-stage')==='1'}catch(e){}
@@ -1963,7 +1975,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const [b2,b1]=bar.children,show=ch=>{b1.classList.toggle('on',!ch);b2.classList.toggle('on',ch);old.forEach(e=>e.hidden=ch);cp.hidden=!ch;if(ch)chBuild()};chBuild();
  b1.onclick=()=>show(false);b2.onclick=()=>show(true);
  const _g64=generate;generate=function(){const r=_g64.apply(this,arguments);if(!cp.hidden){if(!$('#t-mix').hidden)chBuild();else CH.__dirty=1}return r};document.addEventListener('click',()=>setTimeout(()=>{if(CH.__dirty&&!$('#t-mix').hidden&&!cp.hidden){CH.__dirty=0;chBuild()}},0),true); /* perf 6 */
- const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.76 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.76';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
+ const cr=document.createElement('div');cr.className='credit';cr.textContent='Orbitron 9000 v0.8 · designed by superrated and claude · yours truly';window.ORB_VERSION='0.8';const main=document.querySelector('main')||document.body;main.appendChild(cr)}
 /* ---- v65: Euclid tension lives in pat(); reset on each Launch ---- */
 {const _g65=generate;generate=function(){TR.forEach(T=>{T.ten=0;T.acc=0;T.gho=0;T.vari=0;T.vel=null});return _g65.apply(this,arguments)}}
 /* ---- v67: breakbeat tools in the Euclid sequencer (drums) — Accent (loud/soft pattern over the hits), Ghosts (quiet in-between hits), Variation (bar-to-bar pattern changes; snare gets a fill every 4 bars) ---- */
@@ -2071,26 +2083,41 @@ const _gen72=generate;generate=function(){_gen72();if(curMood!=='Power')return;c
   G.pgate=pick([{len:2,on:[1]},{len:4,on:[3]},{len:8,on:[3,7]}]);G.pstyle='blip'}
  G.ldMul=.75;G.pedal=true;buf=[];mot=[];mp=-1;if(typeof lfoUI==='function')lfoUI();build()};
 /* ---- v73: CPU easy wins — pre-rendered hi-hats (2 nodes per hit instead of 8, one shared panner), ladder filter swapped for the cheap version under load, lower visual frame caps ---- */
-{const HC={},HV=3;let busy=0;
+{const HC=new Map(),HV=3,CAP=12,ST={hit:0,near:0,live:0};let busy=0,next=null;window.orbHatCache=ST;
  /* perf 10: the hat cache key used the exact tone, which the analog drift moves all the time, so the cache kept missing and re-rendering.
     Keys now use 1 % tone steps, 2 ms decay steps and 5 % metal steps (far below hearing), and the hits are rendered at exactly those values.
-    Only LFOs that move the hat SOUND (tone, decay) bypass the cache; a Hat hits LFO no longer does. */
- const qv=p=>({tone:Math.pow(1.01,Math.round(Math.log(Math.max(500,+p.tone||7500))/Math.log(1.01))),dec:Math.round((+p.dec||.05)*500)/500,metal:Math.round((p.metal==null?.6:p.metal)*20)/20});
- const hkey=p=>{const q=qv(p);return [Math.round(q.tone),Math.round(q.dec*1000),Math.round(q.metal*100),ctx.sampleRate,A.hm2?(A.hm2.__id||(A.hm2.__id=++HID)):0].join('|')};let HID=0;
- const lfoOnHat=()=>LFOS.some(L=>L.d>0&&/^Hat (tone|decay)/.test(L.tg));
- function render(key,P){if(busy||!window.OfflineAudioContext)return;busy=1;const jobs=[];
-  for(const op of[0,1])for(let v=0;v<HV;v++)jobs.push([op,v]);const out={c:[],o:[]};
-  const one=([op])=>{const d=op?.32:P.dec,sr=ctx.sampleRate,oc=new OfflineAudioContext(2,Math.ceil(sr*(d+.08)),sr),T=TR[1],sv={ctx,m:A.m,dI:A.dI,rI:A.rI,hg:HH.g,lv:T.lv,open:T.p.open,acc:T.p.acc};
-   const q=qv(P),kp={tone:T.p.tone,dec:T.p.dec,metal:T.p.metal};
-   try{ctx=oc;A.m=oc.destination;A.dI=oc.createGain();A.rI=oc.createGain();HH.g=null;T.lv=1;T.p.open=op;T.p.acc=0;Object.assign(T.p,q);_fv73(1,0)}catch(e){console.warn(e)}
-   finally{ctx=sv.ctx;A.m=sv.m;A.dI=sv.dI;A.rI=sv.rI;HH.g=sv.hg;T.lv=sv.lv;T.p.open=sv.open;T.p.acc=sv.acc;Object.assign(T.p,kp)}return oc.startRendering()};
-  (async()=>{try{for(const j of jobs){const b=await one(j);(j[0]?out.o:out.c).push(b)}HC[key]=out;const ks=Object.keys(HC);if(ks.length>6)delete HC[ks[0]]}catch(e){}busy=0})()}
+    v0.8 quick win: 20–48 % of hats were still built live (8 nodes instead of 2), and every hat in moods with a Hat tone / Hat decay LFO.
+    Now: tone in 2 % steps and decay in 4 % steps, the hit is played back at the exact tone (playback rate, ≤ 1 % off: inaudible);
+    a Hat tone LFO is followed the same way (prepared in 8 % steps, re-pitched to the exact tone) and a Hat decay LFO was already part of the settings; while a new hat is being prepared,
+    the nearest prepared one stands in (re-pitched); 12 hats are kept instead of 6, the least recently used goes first. */
+ const LT=Math.log(1.02),LD=Math.log(1.04);
+ const qv=p=>({tone:Math.pow(1.02,Math.round(Math.log(Math.max(500,+p.tone||7500))/LT)),dec:Math.pow(1.04,Math.round(Math.log(Math.max(.01,+p.dec||.05))/LD)),metal:Math.round((p.metal==null?.6:p.metal)*20)/20});
+ let HID=0;const hm=()=>A.hm2?(A.hm2.__id||(A.hm2.__id=++HID)):0;
+ const kq=q=>[Math.round(q.tone),Math.round(q.dec*1e4),Math.round(q.metal*100),ctx.sampleRate,hm()].join('|');
+ const hkey=p=>kq(qv(p));
+ const tone=(p,w)=>(+p.tone||7500)*Math.pow(2,1.2*mv('Hat tone',w));
+ function render(key,P){if(!window.OfflineAudioContext)return;if(busy){next=[key,P];return}busy=1;const jobs=[];
+  for(const op of[0,1])for(let v=0;v<HV;v++)jobs.push([op,v]);const out={c:[],o:[],q:qv(P)};
+  const one=([op])=>{const d=op?.32:out.q.dec,sr=ctx.sampleRate,oc=new OfflineAudioContext(2,Math.ceil(sr*(d+.08)),sr),T=TR[1],sv={ctx,m:A.m,dI:A.dI,rI:A.rI,hg:HH.g,lv:T.lv,open:T.p.open,acc:T.p.acc,mv};
+   const kp={tone:T.p.tone,dec:T.p.dec,metal:T.p.metal};
+   try{ctx=oc;A.m=oc.destination;A.dI=oc.createGain();A.rI=oc.createGain();HH.g=null;T.lv=1;T.p.open=op;T.p.acc=0;Object.assign(T.p,out.q);
+    mv=(tg,t)=>tg==='Hat tone'||tg==='Hat pan'?0:sv.mv(tg,t);_fv73(1,0)}catch(e){console.warn(e)}
+   finally{mv=sv.mv;ctx=sv.ctx;A.m=sv.m;A.dI=sv.dI;A.rI=sv.rI;HH.g=sv.hg;T.lv=sv.lv;T.p.open=sv.open;T.p.acc=sv.acc;Object.assign(T.p,kp)}return oc.startRendering()};
+  (async()=>{try{for(const j of jobs){const b=await one(j);(j[0]?out.o:out.c).push(b)}HC.set(key,out);if(HC.size>CAP)HC.delete(HC.keys().next().value)}catch(e){}busy=0;
+   if(next){const[k2,P2]=next;next=null;if(!HC.has(k2)&&ctx)render(k2,P2)}})()}
+ /* the prepared hat closest to q (same metal, decay within 25 %, tone within 15 %), or null */
+ const near=q=>{let best=null,bd=1e9;for(const c of HC.values()){if(c.q.metal!==q.metal)continue;const dd=Math.abs(Math.log(c.q.dec/q.dec)),dt=Math.abs(Math.log(c.q.tone/q.tone));if(dd>.22||dt>.14)continue;const d=dt+dd;if(d<bd){bd=d;best=c}}return best};
  let pan=null;const hatBus=()=>{if(pan&&pan.context===ctx)return pan;pan=vtag(ctx.createGain());send(pan,A.m,0,.05);return pan};
- const _fv73=fireVoice;fireVoice=function(k,w){if(k!==1||!ctx||ctx instanceof OfflineAudioContext||lfoOnHat()||(TR[1].pan||0)!==0)return _fv73(k,w);
-  const T=TR[1],p=T.p,key=hkey(p),c=HC[key];if(!c){render(key,p);return _fv73(k,w)}
+ const _fv73=fireVoice;fireVoice=function(k,w){if(k!==1||!ctx||ctx instanceof OfflineAudioContext)return _fv73(k,w);if((TR[1].pan||0)!==0){ST.live++;return _fv73(k,w)}
+  const T=TR[1],p=T.p,tn=tone(p,w),q=qv({tone:tn,dec:p.dec,metal:p.metal});if(tn!==(+p.tone||7500))q.tone=Math.pow(1.08,Math.round(Math.log(tn)/Math.log(1.08)));   /* a moving tone: 8 % steps, so the sweep needs only a few prepared hats */
+  const key=kq(q);let c=HC.get(key);
+  if(c){HC.delete(key);HC.set(key,c);ST.hit++}else{render(key,Object.assign({},p,{tone:q.tone}));c=near(q);if(!c){ST.live++;return _fv73(k,w)}ST.near++}
   const op=R()<p.open,bs=op?c.o:c.c;if(!bs.length)return _fv73(k,w);const v=T.lv,pk=(1-p.acc*R()*.8)*(op?1:1);
   if(HH.g){const cg=HH.g;HH.g=null;try{cg.gain.cancelScheduledValues(w);cg.gain.setTargetAtTime(.0001,w,.005)}catch(e){}}
-  const s=mkBuf(),g=ctx.createGain();s.buffer=bs[Math.floor(R()*bs.length)];g.gain.value=v*pk;s.connect(g);{const sp=mv('Hat pan',w);if(sp){const q=ctx.createStereoPanner();q.pan.value=Math.max(-1,Math.min(1,.18+.8*sp));g.connect(q);routeTrack(q,null,hatBus())}else routeTrack(g,null,hatBus())}s.start(w);if(op)HH.g=g};
+  const s=mkBuf(),g=ctx.createGain();s.buffer=bs[Math.floor(R()*bs.length)];const r=tn/c.q.tone;if(r<.999||r>1.001)s.playbackRate.value=r;
+  g.gain.value=v*pk*Math.pow(c.q.tone/tn,.25);s.connect(g);{const sp=mv('Hat pan',w);if(sp){const q2=ctx.createStereoPanner();q2.pan.value=Math.max(-1,Math.min(1,.18+.8*sp));g.connect(q2);routeTrack(q2,null,hatBus())}else routeTrack(g,null,hatBus())}s.start(w);if(op)HH.g=g};
+ /* v0.8: a Launch while playing prepares the new hat sound before its first bar (launch/1690); Play does too (platform/1700 calls it) */
+ window.orbHatWarm=()=>{if(!ctx||(TR[1].pan||0)!==0)return;const p=TR[1].p,key=hkey(p);if(!HC.has(key))render(key,p)};
  // Mini ladder: under load use the two-biquad version (no worklet node per note)
  const _mv73=miniVoice;miniVoice=function(w){const l=A.ladder;if((QOS.ml||0)>=2)A.ladder=false;try{_mv73(w)}finally{A.ladder=l}};
  // visuals: lower frame caps (the star map still reads smoothly)
@@ -2159,18 +2186,25 @@ $('#mood').add(new Option('Bleep','Bleep'));
   Object.assign(B.p,{bgt:pick([.25,.35,.5,.7]),bsl:pick([0,.15,.3,.45]),bgh:pick([0,.25,.4]),bph:pick([1,2,2,4]),dec:.14,cut:pick([380,480,620]),envA:pick([1.2,1.8,2.6]),res:pick([3,5,8]),sub:.55,oct:1,fifth:pick([.1,.25,.35]),jump:pick([.05,.15,.25]),bdrv:pick([0,.15,.3]),sqm:pick([0,0,.35])});
   G.bstyle=R()<.25?'funk':'';G.bavoid=false}
  G.swing=.14+R()*.06;G.dens=Math.min(G.dens||0,.1);G.shim=0;buf=[];mot=[];mp=-1;build()}}
-/* ---- v80: Launch fades out the previous groove's ringing voices and effect tails quickly (~0.25 s) instead of letting them ring on ---- */
-{function fadeOld(){if(!ctx||!playing)return;const now=ctx.currentTime,T=.25,alive=new Set(),ring=s=>!(s.__e===Infinity||!(s.__e>now+.3)||s.__s>now+.01);let loose=false;
+/* ---- v80: Launch fades out the previous groove's ringing voices and effect tails quickly (~0.25 s) instead of letting them ring on
+   v0.8: SHORT CROSSFADE — the handover now happens on the new groove's first beat (launch/1690 builds the groove just before the bar line;
+   window.__launchAt is that bar line). Old notes that still ring there fade out over about one beat on a smooth curve while the new groove
+   starts. Reverb, shimmer and echo no longer drop to silence (that left a small gap): their returns only dip a little and the echo
+   feedback is cut harder, so old echoes die away quickly, then everything comes back to the new groove's settings over two beats. ---- */
+{const FADE=(()=>{const n=33,a=new Float32Array(n);for(let i=0;i<n;i++)a[i]=Math.cos(i/(n-1)*Math.PI/2);a[n-1]=0;return a})();   // equal-power fade-out
+ function fadeOld(){if(!ctx||!playing)return null;const now=ctx.currentTime,at=Math.max(now,window.__launchAt||0),T=Math.min(.7,Math.max(.3,60/G.bpm)),
+   alive=new Set(),ring=s=>s.__e!==Infinity&&s.__e>at+T*.5&&s.__s<=at+.01;let loose=false;
   for(const s of QOS.src)if(ring(s)){if(s.__v)alive.add(s.__v);else loose=true}
   // each ringing voice fades at the point where it enters the mix (its routeTrack connection), then its sources stop
   for(let i=0;i<VON;i++){const n=VOn[i];if(!n||n.context!==ctx)continue;const v=VOv[i];if(!(v?alive.has(v):loose&&VOt[i]>now-8))continue;const dd=VOd[i];VOn[i]=VOd[i]=null;
-   try{n.disconnect(dd)}catch(e){continue}try{const fg=ctx.createGain();fg.gain.setValueAtTime(1,now);fg.gain.linearRampToValueAtTime(0,now+T);n.connect(fg);fg.connect(dd)}catch(e){}}
-  for(const s of QOS.src)if(ring(s)&&s.__v&&alive.has(s.__v))try{s.stop(now+T+.02)}catch(e){}
-  // effect tails: cut feedback and returns briefly, then bring them back for the new groove
-  const dip=(prm,back)=>{if(!prm)return;try{prm.cancelScheduledValues(now);prm.setValueAtTime(prm.value,now);prm.linearRampToValueAtTime(0,now+T);prm.setValueAtTime(0,now+T+.05);prm.linearRampToValueAtTime(back,now+T+.6)}catch(e){}};
-  return dip}
+   try{n.disconnect(dd)}catch(e){continue}try{const fg=ctx.createGain();fg.gain.setValueAtTime(1,at);fg.gain.setValueCurveAtTime(FADE,at,T);n.connect(fg);fg.connect(dd)}catch(e){try{n.connect(dd)}catch(x){}}}
+  for(const s of QOS.src)if(ring(s)&&s.__v&&alive.has(s.__v))try{s.stop(at+T+.02)}catch(e){}
+  // effect returns: remember where they are now; after the new groove is built, dip them gently at the bar line
+  const P=[[A.dF&&A.dF.gain,.2,()=>G.fb],[A.rO&&A.rO.gain,.55,()=>G.rev],[A.sh&&A.sh.gain,.5,()=>G.shim||0],[SHM.fb&&SHM.fb.gain,.5,null]].filter(x=>x[0]).map(x=>[x[0],x[1],x[2],x[0].value]);
+  return ()=>{const b2=2*60/G.bpm;for(const[prm,depth,nv,old]of P){try{const back=nv?nv():prm.value,o=isFinite(old)?old:back,n2=ctx.currentTime;
+    prm.cancelScheduledValues(n2);prm.setValueAtTime(o,n2);if(at>n2+.005)prm.setValueAtTime(o,at);prm.linearRampToValueAtTime(Math.min(o,back)*depth,at+T);prm.linearRampToValueAtTime(back,at+T+b2)}catch(e){}}}}
  const _g80=generate;generate=function(){const dip=fadeOld();const r=_g80.apply(this,arguments);
-  if(dip){dip(A.dF&&A.dF.gain,G.fb);dip(A.rO&&A.rO.gain,G.rev);if(A.sh)dip(A.sh.gain,G.shim||0);if(SHM.fb)dip(SHM.fb.gain,SHM.fb.gain.value);
+  if(dip){dip();
    // flush the reverb tails once their outputs are down (re-setting a convolver's buffer clears what it holds)
    setTimeout(()=>{if(playing)return; /* v0.22 stability: never reload a reverb while playing (the dip above already fades the old tails) */[A.rcv,SHM.cv].forEach(cv=>{try{if(cv&&cv.buffer){const b=cv.buffer;cv.buffer=null;cv.buffer=b}}catch(e){}})},280)}return r}}
 /* ---- v81: pad variety — 5 new pad sounds (PWM, Brass, Bell pad, Fold, Tape), distinct per-mood pad palettes, and a per-Launch pad character (swell, stab-gate, breathing, wide, intimate) ---- */
@@ -3107,7 +3141,8 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
  const soon=()=>{setTimeout(syncAll,0);setTimeout(syncAll,80)};
  ['#t-drums','#t-synth'].forEach(id=>{const c=document.querySelector(id);if(c){c.addEventListener('change',soon,true);c.addEventListener('click',e=>{if(e.target.closest('button'))soon()},true)}});
  const _gs=generate;generate=function(){const r=_gs.apply(this,arguments);soon();return r};
- UI.on(()=>{if(!document.hidden)try{TR.forEach(T=>{const c=T.mb&&T.mb.closest('.card');if(c&&c.offsetParent)syncCard(T)})}catch(e){}})} /* v0.23: only cards on screen */
+ UI.on(()=>{if(document.hidden)return;try{const d=$('#t-drums'),y=$('#t-synth');if(!isShown(d)&&!isShown(y))return;   /* v0.8: no card on screen (Flight, Mix …): nothing to do, no layout read */
+  TR.forEach(T=>{const c=T.mb&&T.mb.closest('.card');if(c&&isShown(c))syncCard(T)})}catch(e){}})} /* v0.23: only cards on screen */
 
 /* ---- v139: new arp modes (Turing loop, Converge, Diverge, Pedal arp) + Cycle, Note repeat and Reset on bar for the lead ---- */
 {const NEWM=['Turing loop','Converge','Diverge','Pedal arp'];NEWM.forEach(m=>{if(!MODES.includes(m))MODES.push(m)});
@@ -4764,12 +4799,20 @@ window.MOODX={
 <script>
 /* ---- v0.22 stability: overload guard. Twice a second the audio clock is compared with real time (and the browser's underrun counter is read
    where it exists). If the audio falls behind, load is shed in stages, one stage per event: 1 = visuals paused, 2 = effects lighter
-   (shimmer off, engine at SAVING), 3 = fewest voices (engine at OVERLOAD). It stays light until you stop or Launch. ---- */
+   (shimmer off, engine at SAVING), 3 = fewest voices (engine at OVERLOAD). It stays light until you stop.
+   v0.8: a Launch no longer snaps straight back to full quality (that put the full load back on a struggling phone at the busiest moment):
+   after a Launch the guard eases off one stage every 8 s without new trouble. ---- */
 {const OV={stage:0,n:0,last:0};let la=0,lr=0,cum=0,hist=[],ur=null;
  const esc=why=>{const n=performance.now();OV.n++;if(n-OV.last<3000||OV.stage>=3)return;OV.last=n;OV.stage++;
+  if(why!=='raise'&&why!=='test'){try{window.orbSafety&&orbSafety.warn&&orbSafety.warn(OV.stage>=3?'overload':'strain')}catch(e){}} /* v0.8: tells the safety lifeboat (platform/1700) */
   try{if(OV.stage>=2&&A.sh&&ctx)A.sh.gain.setTargetAtTime(0,ctx.currentTime,.1)}catch(e){}
   try{if(typeof say==='function')say('⚠ AUDIO OVERLOAD · '+['','VISUALS PAUSED','EFFECTS LIGHTER','FEWER VOICES'][OV.stage])}catch(e){}};
- const clear=()=>{if(OV.stage>=2){try{if(A.sh&&ctx)A.sh.gain.setTargetAtTime(G.shim||0,ctx.currentTime,.1)}catch(e){}}if(OV.f0!=null){QOS.floor=OV.f0;OV.f0=null}OV.stage=0;hist=[];cum=0;la=0};
+ const floorFor=st=>st>=3?3:st>=2?2:0;
+ const ease=()=>{if(!OV.stage)return;OV.ease=performance.now()+8000};
+ const stepDown=()=>{OV.stage--;OV.ease=OV.stage?performance.now()+8000:0;
+  if(OV.stage<2){try{if(A.sh&&ctx)A.sh.gain.setTargetAtTime(G.shim||0,ctx.currentTime,.3)}catch(e){}}
+  if(OV.f0!=null){QOS.floor=Math.max(OV.f0,floorFor(OV.stage));if(!OV.stage)OV.f0=null}};
+ const clear=()=>{OV.ease=0;if(OV.stage>=2){try{if(A.sh&&ctx)A.sh.gain.setTargetAtTime(G.shim||0,ctx.currentTime,.1)}catch(e){}}if(OV.f0!=null){QOS.floor=OV.f0;OV.f0=null}OV.stage=0;hist=[];cum=0;la=0};
  setInterval(()=>{if(!ctx||!playing||document.hidden||ctx.state!=='running'){la=0;hist=[];cum=0;return}
   let ps=null;try{ps=ctx.playbackStats}catch(e){}
   if(ps&&ps.underrunEvents!=null){ /* two underruns within 15 s = one event (a single blip, e.g. right at start, is ignored) */
@@ -4777,6 +4820,7 @@ window.MOODX={
   else{const a=ctx.currentTime,r=performance.now()/1000;if(la){cum+=(r-lr)-(a-la);hist.push(cum);if(hist.length>8)hist.shift();
     if(hist.length===8){const m1=Math.min(...hist.slice(0,4)),m2=Math.min(...hist.slice(4));if(m2-m1>.1){hist=[];cum=0;esc('clock')}}}
    la=a;lr=r}
+  if(OV.ease&&performance.now()>OV.ease&&performance.now()-OV.last>8000)stepDown();
   if(OV.stage>=2&&A.sh)try{A.sh.gain.setTargetAtTime(0,ctx.currentTime,.1)}catch(e){}
   const f=OV.stage>=3?3:OV.stage>=2?2:0;if(f&&(QOS.floor||0)<f){if(OV.f0==null)OV.f0=QOS.floor||0;QOS.floor=f}},500);
  const _vz=viz;viz=function(){if(OV.stage>=1&&playing){setTimeout(()=>requestAnimationFrame(viz),400);return}return _vz()};
@@ -4785,15 +4829,21 @@ window.MOODX={
  /* v0.7: the cushion adapts to the device. Each Launch is timed (the whole busy stretch: building the groove, rebuilding the cards, the first
     follow-up jobs); the next Launch schedules about 1.3x that far ahead — never less than the old 0.6 s, never more than 1.2 s — so a slow phone
     that needs longer than 0.6 s no longer runs out of scheduled notes. Fast devices measure well under 0.46 s and behave exactly as before. */
- let LBLK=0;window.orbLaunchBlock=()=>LBLK;
- const _g=generate;generate=function(){clear();const live=playing&&ctx&&!document.hidden&&!window.__inTime,t0=performance.now();
-  if(live){const o=QOS.la;try{QOS.la=Math.max(o,Math.min(1.2,Math.max(.6,LBLK*1.3/1000)));tick()}catch(e){}finally{QOS.la=o}
-   setTimeout(()=>{if(document.hidden)return;const dt=Math.min(2000,performance.now()-t0);LBLK=Math.max(dt,LBLK*.7)},0)}   // the slowest recent Launch counts; it eases off again over a few quicker ones
+ /* v0.8: every Launch is timed (also when stopped) and the figure is kept between sessions (orb-lblk), so even the first Launch of a session
+    knows this device; with no figure yet, a phone assumes 300 ms */
+ let LBLK=0;try{LBLK=+localStorage.getItem('orb-lblk')||(matchMedia('(pointer:coarse)').matches?300:0)}catch(e){}window.orbLaunchBlock=()=>LBLK;
+ /* v0.8: an in-time Launch (the button while playing) books its own cushion up to the bar line (launch/1690), but is timed here too, so that
+    cushion fits the device. */
+ const _g=generate;generate=function(){if(playing)ease();else clear();const live=playing&&ctx&&!document.hidden,t0=performance.now();
+  if(live&&!window.__inTime){const o=QOS.la;try{QOS.la=Math.max(o,Math.min(1.2,Math.max(.6,LBLK*1.3/1000)));tick()}catch(e){}finally{QOS.la=o}}
+  if(!document.hidden)setTimeout(()=>{if(document.hidden)return;const dt=Math.min(2000,performance.now()-t0);LBLK=Math.max(dt,LBLK*.7);try{localStorage.setItem('orb-lblk',Math.round(LBLK))}catch(e){}},0)   // the slowest recent Launch counts; it eases off again over a few quicker ones
   return _g.apply(this,arguments)};
  const _t=toggle;toggle=function(){const r=_t.apply(this,arguments);if(!playing)clear();else if(ctx){const o=QOS.la;try{QOS.la=Math.max(o,.8);tick()}catch(e){}finally{QOS.la=o}} /* starting: the engine finishes building right after this; have 0.8 s scheduled */return r};try{$('#play').onclick=toggle}catch(e){}
  setInterval(()=>{const d=document.querySelector('#diag');if(!d||!isShown(d))return;let x=d.querySelector('.ovl');if(!x){x=document.createElement('div');x.className='ovl';x.style.cssText='margin-top:4px;font-size:11px;opacity:.85';d.appendChild(x)}
   const t='overload guard · events '+OV.n+' · '+['full quality','visuals paused','effects lighter','fewest voices'][OV.stage];if(x.textContent!==t)x.textContent=t},1000);
- window.orbGuard={state:()=>OV,test:()=>esc('test'),clear}}
+ /* v0.8: raise(n) lifts the guard to at least stage n (used by the safety lifeboat, platform/1700) */
+ const raise=n=>{while(OV.stage<Math.min(3,n)){OV.last=0;esc('raise')}};
+ window.orbGuard={state:()=>OV,test:()=>esc('test'),clear,raise,ease}}
 </script>
 <script>
 /* ---- v0.23: mood refinement pass. Fewer cluttered or cheesy launches, clearer identity per mood, levels fixed per mood. Reference points: each mood's own genre and era.
@@ -5153,54 +5203,162 @@ window.MOODX={
 </script>
 <script>
 /* ---- v0.24: IN-TIME LAUNCH — while playing, Launch and Random warp wait for the next downbeat (the button shows "next bar"),
-   then the new groove starts exactly on beat 1. Stopped: instant, as before. ---- */
+   then the new groove starts exactly on beat 1. Stopped: instant, as before.
+   v0.8: LAUNCH AHEAD — the new groove is built a moment BEFORE the bar line instead of right on it. First the old groove is booked up to
+   the bar line, so the build can take its time: beat 1 of the new groove is never late or skipped (on a slow phone it used to be).
+   How early depends on how long this device took for its recent Launches (platform/1580). The time left before the bar line is used to
+   prepare the new drum hits and the safety loop, so the first bar of the new groove is light on the processor. ---- */
 {let pend=null;
  const isL=b=>b&&b.closest&&b.closest('#gbox')&&/launch|random warp/i.test(b.textContent||'');
+ const sd=()=>60/G.bpm/4;
+ /* seconds needed between "start building" and the bar line: 1.5x the slowest recent Launch + a margin, 0.35–1.2 s */
+ const need=()=>Math.min(1.2,Math.max(.35,(window.orbLaunchBlock?orbLaunchBlock():0)*1.5/1000+.15));
+ /* the first bar line (as a step number) that is not booked yet and still far enough away */
+ const target=()=>{const now=ctx.currentTime,s=sd();let b=tk+(16-((tk%16)+16)%16)%16;while(nextT+(b-tk)*s-now<need())b+=16;return b};
+ /* book the old groove exactly up to time t (the scheduler's look-ahead is stretched once, then put back) */
+ /* (half a step short of the bar line: the clock moves on while booking) */
+ const bookTo=t=>{const o=QOS.la,h=t-ctx.currentTime-sd()/2;if(h<=0)return;try{QOS.la=h>.4?h:h/(window.LASC||1);tick()}catch(e){}finally{QOS.la=o}};
+ /* prepare the new groove's drum hits now: each drum voice runs once against a scratch context, which only queues its pre-render */
+ let scratch=null;
+ const warm=()=>{if(!ctx||!window.OfflineAudioContext)return;
+  try{if(!scratch||scratch.sampleRate!==ctx.sampleRate){scratch=new OfflineAudioContext(1,128,ctx.sampleRate);scratch.__sink=scratch.createGain()}}catch(e){return}
+  const live=ctx,o={OCT,FIX},sv={ks:A.ks,ksd:A.ksd,m:A.m,ru:A.ru,dI:A.dI,rI:A.rI,duck},z=scratch.__sink;
+  A.ks=A.m=A.ru=A.dI=A.rI=z;duck=()=>{};
+  try{for(const k of[0,2,3,7]){if(TR[k].m||!(TR[k].pt||[]).some(Boolean))continue;
+    FIX=0;OCT=G.oct||0;if(k===3&&TR[3].p.mode==='Fixed')FIX=440*Math.pow(2,(TR[3].p.tune-69)/12);
+    ctx=scratch;try{k===7?snare(0):fireVoice(k,0)}catch(e){}finally{ctx=live}}}
+  finally{ctx=live;OCT=o.OCT;FIX=o.FIX;Object.assign(A,{ks:sv.ks,ksd:sv.ksd,m:sv.m,ru:sv.ru,dI:sv.dI,rI:sv.rI});duck=sv.duck}
+  try{if(!TR[1].m&&window.orbHatWarm)orbHatWarm()}catch(e){}};
+ const cancel=(b,lab)=>{if(!pend)return;clearInterval(pend.iv);pend=null;b.innerHTML=lab;b.classList.remove('wait')};
  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(!isL(b)||b.__orbGo||!playing||!ctx)return;e.stopImmediatePropagation();e.preventDefault();
   if(pend)return;const lab=b.innerHTML;b.innerHTML='⏳ next bar';b.classList.add('wait');
-  const go=()=>{clearInterval(pend.iv);pend=null;window.__inTime=1;b.__orbGo=1;try{b.innerHTML=lab;b.click()}finally{b.__orbGo=0;window.__inTime=0;b.classList.remove('wait')}};
-  pend={iv:setInterval(()=>{if(!playing){clearInterval(pend.iv);pend=null;b.innerHTML=lab;b.classList.remove('wait');return}if(((tk%16)+16)%16===0)go()},4)}},true)}
+  const go=(bar,at)=>{cancel(b,lab);bookTo(at);window.__inTime=1;window.__launchAt=at;b.__orbGo=1;
+   try{b.click()}finally{b.__orbGo=0;window.__inTime=0;window.__launchAt=0}
+   if(playing){try{warm()}catch(e){console.warn('[orbitron] launch warm-up',e)}
+    setTimeout(()=>{try{window.orbSafety&&orbSafety.render&&orbSafety.render()}catch(e){}},0)}};
+  pend={bar:target(),iv:setInterval(()=>{if(!playing||!ctx){cancel(b,lab);return}
+   let bar=pend.bar;if(tk>bar)bar=pend.bar=target();   /* the scheduler ran past it (hidden tab, stall): aim for the next one */
+   const at=nextT+(bar-tk)*sd();if(at-ctx.currentTime<=need()+.03)go(bar,at)},8)}},true)}
 </script>
-<script>
-/* ---- v0.24: SAFETY LOOP — if the audio goes haywire while playing (broken audio values, repeated dropouts, or 2 s of silence while
+<script>/* ---- v0.24: SAFETY LOOP — if the audio goes haywire while playing (broken audio values, repeated dropouts, or 2 s of silence while
    tracks should sound), a copy of the current kick pattern (4/4 if the kick is muted or empty) keeps the floor going on its own small audio engine while the
-   main engine resets. The live engine comes back on the next bar of that kick, fading in over one bar while the kick fades out. ---- */
-{let S=null,buf=null,bkey='',busy=0,cool=0;
+   main engine resets. The live engine comes back on the next bar of that kick, fading in over one bar while the kick fades out.
+   v0.8: LIFEBOAT — the loop now steps in BEFORE the glitches get bad, and usually without a reset:
+   - the loop is kick + hi-hat (one pre-rendered buffer, almost no CPU), made for the current groove right after every Launch;
+   - it starts exactly on the beat, at the same place in the pattern as the live groove;
+   - first warning signs (2 dropouts within 3 s, notes arriving late twice within 2 s, or the overload guard at its last stage) start it:
+     the live engine fades out over one beat and rests (no new notes, lighter effects) while the loop holds the floor;
+   - after two calm bars the live groove fades back in on a bar line while the loop fades out (a Launch hands back on its own bar);
+   - only if the trouble goes on (or the audio breaks, or goes silent) is the engine rebuilt, as before, with the loop still playing. ---- */
+{let S=null,LP=null,busyR=0,resetting=0,cool=0,quietT=0;
+ const now=()=>performance.now(),sd=()=>60/G.bpm/4,bar=()=>240/G.bpm;
+ const gcd=(a,b)=>b?gcd(b,a%b):a,lcm=(a,b)=>a/gcd(a,b)*b;
  const sctx=()=>{if(S&&S.state!=='closed')return S;try{S=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'playback'});S.suspend()}catch(e){S=null}return S};
  document.addEventListener('pointerdown',()=>{if(!S)sctx()},{once:true,capture:true});
- const render=()=>{if(!ctx||busy||(window.DR&&DR.rendering)||!window.OfflineAudioContext)return;const K=TR[0],kp=(K.pt||[]).map(x=>x?1:0),use=!K.m&&kp.some(x=>x),ks=use?K.st:4,steps=use&&16%ks&&ks%16?64:16,
-   key=[G.bpm,K.p.pitch,K.p.dec,K.p.punch,K.p.drive,K.p.click,K.lv,use?ks+':'+kp.join(''):'4/4'].join('|');if(key===bkey&&buf)return;
-  const sr=ctx.sampleRate,bar=240/G.bpm,n=Math.round(sr*bar*steps/16),oc=new OfflineAudioContext(1,n+Math.round(sr*.7),sr),sink=oc.createGain(),nul=oc.createGain();sink.connect(oc.destination);
-  const sv={ctx,ks:A.ks,m:A.m,ru:A.ru,dI:A.dI,rI:A.rI,duck,OCT,mt:K.m};
-  try{ctx=oc;A.ks=sink;A.m=sink;A.ru=nul;A.dI=nul;A.rI=nul;duck=()=>{};OCT=0;if(window.DR)DR.rendering=true;K.m=false;for(let i=0;i<steps;i++)if(use?kp[i%ks]:i%4===0)fireVoice(0,i*bar/16)}
-  catch(e){}finally{if(window.DR)DR.rendering=false;ctx=sv.ctx;A.ks=sv.ks;A.m=sv.m;A.ru=sv.ru;A.dI=sv.dI;A.rI=sv.rI;duck=sv.duck;OCT=sv.OCT;K.m=sv.mt}
-  oc.startRendering().then(r=>{const d=r.getChannelData(0),o=new Float32Array(n);for(let i=0;i<d.length;i++)o[i%n]+=d[i]; /* fold the last kick's tail into the start */
-   const c=sctx();if(!c)return;const b=c.createBuffer(1,n,sr);b.copyToChannel(o,0);buf=b;bkey=key}).catch(()=>{})};
- const _g=generate;generate=function(){const r=_g.apply(this,arguments);setTimeout(()=>{try{render()}catch(e){}},1500);return r};
+ const wake=()=>{const c=sctx();if(c&&c.state!=='running')c.resume().catch(()=>{});quietT=now()+15000};
+
+ /* ---------- the loop: kick + hat of the current groove, one buffer of 16–64 steps (step 0 = a step where tk % steps == 0) ---------- */
+ const sig=p=>Object.keys(p).map(k=>typeof p[k]==='number'?k+(+p[k]).toFixed(3):typeof p[k]==='string'?k+p[k]:'').join(',');
+ const render=()=>{if(!ctx||busyR||(window.DR&&DR.rendering)||!window.OfflineAudioContext)return;
+  const K=TR[0],H=TR[1],kp=(K.pt||[]).map(x=>x?1:0),hp=(H.pt||[]).map(x=>x?1:0),useK=!K.m&&kp.some(x=>x),useH=!H.m&&hp.some(x=>x),ks=useK?K.st:4,hs=useH?H.st:16;
+  const steps=Math.min(64,lcm(16,lcm(ks,hs))),
+   key=[G.bpm,G.swing,K.lv,H.lv,sig(K.p),useK?ks+':'+kp.join(''):'4/4',useH?sig(H.p)+hs+':'+hp.join(''):'-'].join('|');
+  if(LP&&LP.key===key)return;
+  const sr=ctx.sampleRate,s=sd(),n=Math.round(sr*s*steps),oc=new OfflineAudioContext(1,n+Math.round(sr*.7),sr),sink=oc.createGain(),nul=oc.createGain();sink.connect(oc.destination);
+  const sv={ctx,ks:A.ks,ksd:A.ksd,m:A.m,ru:A.ru,dI:A.dI,rI:A.rI,duck,OCT,FIX,hg:HH.g,km:K.m,hm:H.m},sw=G.swing*sdur();
+  try{ctx=oc;A.ks=sink;A.m=sink;A.ru=nul;A.dI=nul;A.rI=nul;duck=()=>{};OCT=0;FIX=0;HH.g=null;if(window.DR)DR.rendering=true;K.m=false;H.m=false;
+   for(let i=0;i<steps;i++){const w=i*s+(i%2?sw:0);
+    if(useK?kp[i%ks]:i%4===0)try{fireVoice(0,w)}catch(e){}
+    if(useH&&hp[i%hs])try{fireVoice(1,w)}catch(e){}}}
+  catch(e){}finally{if(window.DR)DR.rendering=false;ctx=sv.ctx;A.ks=sv.ks;A.ksd=sv.ksd;A.m=sv.m;A.ru=sv.ru;A.dI=sv.dI;A.rI=sv.rI;duck=sv.duck;OCT=sv.OCT;FIX=sv.FIX;HH.g=sv.hg;K.m=sv.km;H.m=sv.hm}
+  busyR=1;const bpm=G.bpm;
+  oc.startRendering().then(r=>{busyR=0;const d=r.getChannelData(0),o=new Float32Array(n);for(let i=0;i<d.length;i++)o[i%n]+=d[i]; /* fold the tails into the start */
+   const c=sctx();if(!c)return;const b=c.createBuffer(1,n,sr);b.copyToChannel(o,0);LP={buf:b,key,steps,bpm}}).catch(()=>{busyR=0})};
+ const fresh=()=>LP&&LP.bpm===G.bpm;
+ const _g=generate;generate=function(){const r=_g.apply(this,arguments);setTimeout(()=>{try{render()}catch(e){}},window.__inTime?0:1500);return r};
  setInterval(()=>{try{if(playing)render()}catch(e){}},10000);
- const _t=toggle;toggle=function(){const r=_t.apply(this,arguments);if(playing)setTimeout(()=>{try{render()}catch(e){}},900);return r};try{$('#play').onclick=toggle}catch(e){}
- const safety=why=>{if(busy||!playing||performance.now()<cool)return false;const c=sctx();if(!buf||!c){cool=performance.now()+20000;try{window.orbResetWhy?orbResetWhy('haywire · '+why):hardReset('haywire')}catch(e){}return true} /* no kick loop yet: plain reset */
-  busy=1;cool=performance.now()+20000;
-  try{if(typeof say==='function')say('⚠ SAFETY LOOP · '+why.toUpperCase()+' · ENGINE RESETTING')}catch(e){}
-  c.resume().catch(()=>{});const src=mkBuf(c),g=c.createGain();src.buffer=buf;src.loop=true;g.gain.value=0;src.connect(g);g.connect(c.destination);
-  const t0=c.currentTime+.02;src.start(t0);g.gain.setTargetAtTime(.9,t0,.02);const bar=240/G.bpm,lp=buf.duration;
+
+ /* ---------- holding the floor ---------- */
+ const H={on:0,src:null,g:null,c0:0,p0:0,s:0,cut:Infinity,open:Infinity,since:0,warn:0,m0:.8,starts:[]};
+ const pos=t=>H.p0+(t-H.c0)/H.s;            // the loop's place, in live steps, at safety-engine time t
+ const lat=c=>(c&&((c.outputLatency||0)+(c.baseLatency||0)))||0;
+ const toS=t=>S.currentTime+(ctx?t-ctx.currentTime+lat(ctx)-lat(S):0);   // live-engine time → safety-engine time, so both are HEARD together
+ /* start the loop at live time t, where the live step number is p (exact grid position, swing is inside the loop) */
+ const startLoop=(t,p)=>{const c=S,s=sd(),st=LP.steps,src=c.createBufferSource(),g=c.createGain() /* not mkBuf: the live engine's voice registry must not see it */,cs0=toS(t),cs=Math.max(c.currentTime+.01,cs0),late=cs-cs0;  /* too late for t: join further on */
+  src.buffer=LP.buf;src.loop=true;g.gain.value=0;src.connect(g);g.connect(c.destination);
+  src.start(cs,((((p%st)+st)%st)*s+late)%LP.buf.duration);g.gain.setValueAtTime(0,cs);g.gain.linearRampToValueAtTime(.9,cs+.004);
+  Object.assign(H,{src,g,c0:cs,p0:p+late/s,s})};
+ const stopLoop=(t,fade)=>{const{src,g}=H;if(!src)return;H.src=H.g=null;try{g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(.9,t);g.gain.linearRampToValueAtTime(0,t+fade);src.stop(t+fade+.05)}catch(e){try{src.stop()}catch(x){}}};
+ const say2=m=>{try{if(typeof say==='function')say(m)}catch(e){}};
+ /* the live engine rests: no new notes from the moment the loop takes over */
+ const gated=w=>H.on&&w>=H.cut&&w<H.open;
+ {const _f=fire;fire=function(k,w){if(gated(w))return;return _f.apply(this,arguments)};
+  const _p=pad;pad=function(t,w){if(gated(w))return;return _p.apply(this,arguments)};
+  const _gr=grains;grains=function(w){if(gated(w))return;return _gr.apply(this,arguments)}}
+
+ const lifeboat=why=>{if(H.on||resetting||!playing||!ctx||ctx.state!=='running'||!fresh()||now()<cool)return false;const c=sctx();if(!c)return false;
+  H.on=1;H.since=H.warn=now();H.starts=H.starts.filter(t=>now()-t<30000);H.starts.push(now());
+  say2('⚠ LIFEBOAT · '+why.toUpperCase());try{window.orbGuard&&orbGuard.raise(2)}catch(e){}
+  c.resume().then(()=>{if(!H.on||!playing||!ctx)return;
+   const t=nextT,p=tk;H.cut=t;H.open=Infinity;          // the first step not booked yet: from there the loop plays, the engine rests
+   startLoop(t,p);
+   try{const m=A.m.gain;H.m0=m.value||.8;m.cancelScheduledValues(t);m.setValueAtTime(H.m0,t);m.linearRampToValueAtTime(0,t+4*sd())}catch(e){}
+   if(H.starts.length>=3){H.starts=[];full('keeps failing')}}).catch(()=>{H.on=0});
+  return true};
+ /* hand back to the live groove on a bar line (or on the given time, e.g. a Launch's bar line) */
+ const release=(at,fade)=>{if(!H.on||!H.src||!ctx)return;const s=sd();let tb=at;
+  if(!tb){let b=tk+(16-((tk%16)+16)%16)%16;tb=nextT+(b-tk)*s;if(tb-ctx.currentTime<.15)tb+=16*s}
+  fade=fade||bar();H.open=tb;
+  try{const m=A.m.gain;m.cancelScheduledValues(tb);m.setValueAtTime(0,tb);m.linearRampToValueAtTime(H.m0,tb+fade)}catch(e){}
+  stopLoop(toS(tb),fade);
+  setTimeout(()=>{H.on=0;H.cut=H.open=Infinity;try{window.orbGuard&&orbGuard.ease()}catch(e){}say2('▶ ENGINE BACK')},(tb-ctx.currentTime+fade)*1000+50)};
+
+ /* the old full rescue: the loop holds the floor while the engine is rebuilt, then the engine comes back on a bar of the loop */
+ const full=why=>{if(resetting||!playing||now()<cool&&!H.on)return false;const c=sctx();
+  if(!fresh()||!c){cool=now()+20000;H.on=0;try{window.orbResetWhy?orbResetWhy('haywire · '+why):hardReset('haywire')}catch(e){}return true}  /* no loop for this groove yet: plain reset */
+  resetting=1;cool=now()+20000;say2('⚠ SAFETY LOOP · '+why.toUpperCase()+' · ENGINE RESETTING');
+  c.resume().catch(()=>{});
+  if(!H.src){const s=sd(),p=ctx?tk-Math.max(0,(nextT-ctx.currentTime)/s):tk,pi=Math.ceil(p);startLoop(ctx?nextT-(tk-pi)*s:0,pi)}  /* continue the pattern from where it is */
+  H.on=0;H.cut=H.open=Infinity;
   try{window.orbResetWhy?orbResetWhy('safety loop · '+why):hardReset('safety loop')}catch(e){}
-  let tries=0;const back=setInterval(()=>{tries++;if(tries>60){clearInterval(back);g.gain.setTargetAtTime(0,c.currentTime,.3);setTimeout(()=>{try{src.stop()}catch(e){}c.suspend();busy=0},1500);return}
-   if(!ctx||ctx.state!=='running'||!playing||!A.m)return;clearInterval(back);
-   const ph=((c.currentTime-t0)%lp+lp)%lp;let wait=(lp-ph)%bar||bar;if(wait<.35)wait+=bar;const now=ctx.currentTime,start=now+wait;
-   try{A.m.gain.cancelScheduledValues(now);A.m.gain.setValueAtTime(0,now);A.m.gain.setValueAtTime(0,start);A.m.gain.linearRampToValueAtTime(.8,start+bar)}catch(e){}
-   tk=Math.ceil(tk/16)*16;nextT=start;const cs=c.currentTime+wait;g.gain.cancelScheduledValues(cs);g.gain.setValueAtTime(.9,cs);g.gain.linearRampToValueAtTime(0,cs+bar);
-   setTimeout(()=>{try{src.stop()}catch(e){}try{c.suspend()}catch(e){}busy=0;try{if(typeof say==='function')say('▶ ENGINE BACK')}catch(e){}},(wait+bar+.3)*1000)},100);return true};
- // trigger 1: broken audio values (the NaN watchdog calls orbReset)
- const _r=window.orbReset;window.orbReset=function(){if(playing&&safety('broken audio'))return;return _r&&_r.apply(this,arguments)};
- // trigger 2: repeated dropouts (6 within 10 s)
- let ur=null,ut=[];setInterval(()=>{if(!ctx||!playing)return;let ps=null;try{ps=ctx.playbackStats}catch(e){}if(!ps||ps.underrunEvents==null)return;
-  if(ur!=null&&ps.underrunEvents>ur){const n=performance.now();for(let i=0;i<ps.underrunEvents-ur;i++)ut.push(n);ut=ut.filter(t=>n-t<10000);if(ut.length>=6){ut=[];if(performance.now()-(window.__launchT||-1e9)>10000)safety('dropouts')}}ur=ps.underrunEvents},500);
- // trigger 3: silence for 2 s while tracks should sound
- let q=0;METER.every(2,()=>{if(!ctx||!playing||busy||ctx.state!=='running'){q=0;return}
+  let tries=0;const back=setInterval(()=>{tries++;
+   if(tries>60||!playing&&tries>10){clearInterval(back);stopLoop(c.currentTime,.3);setTimeout(()=>{resetting=0},400);return}
+   if(!ctx||ctx.state!=='running'||!playing||!A.m||!H.src)return;clearInterval(back);
+   const P=pos(c.currentTime),Pb=Math.ceil((P+.35/H.s)/16)*16,wait=(Pb-P)*H.s,start=ctx.currentTime+wait,b=16*H.s;
+   try{A.m.gain.cancelScheduledValues(ctx.currentTime);A.m.gain.setValueAtTime(0,ctx.currentTime);A.m.gain.setValueAtTime(0,start);A.m.gain.linearRampToValueAtTime(.8,start+b)}catch(e){}
+   tk=Pb;nextT=start;stopLoop(c.currentTime+wait,b);
+   setTimeout(()=>{resetting=0;say2('▶ ENGINE BACK')},(wait+b+.3)*1000)},100);
+  return true};
+
+ /* ---------- watching ---------- */
+ let ur=null,ut=[],sk=null,skt=[],cu=null,playT=0;
+ setInterval(()=>{if(!ctx||!playing||resetting){ur=null;sk=null;cu=null;return}
+  const t=now();if(t-playT<3000)return;      /* the first moments after Play are left to the start-up cushion */
+  let ps=null;try{ps=ctx.playbackStats}catch(e){}
+  if(ps&&ps.underrunEvents!=null){const u=ps.underrunEvents;if(ur!=null&&u>ur){for(let i=0;i<Math.min(8,u-ur);i++)ut.push(t);ut=ut.filter(x=>t-x<10000);H.warn=t;wake();
+    if(ut.length>=6&&(H.on||t-(window.__launchT||-1e9)>10000)){ut=[];full('dropouts')}            // trouble goes on: rebuild
+    else if(ut.filter(x=>t-x<3000).length>=2)lifeboat('dropouts')}ur=u}
+  const s=(QOS.skips||0)+((window.ORB_ERR&&ORB_ERR.catchups)||0);
+  if(sk!=null&&s>sk){skt.push(t);skt=skt.filter(x=>t-x<2000);H.warn=t;wake();if(skt.length>=2){skt=[];lifeboat('late notes')}}sk=s;
+  if(H.on&&H.src&&H.open===Infinity){const calm=t-H.warn,held=t-H.since,b=bar()*1000;
+   if(calm>2*b&&held>2*b)release();
+   else if(held>16*b)full('no recovery')}
+  if(!H.on&&S&&S.state==='running'&&t>quietT&&!H.src&&!resetting)S.suspend().catch(()=>{})},250);
+ window.orbSafetyWarn=why=>{if(!playing)return;wake();H.warn=now();if(why==='overload')lifeboat('overload')};
+
+ const _t=toggle;toggle=function(){const r=_t.apply(this,arguments);
+  if(playing){playT=now();setTimeout(()=>{try{render()}catch(e){}},900)}
+  else if(!resetting&&H.on){H.on=0;H.cut=H.open=Infinity;if(H.src&&S)stopLoop(S.currentTime,.05);try{A.m.gain.cancelScheduledValues(0);A.m.gain.value=H.m0}catch(e){}}
+  return r};try{$('#play').onclick=toggle}catch(e){}
+ /* a Launch while the loop holds: the new groove comes in on its own bar line (or the next one), quicker */
+ {const _g2=generate;generate=function(){const r=_g2.apply(this,arguments);if(H.on&&H.src&&!resetting)try{release(window.__launchAt||0,Math.min(1,4*sd()))}catch(e){}return r}}
+ // trigger: broken audio values (the NaN watchdog calls orbReset)
+ const _r=window.orbReset;window.orbReset=function(){if(playing&&full('broken audio'))return;return _r&&_r.apply(this,arguments)};
+ // trigger: silence for 2 s while tracks should sound (not while the lifeboat is holding: then the engine is quiet on purpose)
+ let q=0;METER.every(2,()=>{if(!ctx||!playing||resetting||H.on||ctx.state!=='running'){q=0;return}
   const sounding=TR.some(T=>!T.m&&T.pt&&T.pt.some(x=>x));if(!sounding){q=0;return}
-  let s;try{s=METER.post().sum}catch(e){return}if(s<1e-10)q++;else q=0;if(q>=4){q=0;safety('silence')}});
- window.orbSafety={trigger:safety,ready:()=>!!buf,render}}
+  let s;try{s=METER.post().sum}catch(e){return}if(s<1e-10)q++;else q=0;if(q>=4){q=0;full('silence')}});
+ window.orbSafety={trigger:full,lifeboat,release,warn:window.orbSafetyWarn,ready:fresh,render,state:()=>({on:H.on,resetting,loop:!!H.src,steps:LP&&LP.steps,drift:H.src&&ctx&&S?+(pos(toS(ctx.currentTime))-(tk-(nextT-ctx.currentTime)/H.s)).toFixed(3):null})}}
 </script>
 <script>
 /* ---- v0.24: risers and breakdowns release ON THE BEAT. Let go anywhere: the build holds and the drop (or the full groove coming back)
@@ -6552,7 +6710,7 @@ var PDC={};
 {const PT={Dark:1,Dreamy:1,Ethereal:1,Noir:1,Ambient:1,Melancholic:1,Italo:1,Drone:1};const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{if(PT[curMood]&&TR[5])TR[5].lv=+(TR[5].lv*.82).toFixed(2)}catch(e){}return r}}
 /* ---- quick win 6: a note when a new version has been downloaded. The installed app refreshes its copy in the background; when that copy is
    a newer build than the one running, a small note says so (once). Bump ORB_BUILD with every change. ---- */
-window.ORB_BUILD='2026-11-13-v0.76-c';
+window.ORB_BUILD='2026-11-13-v0.8-a';
 {let shown=false;const note=()=>{if(shown)return;shown=true;const d=document.createElement('div');d.setAttribute('role','status');
   d.style.cssText='position:fixed;left:12px;right:12px;bottom:44px;z-index:9999;background:#ffe44d;color:#04100a;font:700 13px ui-monospace,monospace;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,0,0,.5)';
   d.innerHTML='<span>▲ UPDATE READY · close and reopen Orbitron to use it</span>';const x=document.createElement('button');x.type='button';x.textContent='OK';x.setAttribute('aria-label','Dismiss update note');
@@ -7211,5 +7369,21 @@ window.orbExoProg=function(kind){try{let P,sh;
  const tidy=()=>{TR.forEach(T=>{if(T.pad)return;while(T.st>64){T.st=Math.round(T.st/2);T.h=Math.max(1,Math.round(T.h/2));T.r=(T.r||0)%T.st;T.pt=pat(T)}   /* a ring is never longer than 64 steps */if(T.pt.length!==T.st)T.pt=pat(T)});const P=TR[5];if(P&&prog.length>P.st&&P.st>=1){prog.length=P.st;if(pshape.length>P.st)pshape.length=P.st;if(PX&&PX.length>P.st)PX.length=P.st;pmean=null}else if(P&&prog.length>=1&&prog.length<P.st){P.st=prog.length;P.h=P.st;P.pt=pat(P)}};
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);try{arrange();tidy();try{if(window.orbGroove&&orbGroove.run)orbGroove.run()}catch(e){}G.pwMode=TR[4].p.mode;build();setTimeout(()=>{try{window.syncFaders&&syncFaders();window.bassSync&&bassSync()}catch(e){}},0)}catch(e){console.warn('[orbitron] arranger',e)}return r};
  window.orbArrange=arrange;if(window.orbGroove)orbGroove.late=true}
+</script>
+<script>/* ---- v0.8: OVERSAMPLING FOLLOWS THE LOAD — the clippers and saturators on the master and buses (final clipper 4x; mix clip, drum bus,
+   lead bus and 303 bus 2x) cost a lot of processing because they oversample. At full quality nothing changes. When the device struggles
+   they step down: at SAVING the 4x ones run at 2x, at OVERLOAD all of them run plain. When the load is gone again they step back up.
+   Only the edge of very loud peaks sounds a touch rougher, and only while the device is overloaded. ---- */
+{const OS={nodes:new Set(),lvl:0},D=Object.getOwnPropertyDescriptor(WaveShaperNode.prototype,'oversample');
+ if(D&&D.set){
+  // remember the setting each live shaper asked for (per-note shapers are short-lived; they drop out of the list when garbage collected)
+  Object.defineProperty(WaveShaperNode.prototype,'oversample',{configurable:true,enumerable:D.enumerable,get:D.get,
+   set(v){if(!(this.context instanceof OfflineAudioContext)&&!this.__osApply){this.__os=v;if(v!=='none'&&window.WeakRef){OS.nodes.add(new WeakRef(this));v=OS.pick(v)}}D.set.call(this,v)}});
+  OS.pick=v=>OS.lvl>=3?'none':OS.lvl>=2&&v==='4x'?'2x':v;
+  const apply=()=>{for(const r of OS.nodes){const n=r.deref();if(!n||n.context.state==='closed'){OS.nodes.delete(r);continue}const want=OS.pick(n.__os);
+   if(D.get.call(n)!==want){n.__osApply=1;try{D.set.call(n,want)}catch(e){}n.__osApply=0}}};
+  setInterval(()=>{if(typeof QOS==='undefined')return;const l=typeof ctx!=='undefined'&&ctx&&playing?Math.max(QOS.lvl||0,QOS.ml||0):0;
+   if(l!==OS.lvl){OS.lvl=l;apply()}else if(OS.nodes.size>400)apply()},500);
+  window.orbOversample={state:()=>({lvl:OS.lvl,nodes:OS.nodes.size})}}}
 </script>
 </body></html>

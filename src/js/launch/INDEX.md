@@ -47,7 +47,7 @@ Per file: what it does · **defines** new globals · **wraps** globals defined b
   wraps: fire pad generate
 - **0650-bleep-mood.js** (3.9 KB) — v77: "Bleep" mood — bleepy minimal techno: tight clicky drums, dry sparse bleeps on delay, tuned perc blips, small bass, almost no pads
   wraps: generate
-- **0660-launch-fadeout.js** (1.9 KB) — v80: Launch fades out the previous groove's ringing voices and effect tails quickly (~0.25 s) instead of letting them ring on
+- **0660-launch-fadeout.js** (2.8 KB) — v80: Launch fades out the previous groove's ringing voices and effect tails quickly (~0.25 s) instead of letting them ring on v0.8: SHORT CROSSFADE …
   wraps: generate
 - **0680-the-touch-mood-removed.js** (6.4 KB) — v82: The Touch refined — each Launch picks a flavour (Filter disco, Robot, Sunny); disco bass templates, chopped chord-stab loops, lead only on some …
   wraps: generate
@@ -128,8 +128,9 @@ Per file: what it does · **defines** new globals · **wraps** globals defined b
 - **1680-mood-flavours.js** (11.7 KB) — v0.24: MOOD FLAVOURS — every mood gets 2–3 flavours after the artists it is built on. A Launch picks one; the flavour sets tempo range, drum kit, …
   defines: orbFlavours
   wraps: generate
-- **1690-in-time-launch.js** (0.9 KB) — v0.24: IN-TIME LAUNCH — while playing, Launch and Random warp wait for the next downbeat (the button shows "next bar"), then the new groove starts …
-  defines: __inTime
+- **1690-in-time-launch.js** (3.6 KB) — v0.24: IN-TIME LAUNCH — while playing, Launch and Random warp wait for the next downbeat (the button shows "next bar"), then the new groove starts …
+  defines: __inTime __launchAt
+  wraps: duck
 - **1740-interval-fix.js** (0.3 KB) — v0.26: lead generator fix — Interval mode with almost no Spread got stuck on one note; it now always walks a little
   wraps: generate
 - **1750-modern-sound-pass.js** (13.7 KB) — v0.27: MODERN SOUND PASS (from the first 154 rated Launches + "more modern" brief) Four modern families: Rolling (melodic techno), Bounce (UK house …

@@ -6,7 +6,9 @@ const UI={fns:[],bfns:[],t0:0,t1:0,t2:0,tb:0,passes:0,
  on(fn){if(typeof fn==='function')this.fns.push(fn);return 0},
  onBeat(fn){this.bfns.push(fn)},   // small displays that follow the playhead: once per beat, driven by the sequencer
  beat(){if(this.tb||!this.bfns.length)return;this.tb=setTimeout(()=>{this.tb=0;if(document.hidden)return;const F=this.bfns;for(let i=0;i<F.length;i++)try{F[i]()}catch(e){}},0)},
- flush(){if(document.hidden)return;const F=this.fns;for(let i=0;i<F.length;i++)try{F[i]()}catch(e){}this.passes++},
+ flush(){if(document.hidden)return;this.lf=performance.now();const F=this.fns;for(let i=0;i<F.length;i++)try{F[i]()}catch(e){}this.passes++},
+ /* v0.8 quick win: the sequencer's once-per-bar refresh is ONE pass (it used sync(): two passes per bar), skipped if a pass ran in the last 150 ms */
+ bar(){if(this.tbar)return;this.tbar=setTimeout(()=>{this.tbar=0;if(performance.now()-(this.lf||0)>150)this.flush()},0)},
  /* sync(): one pass now + one at 180 ms. sync(late, true): skip the immediate pass — used around a card rebuild, whose own hooks add controls
     over the next ~120 ms (running first would place additions before their anchors exist). late = one more pass after that many ms. */
  sync(late,settle){if(!settle&&!this.t0)this.t0=setTimeout(()=>{this.t0=0;this.flush()},0);if(!this.t1)this.t1=setTimeout(()=>{this.t1=0;this.flush()},180);
