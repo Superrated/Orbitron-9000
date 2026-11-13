@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Audio-engine load per mood, headless Chrome. For stutter work: does the load stay flat, and how bad are the worst moments?
 //   node tools/perf.mjs                                    Survival, Large · 52 ms buffer, moods Dreamy,Acid,Power,Noir, 40 s each
+//   node tools/perf.mjs --ls orb-mst=0 --eval "G.rev=0"       try an idea: extra localStorage settings, JS run right after Launch
 //   node tools/perf.mjs --quality Eco --buffer "Extra large · 102 ms" --moods Acid --secs 60
 // Per mood:  start = mean load over the first 10 s · end = mean over the last 10 s (should be ≈ start: no creep) ·
 //            worst52 = busiest 52 ms stretch of the run (must stay well under 100 % for a 52 ms buffer; 102 ms buffer → see worst102).
@@ -9,17 +10,18 @@
 import { openApp, unavailable, PAGE_HELPERS } from '../tests/harness.mjs';
 
 const a = process.argv.slice(2), val = (k, d) => { const i = a.indexOf(k); return i < 0 ? d : a[i + 1]; };
-const Q = val('--quality', 'Survival'), BUF = val('--buffer', 'Large · 52 ms'), MOODS = val('--moods', 'Dreamy,Acid,Power,Noir').split(','), SECS = +val('--secs', 40);
+const Q = val('--quality', 'Survival'), BUF = val('--buffer', 'Large · 52 ms'), MOODS = val('--moods', 'Dreamy,Acid,Power,Noir').split(','), SECS = +val('--secs', 40), EVAL = val('--eval', ''), LS = (val('--ls', '') || '').split(',').filter(Boolean).map(x => x.split('='));
 const why = unavailable(); if (why) { console.error(why); process.exit(2); }
 
 async function run(mood) {
   const app = await openApp(); const { page } = app; const browser = page.context().browser();
   try {
-    await page.addInitScript(([q, b]) => { try { localStorage.setItem('orb-q', q); localStorage.setItem('orb-q2', '1'); localStorage.setItem('orb-buf2', b); } catch (e) {} }, [Q, BUF]);
+    await page.addInitScript(([q, b, ls]) => { try { localStorage.setItem('orb-q', q); localStorage.setItem('orb-q2', '1'); localStorage.setItem('orb-buf2', b); for (const [k, v] of ls) localStorage.setItem(k, v); } catch (e) {} }, [Q, BUF, LS]);
     await page.reload(); await page.waitForFunction(() => typeof generate === 'function' && document.querySelector('#mood'));
     await page.evaluate(PAGE_HELPERS); await page.evaluate(n => __seed(n), 7);
     await page.click('#play'); await page.waitForFunction(() => window.__ctx && playing); await page.waitForTimeout(1500);
     await page.evaluate(m => { document.querySelector('#mood').value = m; generate(); }, mood);
+    if (EVAL) await page.evaluate(e => { (0, eval)(e); }, EVAL);
     await page.waitForTimeout(500);
     await browser.startTracing(page, { categories: ['webaudio'] });
     await page.waitForTimeout(SECS * 1000);
