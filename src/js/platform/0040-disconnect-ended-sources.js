@@ -4,10 +4,10 @@
 /* ---- v0.89: a finished VOICE is unplugged too. Unplugging only the source was not enough: Chrome kept processing the voice's filters, gains and
    panners (still wired to the track bus and the meters) until JavaScript garbage collection, so the engine load crept up for as long as a groove
    played (Dreamy 27 % → 74 % in 40 s) and fell back only when the browser happened to clean up. Now every source started inside a voice
-   (VX, set by the voice entry points) is counted; ¾ s after the voice's last source has ended, its exits (the nodes routeTrack/vconn wired into
+   (VX, set by the voice entry points) is counted; ¼ s (v0.98, was ¾ s: with fast repeats the finished voices piled up) after the voice's last source has ended, its exits (the nodes routeTrack/vconn wired into
    the mix, registered with orbVEX) are disconnected. Long-lived stages built inside a voice (vtag) are never registered. ---- */
 {const P=AudioScheduledSourceNode.prototype,st=P.start,ONCE={once:true};
- const LIVE=new Map(),EXIT=new Map(),DUE=[],TAIL=.75,KEEP=60; /* KEEP s: a voice that never finishes (e.g. it started a shared LFO) is just forgotten, as before */
+ const LIVE=new Map(),EXIT=new Map(),DUE=[],TAIL=.25,KEEP=60; /* KEEP s: a voice that never finishes (e.g. it started a shared LFO) is just forgotten, as before */
  /* v0.8 quick win: one shared 'ended' handler (it was a new closure per sound); it also takes the source off the load guard's list (platform/0300) */
  function ended(){try{this.disconnect()}catch(e){}if(this.__q)QOS.src.delete(this);
   const v=this.__vv;if(!v)return;const n=(LIVE.get(v)||1)-1;if(n>0){LIVE.set(v,n);return}LIVE.delete(v);if(EXIT.has(v)&&this.context===ctx)DUE.push(v,ctx.currentTime+TAIL)}

@@ -65,9 +65,16 @@
   rN=(a,q,k)=>q>=3?1:Math.min(q>=2?2:q>=1?4:k===8?4:8,sN(a));   /* the stab is a heavier voice: 4 at most */
  {const _f=fire;
   /* the same note struck again: the lead keeps its last note (normal and acid engines), the stab its chord; a little softer each time */
-  const rat=(k,w,n,i0)=>{const T=TR[k],lv=T.lv,d=lastDeg,ln=leadNote,an=acidNote,sd=sdur();
-   try{if(k===4){SPD=d;leadNote=spLN;acidNote=spLN}for(let i=i0;i<n;i++){T.lv=lv*(1-.5*i/n);_f.call(null,k,w+i*sd/n)}}
-   finally{T.lv=lv;leadNote=ln;acidNote=an;lastDeg=d}};
+  /* v0.98: the repeats are LIGHT voices — one oscillator (no unison stack, sub or octave layer), and a tail no longer than the gap to the
+     next strike, so they do not pile up. The first strike of a note stays the full sound. At Full quality FULL TILT asked for 8 complete
+     stacked lead voices on every step: engine load 30 % → 70 % with peaks over 100 % (stutter). Fader-only: nothing is stored in the groove. */
+  const RK=['uni','subosc','oct2','dec','rel','hold','air'],RS=new Array(RK.length);
+  const rat=(k,w,n,i0)=>{const T=TR[k],P=T.p,lv=T.lv,d=lastDeg,ln=leadNote,an=acidNote,sd=sdur(),gap=sd/n;
+   for(let j=0;j<RK.length;j++)RS[j]=P[RK[j]];
+   try{if(k===4){SPD=d;leadNote=spLN;acidNote=spLN;P.uni=1;P.subosc=0;P.oct2=0}else P.air=0;
+    P.dec=Math.min(P.dec==null?.25:P.dec,Math.max(.05,gap*1.5));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(.03,gap));P.hold=Math.min(P.hold||1,1/n);
+    for(let i=i0;i<n;i++){T.lv=lv*(1-.5*i/n);_f.call(null,k,w+i*sd/n)}}
+   finally{T.lv=lv;leadNote=ln;acidNote=an;lastDeg=d;for(let j=0;j<RK.length;j++){if(RS[j]===undefined)delete P[RK[j]];else P[RK[j]]=RS[j]}}};
   fire=function(k,w){const tx=TE.x,px=PU.x,mel=k===4||k===8||k===9;
    if(!((tx>.01||tx<-.01)&&(mel||k===6))&&!(px>.01&&(k===4||k===8)))return _f.apply(this,arguments);
    const T=TR[k],P=T.p,s=((tk%16)+16)%16,a=px<0?-px:px;let rc=1,o1,o2,o3,o0=TN.on;

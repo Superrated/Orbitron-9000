@@ -154,10 +154,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:30px}
 /* ---- v0.89: a finished VOICE is unplugged too. Unplugging only the source was not enough: Chrome kept processing the voice's filters, gains and
    panners (still wired to the track bus and the meters) until JavaScript garbage collection, so the engine load crept up for as long as a groove
    played (Dreamy 27 % → 74 % in 40 s) and fell back only when the browser happened to clean up. Now every source started inside a voice
-   (VX, set by the voice entry points) is counted; ¾ s after the voice's last source has ended, its exits (the nodes routeTrack/vconn wired into
+   (VX, set by the voice entry points) is counted; ¼ s (v0.98, was ¾ s: with fast repeats the finished voices piled up) after the voice's last source has ended, its exits (the nodes routeTrack/vconn wired into
    the mix, registered with orbVEX) are disconnected. Long-lived stages built inside a voice (vtag) are never registered. ---- */
 {const P=AudioScheduledSourceNode.prototype,st=P.start,ONCE={once:true};
- const LIVE=new Map(),EXIT=new Map(),DUE=[],TAIL=.75,KEEP=60; /* KEEP s: a voice that never finishes (e.g. it started a shared LFO) is just forgotten, as before */
+ const LIVE=new Map(),EXIT=new Map(),DUE=[],TAIL=.25,KEEP=60; /* KEEP s: a voice that never finishes (e.g. it started a shared LFO) is just forgotten, as before */
  /* v0.8 quick win: one shared 'ended' handler (it was a new closure per sound); it also takes the source off the load guard's list (platform/0300) */
  function ended(){try{this.disconnect()}catch(e){}if(this.__q)QOS.src.delete(this);
   const v=this.__vv;if(!v)return;const n=(LIVE.get(v)||1)-1;if(n>0){LIVE.set(v,n);return}LIVE.delete(v);if(EXIT.has(v)&&this.context===ctx)DUE.push(v,ctx.currentTime+TAIL)}
@@ -7425,9 +7425,16 @@ window.orbExoProg=function(kind){try{let P,sh;
   rN=(a,q,k)=>q>=3?1:Math.min(q>=2?2:q>=1?4:k===8?4:8,sN(a));   /* the stab is a heavier voice: 4 at most */
  {const _f=fire;
   /* the same note struck again: the lead keeps its last note (normal and acid engines), the stab its chord; a little softer each time */
-  const rat=(k,w,n,i0)=>{const T=TR[k],lv=T.lv,d=lastDeg,ln=leadNote,an=acidNote,sd=sdur();
-   try{if(k===4){SPD=d;leadNote=spLN;acidNote=spLN}for(let i=i0;i<n;i++){T.lv=lv*(1-.5*i/n);_f.call(null,k,w+i*sd/n)}}
-   finally{T.lv=lv;leadNote=ln;acidNote=an;lastDeg=d}};
+  /* v0.98: the repeats are LIGHT voices — one oscillator (no unison stack, sub or octave layer), and a tail no longer than the gap to the
+     next strike, so they do not pile up. The first strike of a note stays the full sound. At Full quality FULL TILT asked for 8 complete
+     stacked lead voices on every step: engine load 30 % → 70 % with peaks over 100 % (stutter). Fader-only: nothing is stored in the groove. */
+  const RK=['uni','subosc','oct2','dec','rel','hold','air'],RS=new Array(RK.length);
+  const rat=(k,w,n,i0)=>{const T=TR[k],P=T.p,lv=T.lv,d=lastDeg,ln=leadNote,an=acidNote,sd=sdur(),gap=sd/n;
+   for(let j=0;j<RK.length;j++)RS[j]=P[RK[j]];
+   try{if(k===4){SPD=d;leadNote=spLN;acidNote=spLN;P.uni=1;P.subosc=0;P.oct2=0}else P.air=0;
+    P.dec=Math.min(P.dec==null?.25:P.dec,Math.max(.05,gap*1.5));if(P.rel!=null)P.rel=Math.min(P.rel,Math.max(.03,gap));P.hold=Math.min(P.hold||1,1/n);
+    for(let i=i0;i<n;i++){T.lv=lv*(1-.5*i/n);_f.call(null,k,w+i*sd/n)}}
+   finally{T.lv=lv;leadNote=ln;acidNote=an;lastDeg=d;for(let j=0;j<RK.length;j++){if(RS[j]===undefined)delete P[RK[j]];else P[RK[j]]=RS[j]}}};
   fire=function(k,w){const tx=TE.x,px=PU.x,mel=k===4||k===8||k===9;
    if(!((tx>.01||tx<-.01)&&(mel||k===6))&&!(px>.01&&(k===4||k===8)))return _f.apply(this,arguments);
    const T=TR[k],P=T.p,s=((tk%16)+16)%16,a=px<0?-px:px;let rc=1,o1,o2,o3,o0=TN.on;
