@@ -1347,7 +1347,7 @@ const _init38=init;init=function(){const nw=!ctx;_init38();if(nw)setTimeout(hatM
 function hatMetalInit(){if(A.hmP||!window.OfflineAudioContext)return;const sr=ctx.sampleRate,oc=new OfflineAudioContext(1,Math.floor(sr*.6),sr),m=oc.createGain(),bp=oc.createBiquadFilter(),hp=oc.createBiquadFilter();bp.type='bandpass';bp.frequency.value=9200;bp.Q.value=.7;hp.type='highpass';hp.frequency.value=4960;hp.Q.value=.5;m.connect(bp);bp.connect(hp);hp.connect(oc.destination);
  [205.3,304.4,369.6,522.7,540,800].forEach(f=>{const o=oc.createOscillator();o.type='square';o.frequency.value=f*1.6;o.connect(m);o.start()});A.hmP=oc.startRendering().then(b=>{A.hm2=b}).catch(()=>{})};
 /* ---- v39: lead taming — lead bus (de-harsh EQ + compressor), max 3 overlapping lead notes, calmer generated lead settings ---- */
-G.ldOut=.82;G.ldT=.045;
+G.ldOut=.82;
 const _init39=init;init=function(){const nw=!ctx;_init39();if(!nw)return;const pk=ctx.createBiquadFilter(),hs=ctx.createBiquadFilter(),c=ctx.createDynamicsCompressor(),o=ctx.createGain();A.ld=ctx.createGain();
  pk.type='peaking';pk.frequency.value=3000;pk.Q.value=1;pk.gain.value=-3.5;hs.type='highshelf';hs.frequency.value=8000;hs.gain.value=-2.5;
  c.threshold.value=-22;c.ratio.value=4;c.knee.value=8;c.attack.value=.004;c.release.value=.16;o.gain.value=G.ldOut;A.ldo=o;A.ldc=c;
@@ -1356,11 +1356,15 @@ const _init39=init;init=function(){const nw=!ctx;_init39();if(!nw)return;const p
   ft.type='lowpass';ft.frequency.value=5200;ft.Q.value=.5;A.ld.connect(fd);fd.connect(pk);A.ld.connect(fi);{const fh=ctx.createBiquadFilter(),pe=ctx.createBiquadFilter(),de=ctx.createBiquadFilter();fh.type='highpass';fh.frequency.value=180;fh.Q.value=.6;pe.type=de.type='highshelf';pe.frequency.value=de.frequency.value=1500;pe.gain.value=6;de.gain.value=-6;
    fi.connect(fh);fh.connect(pe);pe.connect(fz);fz.connect(de);de.connect(ft)} /* brighter notes drive the overdrive harder, like a filter into a pedal */ft.connect(fw);fw.connect(pk);A.fz={fd,fi,fw}} // v0.22 lead bus fuzz (LEAD fader)
  pk.connect(hs);hs.connect(o);o.connect(A.dk);
- /* slow automatic level control: steer the lead bus towards a target loudness */
- const an=ctx.createAnalyser();an.fftSize=2048;hs.connect(an);let ema=0,agc=1;
- setInterval(()=>{if(!playing)return;const buf=METER.read(an,2048);let s=0;for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];const r=Math.sqrt(s/buf.length);
-  if(r>.004){ema=ema?ema*.9+r*.1:r;agc=Math.max(.35,Math.min(3,G.ldT*(G.ldMul||1)/ema));o.gain.setTargetAtTime(G.ldOut*agc,ctx.currentTime,.6)}},100)};
-const LVQ=[];function leadVoice(g,w){for(let i=LVQ.length-1;i>=0;i--)if(w-LVQ[i].w>2.5)LVQ.splice(i,1);
+ /* v0.71: the automatic level control on the lead bus is gone (it read the bus ten times a second and kept moving the gain). The lead bus
+    gain is now fixed per lead patch — see LK below. */
+ ldSet()};
+/* v0.71 lead bus level per patch (dB): the gain the old automatic control settled on, measured per patch over many Launches. Applied together
+   with the mood's lead level (G.ldMul); set when the patch or mood changes, checked as a note starts (two compares, nothing else). */
+const LK={'Acid 303':-9,'Aggro':-4.5,'Bleep':-3,'Bright pluck':2,'Chorus pulse':-1.5,'Cinematic arp':-1.5,'Clean':2,'Dense':-4,'Donk':-3.5,'EP stab':-2,'FM bell':2.5,'FM keys':-8,'Formant wave':-2,'Glass':-0.5,'Hard sync':-0.5,'Hollow BP':-2.5,'Hoover':0.5,'House piano':1.5,'Hypno stab':-0.5,'Metal FM':-2.5,'Mini acid':-0.5,'Mini bass':4,'Mini brass':-1,'Mini drone':1,'Mini edge':6,'Mini fifths':6,'Mini lead':-1.5,'Mini sparkle':-0.5,'Mini wobble':-1,'Mist':-6,'Organ':-4,'Organ stab':-5.5,'Pluck':2,'Rave stab':-7,'Reese':-1,'Rubber blip':0.5,'Soft keys':-3.5,'Soft sine':-0.5,'Space blip':4,'Square chip':-3.5,'String pluck':-4.5,'Sunny keys':-4.5,'Talkbox':-4.5,'Techno stab':-2,'Vowel':-0.5,'Weird drone':-3.5,'West Coast fold':-6,'Wide saw':1};for(const k in LK)LK[k]=Math.pow(10,LK[k]/20);let _ldV=-1,_ldO=null;
+function ldSet(){const o=A.ldo;if(!o||!ctx||o.context!==ctx)return;const P=TR[4].p,v=G.ldOut*(G.ldMul||1)*(LK[P.mode==='Acid 303'?'Acid 303':P.patch]||1);if(v===_ldV&&o===_ldO)return;
+ const first=o!==_ldO;_ldV=v;_ldO=o;try{if(first)o.gain.value=v;else o.gain.setTargetAtTime(v,ctx.currentTime,.1)}catch(e){}}
+const LVQ=[];function leadVoice(g,w){ldSet();for(let i=LVQ.length-1;i>=0;i--)if(w-LVQ[i].w>2.5)LVQ.splice(i,1);
  while(LVQ.length>=((QOS.floor||0)>=1||(QOS.lvl||0)>=1?2:3)){const o=LVQ.shift();try{o.g.gain.cancelScheduledValues(w);o.g.gain.setTargetAtTime(.0001,w,.06)}catch(e){}
   /* v0.23 perf: the faded note's oscillators stop 0.45 s later instead of running silently to their planned end */
   if(o.src)o.src.forEach(n=>{try{if(n.__e!==Infinity&&n.__e>w+.45)n.stop(w+.45)}catch(e){}})} /* persistent (mono) oscillators are never touched */
@@ -3383,7 +3387,7 @@ window.BFC={};window.bassFold=a=>{const n=1024,c=new Float32Array(n),k=1+a*2.6;f
   const pdb=p>0?20*Math.log10(p):-70,now=performance.now();if(pdb>pk||now-pkT>1200){pk=pdb;pkT=now}
   show()},500);   /* v0.33: loudness read twice a second */
  const _in=init;init=function(){const r=_in.apply(this,arguments);try{setTimeout(()=>{try{mstBuild();if(A.pre&&A.pre.context===ctx)A.pre.gain.value=on?DRV:1}catch(e){console.warn('master+',e)}},0)}catch(e){}return r};
- const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();hist=[];mgSet(.15)}catch(e){}return r};
+ const _ge=generate;generate=function(){const r=_ge.apply(this,arguments);try{amount();hist=[];mgSet(.15);ldSet()}catch(e){}return r};
  // UI under Mood finish
  let box=null;const lab=()=>{if(!box)return;const b=box.querySelector('button');{const h=on?'▲ Master+ <b>ON</b> · peak control + −9 LUFS':'△ Master+ <b>OFF</b> · previous master';if(b.innerHTML!==h)b.innerHTML=h}b.classList.toggle('on',on)};
  function show(){if(!box||!box.offsetParent)return;const t=box.querySelector('.mtx'),f=box.querySelector('.mfl');const l=stv<-60?'—':stv.toFixed(1);
