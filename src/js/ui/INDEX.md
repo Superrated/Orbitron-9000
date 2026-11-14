@@ -27,7 +27,7 @@ Per file: what it does · **defines** new globals · **wraps** globals defined b
 - **0860-solo.js** (4.1 KB) — v129: Solo — next to each Mute on the instrument pages (Kick, Hi-hat, … / Lead, Pad, …). Solo mutes every other track. v0.75: Solo latches. It stays …
   defines: SOLO
   wraps: generate arrStep
-- **0880-compact-top-phone.js** (1.0 KB) — v131: compact top box on phones; the room goes to the riser/breakdown pads on Flight
+- **0880-compact-top-phone.js** (0.8 KB) — v131: compact top box on phones; the room goes to the riser/breakdown pads on Flight
 - **0910-bass-pattern-page.js** (4.7 KB) — v136: Bass pattern page, regrouped: RHYTHM (Euclid ring + Steps/Hits/Rotate/Tension, bass-vs-kick strip, Kick, Ghost notes, Style/🎲 shortcuts), …
   defines: bassLayout
   wraps: bassSync

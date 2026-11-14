@@ -56,7 +56,7 @@ Per file: what it does · **defines** new globals · **wraps** globals defined b
 - **0720-pad-variety.js** (3.7 KB) — v89: pad variety, round three — chord colour locks per Launch, rhythmic chord patterns (offbeat stabs, house-organ syncopation), and a slow …
   defines: orbPadRhy
   wraps: pad generate
-- **0770-bpm-lock.js** (1.7 KB) — v94: BPM lock — keeps the current tempo when you Launch or change mood
+- **0770-bpm-lock.js** (1.9 KB) — v94: BPM lock — keeps the current tempo when you Launch or change mood
   defines: lockSvg
   wraps: generate
 - **0810-key-scale-lock.js** (1.7 KB) — v124: Key + scale lock — one button; when locked, Generate / Randomize all keep the current key and scale (tempo has its own lock)
