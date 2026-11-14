@@ -14,30 +14,33 @@
    Applied once, as the Launch ends: the lead through its bus level, the perc around its voice, the others through the track trims.
    Outer Rim's hats are left alone (its cosmic events play through every solo, so they cannot be read), and so is the Satellite
    (it plays too rarely to be read in four bars). The Level faders are not moved
-   and nothing listens or corrects while you play. To retune: measure again, change a number. ---- */
+   and nothing listens or corrects while you play. To retune: measure again, change a number.
+   v0.83 (genre suite, 10 Launches per mood with every part soloed, then halved by ear): pads +3.5 dB in First Light, Dark Side and Red Giant,
+   −2.5 dB in Lost Signal; Satellite Disco perc +3 dB; Time Dilation satellite +4 dB; clap +1 dB in every mood (ALL). ---- */
 {const MB={
   Dark:{'4':-1,'5':10,'6':2.3,'8':1},
-  Melancholic:{'3':3.5,'4':2.7,'5':7.5,'6':2.3},
+  Melancholic:{'3':3.5,'4':2.7,'5':5,'6':2.3},
   Dreamy:{'1':3.9,'2':4.1,'3':5.3,'4':-0.1} /* v0.83: Nebula lead -3 dB (was too up front, by ear) */,
   Tense:{'1':-1.6,'3':3.8,'5':5.5},
   Ethereal:{'1':1,'2':1.5,'3':4.7,'4':-4.5,'5':2.8,'7':2.4},
-  Hopeful:{'1':3.6,'3':3.5,'4':2.5,'5':-8.9,'6':-3.2},
-  Noir:{'1':3.9,'2':1.2,'3':3.8,'4':-5.3,'5':-8.2,'6':1.4,'7':1.1},
+  Hopeful:{'1':3.6,'3':3.5,'4':2.5,'5':-5.4,'6':-3.2},
+  Noir:{'1':3.9,'2':1.2,'3':3.8,'4':-5.3,'5':-4.7,'6':1.4,'7':1.1},
   Drone:{'3':3.9,'4':-2.5,'5':9,'6':-3.7},
   Acid:{'2':-2.7,'3':-2.9,'7':-2.4},
   Power:{'1':-2,'2':-3.9,'3':1.5,'4':5.7,'5':-1.7,'6':-1.3},
-  Italo:{'2':2.6,'3':4.6,'4':3.6,'5':-10,'6':1},
+  Italo:{'2':2.6,'3':7.6,'4':3.6,'5':-10,'6':1},
   Breaks:{'1':-2.1,'2':2,'3':-6.4,'4':-1.4,'5':4.4},
   Bleep:{'1':1.2,'3':-2.1,'4':4.6,'6':-4.1},
   'Distorted Electro':{'1':2,'2':2.2,'3':4.2,'4':-2.4,'7':-4},
   Ambient:{'1':4.3,'2':5.9,'3':3.6,'5':1.7,'6':4},
   'Groove Techno':{'1':-2.1,'2':-3.9,'5':-2},
   Vector:{'5':-3.4,'6':2.7,'7':-1.5},
-  Temporal:{'1':2.8,'2':-2.7,'5':4.9,'6':1.7,'8':5.5},
+  Temporal:{'1':2.8,'2':-2.7,'5':4.9,'6':1.7,'8':5.5,'9':4},
   Polymeter:{'1':-1.7,'2':2.8,'4':2.2,'6':1.8},
-  Chug:{'1':-1.5,'3':1,'5':6.7,'8':3.1},
+  Chug:{'1':-1.5,'3':1,'5':10.2,'8':3.1},
   'Deep Space':{'2':-2.1,'3':5.4,'4':-5.7,'5':10},
   'Melodic House':{'3':1.9,'4':4.7,'5':-5.3,'6':-3.2,'7':1.4}},
+ ALL={2:1},   /* v0.83: a part in every mood, dB — clap +1 */
  SB={
   3:{Ride:2.1,Cowbell:3.4,Marimba:-10,Blip:-4.3},   // perc sound
   4:{'Techno stab':4.5,'House piano':-1.3,'Bright pluck':2.6,'Organ stab':2.7,'Rave stab':2.3,'EP stab':-4.4,'Chorus pulse':-4.7,'Rubber blip':5.4,'Mini drone':-5.1,Pluck:4.3,'Mini brass':2.7,'FM stab':6.3,'Hollow BP':-1,Hoover:-3.5,'Weird drone':-7.9,'String pluck':-1.4,'Wide saw':1.2,'Hypno stab':3.1,Vowel:-2.6},   // lead patch
@@ -51,7 +54,7 @@
  /* the perc sounds read the track level themselves (most are played from pre-rendered hits), so the track trim never reached them: their part of the balance is applied here, around the voice */
  let pg=1;{const _fv=fireVoice;fireVoice=function(k,w){if(k!==3||pg===1)return _fv.apply(this,arguments);const T=TR[3],o=T.lv;T.lv=o*pg;try{return _fv.apply(this,arguments)}finally{T.lv=o}}}
  const _g=generate;generate=function(){const r=_g.apply(this,arguments);
-  try{pg=1;const kb=KB[G.kit];if(kb)TRIM[0]=(TRIM[0]||0)+kb;const b=MB[curMood]||{};for(let k=1;k<10;k++){const s=SB[k],d=(b[k]||0)+((s&&s[snd(k)])||0);if(!d)continue;
+  try{pg=1;const kb=KB[G.kit];if(kb)TRIM[0]=(TRIM[0]||0)+kb;const b=MB[curMood]||{};for(let k=1;k<10;k++){const s=SB[k],d=(b[k]||0)+(ALL[k]||0)+((s&&s[snd(k)])||0);if(!d)continue;
     if(k===4)G.ldMul=+((G.ldMul||1)*Math.pow(10,d/20)).toFixed(3);else if(k===3)pg=Math.pow(10,d/20);else TRIM[k]=(TRIM[k]||0)+d}}catch(e){console.warn('[orbitron] level balance',e)}
   return r};
- window.orbLevelBalance={MB,SB}}
+ window.orbLevelBalance={MB,SB,ALL}}
