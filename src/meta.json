@@ -9,7 +9,8 @@
   "flight": "the Flight (perform) page: risers, breakdowns, thrusters, drop hits, LOW-PASS / THIN / LEAD / BASS / DRUMS / FX faders",
   "ui": "screens and controls: tabs, cards, faders, menus, Mix/LFO pages, visuals (solar system), CSS injected from JS",
   "platform": "runtime and robustness: timers, render queue, load/overload guards, recovery, audio buffer, PWA install, pre-render caches",
-  "state": "persistence: saving/export, sectors (16 memory slots), WAV recorder, settings migrations"
+  "state": "persistence: saving/export, sectors (16 memory slots), WAV recorder, settings migrations",
+  "midi": "MIDI controllers: MIDI Learn, mapping slots, knob/encoder/button handling, soft takeover, MIDI clock out (OrbMIDI)"
  },
  "notes": {
   "js/core/0050-base-state-engine-ui.js": "FOUNDATION: mood display names (MOODNAME), scales SC, note names, global settings G, the 10 tracks TR (params + slider specs), audio graph setup A/init(), helpers (osc, env, d2f, R), build() hook queue, routeTrack() voice routing, UI helpers",

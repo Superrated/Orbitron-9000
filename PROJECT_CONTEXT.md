@@ -16,7 +16,7 @@ docs/MOODS.md            generated: for every mood, the files whose code names i
 tools/build.mjs          build / --check / --debug (error-reporting debug.html) / --release
 tools/index.mjs          regenerates the INDEX.md / HOOKS.md / MOODS.md maps
 tools/probe.mjs          run the app headless and inspect state, audio level and swallowed errors
-tests/                   build.test.mjs (static), browser.test.mjs (runtime), snapshots/launch.json
+tests/                   build.test.mjs (static), browser.test.mjs (runtime), midi.test.mjs (MIDI module), snapshots/launch.json
 ```
 
 ## Areas (folders) — open the folder's INDEX.md, then 1–3 files
@@ -31,6 +31,7 @@ tests/                   build.test.mjs (static), browser.test.mjs (runtime), sn
 | `ui` | tabs, cards, faders, menus, Mix/LFO pages, the solar-system visuals, CSS injected from JS |
 | `platform` | robustness + speed: timer heartbeat, render queue, load/overload guards, recovery, audio buffer, PWA install, caches |
 | `state` | persistence: export/save, sectors (16 memory slots), WAV recorder, renamed-setting migrations |
+| `midi` | MIDI controllers, OFF unless opened once with `?midi`: `2440-midi-core` (OrbMIDI: knob/endless/button handling, smooth pickup, clock out; no timers, nothing allocated per message, knob moves applied once per frame) and `2450-midi-app` (🎛 panel: Learn = tap any slider / Flight fader / Flight button / Mute·Solo / Play then move a knob; Quick setup; clock follows Play and tempo). Risers, breakdowns, menus and dice are left out on purpose |
 
 ## Key globals (all scripts share one global scope)
 - `G` settings of the current groove (bpm, root, scale, mix/FX amounts, many feature flags) · `curMood` internal mood key · `MOODS[key]` mood recipe · `MOODNAME[key]` display name (`MN(key)`).
@@ -52,6 +53,7 @@ tests/                   build.test.mjs (static), browser.test.mjs (runtime), sn
 | a UI page or control | `ui/INDEX.md`; faders/menus sync: `ui/0930-faders-show-value`, `ui/0080-event-driven-sync` |
 | stutters, CPU, recovery | `platform/INDEX.md`: `0300-load-guard`, `1580-overload-guard`, `1700-safety-loop`, `1490-audio-buffer` |
 | saving, sectors, export | `state/0830-sectors`, `state/0060-saving-share-download` |
+| MIDI controllers, clock out | `midi/2440-midi-core` (header shows the API), `midi/2450-midi-app` (what a knob can move); `tests/midi.test.mjs` |
 
 ## Conventions
 - File = one feature. Header comment first line: `/* ---- vX.Y: WHAT — why ---- */`, in plain English (the indexes show it).

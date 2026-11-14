@@ -33,4 +33,4 @@
   tr.addEventListener('pointerdown',e=>{e.preventDefault();cancelAnimationFrame(LM.raf);try{window.orbWake&&orbWake()}catch(_){}tr.setPointerCapture(e.pointerId);on=1;at(e);lt=0;LM.raf=requestAnimationFrame(sm)});
   tr.addEventListener('pointermove',e=>{if(on)at(e)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>tr.addEventListener(ev,()=>{if(!on)return;on=0}));
   let lt2=0;tr.addEventListener('pointerup',()=>{const n=performance.now();if(n-lt2<300){tg=0;lt=0;cancelAnimationFrame(LM.raf);LM.raf=requestAnimationFrame(sm)}lt2=n});show()}; // v0.22: LEAD holds where you leave it; double-tap = back to AS SET
- add();UI.on(()=>{try{add()}catch(e){}});LM.reset=()=>{cancelAnimationFrame(LM.raf);LM.raf=0;LM.x=0;lastX=null;show()};window.leadMacro=LM}
+ add();UI.on(()=>{try{add()}catch(e){}});LM.reset=()=>{cancelAnimationFrame(LM.raf);LM.raf=0;LM.x=0;lastX=null;show()};LM.set=v=>{cancelAnimationFrame(LM.raf);LM.raf=0;LM.x=Math.max(-1,Math.min(1,+v||0));lastX=null;show()};/* v0.77: set from code (MIDI) */window.leadMacro=LM}

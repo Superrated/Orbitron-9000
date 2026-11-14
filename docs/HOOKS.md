@@ -25,14 +25,14 @@ core/0110-generate-builder-tracks-ui.js → core/0120-moods-pad-motif-generator.
 ## mix — 9 wraps, defined in js/core/0050-base-state-engine-ui.js
 engine/0150-production-master-glue.js → engine/0340-shimmer-reverb.js → platform/0350-perf-prerender-hat-fps.js → platform/0370-lean-engine.js → instruments/1050-kick-rumble.js → engine/1450-master-air.js → platform/1490-audio-buffer.js → engine/1640-pump-fader.js → ui/1650-interface-cleanup.js
 
+## toggle — 9 wraps, defined in js/core/0050-base-state-engine-ui.js
+platform/0740-stability-guards-worker-clock.js → platform/0960-engine-sleep.js → platform/1580-overload-guard.js → platform/1600-pad-chord-ids.js → platform/1700-safety-loop.js → instruments/1780-sub-hold.js → sequencer/2040-lfo-bar-sync.js → flight/2130-clean-start.js → midi/2450-midi-app.js
+
 ## viz — 9 wraps, defined in js/core/0100-tabs-perform-visual-risers.js
 ui/0210-viz-solar-system.js → ui/0220-viz-cinematic.js → ui/0270-viz-orbit-map.js → platform/0300-load-guard.js → platform/0350-perf-prerender-hat-fps.js → platform/1480-viz-half-rate-on-fader.js → platform/1490-audio-buffer.js → platform/1580-overload-guard.js → ui/1900-perf-viz-load.js
 
 ## fireVoice — 8 wraps, defined in js/core/0090-track-params-voices-tick.js
 launch/0190-mood-track-trims.js → launch/0240-moods-italo-touch-breaks.js → platform/0620-cpu-easy-wins.js → instruments/0750-ride-perc.js → instruments/1160-kick-key-tuned.js → platform/1620-lead-osc-collect.js → launch/1630-sound-variety.js → platform/1920-prerender-perc.js
-
-## toggle — 8 wraps, defined in js/core/0050-base-state-engine-ui.js
-platform/0740-stability-guards-worker-clock.js → platform/0960-engine-sleep.js → platform/1580-overload-guard.js → platform/1600-pad-chord-ids.js → platform/1700-safety-loop.js → instruments/1780-sub-hold.js → sequencer/2040-lfo-bar-sync.js → flight/2130-clean-start.js
 
 ## send — 7 wraps, defined in js/core/0050-base-state-engine-ui.js
 engine/0340-shimmer-reverb.js → ui/0550-mix-tab-channels.js → engine/1020-space-stereo.js → launch/1090-pad-generation-4.js → instruments/1210-produced-leads.js → instruments/1310-hat-clap-808-room.js → engine/2020-frequency-slots.js
@@ -93,6 +93,9 @@ ui/1140-menus-follow-sound.js → ui/1860-perf-syncfaders.js
 
 ## syncMix — 2 wraps, defined in js/core/0120-moods-pad-motif-generator.js
 ui/1860-perf-syncfaders.js → instruments/1910-new-sounds-patterns.js
+
+## $ — 1 wrap, defined in js/core/0050-base-state-engine-ui.js
+midi/2450-midi-app.js
 
 ## add — 1 wrap, defined in js/core/0090-track-params-voices-tick.js
 ui/1410-pad-progression-menu.js
