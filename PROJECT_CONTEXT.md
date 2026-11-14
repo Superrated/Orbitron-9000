@@ -31,7 +31,7 @@ tests/                   build.test.mjs (static), browser.test.mjs (runtime), mi
 | `ui` | tabs, cards, faders, menus, Mix/LFO pages, the solar-system visuals, CSS injected from JS |
 | `platform` | robustness + speed: timer heartbeat, render queue, load/overload guards, recovery, audio buffer, PWA install, caches |
 | `state` | persistence: export/save, sectors (16 memory slots), WAV recorder, renamed-setting migrations |
-| `midi` | MIDI controllers, OFF unless opened once with `?midi`: `2440-midi-core` (OrbMIDI: knob/endless/button handling, smooth pickup, clock out; no timers, nothing allocated per message, knob moves applied once per frame) and `2450-midi-app` (🎛 panel: Learn = tap any slider / Flight fader / Flight button / Mute·Solo / Play then move a knob; Quick setup; clock follows Play and tempo). Risers, breakdowns, menus and dice are left out on purpose |
+| `midi` | MIDI controllers (experimental), OFF until Mix › Engine › Turn MIDI on (or `?midi`): `2440-midi-core` (OrbMIDI: knob/endless/button handling, smooth pickup, clock out; no timers, nothing allocated per message, knob moves applied once per frame) and `2450-midi-app` (section at the bottom of Mix › Engine: Learn = tap any slider / Flight fader / Flight button / Mute·Solo / Play then move a knob; Quick setup; clock follows Play and tempo). Risers, breakdowns, menus and dice are left out on purpose |
 
 ## Key globals (all scripts share one global scope)
 - `G` settings of the current groove (bpm, root, scale, mix/FX amounts, many feature flags) · `curMood` internal mood key · `MOODS[key]` mood recipe · `MOODNAME[key]` display name (`MN(key)`).

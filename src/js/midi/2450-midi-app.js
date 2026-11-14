@@ -1,13 +1,54 @@
-/* ---- v0.77: MIDI in the app (EXPERIMENTAL, shown in its own colour: magenta) — OFF unless switched on (open Orbitron once with ?midi at the end of the address). Then a MIDI button sits in the top bar: LEARN (tap any slider, any Flight fader or Flight button, Mute/Solo or Play, then move a knob), QUICK SETUP (turn knobs = the six Flight faders, press pads = the planet mutes), two presets for the Arturia MiniLab MkII and SYNC OTHER GEAR (MIDI clock out). Knobs move the same controls your finger does, so nothing new happens to the sound. Left out on purpose: risers and breakdowns (hold + drag), menus and dice buttons ---- */
+/* ---- v0.77: MIDI in the app (EXPERIMENTAL, shown in its own colour: magenta) — OFF unless switched on (Mix › Engine › Turn MIDI on, or open Orbitron once with ?midi). Then its section at the bottom of Mix › Engine has: LEARN (tap any slider, any Flight fader or Flight button, Mute/Solo or Play, then move a knob), QUICK SETUP (turn knobs = the six Flight faders, press pads = the planet mutes), two presets for the Arturia MiniLab MkII and SYNC OTHER GEAR (MIDI clock out). Knobs move the same controls your finger does, so nothing new happens to the sound. Left out on purpose: risers and breakdowns (hold + drag), menus and dice buttons ---- */
 {
   let on = false;
   try {
     if (/[?&]midi\b/.test(location.search)) localStorage.setItem('orb-midi-on', '1');
     on = localStorage.getItem('orb-midi-on') === '1';
   } catch (e) {}
-  if (on && window.OrbMIDI) try { orbMidiApp(); } catch (e) { console.warn('[orbitron] midi app', e); }
+  const css = document.createElement('style');
+  // MIDI mode has its own colour (magenta) so it is never mistaken for the yellow/green controls or the violet LFOs.
+  // Everything else comes from the app's own styles: panels, buttons, menus, fonts, the current theme.
+  css.textContent = `
+:root{--midi:#ff4fd8}
+#midiPanel{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--midi)}
+#midiPanel .midiHd{display:flex;align-items:center;gap:8px;margin-top:4px;font:700 10px ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--midi)}
+.midiExp{font-size:9px;letter-spacing:.12em;border:1px solid var(--midi);padding:1px 5px;color:var(--midi)}
+#midiPanel .dim{color:var(--muted);font-size:12px}
+#midiPanel button{flex:0 0 auto}
+#midiPanel .go,#midiPanel .midiOn{background:var(--midi)!important;color:var(--bg)!important;border-color:var(--midi);padding:12px;font-size:12px;font-weight:700}
+#midiPanel .row{display:flex;gap:6px;align-items:center;justify-content:space-between}
+#midiPanel .row>button{flex:1}
+#midiPanel button.on{color:var(--midi);border-color:var(--midi);box-shadow:inset 0 0 10px rgba(255,79,216,.3)}
+#midiPanel .mp{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 6px;border:1px solid rgba(255,79,216,.3);font-size:12px}
+#midiPanel .mp b{color:var(--midi);font-weight:400}
+#midiPanel .mp button{padding:3px 9px;font-size:11px}
+#midiPanel input[type=range]{accent-color:var(--midi)}
+#midiBar[hidden]{display:none}
+#midiBar{position:fixed;left:4px;right:4px;bottom:4px;z-index:50;border-color:var(--midi)!important;display:flex;gap:8px;align-items:center;font-size:13px}
+#midiBar span{flex:1}#midiBar b{color:var(--midi);font-weight:400}
+#midiBar button{flex:0 0 auto}#midiBar .go{background:var(--midi)!important;color:var(--bg)!important;border-color:var(--midi)}
+#midiFrame{position:fixed;inset:0;border:2px solid var(--midi);pointer-events:none;z-index:49;box-shadow:inset 0 0 18px rgba(255,79,216,.35)}#midiFrame[hidden]{display:none}
+body.midiL input[type=range]{pointer-events:none}
+.midiCan{outline:1px dashed rgba(255,79,216,.7)!important;outline-offset:1px}
+.midiMap{outline:2px solid var(--midi)!important;outline-offset:1px}
+.midiArm{outline:3px solid var(--midi)!important;outline-offset:1px;animation:midiBl .8s infinite}
+@keyframes midiBl{50%{outline-color:transparent}}`;
+  document.head.appendChild(css);
+  // the MIDI section lives at the bottom of Mix › Engine
+  const eng = [...document.querySelectorAll('#t-mix > .panel')].find(p => p.querySelector('.eng'));
+  const box = document.createElement('div'); box.id = 'midiPanel';
+  if (eng && window.OrbMIDI) {
+    eng.appendChild(box);
+    if (on) start(); else {   // off: a heading, one line, one button — nothing else runs
+      box.innerHTML = '<div class="midiHd">MIDI controller <span class="midiExp">Experimental</span></div>' +
+        '<div class="dim">Play Orbitron from a MIDI controller: knobs, faders and pads. Chrome or Edge on a computer, Chrome on Android.</div>' +
+        '<button type="button" class="midiOn">Turn MIDI on</button>';
+      box.querySelector('.midiOn').onclick = () => { try { localStorage.setItem('orb-midi-on', '1'); } catch (e) {} start(); };
+    }
+  }
+  function start() { try { orbMidiApp(box); } catch (e) { console.warn('[orbitron] midi app', e); } }
 
-  function orbMidiApp() {
+  function orbMidiApp(panel) {
     const M = OrbMIDI, $ = s => document.querySelector(s);
 
     // ---------- what a knob can move ----------
@@ -78,7 +119,7 @@
       if (FL[id]) return 'Flight · ' + FL[id].name;
       const parts = id.slice(2).split('|'), sec = parts[0], ctx = parts[1], name = parts.slice(2, -1).join('|');
       const card = /^\d+$/.test(ctx) && document.querySelector('.card[data-k="' + ctx + '"] .hd span');
-      const what = card ? card.textContent.trim() : ctx;
+      const what = card ? card.textContent.trim() : '';   // track name for track cards; panel titles are too long to show
       return [SEC[sec] || (sec === 'top' ? '' : sec), what, name === 'bpm' ? 'Tempo' : name === 'play' ? 'Play' : name].filter(Boolean).join(' · ');
     }
 
@@ -121,65 +162,26 @@
     }
 
     // ---------- the MIDI button and panel ----------
-    const css = document.createElement('style');
-    // MIDI mode has its own colour (magenta) so it is never mistaken for the yellow/green controls or the violet LFOs.
-    // Everything else comes from the app's own styles: panels, buttons, menus, fonts, the current theme.
-    css.textContent = `
-:root{--midi:#ff4fd8}
-#midiBtn{flex:0 0 auto;color:var(--midi);border-color:var(--midi)}
-#midiBtn.on{background:var(--midi);color:var(--bg)}
-#midiPanel{position:fixed;left:50%;top:56px;transform:translateX(-50%);width:min(94vw,420px);max-height:70vh;overflow:auto;z-index:50;border-color:var(--midi)!important;box-shadow:0 10px 40px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:6px}
-#midiPanel[hidden],#midiBar[hidden]{display:none}
-#midiPanel h2{color:var(--midi);display:flex;align-items:center;gap:8px;margin:0}
-#midiPanel h2 .x{margin-left:auto;flex:0 0 auto}
-.midiExp{font-size:9px;letter-spacing:.12em;border:1px solid var(--midi);padding:1px 5px;color:var(--midi)}
-#midiPanel .dim{color:var(--muted);font-size:12px}
-#midiPanel button{flex:0 0 auto}
-#midiPanel .go{background:var(--midi)!important;color:var(--bg)!important;border-color:var(--midi);padding:12px;font-size:12px;font-weight:700}
-#midiPanel .row{display:flex;gap:6px;align-items:center;justify-content:space-between}
-#midiPanel .row>button{flex:1}
-#midiPanel button.on{color:var(--midi);border-color:var(--midi);box-shadow:inset 0 0 10px rgba(255,79,216,.3)}
-#midiPanel .mp{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 6px;border:1px solid rgba(255,79,216,.3);font-size:12px}
-#midiPanel .mp b{color:var(--midi);font-weight:400}
-#midiPanel input[type=range]{accent-color:var(--midi)}
-#midiBar{position:fixed;left:4px;right:4px;bottom:4px;z-index:50;border-color:var(--midi)!important;display:flex;gap:8px;align-items:center;font-size:13px}
-#midiBar span{flex:1}#midiBar b{color:var(--midi);font-weight:400}
-#midiBar button{flex:0 0 auto}#midiBar .go{background:var(--midi)!important;color:var(--bg)!important;border-color:var(--midi)}
-#midiFrame{position:fixed;inset:0;border:2px solid var(--midi);pointer-events:none;z-index:49;box-shadow:inset 0 0 18px rgba(255,79,216,.35)}#midiFrame[hidden]{display:none}
-body.midiL input[type=range]{pointer-events:none}
-.midiCan{outline:1px dashed rgba(255,79,216,.7)!important;outline-offset:1px}
-.midiMap{outline:2px solid var(--midi)!important;outline-offset:1px}
-.midiArm{outline:3px solid var(--midi)!important;outline-offset:1px;animation:midiBl .8s infinite}
-@keyframes midiBl{50%{outline-color:transparent}}`;
-    document.head.appendChild(css);
-    const btn = document.createElement('button');
-    btn.id = 'midiBtn'; btn.type = 'button'; btn.textContent = 'MIDI'; btn.title = 'MIDI controller (experimental)';
-    const play = $('#play'); (play && play.parentElement ? play.parentElement : document.body).appendChild(btn);
-    const panel = document.createElement('div'); panel.id = 'midiPanel'; panel.className = 'panel'; panel.hidden = true; document.body.appendChild(panel);
     const frame = document.createElement('div'); frame.id = 'midiFrame'; frame.hidden = true; document.body.appendChild(frame);   // magenta edge = MIDI mode is on
     const bar = document.createElement('div'); bar.id = 'midiBar'; bar.className = 'panel'; bar.hidden = true; document.body.appendChild(bar);
-    btn.onclick = () => {
-      panel.hidden = !panel.hidden;
-      if (!panel.hidden) { panel.style.top = Math.max(8, btn.getBoundingClientRect().bottom + 6) + 'px'; M.start(); draw(); }   // open just below the button, never over it
-    };
 
     let status = 'Looking for a controller…';
-    M.on('ports', () => { const i = M.inputs(); status = i.length ? '● ' + i.map(p => p.name).join(', ') : 'Plug in a MIDI controller'; if (!panel.hidden) draw(); });
-    M.on('error', r => { status = r === 'unsupported' ? 'MIDI needs Chrome or Edge (computer) or Chrome (Android). Not iPhone/iPad.' : 'MIDI was blocked: allow it in the browser\'s site settings.'; if (!panel.hidden) draw(); });
-    M.on('map', () => { if (!panel.hidden) draw(); if (learning) mark(); });
-    M.start();   // MIDI is switched on, so connect straight away
+    M.on('ports', () => { const i = M.inputs(); status = i.length ? '● ' + i.map(p => p.name).join(', ') : 'Plug in a MIDI controller'; draw(); });
+    M.on('error', r => { status = r === 'unsupported' ? 'MIDI needs Chrome or Edge (computer) or Chrome (Android). Not iPhone/iPad.' : 'MIDI was blocked: allow it in the browser\'s site settings.'; draw(); });
+    M.on('map', () => { draw(); if (learning) mark(); });
+    M.start(); draw();   // MIDI is switched on, so connect straight away
 
     function draw() {
       const maps = M.list(), c = M.clock.settings(), outs = M.outputs();
-      panel.innerHTML = `<h2>MIDI controller <span class="midiExp">EXPERIMENTAL</span><button class="x" data-a="close">✕</button></h2>
+      panel.innerHTML = `<div class="midiHd">MIDI controller <span class="midiExp">Experimental</span></div>
         <div class="dim">MIDI mode is experimental: it may change, and some controls can't be paired yet.</div>
         <div class="dim">${status}</div>
         <button class="go" data-a="learn">Learn · tap a control, turn a knob</button>
         <button data-a="quick">Quick setup</button>
-        <h2 style="margin-top:6px">Presets · Arturia MiniLab MkII</h2>
+        <div class="midiHd">Presets · Arturia MiniLab MkII</div>
         <div class="row"><button data-a="pre" data-p="mutes">Perform + mutes</button><button data-a="pre" data-p="thrust">Perform + thrusters</button></div>
         <div class="dim">Factory settings. Top row: Tempo · Filter · Thin · Lead · Bass · Drums · FX · Swing. Bottom row: Reverb · levels of Kick, Snare, Hi-hat, Clap, Bass, Lead, Pad. Mod strip: Delay. Pads: planet mutes or thrusters.</div>
-        <h2 style="margin-top:6px">Your knobs · ${maps.length}</h2>
+        <div class="midiHd">Your knobs · ${maps.length}</div>
         ${maps.map(m => `<div class="mp"><span><b>${m.label}</b> → ${nameOf(m.id)}</span><button class="x" data-a="del" data-id="${encodeURIComponent(m.id)}">✕</button></div>`).join('') || '<div class="dim">None yet.</div>'}
         <div class="row"><button data-a="soft" class="${M.soft() ? 'on' : ''}">Smooth pickup ${M.soft() ? '✓' : '✗'}</button><button data-a="clk" class="${c.on ? 'on' : ''}">Sync other gear ${c.on ? '✓' : '✗'}</button></div>
         ${c.on ? `<div class="row"><span class="dim">Send clock to</span><select data-a="out">${outs.map(o => `<option value="${o.id}" ${o.id === c.out || o.name === c.outName ? 'selected' : ''}>${o.name}</option>`).join('') || '<option>No MIDI outputs</option>'}</select></div>
@@ -189,11 +191,10 @@ body.midiL input[type=range]{pointer-events:none}
     }
     panel.addEventListener('click', e => {
       const a = e.target.dataset.a;
-      if (a === 'close') panel.hidden = true;
       if (a === 'soft') { M.setSoft(!M.soft()); draw(); }
       if (a === 'clk') { M.clock.enable(!M.clock.settings().on); draw(); }
-      if (a === 'learn') { panel.hidden = true; learn(true); }
-      if (a === 'quick') { panel.hidden = true; quick(); }
+      if (a === 'learn') learn(true);
+      if (a === 'quick') quick();
       if (a === 'pre') {
         const k = e.target.dataset.p;
         if (M.list().length && !confirm('Replace your knobs with "' + PRESETS[k].name + '"?')) return;
@@ -235,7 +236,7 @@ body.midiL input[type=range]{pointer-events:none}
       say(`Move a knob for <b>${nameOf(armed.id)}</b>${k ? ` (now ${k})` : ''}`, (k ? '<button data-a="unmap">Remove</button>' : '') + '<button data-a="done">Done</button>');
     }
     function stopTap(e) {
-      if (bar.contains(e.target) || panel.contains(e.target) || e.target === btn) return;
+      if (bar.contains(e.target) || panel.contains(e.target)) return;
       const c = controlAt(e.target); if (!c || !c.id) return;
       e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
       if (e.type !== 'pointerdown') return;
@@ -244,7 +245,7 @@ body.midiL input[type=range]{pointer-events:none}
     }
     function learn(onoff) {
       learning = onoff; armed = null; M.cancelCatch();
-      document.body.classList.toggle('midiL', onoff); btn.classList.toggle('on', onoff); frame.hidden = !onoff;
+      document.body.classList.toggle('midiL', onoff); frame.hidden = !onoff;
       for (const t of ['pointerdown', 'click', 'mousedown', 'touchstart']) (onoff ? document.addEventListener : document.removeEventListener).call(document, t, stopTap, { capture: true, passive: false });
       if (onoff) learnBar(); else bar.hidden = true;
       mark();
