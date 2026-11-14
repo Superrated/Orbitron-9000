@@ -5,8 +5,10 @@
 //   node tests/genre/run.mjs --n 20 --mood Acid   20 Launches of one mood
 //   node tests/genre/run.mjs --seed 4242          repeat an earlier run exactly (the seed is printed every run)
 //   node tests/genre/run.mjs --bars 4 --workers 2 longer audio per Launch / parallel browser tabs
+//   node tests/genre/run.mjs --per-mood 10 --sec 20  10 Launches of every mood, about 20 s of audio each (whole bars)
 //   node tests/genre/run.mjs --no-audio           patterns + arrangement only (a few seconds)
 //   node tests/genre/run.mjs --after "setPercSound('Conga')"   run JS right after each Launch (force a sound, solo a part …)
+//   node tests/genre/run.mjs --parts             also solo every track after the mix: its loudness against the kick (like tools/levels.mjs)
 //   node tests/genre/run.mjs --fresh              reload the app before every Launch (slower; no memory of earlier Launches)
 //
 // How it works, fast: Launches run in headless-Chrome tabs that stay open (the app is reloaded every 25 Launches), and the app's AudioContext is swapped for an
@@ -26,9 +28,9 @@ import { check } from './rules.mjs';
 
 // ---------- options ----------
 const argv = process.argv.slice(2), arg = (k, d) => { const i = argv.indexOf(k); return i < 0 ? d : (argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : true); };
-const N = +arg('--n', 100), BARS = +arg('--bars', 2), WARM = 1, ONLY = arg('--mood', null), AUDIO = !argv.includes('--no-audio');
+const N = +arg('--n', 100), BARS = +arg('--bars', 2), SECS = +arg('--sec', 0), WARM = 1, ONLY = arg('--mood', null), AUDIO = !argv.includes('--no-audio');
 const SEED = +arg('--seed', Date.now() % 1e6), WORKERS = +arg('--workers', Math.max(1, Math.min(4, os.cpus().length)));
-const AFTER = arg('--after', ''), VERBOSE = argv.includes('--verbose'), FRESH = argv.includes('--fresh'), RELOAD = 25;
+const PARTS = argv.includes('--parts'), AFTER = arg('--after', ''), VERBOSE = argv.includes('--verbose'), FRESH = argv.includes('--fresh'), RELOAD = 25;
 
 // ---------- browser + server ----------
 const require = createRequire(import.meta.url);
@@ -63,7 +65,7 @@ function initScript() {
   window.__SEC = 10;
   const Fake = function (opts) {
     if (window.__oc) return new RealAC(opts);
-    const oc = new OAC(2, Math.ceil(SR * window.__SEC), SR);
+    const oc = new OAC(window.__CH || 2, Math.ceil(SR * window.__SEC), SR);
     oc.__res = oc.resume.bind(oc); oc.resume = () => Promise.resolve(); oc.suspend = (t => oc.__sus ? oc.__sus(t) : Promise.resolve()); oc.__sus = null;
     oc.close = () => Promise.resolve(); oc.baseLatency = 0; oc.outputLatency = 0; oc.getOutputTimestamp = () => ({ contextTime: oc.currentTime, performanceTime: performance.now() });
     window.__oc = oc; return oc;
@@ -73,6 +75,13 @@ function initScript() {
   // the app skips some voices inside offline renders (Ride, Marimba: `ctx instanceof OfflineAudioContext`); its main engine must not count as one
   Object.defineProperty(OAC, Symbol.hasInstance, { value: o => o != null && o !== window.__oc && Object.getPrototypeOf(o) === OAC.prototype });
 
+  /** K-weighted loudness (ungated) of channels 2+3 = the tap where all tracks meet (A.m, before the master), samples [from, from+len) */
+  window.__partLU = (buf, from, len) => { if (buf.numberOfChannels < 4) return null; const L = buf.getChannelData(2), R = buf.getChannelData(3);
+    let z = 0; for (const x of [L, R]) { let a1 = 0, a2 = 0, b1 = 0, b2 = 0, c1 = 0, c2 = 0, d1 = 0, d2 = 0;
+      for (let i = from; i < from + len && i < x.length; i++) { const v = x[i] === x[i] ? x[i] : 0;
+        const s1 = 1.53512485958697 * v - 2.69169618940638 * a1 + 1.19839281085285 * a2 + 1.69065929318241 * b1 - .73248077421585 * b2; a2 = a1; a1 = v; b2 = b1; b1 = s1;
+        const s2 = s1 - 2 * c1 + c2 + 1.99004745483398 * d1 - .99007225036621 * d2; c2 = c1; c1 = s1; d2 = d1; d1 = s2; z += s2 * s2; } }
+    return -0.691 + 10 * Math.log10(z / len + 1e-12); };
   /** Measure rendered audio: loudness (BS.1770 / LUFS), peaks, tone, stereo, glitches. Runs in the page so the samples never leave it. */
   window.__analyze = (buf, from, barLen, bars) => {
     const L = buf.getChannelData(0).subarray(from, from + barLen * bars), R = buf.getChannelData(1).subarray(from, from + barLen * bars), n = L.length;
@@ -109,7 +118,7 @@ function initScript() {
     for (let i = 0; i + w <= n; i += w) { const z = ms(L, R, i, i + w) / 2; if (z < 1e-6) { run += .01; gap = Math.max(gap, run); } else run = 0; }
     return { lufs, peak: db(pk * pk + 1e-20) , clips, nan, dc: dc / (2 * n), plr: db(pk * pk + 1e-20) - lufs, barL, barSwing: Math.max(...barL) - Math.min(...barL),
       tilt: num / den, bassWeight: db(band(PM, 20, 250) / band(PM, 250, 6000)), air: db(band(PM, 6000, 20000) / band(PM, 20, 20000)),
-      lowSide: db(band(PS, 20, 120) / band(PM, 20, 120)), width: db(band(PS, 20, 20000) / band(PM, 20, 20000)), corr: sLR / Math.sqrt(sLL * sRR + 1e-20), gap, octaves: oct.map(v => Math.round(v * 10) / 10) };
+      lowSide: db(band(PS, 20, 120) / band(PM, 20, 120)), width: db(band(PS, 20, 20000) / band(PM, 20, 20000)), corr: sLR / Math.sqrt(sLL * sRR + 1e-20), lr: db((sLL + 1e-20) / (sRR + 1e-20)), gap, octaves: oct.map(v => Math.round(v * 10) / 10) };
   };
 }
 
@@ -121,7 +130,7 @@ async function launchOnce(page, job) {
     await page.waitForFunction(() => typeof generate === 'function' && document.querySelector('#mood'));
   }
   page.__n++;
-  return page.evaluate(async ({ mood, seed, warm, bars, audio, after }) => {
+  return page.evaluate(async ({ mood, seed, warm, bars, secs, audio, after, parts }) => {
     __errors.length = 0;
     if (window.__oc && playing) toggle(); // stop the previous Launch's engine (its render is finished)
     const sel = document.querySelector('#mood'); sel.value = mood; __seed(seed);
@@ -130,24 +139,37 @@ async function launchOnce(page, job) {
     const genMs = performance.now() - t0;
     let a = null;
     if (audio && !genErr) {
-      const barS = 240 / G.bpm; window.__SEC = (warm + bars) * barS + .1;
+      const barS = 240 / G.bpm; if (secs) bars = Math.max(1, Math.round(secs / barS));
+      // --parts: after the mix, every playing track alone for 2 bars (1 bar to settle, 1 bar measured), tapped before the master
+      const solo = parts ? TR.map((T, k) => (!T.m && (T.pt || []).some(Boolean)) ? k : -1).filter(k => k >= 0).concat(window.__KICK2 ? [0] : []) : [], mixEnd = (warm + bars) * barS, seg = ((window.__SETTLE ?? 1) + 1) * barS;
+      window.__SEC = mixEnd + solo.length * seg + .1; window.__CH = solo.length ? 4 : 2;
+      // measure like a capable device: the load guard must not shed voices/effects because the offline render keeps the CPU busy
+      if (window.QOS && !QOS.__pinned) { QOS.__pinned = 1; Object.defineProperty(QOS, 'lvl', { configurable: true, get: () => 0, set() {} }); }
       if (window.__oc) { window.__oc = null; hardReset('genre test'); } // the app's own engine rebuild (↻ RESET) → a fresh offline engine
       toggle(); // ▶ Ignite
       const oc = window.__oc;
       if (!oc) throw new Error('engine did not start');
-      const step = .05, end = window.__SEC - .02, OS = OfflineAudioContext.prototype.suspend;
-      for (let t = step; t < end; t += step) OS.call(oc, +t.toFixed(4)).then(() => { try { if (ctx === oc) tick(); } catch (e) { __errors.push('tick: ' + e) } oc.__res(); });
+      const step = .05, end = window.__SEC - .02, OS = OfflineAudioContext.prototype.suspend, mutes = TR.map(T => !!T.m);
+      if (solo.length) { const sp = oc.createChannelSplitter(2), mg = oc.createChannelMerger(4); A.m.connect(sp); sp.connect(mg, 0, 2); sp.connect(mg, 1, 3); mg.connect(oc.destination);
+        if (window.orbHeadroom) { let v = orbHeadroom.db; Object.defineProperty(orbHeadroom, 'db', { configurable: true, get: () => window.__hold ? 0 : v, set(x) { v = x; } }); } }
+      let seg0 = -1;
+      for (let t = step; t < end; t += step) OS.call(oc, +t.toFixed(4)).then(() => { try {
+        if (solo.length && t >= mixEnd - 1e-6) { const si = Math.floor((t - mixEnd + 1e-6) / seg); if (si !== seg0 && si < solo.length) { seg0 = si; window.__hold = true; TR.forEach((T, j) => T.m = j !== solo[si]); } }
+        if (ctx === oc) tick(); } catch (e) { __errors.push('tick: ' + e) } oc.__res(); });
       try { tick(); } catch (e) {}
       const buf = await oc.startRendering();
       if (ctx !== oc) __errors.push('audio engine was rebuilt during the render');
       a = __analyze(buf, Math.round(warm * barS * 48000), Math.round(barS * 48000), bars);
+      if (solo.length) { window.__hold = false; TR.forEach((T, j) => T.m = mutes[j]);
+        a.parts = {}; solo.forEach((k, si) => { a.parts[si === solo.length - 1 && k === 0 && si ? 'kick2' : k] = __partLU(buf, Math.round((mixEnd + si * seg + (window.__SETTLE ?? 1) * barS) * 48000), Math.round(barS * 48000)); });
+        a.mixTap = __partLU(buf, Math.round(warm * barS * 48000), Math.round(bars * barS * 48000)); }
     }
     const r4 = v => Math.round(v * 1e4) / 1e4;
     const d = { mood: curMood, bpm: G.bpm, swing: r4(G.swing || 0), scale: G.scale, root: G.root,
       TR: TR.map(T => ({ n: T.n, st: T.st, h: T.h, m: !!T.m, pt: (T.pt || []).map(x => x ? 1 : 0).join(''), mode: T.p && T.p.mode || '', snd: T.p && (T.p.pv || T.p.patch) || '' })) };
     const errors = [...__errors]; if (genErr) errors.unshift('generate: ' + genErr);
     return { d, a, genMs, errors };
-  }, { ...job, warm: WARM, bars: BARS, audio: AUDIO, after: AFTER });
+  }, { ...job, warm: WARM, bars: BARS, secs: SECS, audio: AUDIO, after: AFTER, parts: PARTS });
 }
 
 // ---------- run ----------
@@ -163,8 +185,9 @@ await pages[0].goto(URL0); await pages[0].waitForFunction(() => document.querySe
 const pageMoods = await pages[0].evaluate(() => [...document.querySelector('#mood').options].map(o => o.value).filter(v => v !== 'Auto'));
 const moods = ONLY ? [ONLY] : pageMoods;
 const missing = pageMoods.filter(m => !PROFILES[m]);
-const jobs = Array.from({ length: N }, (_, i) => ({ i, mood: moods[i % moods.length], seed: SEED + i * 7919 }));
-console.log(`Orbitron genre suite · ${N} Launches · ${moods.length} moods · ${AUDIO ? BARS + ' bars of audio each' : 'no audio'} · ${WORKERS} tabs · seed ${SEED}`);
+const PER = +arg('--per-mood', 0), NN = PER ? PER * moods.length : N;
+const jobs = Array.from({ length: NN }, (_, i) => ({ i, mood: moods[i % moods.length], seed: SEED + i * 7919 }));
+console.log(`Orbitron genre suite · ${NN} Launches · ${moods.length} moods · ${AUDIO ? BARS + ' bars of audio each' : 'no audio'} · ${WORKERS} tabs · seed ${SEED}`);
 if (missing.length) console.log(`  ! no profile for: ${missing.join(', ')} (generic rules used)`);
 
 const results = []; let done = 0;
@@ -179,7 +202,7 @@ await Promise.all(pages.map(async page => {
     const fails = checks.filter(c => !c.ok);
     results.push({ ...job, genre: P.genre, pass: !fails.length, fails, checks, digest: res.d, audio: res.a, genMs: res.genMs, errors: res.errors });
     done++;
-    if (VERBOSE || process.stdout.isTTY) process.stdout.write(`\r  ${done}/${N} done`);
+    if (VERBOSE || process.stdout.isTTY) process.stdout.write(`\r  ${done}/${NN} done`);
   }
 }));
 await browser.close(); server.close();
@@ -191,7 +214,7 @@ const pass = results.filter(r => r.pass).length, secs = ((Date.now() - t0) / 100
 const byMood = {}; for (const r of results) (byMood[r.mood] ||= []).push(r);
 const byRule = {}; for (const r of results) for (const f of r.fails) { const k = f.group + ' · ' + f.rule; (byRule[k] ||= { n: 0, ex: [] }).n++; if (byRule[k].ex.length < 3) byRule[k].ex.push(`${r.mood}: ${f.value}`); }
 
-console.log(`\nRESULT  ${pass}/${N} Launches pass  (${Math.round(100 * pass / N)}%)  in ${secs} s\n`);
+console.log(`\nRESULT  ${pass}/${NN} Launches pass  (${Math.round(100 * pass / NN)}%)  in ${secs} s\n`);
 console.log('By mood (pass/total · subgenre · most common problem)');
 for (const m of moods) { const rs = byMood[m] || []; if (!rs.length) continue;
   const p = rs.filter(r => r.pass).length, cnt = {}; rs.forEach(r => r.fails.forEach(f => cnt[f.rule] = (cnt[f.rule] || 0) + 1));
@@ -205,6 +228,6 @@ if (AUDIO) {
   for (const m of moods) { const rs = byMood[m] || []; if (!rs.length) continue; console.log(`  ${m.padEnd(18)} ${['lufs', 'plr', 'tilt', 'bassWeight', 'air', 'width'].map(k => String(med(k, rs)).padStart(6)).join('')}`); }
 }
 const OUT = join(ROOT, 'tests/genre/out'); mkdirSync(OUT, { recursive: true });
-writeFileSync(join(OUT, 'report.json'), JSON.stringify({ seed: SEED, n: N, bars: BARS, pass, seconds: +secs, results }, null, 1));
+writeFileSync(join(OUT, 'report.json'), JSON.stringify({ seed: SEED, n: NN, bars: BARS, secs: SECS, pass, seconds: +secs, results }, null, 1));
 console.log(`\nFull details: tests/genre/out/report.json · repeat this run: node tests/genre/run.mjs --seed ${SEED}${ONLY ? ' --mood "' + ONLY + '"' : ''} --n ${N}`);
-process.exitCode = pass === N ? 0 : 1;
+process.exitCode = pass === NN ? 0 : 1;
