@@ -1988,7 +1988,7 @@ body{padding-bottom:44px}`;document.head.appendChild(st);
  const M=$('#t-mix'),old=[...M.children],bar=document.createElement('div');bar.className='mxs';bar.innerHTML='<button class="on">Channels</button><button>Bus &amp; FX</button>';M.prepend(bar);
  const cp=document.createElement('div');cp.className='panel';cp.hidden=false;cp.innerHTML='<h2 style="margin-bottom:4px">Channels · level</h2><div class="ch"></div><p class="gnote" style="margin:6px 0 0;font-size:10px">Double-tap a fader to reset.</p>';bar.after(cp);old.forEach(e=>e.hidden=true);
  const CH=cp.querySelector('.ch'),NM=['Kick','Hi-hat','Clap','Perc','Lead','Pad','Bass','Snare','Stab','Satellite'];
- const GRP=[['Drums',[0,7,2,1,3]],['Low end',[6,9]],['Synths',[4,5,8]]];
+ const GRP=[['Drums',[0,7,2,1,3]],['Synths',[6,4,5,8,9]]];   /* v1.0: two groups — drums and synths */
  const rng=(lab,min,max,val,fmt,fn,cls)=>{const w=document.createElement('label');w.className='cr '+(cls||'');w.innerHTML='<span>'+lab+'</span><input type="range" min="'+min+'" max="'+max+'" step=".01"><b></b>';const r=w.children[1],b=w.children[2];r.value=val;b.textContent=fmt(+val);
   r.oninput=()=>{fn(+r.value);b.textContent=fmt(+r.value)};r.ondblclick=()=>{const d=lab==='Pan'?0:.5;r.value=d;fn(d);b.textContent=fmt(d)};return w};
  function chBuild(){CH.innerHTML='';GRP.forEach(([gn,ks])=>{const hd=document.createElement('div');hd.className='chg';hd.textContent=gn;CH.appendChild(hd);ks.forEach(k=>{const T=TR[k];if(!T)return;const c=document.createElement('div');c.className='cs';
