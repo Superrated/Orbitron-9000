@@ -149,3 +149,21 @@ test('clock: off sends nothing; offset and tempo changes apply', async () => {
   const p = t.sent.filter(x => x.b === 0xF8);
   assert.ok(Math.abs(p.at(-1).ts - p.at(-2).ts - 1000 / 96) < 1e-6);
 });
+
+test('an endless knob learned as a normal knob is fixed while you play (and the other way round)', async () => {
+  const t = load(); await t.M.start(); t.M.setSoft(false);
+  t.learn('cut', [0xB0, 30, 65]);   // turned too slowly: only one value, so it was taken for a normal knob
+  assert.equal(t.M.list()[0].type, 'knob');
+  t.feed(0xB0, 30, 65); t.feed(0xB0, 30, 65); t.feed(0xB0, 30, 65); t.run();
+  assert.equal(t.M.list()[0].type, 'encoder', 'same step value three times: endless knob');
+  const v = t.V.cut;
+  t.feed(0xB0, 30, 65); t.feed(0xB0, 30, 65); t.run();
+  assert.ok(Math.abs(t.V.cut - (v + 0.02)) < 1e-9, 'now each click moves it a little, and it stays there');
+  t.feed(0xB0, 30, 63); t.run();
+  assert.ok(Math.abs(t.V.cut - (v + 0.01)) < 1e-9, '63 = one step left');
+  assert.equal(load(t.store).M.list()[0].type, 'encoder', 'the fix is saved');
+  // the other way: a normal knob that was set up as endless
+  t.learn('mute', [0xB0, 31, 1], [0xB0, 31, 1], [0xB0, 31, 1]);
+  t.feed(0xB0, 31, 40);
+  assert.equal(t.M.list().find(m => m.id === 'mute').type, 'knob', 'a value like 40 only comes from a normal knob');
+});

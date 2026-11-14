@@ -43,7 +43,7 @@ window.OrbMIDI = (function () {
   let byKey = new Map(), byId = new Map();
   function reindex() {
     byKey = new Map(); byId = new Map();
-    for (const m of S.maps) { m.r = { caught: false, lastIn: -1, lastSet: -1, down: false, pend: -1, t: null }; byKey.set(m.key, m); byId.set(m.id, m); }
+    for (const m of S.maps) { m.r = { caught: false, lastIn: -1, lastSet: -1, down: false, pend: -1, t: null, prev: -1, rep: 0, f: 0 }; byKey.set(m.key, m); byId.set(m.id, m); }
   }
   function changed() { reindex(); save(); emit('map'); }
   reindex();
@@ -100,8 +100,28 @@ window.OrbMIDI = (function () {
     const t = OrbMIDI.resolve(m.id); if (!t) return;   // that control isn't there right now
     apply(m, t, kind, val);
   }
+  // Endless knobs send "steps" (65 = one right, 63 = one left, or 1 / 127), normal knobs send positions.
+  // A wrong guess (Learn turned too slowly, or a controller set differently from its factory settings) is fixed
+  // while you play: a "knob" that keeps sending the same step value is an endless knob; an "endless knob" that
+  // sends a value no endless knob sends (20–48, 80–108) is a normal knob. The fix is saved.
+  const band = v => v >= 1 && v <= 15 ? 1 : v >= 113 ? 2 : v >= 49 && v <= 63 ? 4 : v >= 65 && v <= 79 ? 8 : 0;
+  function retype(m, r, val) {
+    if (m.type === 'knob') {
+      const b = band(val);
+      if (!b) { r.rep = 0; r.f = 0; r.prev = val; return; }
+      r.f |= b;
+      r.rep = val === r.prev ? r.rep + 1 : 0; r.prev = val;
+      if (r.rep < 2) return;   // the same step value three times in a row: no normal knob does that
+      m.type = 'encoder';
+      m.enc = r.f & 4 ? 'rel64' : r.f & 2 ? 'rel2c' : (r.f & 8) && (r.f & 1) ? 'relsign' : r.f & 8 ? 'rel64' : 'rel2c';
+      r.rep = 0; r.f = 0; save();
+    } else if (m.type === 'encoder' && !band(val) && val !== 0 && val !== 64 && val !== 127) {
+      m.type = 'knob'; r.caught = false; r.lastIn = -1; save();
+    }
+  }
   function apply(m, t, kind, val) {
     const r = m.r;
+    if (!kind && m.type !== 'button') retype(m, r, val);
     if (m.type === 'button' || t.kind === 'hold' || t.kind === 'trigger') {   // buttons act at once
       const down = kind ? val > 0 : val >= 64;
       if (down === r.down) return; r.down = down;
