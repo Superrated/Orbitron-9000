@@ -5800,6 +5800,12 @@ input[type=range]::-moz-range-thumb{border-radius:3px;box-shadow:0 2px 6px rgba(
  const CELLS=[[0,2,4],[0,4,2,6],[4,2,0],[0,2,4,6,4],[0,4,6,2],[2,4,0,4,6]];
  const SST={tpl:null,mem:{},cp:null};window.orbSatState=SST;
  const fitRing=t=>{const pt=t.map(x=>x==null?0:1);S.st=16;try{const ft=bassFit(S,pt);Object.assign(S,{h:ft.h,r:ft.r,ten:ft.ten})}catch(e){Object.assign(S,{h:pt.reduce((a,b)=>a+b,0),r:0,ten:0})}S.pt=pat(S)};
+ /* v1.0: the ring follows the note pattern exactly — while a Sparkle or Arp figure is active the Satellite's ring IS that figure.
+    bassFit could only approximate 2 of the 4 Sparkle figures (the ring fired one step off, so one note in three never played),
+    and Hits / Rotate / drift could move the ring away from the notes. Any ring set elsewhere is kept and comes back for the other motions. */
+ {let raw=S.pt,mT=null,mk=null;
+  Object.defineProperty(S,'pt',{configurable:true,enumerable:true,set(v){raw=v},
+   get(){const t=SST.tpl;if(!t||(S.p.role!=='Sparkle'&&S.p.mot!=='Arp'))return raw;if(t!==mT){mT=t;mk=t.map(x=>x==null?0:1)}if(S.st!==16)S.st=16;return mk}})}
  window.orbSatRing=()=>{const p=S.p,L=TR[4];SST.mem={};SST.cp=null;
   if(p.role==='Sparkle'){SST.tpl=pick(SPK);fitRing(SST.tpl)}
   else if(p.mot==='Arp'){SST.tpl=pick(ARPT);fitRing(SST.tpl)}
