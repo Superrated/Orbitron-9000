@@ -2,7 +2,7 @@
    SHAPE holds the big movers that used to sit on top of the strips — Space, Air, Pump, Feel, Drum bus — and the Texture bed.
    BUS & FX and ENGINE are as before. Nothing was rebuilt: the same controls are shown on a different sub-page. ---- */
 {const M=document.querySelector('#t-mix'),bar=M&&M.querySelector('.mxs');if(bar&&bar.children.length>=3){const [bCh,bBus,bEng]=bar.children,bSh=document.createElement('button');bSh.type='button';bSh.textContent='Shape';bCh.textContent='Mixer';bCh.after(bSh);
-  const ch=M.querySelector('.ch'),cp=ch&&ch.closest('.panel');if(cp){cp.classList.add('mxcp');const h=cp.querySelector('h2');if(h)h.textContent='Mixer · level and pan'}
+  const ch=M.querySelector('.ch'),cp=ch&&ch.closest('.panel');if(cp){cp.classList.add('mxcp');const h=cp.querySelector('h2');if(h)h.textContent='Mixer · level'}
   let want='mixer';const set=m=>{M.dataset.mx=m;bSh.classList.toggle('on',m==='shape');if(m==='shape'){bCh.classList.remove('on');const p=M.querySelector('.bedp');if(p)p.hidden=false}};
   bCh.addEventListener('click',()=>{set(want);want='mixer'});bSh.addEventListener('click',()=>{want='shape';bCh.click()});[bBus,bEng].forEach(b=>b.addEventListener('click',()=>set('other')));set('mixer');
   const tag=()=>{const g=document.getElementById('bedg'),p=g&&g.closest('.panel');if(p&&!p.classList.contains('bedp'))p.classList.add('bedp')};tag();UI.on(tag);
