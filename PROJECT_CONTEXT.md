@@ -16,6 +16,8 @@ docs/MOODS.md            generated: for every mood, the files whose code names i
 tools/build.mjs          build / --check / --debug (error-reporting debug.html) / --release
 tools/index.mjs          regenerates the INDEX.md / HOOKS.md / MOODS.md maps
 tools/probe.mjs          run the app headless and inspect state, audio level and swallowed errors
+tools/bake.mjs           bake a .orbit file (exported Sectors) into seamless audio loops for games (see game/README.md)
+game/                    OrbitPlayer: tiny loop player for baked Sectors in a browser game (+ demo.html)
 tools/levels.mjs         measure how loud every part is after a Launch, per mood (solo per track, 8 browsers in parallel)
 tests/                   build.test.mjs (static), browser.test.mjs (runtime), snapshots/launch.json
 tests/genre/             genre suite: random Launches vs real-track profiles per mood (`node tests/genre/run.mjs`, ~2.5 min, offline render)

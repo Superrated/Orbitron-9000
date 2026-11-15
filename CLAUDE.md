@@ -22,6 +22,7 @@ node tools/levels.mjs --moods Acid,Noir --out levels.json   # loudness of every 
 node tools/levels.mjs --loud --out loud.json   # loudness leaving the master per mood, at the start and settled (~2.5 min); --loudreport new.json old.json compares two runs
 node tools/perf.mjs --moods Dreamy,Acid   # audio-engine load per mood: start vs end (must stay flat) and the busiest 52 ms (stutter risk); compare before/after
 node tools/build.mjs --release 0.8   # also copy the build to releases/
+node tools/bake.mjs my-set.orbit --stems   # .orbit → game loop pack for game/orbit-player.js (game/README.md)
 ```
 
 ## Done = all of these
