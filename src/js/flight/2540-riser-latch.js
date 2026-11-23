@@ -2,7 +2,7 @@
    a riser or breakdown stays held when you lift your finger, at the height you left it (the pad glows and shows 🔒), so both hands are
    free for thrusters, mutes and faders. Tap the held pad and it lets go as usual: the drop / the full groove lands on the next beat.
    Switching LATCH off lets go of every held pad. Hooks into the release-on-beat step (1710), which asks orbLatch first. ---- */
-/* after v1.02: a held pad can still be played — touch it and drag to move the build up or down from where it is; lift and it stays held at
+/* v1.03: a held pad can still be played — touch it and drag to move the build up or down from where it is; lift and it stays held at
    the new height. Only a plain tap (no drag) lets it go. */
 {const zones=()=>[document.getElementById('riser'),...[...document.querySelectorAll('#t-perf>.rz')].map(p=>p.children[1])].filter(Boolean);
  const inZone=t=>t&&zones().find(z=>z===t||z.contains(t));
