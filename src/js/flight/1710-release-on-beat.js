@@ -5,7 +5,7 @@
  const zones=()=>[document.getElementById('riser'),...[...document.querySelectorAll('#t-perf>.rz')].map(p=>p.children[1])].filter(Boolean);
  const inZone=t=>zones().find(z=>z===t||z.contains(t));
  const flush=()=>{if(!pend)return;clearTimeout(pend.tm);const p=pend;pend=null;pass=1;try{p.tgt.dispatchEvent(new PointerEvent(p.type,{bubbles:true,cancelable:true,pointerId:p.id,clientX:p.x,clientY:p.y}))}finally{pass=0;window.__dropT=0}};
- const hold=e=>{if(!pass&&window.orbLatch&&window.orbLatch(e))return;   /* v1.01: LATCH (2540) may keep the pad held instead */
+ const hold=e=>{if(!pass&&window.orbLatch&&window.orbLatch(e))return;   /* v1.02: LATCH (2540) may keep the pad held instead */
   if(pass||!playing||!ctx)return;const z=inZone(e.target);if(!z)return;if(pend)flush();
   const sd=sdur(),bt=4*sd,a=anchor(),now=ctx.currentTime;let wB=a+Math.ceil((now-a+.001)/bt)*bt;if(wB-now<.06)wB+=bt;
   e.stopImmediatePropagation();window.__dropT=wB;pend={tgt:e.target,type:e.type,id:e.pointerId,x:e.clientX,y:e.clientY,tm:setTimeout(flush,Math.max(0,(wB-now-(z.id==='riser'?.15:.04))*1000))}}; /* the main riser schedules its drop on the exact beat, so it can be told earlier */

@@ -1,4 +1,4 @@
-/* ---- v1.01: LATCH for risers and breakdowns — a small "🔒 LATCH" switch next to STAGE / RESET (shown on Flight only). While it is on,
+/* ---- v1.02: LATCH for risers and breakdowns — a small "🔒 LATCH" switch next to STAGE / RESET (shown on Flight only). While it is on,
    a riser or breakdown stays held when you lift your finger, at the height you left it (the pad glows and shows 🔒), so both hands are
    free for thrusters, mutes and faders. Tap the held pad and it lets go as usual: the drop / the full groove lands on the next beat.
    Switching LATCH off lets go of every held pad. Hooks into the release-on-beat step (1710), which asks orbLatch first. ---- */
