@@ -276,4 +276,5 @@ js   js/launch/2500-hat-density-level.js
 js   js/launch/2510-lead-taste.js  -
 js   js/platform/2520-performance-test.js  -
 js   js/flight/2530-phone-no-scroll.js  -
+js   js/flight/2540-riser-latch.js  -
 raw  html/end.html
